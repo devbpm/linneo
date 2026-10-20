@@ -1,0 +1,43 @@
+# Linneo extensions to the fideslang data categories. Copyright 2026 the original author or authors.
+# Licensed under the Apache License, Version 2.0. Each key extends an existing fideslang key or adds a
+# non-personal root (org, reference); fideslang keys are never redefined here.
+# Columns: key, parent_key, name, description, version_added, version_deprecated, replaced_by
+key	parent_key	name	description	version_added	version_deprecated	replaced_by
+user.unique_id.record_reference	user.unique_id	Record Reference	Key, label or link that points to a record about the subject in this or another system.	0.1.0
+user.government_id.social_security_number	user.government_id	Social Security Number	Number assigned to the subject by a social security system.	0.1.0
+user.device.user_agent	user.device	User Agent	Browser or client identification string sent by the subject's device.	0.1.0
+user.device.session_id	user.device	Session ID	Identifier of an authenticated or anonymous session of the subject; while the session is valid it grants access like a credential.	0.1.0
+user.workplace.team	user.workplace	Team	Team or working group the subject belongs to within the organization.	0.1.0
+user.workplace.unit	user.workplace	Organizational Unit	Department, service or other unit the subject belongs to.	0.1.0
+user.workplace.role	user.workplace	Role	Position or function the subject holds within the organization, such as head of unit or coordinator.	0.1.0
+user.workplace.assignment_period	user.workplace	Assignment Period	Start and end of the subject's assignment to a team, unit or role.	0.1.0
+user.demographic.nationality	user.demographic	Nationality	Nationality or citizenship of the subject.	0.1.0
+user.demographic.family	user.demographic	Family Relationship	Family or legal relationship between the subject and another person.	0.1.0
+user.demographic.philosophical_belief	user.demographic	Philosophical Belief	Philosophical or ethical convictions of the subject that are not religious, such as conscientious objection.	0.1.0
+user.demographic.trade_union_membership	user.demographic	Trade Union Membership	Membership of the subject in a trade union, including union dues deducted from pay.	0.1.0
+user.demographic.sex_life	user.demographic	Sex Life	Data concerning the sex life of the subject.	0.1.0
+user.education	user	Education Data	Data about the subject's studies and academic history, as a student or applicant.	0.1.0
+user.education.program	user.education	Program	Degree, program or qualification the subject is studying or has studied.	0.1.0
+user.education.enrollment	user.education	Enrollment	Registration of the subject in a program, course or academic period.	0.1.0
+user.education.course_history	user.education	Course History	Courses the subject has taken, with their periods and outcomes.	0.1.0
+user.education.grade	user.education	Grade	Marks, grades or assessment results obtained by the subject.	0.1.0
+user.education.test_score	user.education	Test Score	Results of admission or standardized tests taken by the subject.	0.1.0
+user.education.previous_education	user.education	Previous Education	Studies completed by the subject before the current program.	0.1.0
+user.education.status	user.education	Academic Status	Standing of the subject in a program: active, on leave, graduated, withdrawn.	0.1.0
+user.education.accomplishment	user.education	Accomplishment	Awards, honours, certificates and other merits of the subject.	0.1.0
+user.financial.scholarship	user.financial	Scholarship	Scholarships, grants and financial aid applied for or awarded to the subject.	0.1.0
+user.financial.fee	user.financial	Fee	Tuition, fees and charges owed or paid by the subject.	0.1.0
+user.health_and_medical.disability	user.health_and_medical	Disability	Type or degree of a disability of the subject.	0.1.0
+user.behavior.activity_log	user.behavior	Activity Log	Record of the actions the subject performed in a system: who did what and when.	0.1.0
+system.authentication.secret	system.authentication	Secret	Secret, or a hash of a secret, that grants access: API keys, tokens, signing keys.	0.1.0
+system.security	system	Security Data	Access control definitions that do not identify a person: roles, permission matrices, scopes.	0.1.0
+system.integrity	system	Integrity Data	Evidence that protects the integrity of other data: hashes, chain anchors, checkpoints.	0.1.0
+system.configuration	system	Configuration Data	Settings and definitions that drive the system: menus, objects, parameters, rules.	0.1.0
+org		Organization Data	Data about the organization and about third parties that are not natural persons.	0.1.0
+org.structure	org	Organizational Structure	Units, teams and their hierarchy.	0.1.0
+org.legal_entity	org	Legal Entity	Organizations and other legal persons: names, registration numbers, public registry data.	0.1.0
+org.location	org	Location	Sites, buildings, rooms and other places of the organization.	0.1.0
+org.process	org	Process Definition	Definitions, documentation and management data of the organization's processes.	0.1.0
+org.business_records	org	Business Records	Business records that do not relate to a natural person.	0.1.0
+reference		Reference Data	Master data from public or standard sources.	0.1.0
+reference.public	reference	Public Reference Data	Public code lists and registers: countries, currencies, languages, territorial codes, holidays.	0.1.0

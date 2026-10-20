@@ -1,0 +1,10 @@
+# Linneo extensions to the fideslang data subjects. Copyright 2026 the original author or authors.
+# Licensed under the Apache License, Version 2.0.
+# Columns: key, parent_key, name, description, version_added, version_deprecated, replaced_by
+key	parent_key	name	description	version_added	version_deprecated	replaced_by
+student		Student	An individual enrolled in a program or course of the organization.	0.1.0
+applicant		Applicant	An individual who applies for admission to a program of the organization.	0.1.0
+alumnus		Alumnus	A former student of the organization.	0.1.0
+faculty_member		Faculty Member	An individual who teaches or does research for the organization.	0.1.0
+staff_member		Staff Member	An individual in an administrative, technical or service role of the organization.	0.1.0
+legal_representative		Legal Representative	An individual who acts on behalf of a legal entity or of another person.	0.1.0

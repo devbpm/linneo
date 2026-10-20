@@ -1,0 +1,60 @@
+Linneo
+Copyright 2026 the original author or authors.
+
+This product is licensed under the Apache License, Version 2.0 (see the LICENSE file).
+
+=============================================================================
+fideslang default taxonomy
+=============================================================================
+
+This product includes the data categories, data uses and data subjects of the
+fideslang default taxonomy, version 3.1.4: their keys, hierarchy, names,
+descriptions, version_added values and deprecations. They are in the files
+
+  src/main/resources/io/github/devbpm/linneo/internal/fideslang-data-categories.tsv
+  src/main/resources/io/github/devbpm/linneo/internal/fideslang-data-uses.tsv
+  src/main/resources/io/github/devbpm/linneo/internal/fideslang-data-subjects.tsv
+
+and in the constants and their documentation in the classes
+io.github.devbpm.linneo.Categories, DataUses and DataSubjects.
+
+  Work:      fideslang (Fides language) default taxonomy, version 3.1.4
+  Creator:   Ethyca, Inc.
+  Source:    https://github.com/ethyca/fideslang
+             https://pypi.org/project/fideslang/3.1.4/
+  Licence:   Creative Commons Attribution 4.0 International (CC BY 4.0)
+             https://creativecommons.org/licenses/by/4.0/
+             The fideslang package metadata also declares the Apache License,
+             Version 2.0; this product complies with both.
+
+The fideslang material is provided by its licensor "as is" and "as available",
+without representations or warranties of any kind; see section 5 of the
+CC BY 4.0 licence.
+
+Changes made by Linneo to the fideslang material:
+  - converted from the Python modules src/fideslang/default_taxonomy/data_*.py
+    to tab-separated values (tools/fideslang/update.py);
+  - normalised whitespace in descriptions;
+  - written an empty version_added as 2.0.0, the value fideslang's
+    default_factory assigns.
+No key, parent, name or description was altered.
+
+Linneo adds, in separate files, material that is not part of fideslang and is
+licensed under the Apache License, Version 2.0:
+  - its own terms (linneo-data-categories.tsv, linneo-data-uses.tsv,
+    linneo-data-subjects.tsv), each recorded with origin "linneo";
+  - a protection policy for the data categories (linneo-category-policy.tsv):
+    legal nature, confidentiality, integrity and secrecy. fideslang assigns no
+    such levels; they are Linneo's.
+
+Linneo is an independent project. It is not affiliated with, sponsored or
+endorsed by Ethyca, Inc. or IAB Tech Lab.
+
+=============================================================================
+Microsoft Common Data Model
+=============================================================================
+
+The values of io.github.devbpm.linneo.Identifiability and the names of some of
+Linneo's education terms are inspired by the Microsoft Common Data Model
+(https://github.com/microsoft/CDM, CC BY 4.0). No Common Data Model material is
+reproduced.

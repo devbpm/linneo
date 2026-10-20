@@ -1,0 +1,34 @@
+# GitHub Pages site for the documentation in this folder, built by .github/workflows/pages.yml.
+title: Linneo
+description: Declare what every field of your data model holds, and the protection it needs.
+url: https://devbpm.github.io
+baseurl: /linneo
+
+remote_theme: just-the-docs/just-the-docs@v0.12.0
+plugins:
+  - jekyll-remote-theme
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+search_enabled: true
+heading_anchors: true
+back_to_top: true
+back_to_top_text: "Back to top"
+
+aux_links:
+  GitHub: https://github.com/devbpm/linneo
+aux_links_new_tab: true
+
+gh_edit_link: true
+gh_edit_link_text: "Edit this page on GitHub"
+gh_edit_repository: https://github.com/devbpm/linneo
+gh_edit_branch: main
+gh_edit_source: docs
+gh_edit_view_mode: edit
+
+footer_content: >-
+  Linneo is licensed under the Apache License, Version 2.0. It includes the fideslang default taxonomy by
+  Ethyca, Inc., licensed under CC BY 4.0.

@@ -1,0 +1,65 @@
+# Source: fideslang 3.1.4 default taxonomy, https://pypi.org/project/fideslang/3.1.4/
+#   (source repository https://github.com/ethyca/fideslang, file src/fideslang/default_taxonomy/data_uses.py)
+# Copyright (c) Ethyca, Inc. Licensed under the Creative Commons Attribution 4.0 International licence
+#   (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/); the package metadata declares Apache-2.0.
+# Changes made by Linneo: converted from Python to tab-separated values; whitespace in descriptions
+#   normalised; an empty version_added is written as 2.0.0, the value fideslang's default_factory assigns.
+#   No key, parent, name or description was altered.
+# Columns: key, parent_key, name, description, version_added, version_deprecated, replaced_by
+key	parent_key	name	description	version_added	version_deprecated	replaced_by
+analytics		Analytics	Provides analytics for activities such as system and advertising performance reporting, insights and fraud detection.	2.0.0		
+analytics.reporting	analytics	Analytics for Reporting	Provides analytics for general reporting such as system and advertising performance.	2.0.0		
+analytics.reporting.ad_performance	analytics.reporting	Analytics for Advertising Performance	Provides analytics for reporting of advertising performance.	2.0.0		
+analytics.reporting.content_performance	analytics.reporting	Analytics for Content Performance	Analytics for reporting on content performance.	2.0.0		
+analytics.reporting.campaign_insights	analytics.reporting	Analytics for Insights	Provides analytics for reporting of campaign insights related to advertising and promotion activities.	2.0.0		
+analytics.reporting.system	analytics.reporting	Analytics for System Activity	Provides analytics for reporting on system activity.	2.0.0		
+analytics.reporting.system.performance	analytics.reporting.system	Analytics for System Performance	Provides analytics for reporting on system performance.	2.0.0		
+collect		Collect	Collects or stores data in order to use it for another purpose which has not yet been expressly defined.	2.0.0		
+employment		Employment	Processes data for the purpose of recruitment or employment and human resources (HR) related activities.	2.0.0		
+employment.recruitment	employment	Employment Recruitment	Processes data of prospective employees for the purpose of recruitment.	2.0.0		
+essential		Essential	Operates the service or product, including legal obligations, support and basic system operations.	2.0.0		
+essential.fraud_detection	essential	Essential Fraud Detection	Detects possible fraud or misuse of the product, service, application or system.	2.0.0		
+essential.legal_obligation	essential	Essential Legal Obligation	Provides service to meet a legal or compliance obligation such as consent management.	2.0.0		
+essential.service	essential	Essential for Service	Provides the essential product, service, application or system, without which the product/service would not be possible.	2.0.0		
+essential.service.authentication	essential.service	Essential Service Authentication	Authenticate users to the product, service, application or system.	2.0.0		
+essential.service.notifications	essential.service	Essential Service Notifications	Sends notifications about the product, service, application or system.	2.0.0		
+essential.service.notifications.email	essential.service.notifications	Essential Email Service Notifications	Sends email notifications about the product, service, application or system.	2.0.0		
+essential.service.notifications.sms	essential.service.notifications	Essential SMS Service Notifications	Sends SMS notifications about the product, service, application or system.	2.0.0		
+essential.service.operations	essential.service	Essential for Operations	Essential to ensure the operation of the product, service, application or system.	2.0.0		
+essential.service.operations.support	essential.service.operations	Essential for Operations Support	Provides support for the product, service, application or system.	2.0.0		
+essential.service.operations.improve	essential.service.operations	Essential for Support Improvement	Essential to optimize and improve support for the product, service, application or system.	2.0.0		
+essential.service.payment_processing	essential.service	Essential for Payment Processing	Essential to processes payments for the product, service, application or system.	2.0.0		
+essential.service.security	essential.service	Essential for Security	Essential to provide security for the product, service, application or system	2.0.0		
+essential.service.upgrades	essential.service	Essential for Service Upgrades	Provides timely system upgrade information options.	2.0.0		
+finance		Finance	Enables finance and accounting activities such as audits and tax reporting.	2.0.0		
+functional		Functional	Used for specific, necessary, and legitimate purposes	2.0.0		
+functional.storage	functional	Local Data Storage	Stores or accesses information from the device as needed when using a product, service, application, or system	2.0.0		
+functional.storage.privacy_preferences	functional.storage	Local Data Storage for Privacy Preferences	Stores or accesses privacy preferences information from the device as needed when using a product, service, application, or system	2.0.0		
+functional.service	functional	Service	Functions relating to provided services, products, applications or systems.	2.0.0		
+functional.service.improve	functional.service	Improve Service	Improves the specific product, service, application or system.	2.0.0		
+marketing		Marketing	Enables marketing, promotion, advertising and sales activities for the product, service, application or system.	2.0.0		
+marketing.advertising	marketing	Advertising, Marketing or Promotion	Advertises or promotes the product, service, application or system and associated services.	2.0.0		
+marketing.advertising.first_party	marketing.advertising	First Party Advertising	Serves advertisements based on first party data collected or derived about the user.	2.0.0		
+marketing.advertising.first_party.contextual	marketing.advertising.first_party	First Party Contextual Advertising	Serves advertisements based on current content being viewed by the user of the system or service.	2.0.0		
+marketing.advertising.first_party.targeted	marketing.advertising.first_party	First Party Personalized Advertising	Targets advertisements based on data collected or derived about the user from use of the system.	2.0.0		
+marketing.advertising.frequency_capping	marketing.advertising	Frequency Capping	Restricts the number of times a specific advertisement is shown to an individual.	2.0.0		
+marketing.advertising.negative_targeting	marketing.advertising	Negative Targeting	Enforces rules used to ensure a certain audience or group is not targeted by advertising.	2.0.0		
+marketing.advertising.profiling	marketing.advertising	Profiling for Advertising	Creates audience profiles for the purpose of targeted advertising	2.0.0		
+marketing.advertising.serving	marketing.advertising	Essential for Serving Ads	Essential to the delivery of advertising and content.	2.0.0		
+marketing.advertising.third_party	marketing.advertising	Third Party Advertising	Serves advertisements based on data within the system or joined with data provided by 3rd parties.	2.0.0		
+marketing.advertising.third_party.targeted	marketing.advertising.third_party	Third Party Targeted Advertising	Targets advertisements based on data within the system or joined with data provided by 3rd parties.	2.0.0		
+marketing.communications	marketing	Marketing Communications	Uses combined channels to message and market to a customer, user or prospect.	2.0.0		
+marketing.communications.email	marketing.communications	Marketing Email Communications	Sends email marketing communications.	2.0.0		
+marketing.communications.sms	marketing.communications	Marketing SMS Communications	Sends SMS marketing communications.	2.0.0		
+operations		Operations	Supports business processes necessary to the organization's operation.	2.0.0		
+personalize		Personalize	Personalizes the product, service, application or system.	2.0.0		
+personalize.content	personalize	Content Personalization	Personalizes the content of the product, service, application or system.	2.0.0		
+personalize.profiling	personalize	Personalized Profiling	Creates profiles for the purpose of serving content.	2.0.0	2.1.1	personalize.content.profiling
+personalize.content.limited	personalize.content	Limited Content Personalization	Uses limited data for the purpose of serving content.	2.1.1		
+personalize.content.profiling	personalize.content	Profiling for Personalization	Creates profiles for the purpose of serving content.	2.1.1		
+personalize.content.profiled	personalize.content	Targeted Content Personalization	Uses profiles for the purpose of serving content.	2.1.1		
+personalize.system	personalize	System Personalization	Personalizes the system.	2.0.0		
+sales		Sales	Supports sales activities such as communications and outreach.	2.0.0		
+third_party_sharing		Third Party Sharing	Transfers data to third parties outside of the system or service's scope.	2.0.0		
+third_party_sharing.legal_obligation	third_party_sharing	Sharing for Legal Obligation	Shares data for legal obligations, including contracts, applicable laws or regulations.	2.0.0		
+train_ai_system		Train AI System	Trains an AI system or data model for machine learning.	2.0.0		

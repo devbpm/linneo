@@ -1,0 +1,94 @@
+# Source: fideslang 3.1.4 default taxonomy, https://pypi.org/project/fideslang/3.1.4/
+#   (source repository https://github.com/ethyca/fideslang, file src/fideslang/default_taxonomy/data_categories.py)
+# Copyright (c) Ethyca, Inc. Licensed under the Creative Commons Attribution 4.0 International licence
+#   (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/); the package metadata declares Apache-2.0.
+# Changes made by Linneo: converted from Python to tab-separated values; whitespace in descriptions
+#   normalised; an empty version_added is written as 2.0.0, the value fideslang's default_factory assigns.
+#   No key, parent, name or description was altered.
+# Columns: key, parent_key, name, description, version_added, version_deprecated, replaced_by
+key	parent_key	name	description	version_added	version_deprecated	replaced_by
+user		User Data	Data related to the user of the system, either provided directly or derived based on their usage.	2.0.0		
+user.account	user	Account Information	Account creation or registration information.	2.0.0		
+user.account.settings	user.account	Account Settings	Account preferences and settings.	2.0.0		
+user.account.username	user.account	Account Username	Username associated with account.	2.0.0		
+user.authorization	user	Authorization Information	Scope of permissions and access to a system.	2.0.0		
+user.authorization.credentials	user.authorization	Account password	Authentication credentials to a system.	2.0.0		
+user.authorization.biometric	user.authorization	Biometric Credentials	Credentials for system authentication.	2.0.0		
+user.authorization.password	user.authorization	Password	Password for system authentication.	2.0.0		
+user.behavior	user	Observed Behavior	Behavioral data about the subject.	2.0.0		
+user.behavior.browsing_history	user.behavior	Browsing History	Content browsing history of a user.	2.0.0		
+user.behavior.media_consumption	user.behavior	Media Consumption	Content consumption history of the subject.	2.0.0		
+user.behavior.purchase_history	user.behavior	Purchase History	Purchase history of the subject.	2.0.0		
+user.behavior.search_history	user.behavior	Search History	Search history of the subject.	2.0.0		
+user.biometric	user	Biometric Data	Encoded characteristics provided by a user.	2.0.0		
+user.biometric.fingerprint	user.biometric	Fingerprint	Fingerprint encoded data about a subject.	2.0.0		
+user.biometric.retinal	user.biometric	Retina Scan	Retinal data about a subject.	2.0.0		
+user.biometric.voice	user.biometric	Voice Recording	Voice encoded data about a subject.	2.0.0		
+user.biometric.health	user.biometric	Biometric Health Data	Encoded characteristic collected about a user.	2.0.0		
+user.childrens	user	Children's Data	Data relating to children.	2.0.0		
+user.contact	user	Contact Data	Contact data collected about a user.	2.0.0		
+user.contact.address	user.contact	User Contact Address	Contact address data collected about a user.	2.0.0		
+user.contact.address.city	user.contact.address	User Contact City	User's city level address data.	2.0.0		
+user.contact.address.country	user.contact.address	User Contact Country	User's country level address data.	2.0.0		
+user.contact.email	user.contact	User Contact Email	User's contact email address.	2.0.0		
+user.contact.phone_number	user.contact	User Contact Phone Number	User's phone number.	2.0.0		
+user.contact.url	user.contact	User Website	Subject's websites or links to social and personal profiles.	2.0.0		
+user.contact.fax_number	user.contact	Fax Number	Data Subject's fax number.	2.0.0		
+user.contact.address.postal_code	user.contact.address	User Contact Postal Code	User's postal code.	2.0.0		
+user.contact.address.state	user.contact.address	User Contact State	User's state level address data.	2.0.0		
+user.contact.address.street	user.contact.address	User Contact Street	User's street level address data.	2.0.0		
+user.contact.organization	user.contact	Organization	Data Subject's Organization.	2.0.0		
+user.content	user	User Content	Content related to, or created by the subject.	2.0.0		
+user.content.private	user.content	Private Content	Private content related to, or created by the subject, not publicly available.	2.0.0		
+user.content.public	user.content	Public Content	Publicly shared Content related to, or created by the subject.	2.0.0		
+user.content.self_image	user.content	User Image	Photograph or image in which subject is whole or partially recognized.	2.0.0		
+user.demographic	user	Demographic Data	Demographic data about a user.	2.0.0		
+user.demographic.age_range	user.demographic	Age Range	Non specific age or age-range of data subject.	2.0.0		
+user.demographic.date_of_birth	user.demographic	Birth Date	Date of birth of data subject.	2.0.0		
+user.demographic.gender	user.demographic	Gender	Gender of data subject.	2.0.0		
+user.demographic.language	user.demographic	Language	Spoken or written language of subject.	2.0.0		
+user.demographic.marital_status	user.demographic	Marital Status	Marital status of data subject.	2.0.0		
+user.demographic.political_opinion	user.demographic	Political Opinion	Political opinion or belief of data subject.	2.0.0		
+user.demographic.profile	user.demographic	User Profile Data	Profile or preference information about the data subject.	2.0.0		
+user.demographic.race_ethnicity	user.demographic	Race	Race or ethnicity of data subject.	2.0.0		
+user.demographic.religious_belief	user.demographic	Religion	Religion or religious beliefs of the data subject.	2.0.0		
+user.demographic.sexual_orientation	user.demographic	Sexual Orientation	Sexual orientation of data subject.	2.0.0		
+user.location	user	Location Data	Records of the location of a user.	2.0.0		
+user.location.imprecise	user.location	Imprecise Subject Location	Imprecise location derived from sensors (more than 500M).	2.0.0		
+user.location.precise	user.location	Precise Subject Location	Precise location derived from sensors (less than 500M).	2.0.0		
+user.device	user	Device Data	Data related to a user's device, configuration and setting.	2.0.0		
+user.device.cookie	user.device	Device Cookie	Data related to a subject, stored within a cookie.	2.0.0		
+user.device.cookie_id	user.device	Cookie ID	Cookie unique identification number.	2.0.0		
+user.device.device_id	user.device	Device ID	Device unique identification number.	2.0.0		
+user.device.ip_address	user.device	IP Address	Unique identifier related to device connection.	2.0.0		
+user.payment	user	Payment Data	Payment data related to user.	2.0.0		
+user.social	user	Social Data	Social activity and interaction data.	2.0.0		
+user.unique_id	user	Unique ID	Unique identifier for a user assigned through system use.	2.0.0		
+user.unique_id.pseudonymous	user.unique_id	Pseudonymous User ID	A pseudonymous, or probabilistic identifier generated from other subject or device data belonging to the subject.	2.0.0		
+user.telemetry	user	Telemetry Data	User identifiable measurement data from system sensors and monitoring.	2.0.0		
+user.user_sensor	user	User Sensor Data	Measurement data about a user's environment through system use.	2.0.0		
+user.workplace	user	Workplace	Organization of employment.	2.0.0		
+user.sensor	user	Sensor Data	Measurement data from sensors and monitoring systems.	2.0.0		
+user.financial	user	Financial Data	Payment data and financial history.	2.0.0		
+user.financial.bank_account	user.financial	Bank Account Information	Bank account information belonging to the subject.	2.0.0		
+user.financial.credit_card	user.financial	Credit Card Information	Credit card information belonging to the subject.	2.0.0		
+user.government_id	user	Government ID	State provided identification data.	2.0.0		
+user.government_id.birth_certificate	user.government_id	Birth Certificate	State issued certificate of birth.	2.0.0		
+user.government_id.drivers_license_number	user.government_id	Driver's License Number	State issued driving identification number.	2.0.0		
+user.government_id.immigration	user.government_id	Immigration ID	State issued immigration or residency data.	2.0.0		
+user.government_id.national_identification_number	user.government_id	National Identification Number	State issued personal identification number.	2.0.0		
+user.government_id.passport_number	user.government_id	Passport Number	State issued passport data.	2.0.0		
+user.government_id.vehicle_registration	user.government_id	Vehicle Registration	State issued license plate or vehicle registration data.	2.0.0		
+user.health_and_medical	user	Health and Medical Data	Health records or individual's personal medical information.	2.0.0		
+user.health_and_medical.genetic	user.health_and_medical	User's Genetic Data	Data about the genetic makeup provided by the subject.	2.0.0		
+user.health_and_medical.insurance_beneficiary_id	user.health_and_medical	Medical Insurance ID	Health insurance beneficiary number of the subject.	2.0.0		
+user.health_and_medical.record_id	user.health_and_medical	Medical Record ID	Medical record identifiers belonging to a subject.	2.0.0		
+user.name	user	Name	User's real name.	2.0.0		
+user.name.first	user.name	First Name	Subject's first name.	2.0.0		
+user.name.last	user.name	Last Name	Subject's last, or family, name.	2.0.0		
+user.criminal_history	user	Criminal History	Criminal records or information about the data subject.	2.0.0		
+user.privacy_preferences	user	Privacy Preferences	Privacy preferences or settings set by the subject.	2.0.0		
+user.job_title	user	Job Title	Professional data.	2.0.0		
+system		System Data	Data unique to, and under control of the system.	2.0.0		
+system.authentication	system	Authentication Data	Data used to manage access to the system.	2.0.0		
+system.operations	system	Operations Data	Data used for system operations.	2.0.0		

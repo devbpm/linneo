@@ -1,0 +1,52 @@
+# Linneo's protection policy for the data categories. Copyright 2026 the original author or authors.
+# Licensed under the Apache License, Version 2.0. fideslang assigns no protection level to its
+# categories; these are Linneo's defaults. Every root declares all four facets; a key not listed
+# inherits from its parent, and a listed value may only raise what the parent gives (see Taxonomy).
+# Columns: key, nature, confidentiality, integrity, secret (empty = inherit)
+key	nature	confidentiality	integrity	secret
+user	ORDINARY	LOW	MEDIUM	false
+user.authorization		HIGH	HIGH
+user.authorization.biometric	SPECIAL_CATEGORY			true
+user.authorization.credentials				true
+user.authorization.password				true
+user.behavior		MEDIUM
+user.behavior.activity_log			HIGH
+user.biometric	SPECIAL_CATEGORY	HIGH	HIGH
+user.childrens		MEDIUM
+user.content.private		MEDIUM
+user.content.self_image		MEDIUM
+user.criminal_history	CRIMINAL_OFFENCE	HIGH	HIGH
+user.demographic.date_of_birth		MEDIUM
+user.demographic.gender		MEDIUM
+user.demographic.marital_status		MEDIUM
+user.demographic.profile		MEDIUM
+user.demographic.family		MEDIUM
+user.demographic.nationality		MEDIUM
+user.demographic.philosophical_belief	SPECIAL_CATEGORY	HIGH	HIGH
+user.demographic.political_opinion	SPECIAL_CATEGORY	HIGH	HIGH
+user.demographic.race_ethnicity	SPECIAL_CATEGORY	HIGH	HIGH
+user.demographic.religious_belief	SPECIAL_CATEGORY	HIGH	HIGH
+user.demographic.sexual_orientation	SPECIAL_CATEGORY	HIGH	HIGH
+user.demographic.sex_life	SPECIAL_CATEGORY	HIGH	HIGH
+user.demographic.trade_union_membership	SPECIAL_CATEGORY	HIGH	HIGH
+user.education		MEDIUM	HIGH
+user.financial		MEDIUM	HIGH
+user.financial.credit_card		HIGH
+user.payment		MEDIUM	HIGH
+user.government_id		MEDIUM
+user.health_and_medical	SPECIAL_CATEGORY	HIGH	HIGH
+user.device.session_id		HIGH		true
+user.location.precise		MEDIUM
+system	NONE	LOW	LOW	false
+system.authentication		HIGH	HIGH
+system.authentication.secret				true
+system.security			HIGH
+system.integrity			HIGH
+system.configuration			MEDIUM
+org	NONE	PUBLIC	LOW	false
+org.structure		LOW	MEDIUM
+org.legal_entity			MEDIUM
+org.location		LOW	MEDIUM
+org.process		LOW	MEDIUM
+org.business_records		MEDIUM	MEDIUM
+reference	NONE	PUBLIC	MEDIUM	false

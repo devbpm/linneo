@@ -1,0 +1,11 @@
+# Linneo extensions to the fideslang data uses. Copyright 2026 the original author or authors.
+# Licensed under the Apache License, Version 2.0.
+# Columns: key, parent_key, name, description, version_added, version_deprecated, replaced_by
+key	parent_key	name	description	version_added	version_deprecated	replaced_by
+education		Education	Provides educational services: admission, enrollment, teaching, assessment and academic records.	0.1.0
+education.admission	education	Admission	Processes applications and admits applicants to programs.	0.1.0
+education.enrollment	education	Enrollment	Registers students in programs, courses and academic periods.	0.1.0
+education.teaching	education	Teaching	Delivers courses and supports students' learning.	0.1.0
+education.assessment	education	Assessment	Evaluates students and records their grades.	0.1.0
+education.academic_records	education	Academic Records	Keeps students' academic records and issues certificates and degrees.	0.1.0
+education.financial_aid	education	Financial Aid	Manages scholarships, grants and other financial aid for students.	0.1.0

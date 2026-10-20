@@ -1,0 +1,24 @@
+# Source: fideslang 3.1.4 default taxonomy, https://pypi.org/project/fideslang/3.1.4/
+#   (source repository https://github.com/ethyca/fideslang, file src/fideslang/default_taxonomy/data_subjects.py)
+# Copyright (c) Ethyca, Inc. Licensed under the Creative Commons Attribution 4.0 International licence
+#   (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/); the package metadata declares Apache-2.0.
+# Changes made by Linneo: converted from Python to tab-separated values; whitespace in descriptions
+#   normalised; an empty version_added is written as 2.0.0, the value fideslang's default_factory assigns.
+#   No key, parent, name or description was altered.
+# Columns: key, parent_key, name, description, version_added, version_deprecated, replaced_by
+key	parent_key	name	description	version_added	version_deprecated	replaced_by
+anonymous_user		Anonymous User	An individual that is unidentifiable to the systems. Note - This should only be applied to truly anonymous users where there is no risk of re-identification	2.0.0		
+citizen_voter		Citizen Voter	An individual registered to voter with a state or authority.	2.0.0		
+commuter		Commuter	An individual that is traveling or transiting in the context of location tracking.	2.0.0		
+consultant		Consultant	An individual employed in a consultative/temporary capacity by the organization.	2.0.0		
+customer		Customer	An individual or other organization that purchases goods or services from the organization.	2.0.0		
+employee		Employee	An individual employed by the organization.	2.0.0		
+job_applicant		Job Applicant	An individual applying for employment to the organization.	2.0.0		
+next_of_kin		Next of Kin	A relative of any other individual subject where such a relationship is known.	2.0.0		
+passenger		Passenger	An individual traveling on some means of provided transport.	2.0.0		
+patient		Patient	An individual identified for the purposes of any medical care.	2.0.0		
+prospect		Prospect	An individual or organization to whom an organization is selling goods or services.	2.0.0		
+shareholder		Shareholder	An individual or organization that holds equity in the organization.	2.0.0		
+supplier_vendor		Supplier/Vendor	An individual or organization that provides services or goods to the organization.	2.0.0		
+trainee		Trainee	An individual undergoing training by the organization.	2.0.0		
+visitor		Visitor	An individual visiting a location.	2.0.0		
