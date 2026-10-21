@@ -30,12 +30,11 @@ import static io.github.devbpm.linneo.extension.university.UniversityDataUses.*;
  * and supporters beyond the standard {@code user.education.*} terms, the purposes it processes them for and the
  * people involved.
  * <p>
- * The terms are informed by three models of the domain: the Open Education API (OEAPI v6), the higher education
- * entities of Microsoft's Common Data Model and Education Accelerator, and Salesforce Education Cloud with its
- * Education Data Architecture. Attributes those models share with the standard taxonomy (grades, enrollments, test
- * scores, previous education, scholarships, fees, disability, nationality…) use the standard keys; only what has no
- * standard key is added. Teaching roles such as lecturer or invigilator are not data subjects: the models treat
- * them as roles a staff member or student holds in a course offering.
+ * The terms are informed by the Open Education API (OEAPI v6), copyright SURF U.A. Cooperative, licensed under the
+ * EUPL-1.2; no OEAPI material is reproduced. Attributes OEAPI shares with the standard taxonomy (grades,
+ * enrollments, test scores, previous education, scholarships, fees, disability, nationality…) use the standard keys;
+ * only what has no standard key is added. Teaching roles such as lecturer or invigilator are not data subjects:
+ * OEAPI treats them as roles a staff member or student holds in an offering.
  * <p>
  * The student record gets the finest detail: enrolment changes and record transfers below
  * {@code user.education.enrollment}, assessment attempts, ratified final grades and averages below

@@ -319,24 +319,21 @@ describe:
 
 ## Sources
 
-The terms are informed by three public models of the higher education domain, read in October 2026. The extension
-takes concepts from them, not their texts or their structure.
+The terms are informed by a public model of the higher education domain, read in October 2026. The extension takes
+concepts from it, not its texts or its structure.
 
 - **Open Education API (OEAPI) v6** — the specification of persons, offerings, associations, attempts, results and
   their enumerations (attendance, personal needs, association roles, affiliations):
   <https://github.com/open-education-api/specification/tree/v6.0>.
-- **Microsoft Common Data Model, higher education** — the `higherEducation` entities of the CDM (version 1.4):
-  <https://github.com/microsoft/CDM/tree/master/schemaDocuments/core/applicationCommon/foundationCommon/crmCommon/accelerators/education/higherEducation>,
-  and the Dynamics 365 Education Accelerator metadata (attendance, behaviour incidents, interventions, student
-  characteristics; the repository is archived): <https://github.com/microsoft/Industry-Accelerator-Education>.
-- **Salesforce Education Cloud** — the standard objects of the *Education Cloud Developer Guide* (version 68.0):
-  <https://developer.salesforce.com/docs/atlas.en-us.edu_cloud_dev_guide.meta/edu_cloud_dev_guide/edu_cloud_standard_objects.htm>;
-  and the **Education Data Architecture (EDA)** package: <https://github.com/SalesforceFoundation/EDA>.
+  Copyright (c) 2017-2026 SURF U.A. Cooperative (<https://surf.nl>), licensed under the
+  [European Union Public Licence v. 1.2 (EUPL-1.2)](https://github.com/open-education-api/specification/blob/master/LICENSE.md).
 
-What they contributed: all of them model attendance and accommodations or personal needs; Microsoft's
-accelerator and EDA model behaviour incidents and student characteristics; Salesforce models admissions (applications,
-reviews, recommendations), academic standing, holds, watchlists, placements and fundraising with prospect research.
-Teaching roles come from the OEAPI association roles and the Salesforce course offering participants.
+No OEAPI material (schemas, texts or enumerations) is reproduced in Linneo, so the EUPL does not apply to Linneo's
+code; OEAPI is cited as the source of the concepts. Linneo is not affiliated with or endorsed by SURF or the OEAPI
+project.
+
+What it contributed: attendance and personal needs (accommodations). Teaching roles come from the OEAPI association
+roles.
 
 See also: [Extensions](README.md) · [Standard taxonomy](../standard-taxonomy.md) ·
 [Key constants](../key-constants.md) · [Protection levels](../protection-levels.md)

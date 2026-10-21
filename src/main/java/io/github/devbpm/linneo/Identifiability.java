@@ -19,9 +19,8 @@ package io.github.devbpm.linneo;
  * How directly a stored value of personal data points to a person.
  * <p>
  * It belongs to the field, not to the category: the same category can be stored identified in one table and
- * pseudonymized in another. The values follow the identifiability traits of the Microsoft Common Data Model.
- * Pseudonymized data is still personal data (GDPR recital 26); anonymized and aggregated data is not, as long as
- * no one can re-identify the person.
+ * pseudonymized in another. Pseudonymized data is still personal data (GDPR recital 26); anonymized and aggregated
+ * data is not, as long as no one can re-identify the person.
  *
  * @since 0.1.0
  */

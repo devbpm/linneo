@@ -132,9 +132,8 @@ captures this, and it belongs to the **field**, not to the category:
 | `ANONYMIZED` | The value can no longer be linked to the person | no |
 | `AGGREGATED` | The value summarises several people and does not describe any one of them | no |
 
-The values follow the identifiability traits of the Microsoft Common Data Model. Note the common misconception:
-**pseudonymised data is still personal data**. Only anonymised and aggregated values leave the scope of the GDPR,
-and only as long as nobody can re-identify the person.
+Note the common misconception: **pseudonymised data is still personal data**. Only anonymised and aggregated values
+leave the scope of the GDPR, and only as long as nobody can re-identify the person.
 
 In module 3 you will declare identifiability on a field:
 

@@ -107,8 +107,8 @@ Integrity.HIGH.compareTo(Integrity.MEDIUM) > 0;  // true
 ## Identifiability
 
 `io.github.devbpm.linneo.Identifiability` — how directly a stored value of personal data points to a person. It
-belongs to the field, not to the category: the same category can be stored identified in one table and pseudonymized
-in another. The values follow the identifiability traits of the Microsoft Common Data Model.
+belongs to the field, not to the category: the same category can be stored identified in one table and pseudonymized in
+another.
 
 | Constant | Meaning | Personal data? |
 |---|---|---|

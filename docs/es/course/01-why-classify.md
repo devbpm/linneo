@@ -135,9 +135,8 @@ de ellos. `Identifiability` recoge esta diferencia y pertenece al **campo**, no 
 | `ANONYMIZED` | El valor ya no puede vincularse a la persona | no |
 | `AGGREGATED` | El valor resume a varias personas y no describe a ninguna en concreto | no |
 
-Los valores siguen los rasgos de identificabilidad del Microsoft Common Data Model. Atención a un error frecuente:
-**los datos seudonimizados siguen siendo datos personales**. Solo los valores anonimizados y agregados quedan fuera
-del ámbito del RGPD, y solo mientras nadie pueda reidentificar a la persona.
+Atención a un error frecuente: **los datos seudonimizados siguen siendo datos personales**. Solo los valores
+anonimizados y agregados quedan fuera del ámbito del RGPD, y solo mientras nadie pueda reidentificar a la persona.
 
 En el módulo 3 declararás la identificabilidad en un campo:
 

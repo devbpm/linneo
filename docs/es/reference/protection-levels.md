@@ -109,8 +109,8 @@ Integrity.HIGH.compareTo(Integrity.MEDIUM) > 0;  // true
 ## Identifiability
 
 `io.github.devbpm.linneo.Identifiability` — hasta qué punto un valor almacenado de datos personales apunta
-directamente a una persona. Pertenece al campo, no a la categoría: la misma categoría puede guardarse identificada en una tabla y
-seudonimizada en otra. Los valores siguen los rasgos de identificabilidad del Microsoft Common Data Model.
+directamente a una persona. Pertenece al campo, no a la categoría: la misma categoría puede guardarse identificada en
+una tabla y seudonimizada en otra.
 
 | Constante | Significado | ¿Dato personal? |
 |---|---|---|

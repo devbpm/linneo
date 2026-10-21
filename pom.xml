@@ -29,7 +29,8 @@
         A data classification taxonomy for Java: annotations that declare what each field of a data model holds
         (personal data categories based on fideslang, plus non-personal system, organization and reference data),
         the protection each category requires (GDPR nature, confidentiality, integrity, secrecy), a classifier
-        that verifies a model is fully classified, and an export to OpenMetadata classifications and tags.
+        that verifies a model is fully classified, a checker for GDPR processing activities that builds the
+        article 30 record, and exports of the taxonomy to OpenMetadata, DataHub and Apache Atlas.
     </description>
     <url>https://github.com/devbpm/linneo</url>
     <inceptionYear>2026</inceptionYear>
@@ -229,6 +230,32 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <!-- The javadoc jar is a redistribution too: it carries the licence and the notice. -->
+                    <execution>
+                        <id>javadoc-legal-files</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/reports/apidocs/META-INF</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>LICENSE</include>
+                                        <include>NOTICE</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <executions>
                     <execution>
@@ -248,6 +275,8 @@
                     <links>
                         <link>https://docs.oracle.com/en/java/javase/21/docs/api/</link>
                     </links>
+                    <!-- The constants' Javadoc reproduces fideslang descriptions: CC BY 4.0 requires attribution. -->
+                    <bottom><![CDATA[Copyright &#169; {inceptionYear}&#x2013;{currentYear} the original author or authors. Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>. Includes the fideslang default taxonomy by Ethyca, Inc., licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; see META-INF/NOTICE.]]></bottom>
                 </configuration>
                 <executions>
                     <execution>

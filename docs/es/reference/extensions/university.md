@@ -324,25 +324,21 @@ concreto: `user.education.grade` (`.final`, `.average`, `.attempt`), `user.educa
 
 ## Fuentes
 
-Los términos se basan en tres modelos públicos del dominio de la educación superior, consultados en octubre de 2026.
-La extensión toma de ellos conceptos, no sus textos ni su estructura.
+Los términos se basan en un modelo público del dominio de la educación superior, consultado en octubre de 2026. La
+extensión toma de él conceptos, no sus textos ni su estructura.
 
 - **Open Education API (OEAPI) v6**: la especificación de personas, ofertas, asociaciones, intentos, resultados y sus
   enumeraciones (asistencia, necesidades personales, roles en una asociación, afiliaciones):
   <https://github.com/open-education-api/specification/tree/v6.0>.
-- **Microsoft Common Data Model, educación superior**: las entidades `higherEducation` del CDM (versión 1.4):
-  <https://github.com/microsoft/CDM/tree/master/schemaDocuments/core/applicationCommon/foundationCommon/crmCommon/accelerators/education/higherEducation>,
-  y los metadatos del Dynamics 365 Education Accelerator (asistencia, incidentes de conducta, intervenciones,
-  características del estudiante; el repositorio está archivado): <https://github.com/microsoft/Industry-Accelerator-Education>.
-- **Salesforce Education Cloud**: los objetos estándar de la *Education Cloud Developer Guide* (versión 68.0):
-  <https://developer.salesforce.com/docs/atlas.en-us.edu_cloud_dev_guide.meta/edu_cloud_dev_guide/edu_cloud_standard_objects.htm>;
-  y el paquete **Education Data Architecture (EDA)**: <https://github.com/SalesforceFoundation/EDA>.
+  Copyright (c) 2017-2026 SURF U.A. Cooperative (<https://surf.nl>), con licencia
+  [European Union Public Licence v. 1.2 (EUPL-1.2)](https://github.com/open-education-api/specification/blob/master/LICENSE.md).
 
-Qué aportó cada uno: todos modelan la asistencia y las adaptaciones o necesidades personales; el acelerador de
-Microsoft y EDA modelan incidentes de conducta y características del estudiante; Salesforce modela la admisión
-(solicitudes, evaluaciones, recomendaciones), la situación académica, los bloqueos, las listas de seguimiento, las
-prácticas y la captación de fondos con investigación de donantes. Los roles docentes vienen de los roles de asociación
-de OEAPI y de los participantes en una oferta docente de Salesforce.
+Linneo no reproduce material de OEAPI (esquemas, textos ni enumeraciones), por lo que la EUPL no se aplica a su
+código; OEAPI se cita como fuente de los conceptos. Linneo no está afiliado a SURF ni al proyecto OEAPI, ni cuenta con
+su respaldo.
+
+Qué aportó: la asistencia y las necesidades personales (adaptaciones). Los roles docentes vienen de los roles de
+asociación de OEAPI.
 
 Véase también: [Extensiones](README.md) · [Taxonomía estándar](../standard-taxonomy.md) ·
 [Constantes de claves](../key-constants.md) · [Niveles de protección](../protection-levels.md)

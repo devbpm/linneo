@@ -7,6 +7,10 @@
 
 **Declare what every field of your data model holds, and the protection it needs. Let the build check it.**
 
+> The name comes from Carl Linnaeus (Carl von Linné), whose taxonomy classified living beings into a nested hierarchy
+> of ranks, each identified by a name. Linneo does the same for data: every category sits under its parent in a tree,
+> and its dotted key (`user.contact.email`) names the path from the root.
+
 Linneo is a small Java library, with no runtime dependencies, that brings a data classification taxonomy into your
 code. You annotate each field with a category such as `user.contact.email` or `user.health_and_medical`, and Linneo
 tells you what that means: whether it is personal data, whether it is a special category under the GDPR, how
@@ -254,9 +258,8 @@ See [Extending the taxonomy](docs/en/reference/extending.md).
 
 ### The university extension
 
-Linneo ships an optional extension for universities and other higher education institutions, informed by the Open
-Education API (OEAPI), the higher education model of Microsoft's Common Data Model and Salesforce Education Cloud.
-It adds 33 data categories, with the finest detail on the student record: enrolment changes and record
+Linneo ships an optional extension for universities and other higher education institutions, informed by the
+[Open Education API (OEAPI)](https://github.com/open-education-api/specification). It adds 33 data categories, with the finest detail on the student record: enrolment changes and record
 transfers, assessment attempts, final grades and averages, credit recognition, programme progress, degrees,
 certificates and language proficiency. It also covers attendance, academic accommodations, discipline, advising,
 admissions, internships and their evaluation, international mobility, means-tested aid, fee exemptions and
@@ -413,3 +416,9 @@ It includes the fideslang default taxonomy, version 3.1.4, by Ethyca, Inc.
 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), converted to tab-separated values. Linneo's own terms and
 the protection levels are not part of fideslang. See [NOTICE](NOTICE) for the full attribution and the list of
 changes. Linneo is not affiliated with or endorsed by Ethyca, Inc. or IAB Tech Lab.
+
+The university extension is informed by the concepts of the
+[Open Education API (OEAPI) specification](https://github.com/open-education-api/specification), version 6,
+Copyright (c) 2017-2026 SURF U.A. Cooperative ([surf.nl](https://surf.nl)), licensed under the
+[EUPL-1.2](https://github.com/open-education-api/specification/blob/master/LICENSE.md). No OEAPI material is
+reproduced. Linneo is not affiliated with or endorsed by SURF or the OEAPI project.

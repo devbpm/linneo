@@ -51,10 +51,20 @@ Linneo is an independent project. It is not affiliated with, sponsored or
 endorsed by Ethyca, Inc. or IAB Tech Lab.
 
 =============================================================================
-Microsoft Common Data Model
+Open Education API (OEAPI)
 =============================================================================
 
-The values of io.github.devbpm.linneo.Identifiability and the names of some of
-Linneo's education terms are inspired by the Microsoft Common Data Model
-(https://github.com/microsoft/CDM, CC BY 4.0). No Common Data Model material is
-reproduced.
+The terms of the optional university extension
+(io.github.devbpm.linneo.extension.university) are informed by the concepts of
+the Open Education API specification, version 6.
+
+  Work:      Open Education API (OEAPI) specification, version 6
+  Copyright: Copyright (c) 2017-2026 SURF U.A. Cooperative (https://surf.nl)
+  Source:    https://github.com/open-education-api/specification
+  Licence:   European Union Public Licence v. 1.2 (EUPL-1.2)
+             https://github.com/open-education-api/specification/blob/master/LICENSE.md
+
+No OEAPI material (schemas, texts or enumerations) is reproduced in this
+product; the specification is cited as the source of the concepts only.
+Linneo is not affiliated with, sponsored or endorsed by SURF U.A. Cooperative
+or the OEAPI project.

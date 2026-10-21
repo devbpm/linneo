@@ -21,9 +21,8 @@ All notable changes to this project are documented in this file. The format foll
 - `OpenMetadataCatalog`: classifications, nested tags with associated tags, and the tags of each column.
 - `UniversityTaxonomy`: an optional taxonomy extension for higher education (33 data categories focused on the
   student record, 27 data uses including the new roots `advancement` and `research`, 13 data subjects), informed by
-  OEAPI, the Common Data Model higher education entities and Salesforce Education Cloud, and following fideslang's
-  rules for custom labels. Not applied by default; keys in `UniversityCategories`, `UniversityDataUses` and
-  `UniversityDataSubjects`.
+  the Open Education API (OEAPI) and following fideslang's rules for custom labels. Not applied by default; keys in
+  `UniversityCategories`, `UniversityDataUses` and `UniversityDataSubjects`.
 - `ProcessingChecker`, `ProcessingActivity` and `ProcessingRecord`: GDPR processing activities (purposes, data
   subjects, personal data from category keys and annotated entities, lawful basis, article 9.2 and 10 conditions,
   retention, recipients, transfers, impact assessment) checked against the taxonomy and the classification, and the
