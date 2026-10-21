@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/package-info.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
+  - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
 -->
 
 # Processing activities
@@ -30,6 +31,7 @@ taxonomy and the classification of the model, and renders the record.
 | `TransferSafeguard` | enum | What allows a transfer (chapter V) | [Legal bases](bases.md#transfersafeguard) |
 | `ProcessingChecker` | class | Checks activities and builds the record | [ProcessingChecker](checker.md) |
 | `CheckedActivity` | record | An activity with its terms resolved, its personal data, the protection it requires and the problems found | [ProcessingChecker](checker.md#checkedactivity) |
+| `Jurisdiction` | enum | The national law a checker applies on top of the GDPR (`EU`, `SPAIN`) | [ProcessingChecker](checker.md#jurisdiction) |
 | `ProcessingViolation` | record, with `Severity` and `Code` | A problem found in an activity | [ProcessingChecker](checker.md#processingviolation) |
 | `ProcessingException` | exception | Thrown by `verify` with every error | [ProcessingChecker](checker.md#processingexception) |
 | `ProcessingRecord` | record | The record of processing activities, as Markdown or JSON | [ProcessingRecord](record.md) |
@@ -63,7 +65,8 @@ severity:
 - **Error**: the activity, as declared, would be unlawful or cannot be checked. Personal data without a lawful basis,
   special categories without an article 9.2 condition, criminal offence data without an article 10 basis, an
   unknown key, an activity with no purpose, no data subjects or no personal data, an entity with classification
-  errors, two activities with the same key. `verify` throws a `ProcessingException` and no record is produced.
+  errors, two activities with the same key. With `Jurisdiction.SPAIN`, also explicit consent as the only condition for
+  the special categories of LOPDGDD article 9.1. `verify` throws a `ProcessingException` and no record is produced.
 - **Warning**: the record is incomplete or should be reviewed. A deprecated key, a non-personal category, a basis
   resting on law without naming the law, legitimate interests without the interest pursued, no retention, a
   condition declared for data the activity does not process, and special category, criminal offence or profiling

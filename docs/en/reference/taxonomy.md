@@ -38,7 +38,7 @@ Taxonomy custom = Taxonomy.builder()
         .build();
 ```
 
-`toString()` reports the sizes, for example `Taxonomy[123 data categories, 63 data uses, 21 data subjects]` for the
+`toString()` reports the sizes, for example `Taxonomy[125 data categories, 63 data uses, 21 data subjects]` for the
 standard taxonomy.
 
 ## Data categories

@@ -47,8 +47,8 @@ import io.github.devbpm.linneo.extension.university.UniversityTaxonomy;
 Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
 ```
 
-`taxonomy.toString()` prints `Taxonomy[156 data categories, 90 data uses, 34 data subjects]`, against
-`Taxonomy[123 data categories, 63 data uses, 21 data subjects]` for the standard taxonomy. Keep the result and use it
+`taxonomy.toString()` prints `Taxonomy[158 data categories, 90 data uses, 34 data subjects]`, against
+`Taxonomy[125 data categories, 63 data uses, 21 data subjects]` for the standard taxonomy. Keep the result and use it
 everywhere: in the [`Classifier`](../classify/classifier.md), the
 [`ProcessingChecker`](../processing/checker.md) and the catalogue exporters. A `Classifier` built on
 `Taxonomy.standard()` reports every key of the extension as `UNKNOWN_CATEGORY`.

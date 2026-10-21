@@ -27,7 +27,7 @@ a non-exported package and not part of the public API, from tab-separated resour
 
 | | fideslang 3.1.4 | Linneo | Total |
 |---|---|---|---|
-| Data categories | 85 | 38 | 123 |
+| Data categories | 85 | 40 | 125 |
 | Data uses | 56 | 7 | 63 |
 | Data subjects | 15 | 6 | 21 |
 
@@ -59,11 +59,13 @@ Below the roots, the policy raises facets where the data requires it; any key no
 |---|---|
 | `user.health_and_medical`, `user.biometric`, `user.demographic.philosophical_belief`, `.political_opinion`, `.race_ethnicity`, `.religious_belief`, `.sex_life`, `.sexual_orientation`, `.trade_union_membership` | `SPECIAL_CATEGORY`, confidentiality `HIGH`, integrity `HIGH` |
 | `user.criminal_history` | `CRIMINAL_OFFENCE`, `HIGH`, `HIGH` |
+| `user.administrative_sanction`, `user.victim_status` | `ORDINARY`, confidentiality `HIGH`, integrity `HIGH` |
 | `user.authorization` (scope of permissions) | confidentiality `HIGH`, integrity `HIGH`; `user.authorization.credentials`, `.password` and `.biometric` are **secret**, and `user.authorization.biometric` is also `SPECIAL_CATEGORY` |
 | `user.device.session_id` | confidentiality `HIGH`, **secret** |
 | `system.authentication` | confidentiality `HIGH`, integrity `HIGH`; `system.authentication.secret` is **secret** |
 | `user.financial`, `user.payment`, `user.education` | confidentiality `MEDIUM`, integrity `HIGH`; `user.financial.credit_card` confidentiality `HIGH` |
-| `user.behavior`, `user.childrens`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, several `user.demographic.*` (date of birth, gender, marital status, profile, family, nationality) | confidentiality `MEDIUM` |
+| `user.behavior`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, several `user.demographic.*` (date of birth, gender, marital status, profile, family, nationality) | confidentiality `MEDIUM` |
+| `user.childrens`, `user.government_id.immigration` | confidentiality `HIGH` (data of vulnerable data subjects: children and migrants or asylum seekers) |
 | `user.behavior.activity_log`, `system.security`, `system.integrity` | integrity `HIGH` |
 | `system.configuration` | integrity `MEDIUM` |
 | `org.structure`, `org.location`, `org.process` | confidentiality `LOW`, integrity `MEDIUM` |
@@ -71,15 +73,36 @@ Below the roots, the policy raises facets where the data requires it; any key no
 | `org.business_records` | confidentiality `MEDIUM`, integrity `MEDIUM` |
 
 Children of a special-category category are special category too (for example
-`user.health_and_medical.disability`), and every descendant of a secret category is secret.
+`user.health_and_medical.disability`), and every descendant of a secret category is secret. The builder requires every
+`SPECIAL_CATEGORY` and `CRIMINAL_OFFENCE` category to resolve to `HIGH` confidentiality and `HIGH` integrity (see
+[Protection levels](protection-levels.md#legalnature)).
+
+### Legal basis
+
+The policy follows Regulation (EU) 2016/679 (GDPR) as corrected (OJ L 127, 23.5.2018; EUR-Lex has no later
+consolidated text) and, for Spain, Ley Orgánica 3/2018 (LOPDGDD), consolidated text of 27 December 2025
+(BOE-A-2018-16673):
+
+- Special categories (GDPR and LOPDGDD article 9) and criminal offence data (GDPR and LOPDGDD article 10) get the
+  maximum protection, `HIGH` and `HIGH`.
+- `user.childrens` is `HIGH` because children are vulnerable data subjects (GDPR recital 38 and article 8; LOPDGDD
+  article 7 sets the age of consent at 14).
+- `user.government_id.immigration` is `HIGH` for the same reason applied to migrants and asylum seekers (EDPB
+  WP248 rev.01).
+- Data about administrative infringements and sanctions (`user.administrative_sanction`) is `ORDINARY` with high
+  confidentiality and integrity, not `CRIMINAL_OFFENCE` (LOPDGDD article 27); criminal offences stay in
+  `user.criminal_history`.
+- `user.victim_status` (recognition as a victim of gender-based violence, sexual violence, terrorism, trafficking or
+  another offence, and the protection and entitlements it gives) is deliberately `ORDINARY`, not `CRIMINAL_OFFENCE`,
+  with `HIGH` confidentiality and integrity.
 
 ## Linneo's additions
 
-**Data categories** (38, all `since` `0.1.0`):
+**Data categories** (40, all `since` `0.1.0`):
 
 | Parent | Added children |
 |---|---|
-| `user` | `user.education` with `program`, `enrollment`, `course_history`, `grade`, `test_score`, `previous_education`, `status`, `accomplishment` |
+| `user` | `user.education` with `program`, `enrollment`, `course_history`, `grade`, `test_score`, `previous_education`, `status`, `accomplishment`; `administrative_sanction`, `victim_status` |
 | `user.unique_id` | `record_reference` |
 | `user.government_id` | `social_security_number` |
 | `user.device` | `user_agent`, `session_id` |

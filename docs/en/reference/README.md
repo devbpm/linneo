@@ -154,7 +154,7 @@ labels to your tables: they build request bodies and names.
 | Legal nature | built-in `PersonalData.Personal` / `SpecialCategory` (criminal offence data is `SpecialCategory`) | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` |
 | Sensitivity | built-in `PII.None` / `NonSensitive` / `Sensitive`, threshold `sensitiveFrom` | — | — |
 | Levels and secret | `Confidentiality.*`, `Integrity.*`, `Identifiability.*`, `DataHandling.Secret` | the same, as glossary terms | the same, as classifications (not super types of the categories) |
-| Created for the standard taxonomy | 5 classifications and 135 tags | 289 proposals: 28 nodes, 138 terms, 123 relation aspects | 144 classification types |
+| Created for the standard taxonomy | 5 classifications and 137 tags | 293 proposals: 28 nodes, 140 terms, 125 relation aspects | 146 classification types |
 | Requests | `PUT /api/v1/classifications`, `PUT /api/v1/tags`, one per body | `POST /aspects?action=ingestProposal`, one per proposal | one `POST /api/atlas/v2/types/typedefs` |
 | Sending again | create or update | `UPSERT` (replaces each aspect) | `POST` rejects existing types; update with `PUT` |
 | Labels of a field | `tagsOf(field)`: tag names | `termsOf(field)`: term URNs | `classificationsOf(field)`: names; `classificationsJson(field)`: request body |

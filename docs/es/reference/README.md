@@ -157,7 +157,7 @@ las etiquetas a tus tablas: construyen cuerpos de petición y nombres.
 | Naturaleza jurídica | `PersonalData.Personal` / `SpecialCategory` predefinidas (los datos penales son `SpecialCategory`) | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` |
 | Sensibilidad | `PII.None` / `NonSensitive` / `Sensitive` predefinidas, umbral `sensitiveFrom` | — | — |
 | Niveles y secreto | `Confidentiality.*`, `Integrity.*`, `Identifiability.*`, `DataHandling.Secret` | los mismos, como términos del glosario | los mismos, como clasificaciones (no son supertipos de las categorías) |
-| Se crea con la taxonomía estándar | 5 clasificaciones y 135 etiquetas | 289 propuestas: 28 nodos, 138 términos y 123 aspectos de relaciones | 144 tipos de clasificación |
+| Se crea con la taxonomía estándar | 5 clasificaciones y 137 etiquetas | 293 propuestas: 28 nodos, 140 términos y 125 aspectos de relaciones | 146 tipos de clasificación |
 | Peticiones | `PUT /api/v1/classifications`, `PUT /api/v1/tags`, una por cuerpo | `POST /aspects?action=ingestProposal`, una por propuesta | un único `POST /api/atlas/v2/types/typedefs` |
 | Volver a enviar | crea o actualiza | `UPSERT` (sustituye cada aspecto) | `POST` rechaza los tipos existentes; se actualizan con `PUT` |
 | Etiquetas de un campo | `tagsOf(field)`: nombres de etiqueta | `termsOf(field)`: URN de términos | `classificationsOf(field)`: nombres; `classificationsJson(field)`: cuerpo de la petición |

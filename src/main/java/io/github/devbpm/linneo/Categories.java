@@ -363,6 +363,12 @@ public final class Categories {
     /** Activity Log: Record of the actions the subject performed in a system: who did what and when. */
     public static final String USER_BEHAVIOR_ACTIVITY_LOG = "user.behavior.activity_log";
 
+    /** Administrative Sanction: Administrative infringements committed by the subject, the proceedings about them and the sanctions imposed, such as disciplinary or regulatory sanctions; criminal offences are user.criminal_history. */
+    public static final String USER_ADMINISTRATIVE_SANCTION = "user.administrative_sanction";
+
+    /** Victim Status: Recognition of the subject as a victim of gender-based violence, sexual violence, terrorism, trafficking or another offence, and the protection measures or entitlements it gives. */
+    public static final String USER_VICTIM_STATUS = "user.victim_status";
+
     /** Secret: Secret, or a hash of a secret, that grants access: API keys, tokens, signing keys. */
     public static final String SYSTEM_AUTHENTICATION_SECRET = "system.authentication.secret";
 

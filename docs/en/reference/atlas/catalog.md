@@ -95,12 +95,12 @@ categories**, for two reasons:
 
 ### Creation order and descriptions
 
-`classificationDefs()` returns, in this order (144 types for the standard taxonomy):
+`classificationDefs()` returns, in this order (146 types for the standard taxonomy):
 
 1. the six roots, without super types: `PersonalData`, `Confidentiality`, `Integrity`, `Identifiability`,
    `DataHandling`, `DataCategory` (6);
 2. the level classifications of the table above (15);
-3. one classification per category, in key order, every parent before its children (123).
+3. one classification per category, in key order, every parent before its children (125).
 
 Every super type is defined before the types that name it. A category's description is its name, a colon and its
 description, plus ` Deprecated.` or ` Deprecated: use <key>.` for a deprecated category (Atlas classifications have

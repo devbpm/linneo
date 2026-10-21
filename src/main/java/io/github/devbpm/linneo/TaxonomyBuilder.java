@@ -40,6 +40,9 @@ import java.util.regex.Pattern;
  * <ul>
  *   <li>a root data category must declare its nature, confidentiality and integrity;</li>
  *   <li>a child inherits every facet it does not declare, and may not declare a weaker one;</li>
+ *   <li>a {@linkplain LegalNature#requiresMaximumProtection() special category or criminal offence} category must
+ *       end up with {@link Confidentiality#HIGH HIGH} confidentiality and {@link Integrity#HIGH HIGH} integrity,
+ *       declared or inherited;</li>
  *   <li>a secret category makes all its children secret;</li>
  *   <li>a replacement must exist in the same hierarchy, and replacements must not form a cycle.</li>
  * </ul>
@@ -272,7 +275,8 @@ public final class TaxonomyBuilder {
      *
      * @return the immutable taxonomy
      * @throws TaxonomyException if a parent or replacement is missing, a root category lacks a facet, a category
-     *         weakens its parent's protection, or replacements form a cycle
+     *         weakens its parent's protection, a special category or criminal offence category is not at
+     *         {@code HIGH} confidentiality and integrity, or replacements form a cycle
      */
     public Taxonomy build() {
         Map<String, DataCategory> builtCategories = new LinkedHashMap<>();
@@ -299,6 +303,7 @@ public final class TaxonomyBuilder {
                 throw new TaxonomyException("Root data category '" + key
                         + "' must declare its nature, confidentiality and integrity");
             }
+            checkMaximumProtection(key, nature, confidentiality, integrity);
             attributes.putAll(draft.declaredAttributes());
             return new DataCategory(draft.info(null), nature, confidentiality, integrity, draft.declaredSecret(),
                     attributes);
@@ -315,14 +320,26 @@ public final class TaxonomyBuilder {
             throw new TaxonomyException("Data category '" + key + "' declares integrity " + integrity
                     + ", lower than its parent's " + parent.integrity());
         }
+        nature = nature != null ? nature : parent.nature();
+        confidentiality = confidentiality != null ? confidentiality : parent.confidentiality();
+        integrity = integrity != null ? integrity : parent.integrity();
+        checkMaximumProtection(key, nature, confidentiality, integrity);
         attributes.putAll(parent.attributes());
         attributes.putAll(draft.declaredAttributes());
-        return new DataCategory(draft.info(parentKey),
-                nature != null ? nature : parent.nature(),
-                confidentiality != null ? confidentiality : parent.confidentiality(),
-                integrity != null ? integrity : parent.integrity(),
-                parent.secret() || draft.declaredSecret(),
-                attributes);
+        return new DataCategory(draft.info(parentKey), nature, confidentiality, integrity,
+                parent.secret() || draft.declaredSecret(), attributes);
+    }
+
+    // Special category data (GDPR art. 9, LOPDGDD art. 9) and criminal offence data (GDPR art. 10, LOPDGDD art. 10)
+    // get the maximum protection: a category of either nature must resolve to HIGH confidentiality and integrity.
+    private static void checkMaximumProtection(String key, LegalNature nature, Confidentiality confidentiality,
+                                               Integrity integrity) {
+        if (nature.requiresMaximumProtection()
+                && (confidentiality != Confidentiality.HIGH || integrity != Integrity.HIGH)) {
+            throw new TaxonomyException("Data category '" + key + "' is " + nature
+                    + " data and must have HIGH confidentiality and integrity, not " + confidentiality + " and "
+                    + integrity);
+        }
     }
 
     private static <T extends Term> List<T> buildTerms(Map<String, TermDraft> drafts, String kind,

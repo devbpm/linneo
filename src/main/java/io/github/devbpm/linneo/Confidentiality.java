@@ -42,7 +42,8 @@ public enum Confidentiality {
     MEDIUM,
 
     /**
-     * Disclosure would cause severe harm.
+     * Disclosure would cause severe harm. Always the level of special category and criminal offence data
+     * ({@link LegalNature#requiresMaximumProtection()}).
      */
     HIGH;
 

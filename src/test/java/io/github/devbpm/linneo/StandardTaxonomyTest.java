@@ -110,6 +110,43 @@ class StandardTaxonomyTest {
             DataCategory category = taxonomy.requireCategory(key);
             assertAll(key,
                     () -> assertEquals(LegalNature.SPECIAL_CATEGORY, category.nature()),
+                    () -> assertEquals(Confidentiality.HIGH, category.confidentiality()),
+                    () -> assertEquals(Integrity.HIGH, category.integrity()));
+        }
+    }
+
+    @Test
+    @DisplayName("gives the maximum protection to every special category and criminal offence category")
+    void maximumProtection() {
+        for (DataCategory category : taxonomy.categories()) {
+            if (category.nature().requiresMaximumProtection()) {
+                assertAll(category.key(),
+                        () -> assertEquals(Confidentiality.HIGH, category.confidentiality()),
+                        () -> assertEquals(Integrity.HIGH, category.integrity()));
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("protects administrative sanctions and victim status without making them criminal offence data")
+    void sanctionsAndVictims() {
+        for (String key : List.of(Categories.USER_ADMINISTRATIVE_SANCTION, Categories.USER_VICTIM_STATUS)) {
+            DataCategory category = taxonomy.requireCategory(key);
+            assertAll(key,
+                    () -> assertEquals(TermInfo.LINNEO, category.info().origin()),
+                    () -> assertEquals(LegalNature.ORDINARY, category.nature()),
+                    () -> assertEquals(Confidentiality.HIGH, category.confidentiality()),
+                    () -> assertEquals(Integrity.HIGH, category.integrity()));
+        }
+    }
+
+    @Test
+    @DisplayName("gives high confidentiality to the data of vulnerable data subjects")
+    void vulnerableSubjects() {
+        for (String key : List.of(Categories.USER_CHILDRENS, Categories.USER_GOVERNMENT_ID_IMMIGRATION)) {
+            DataCategory category = taxonomy.requireCategory(key);
+            assertAll(key,
+                    () -> assertEquals(LegalNature.ORDINARY, category.nature()),
                     () -> assertEquals(Confidentiality.HIGH, category.confidentiality()));
         }
     }

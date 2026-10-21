@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
   - src/main/java/io/github/devbpm/linneo/processing/CheckedActivity.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
+  - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingException.java
 -->
 
@@ -25,7 +26,9 @@ consulta [Errores y avisos](README.md#errores-y-avisos). Las instancias son inmu
 
 | Miembro | Devuelve | Descripción |
 |---|---|---|
-| `ProcessingChecker(Taxonomy taxonomy)` | — | Crea un comprobador; las claves y las entidades deben pertenecer a `taxonomy`. Crea su propio [`Classifier`](../classify/classifier.md) para esa taxonomía. `NullPointerException` si `taxonomy` es `null`. |
+| `ProcessingChecker(Taxonomy taxonomy)` | — | Crea un comprobador; las claves y las entidades deben pertenecer a `taxonomy`. Crea su propio [`Classifier`](../classify/classifier.md) para esa taxonomía. `NullPointerException` si `taxonomy` es `null`. Aplica solo el RGPD, como `Jurisdiction.EU`. |
+| `ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction)` | — | Lo mismo, aplicando además las normas nacionales de `jurisdiction` (véase [Jurisdiction](#jurisdiction)). `NullPointerException` si algún argumento es `null`. |
+| `Jurisdiction jurisdiction()` | [`Jurisdiction`](#jurisdiction) | El derecho nacional que este comprobador aplica además del RGPD. |
 | `CheckedActivity check(ProcessingActivity activity)` | [`CheckedActivity`](#checkedactivity) | Comprueba una actividad: sus términos resueltos, sus datos personales, la protección que requieren y cada infracción encontrada. Nunca lanza excepciones por un problema de la actividad. `NullPointerException` si `activity` es `null`. |
 | `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | lista | Un resultado por actividad, en el orden dado. Una actividad cuya clave ya usó otra anterior recibe además el error `DUPLICATE_ACTIVITY`; la primera no. |
 | `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Ejecuta `checkAll` y lanza una [`ProcessingException`](#processingexception) con **todos los errores de todas las actividades** si hay alguno. Los avisos no hacen fallar. |
@@ -61,6 +64,9 @@ Para cada actividad, en este orden (las infracciones de una `CheckedActivity` lo
      condición sin datos de categorías especiales: aviso `UNNEEDED_CONDITION`;
    - datos penales sin `criminalDataBasis`: error `MISSING_CRIMINAL_DATA_BASIS`; una base sin datos penales: aviso
      `UNNEEDED_CONDITION`;
+   - con `Jurisdiction.SPAIN`, `EXPLICIT_CONSENT` como condición del artículo 9.2 de una actividad que trata ideología,
+     afiliación sindical, religión, orientación sexual, creencias u origen racial o étnico: error
+     `CONSENT_NOT_SUFFICIENT`;
    - bases que [descansan en una ley](bases.md#la-referencia-legal) sin `legalReference`: aviso
      `MISSING_LEGAL_REFERENCE`;
    - sin `retention`: aviso `MISSING_RETENTION`;
@@ -187,11 +193,12 @@ para una clave, `<a>` para un artículo). Los mensajes están en inglés.
 | `MISSING_LEGAL_BASIS` | error | Datos personales sin `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
 | `MISSING_SPECIAL_CATEGORY_CONDITION` | error | Datos de categorías especiales sin `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
 | `MISSING_CRIMINAL_DATA_BASIS` | error | Datos penales sin `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
+| `CONSENT_NOT_SUFFICIENT` | error | Solo con `Jurisdiction.SPAIN`: la actividad trata `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` o `race_ethnicity` (o un descendiente) y su única condición del artículo 9.2 es `EXPLICIT_CONSENT` (LOPDGDD, artículo 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
 | `DUPLICATE_ACTIVITY` | error | Solo en `checkAll`/`verify`: una actividad anterior tiene la misma clave. | `Another activity of the record has the key '<k>'` |
 | `DEPRECATED_KEY` | **aviso** | Una clave de finalidad, interesado o categoría está obsoleta; la actividad se comprueba con su sustituta. | `The data use '<k>' is deprecated; checked as '<r>'` (igual con `data subject` y `data category`; sin la parte `; checked as` cuando la clave no tiene sustituto) |
 | `NOT_PERSONAL_DATA` | **aviso** | Una categoría declarada no es dato personal; queda fuera del registro. | `The data category '<k>' is not personal data and is left out of the record` |
 | `UNNEEDED_CONDITION` | **aviso** | Se declara una condición del artículo 9.2 o una base del artículo 10 para datos que la actividad no trata, o se indica un interés legítimo con otra base jurídica. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
-| `MISSING_LEGAL_REFERENCE` | **aviso** | Se aplica una base que descansa en una ley y no se indica `legalReference`. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference` |
+| `MISSING_LEGAL_REFERENCE` | **aviso** | Se aplica una base que descansa en una ley y no se indica `legalReference`. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; con `Jurisdiction.SPAIN` y una condición `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH`, termina con ` (LOPDGDD article 9.2: a law with the rank of statute)` |
 | `MISSING_LEGITIMATE_INTEREST` | **aviso** | La base es `LEGITIMATE_INTERESTS` y no se indica `legitimateInterest`. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
 | `MISSING_RETENTION` | **aviso** | Datos personales sin `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
 | `IMPACT_ASSESSMENT_RECOMMENDED` | **aviso** | Datos de categorías especiales, datos penales o una finalidad de elaboración de perfiles, sin `impactAssessment`. | `The activity involves <reasons>; GDPR article 35 may require an impact assessment`, donde `<reasons>` une `special categories of data`, `criminal offence data` y `profiling` con `and` |
@@ -213,6 +220,32 @@ y para una con tres declaraciones innecesarias (`legitimateInterest(...)` seguid
 WARNING UNNEEDED_CONDITION newsletter: A legitimate interest is stated but the lawful basis is article 6.1.a
 WARNING UNNEEDED_CONDITION newsletter: Article 9.2.a is declared but the activity processes no special category of data
 WARNING UNNEEDED_CONDITION newsletter: Article 10 is declared but the activity processes no criminal offence data
+```
+
+## Jurisdiction
+
+`io.github.devbpm.linneo.processing.Jurisdiction` — `public enum`, `@since 0.1.0`
+
+El derecho nacional de protección de datos que un comprobador aplica además del RGPD.
+
+| Constante | Significado |
+|---|---|
+| `EU` | Solo el RGPD, sin normas nacionales. Es el valor de `new ProcessingChecker(taxonomy)`. |
+| `SPAIN` | El RGPD y la Ley Orgánica 3/2018 (LOPDGDD). Añade las dos reglas siguientes. |
+
+Con `SPAIN`:
+
+- **El consentimiento no basta** (LOPDGDD, artículo 9.1). Si la actividad trata `user.demographic.political_opinion`,
+  `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` o `race_ethnicity`
+  (o un descendiente) y su única condición del artículo 9.2 es `EXPLICIT_CONSENT`, el error
+  `CONSENT_NOT_SUFFICIENT` nombra esas claves: declara otra condición del artículo 9.2.
+- **Norma con rango de ley** (LOPDGDD, artículo 9.2). Cuando la condición es `SUBSTANTIAL_PUBLIC_INTEREST`,
+  `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH` y no hay `legalReference`, el aviso `MISSING_LEGAL_REFERENCE` añade que
+  la norma debe tener rango de ley.
+
+```java
+ProcessingChecker checker = new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN);
+checker.jurisdiction();   // SPAIN
 ```
 
 ## ProcessingException

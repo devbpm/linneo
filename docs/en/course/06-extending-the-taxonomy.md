@@ -223,7 +223,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-`taxonomy.toString()` prints `Taxonomy[158 data categories, 90 data uses, 35 data subjects]`: the 123 standard
+`taxonomy.toString()` prints `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: the 125 standard
 categories, 33 from `university` and 2 from `campus`. Its keys have constants in `UniversityCategories`,
 `UniversityDataUses` and `UniversityDataSubjects`, so they work in annotations like the standard ones:
 
@@ -373,8 +373,10 @@ confidentiality, so they all inherit `MEDIUM`. `user.contact.email` and the othe
 
 1. Fails at build: `The parent 'user.education.lab_notebook' of data category 'user.education.lab_notebook.entry'
    does not exist` (unless `user.education.lab_notebook` is also added).
-2. Succeeds: `ORDINARY` admits `SPECIAL_CATEGORY`. The new key is special category data with `MEDIUM`/`HIGH` from
-   `user.education`; consider also raising its confidentiality to `HIGH`, like the other health data.
+2. Fails at build: `ORDINARY` admits `SPECIAL_CATEGORY`, but special category data must have maximum protection and
+   the key inherits `MEDIUM` confidentiality from `user.education`: `Data category 'user.education.special_needs' is
+   SPECIAL_CATEGORY data and must have HIGH confidentiality and integrity, not MEDIUM and HIGH`. Declaring
+   `c.nature(LegalNature.SPECIAL_CATEGORY).confidentiality(Confidentiality.HIGH)` makes it succeed.
 3. Fails on `refineCategory`: `Cannot change the nature of 'user.health_and_medical' from SPECIAL_CATEGORY to
    ORDINARY`.
 4. Succeeds: test scores become secret (an odd choice, but stricter, so allowed).
@@ -410,7 +412,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-1. `Taxonomy[158 data categories, 90 data uses, 35 data subjects]`: 123 + 33 + 2 categories, 63 + 27 uses and
+1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 125 + 33 + 2 categories, 63 + 27 uses and
    21 + 13 + 1 subjects. Applying the two extensions in the other order gives the same taxonomy.
 2. `university` and `campus`.
 3. `extend(new CampusTaxonomy())` throws `TaxonomyException` with `Duplicate key 'user.education.thesis'`.

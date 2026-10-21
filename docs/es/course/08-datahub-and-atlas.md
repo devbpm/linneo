@@ -100,11 +100,11 @@ List<DhProposal> proposals = catalog.proposals();
 
 En DataHub se escribe **aspecto** a aspecto. Una `DhProposal` inserta o actualiza un aspecto de una entidad:
 `entityType` (`glossaryNode` o `glossaryTerm`), `entityUrn`, `aspectName` y el `aspect` en JSON. Con la taxonomía
-estándar, `proposals()` devuelve 289, en un orden que puedes enviar tal cual:
+estándar, `proposals()` devuelve 293, en un orden que puedes enviar tal cual:
 
 1. 28 `glossaryNodeInfo`: las seis raíces y después las 22 categorías con hijas, cada nodo detrás de su padre;
-2. 138 `glossaryTermInfo`: los 15 términos de nivel y después las 123 categorías;
-3. 123 `glossaryRelatedTerms`: las relaciones de cada término de categoría.
+2. 140 `glossaryTermInfo`: los 15 términos de nivel y después las 125 categorías;
+3. 125 `glossaryRelatedTerms`: las relaciones de cada término de categoría.
 
 El `glossaryTermInfo` de `Grade`:
 
@@ -246,7 +246,7 @@ AtlasCatalog atlas = AtlasCatalog.of(Taxonomy.load());
 String typeDefs = atlas.typeDefsJson();
 ```
 
-`classificationDefs()` enumera 144 tipos con la taxonomía estándar —seis raíces, 15 niveles, 123 categorías, cada
+`classificationDefs()` enumera 146 tipos con la taxonomía estándar —seis raíces, 15 niveles, 125 categorías, cada
 supertipo primero— y `typeDefsJson()` los reúne en un único cuerpo para `POST /api/atlas/v2/types/typedefs`. La
 definición de `Grade`:
 
@@ -439,7 +439,7 @@ Files.write(Path.of("datahub-proposals.jsonl"),
 Files.writeString(Path.of("atlas-typedefs.json"), AtlasCatalog.of(Taxonomy.load()).typeDefsJson());
 ```
 
-Con la taxonomía estándar, el primer fichero tiene 289 líneas: 28 nodos, 138 términos y 123 aspectos de relaciones.
+Con la taxonomía estándar, el primer fichero tiene 293 líneas: 28 nodos, 140 términos y 125 aspectos de relaciones.
 
 **Ejercicio 8.3**
 

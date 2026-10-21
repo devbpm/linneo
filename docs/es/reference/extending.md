@@ -65,8 +65,11 @@ existir en la misma jerarquía, pero los términos pueden añadirse en cualquier
 3. Que una categoría hija herede toda faceta que no declara y que una faceta declarada no sea más débil que la del
    padre: la naturaleza del padre debe admitir `nature` (`LegalNature.admits`), y `confidentiality` e `integrity` no
    pueden ser inferiores.
-4. `secret` se combina con OR hacia abajo; los atributos se heredan y los de la hija prevalecen.
-5. Que todo `replacedBy` exista en la misma jerarquía y que las sustituciones no formen un ciclo (para categorías,
+4. Que una categoría de naturaleza `SPECIAL_CATEGORY` o `CRIMINAL_OFFENCE`
+   (`LegalNature.requiresMaximumProtection()`) resuelva, declarada o heredada, a confidencialidad `HIGH` e integridad
+   `HIGH`.
+5. `secret` se combina con OR hacia abajo; los atributos se heredan y los de la hija prevalecen.
+6. Que todo `replacedBy` exista en la misma jerarquía y que las sustituciones no formen un ciclo (para categorías,
    usos y sujetos).
 
 Consulta [Niveles de protección](protection-levels.md#regla-de-herencia).
@@ -89,6 +92,7 @@ Todos son `TaxonomyException` (mensajes tal como los produce el código):
 | `build`, naturaleza no admitida | `Data category '<key>' declares nature <n>, which its parent '<parent>' (<pn>) does not admit` |
 | `build`, confidencialidad inferior | `Data category '<key>' declares confidentiality <c>, lower than its parent's <pc>` |
 | `build`, integridad inferior | `Data category '<key>' declares integrity <i>, lower than its parent's <pi>` |
+| `build`, categoría especial o de infracciones penales por debajo de `HIGH` | `Data category '<key>' is <nature> data and must have HIGH confidentiality and integrity, not <c> and <i>` |
 | `build`, falta la sustituta | `The replacement '<r>' of data category '<key>' does not exist` |
 | `build`, ciclo de sustituciones | `The replacements of data category '<key>' form a cycle` |
 

@@ -27,7 +27,7 @@ el JAR bajo `io/github/devbpm/linneo/internal/`.
 
 | | fideslang 3.1.4 | Linneo | Total |
 |---|---|---|---|
-| Categorías de datos | 85 | 38 | 123 |
+| Categorías de datos | 85 | 40 | 125 |
 | Usos de datos | 56 | 7 | 63 |
 | Sujetos de datos | 15 | 6 | 21 |
 
@@ -59,11 +59,13 @@ de su padre (ver [Niveles de protección](protection-levels.md#regla-de-herencia
 |---|---|
 | `user.health_and_medical`, `user.biometric`, `user.demographic.philosophical_belief`, `.political_opinion`, `.race_ethnicity`, `.religious_belief`, `.sex_life`, `.sexual_orientation`, `.trade_union_membership` | `SPECIAL_CATEGORY`, confidencialidad `HIGH`, integridad `HIGH` |
 | `user.criminal_history` | `CRIMINAL_OFFENCE`, `HIGH`, `HIGH` |
+| `user.administrative_sanction`, `user.victim_status` | `ORDINARY`, confidencialidad `HIGH`, integridad `HIGH` |
 | `user.authorization` (alcance de los permisos) | confidencialidad `HIGH`, integridad `HIGH`; `user.authorization.credentials`, `.password` y `.biometric` son **secretas**, y `user.authorization.biometric` además es `SPECIAL_CATEGORY` |
 | `user.device.session_id` | confidencialidad `HIGH`, **secreta** |
 | `system.authentication` | confidencialidad `HIGH`, integridad `HIGH`; `system.authentication.secret` es **secreta** |
 | `user.financial`, `user.payment`, `user.education` | confidencialidad `MEDIUM`, integridad `HIGH`; `user.financial.credit_card` confidencialidad `HIGH` |
-| `user.behavior`, `user.childrens`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, varias `user.demographic.*` (fecha de nacimiento, género, estado civil, perfil, familia, nacionalidad) | confidencialidad `MEDIUM` |
+| `user.behavior`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, varias `user.demographic.*` (fecha de nacimiento, género, estado civil, perfil, familia, nacionalidad) | confidencialidad `MEDIUM` |
+| `user.childrens`, `user.government_id.immigration` | confidencialidad `HIGH` (datos de interesados vulnerables: menores y personas migrantes o solicitantes de asilo) |
 | `user.behavior.activity_log`, `system.security`, `system.integrity` | integridad `HIGH` |
 | `system.configuration` | integridad `MEDIUM` |
 | `org.structure`, `org.location`, `org.process` | confidencialidad `LOW`, integridad `MEDIUM` |
@@ -71,15 +73,36 @@ de su padre (ver [Niveles de protección](protection-levels.md#regla-de-herencia
 | `org.business_records` | confidencialidad `MEDIUM`, integridad `MEDIUM` |
 
 Las hijas de una categoría especial son también categoría especial (por ejemplo,
-`user.health_and_medical.disability`), y toda descendiente de una categoría secreta es secreta.
+`user.health_and_medical.disability`), y toda descendiente de una categoría secreta es secreta. El constructor exige
+que toda categoría `SPECIAL_CATEGORY` y `CRIMINAL_OFFENCE` resuelva a confidencialidad `HIGH` e integridad `HIGH`
+(ver [Niveles de protección](protection-levels.md#legalnature)).
+
+### Base legal
+
+La política sigue el Reglamento (UE) 2016/679 (RGPD) con sus correcciones (DOUE L 127, 23.5.2018; EUR-Lex no tiene un
+texto consolidado posterior) y, para España, la Ley Orgánica 3/2018 (LOPDGDD), texto consolidado de 27 de diciembre de
+2025 (BOE-A-2018-16673):
+
+- Las categorías especiales (artículo 9 del RGPD y de la LOPDGDD) y los datos de condenas e infracciones penales
+  (artículo 10 del RGPD y de la LOPDGDD) reciben la máxima protección, `HIGH` y `HIGH`.
+- `user.childrens` es `HIGH` porque los menores son interesados vulnerables (considerando 38 y artículo 8 del RGPD;
+  el artículo 7 de la LOPDGDD fija en 14 años la edad de consentimiento).
+- `user.government_id.immigration` es `HIGH` por la misma razón aplicada a personas migrantes y solicitantes de asilo
+  (EDPB WP248 rev.01).
+- Los datos de infracciones y sanciones administrativas (`user.administrative_sanction`) son `ORDINARY` con
+  confidencialidad e integridad altas, no `CRIMINAL_OFFENCE` (artículo 27 de la LOPDGDD); los delitos siguen en
+  `user.criminal_history`.
+- `user.victim_status` (el reconocimiento como víctima de violencia de género, violencia sexual, terrorismo, trata u
+  otro delito, y la protección y los derechos que otorga) es deliberadamente `ORDINARY`, no `CRIMINAL_OFFENCE`, con
+  confidencialidad e integridad `HIGH`.
 
 ## Añadidos de Linneo
 
-**Categorías de datos** (38, todas con `since` `0.1.0`):
+**Categorías de datos** (40, todas con `since` `0.1.0`):
 
 | Padre | Hijas añadidas |
 |---|---|
-| `user` | `user.education` con `program`, `enrollment`, `course_history`, `grade`, `test_score`, `previous_education`, `status`, `accomplishment` |
+| `user` | `user.education` con `program`, `enrollment`, `course_history`, `grade`, `test_score`, `previous_education`, `status`, `accomplishment`; `administrative_sanction`, `victim_status` |
 | `user.unique_id` | `record_reference` |
 | `user.government_id` | `social_security_number` |
 | `user.device` | `user_agent`, `session_id` |

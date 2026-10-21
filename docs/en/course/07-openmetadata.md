@@ -77,7 +77,7 @@ of a `CreateClassification` request (`PUT /api/v1/classifications`):
 
 `tags()` returns the tags to create, in an order you can send as is: first the level tags (four confidentiality,
 three integrity, four identifiability), then `DataHandling.Secret`, then one tag per data category with **every
-parent before its children**. For the standard taxonomy that is 4 + 3 + 4 + 1 + 123 = 135 tags.
+parent before its children**. For the standard taxonomy that is 4 + 3 + 4 + 1 + 125 = 137 tags.
 
 Each `OmTag` has a `classification`, a `parent` (the fully qualified name of the parent tag, or `null` at the root),
 a `name` (one segment, the last of the key), a `displayName` (the category's name), a `description` and its
@@ -295,8 +295,8 @@ are `PII.Sensitive`; every other personal field is `PII.NonSensitive`.
 
 **Exercise 7.4**
 
-The extension adds two categories (`user.education.lab_notebook` and `user.education.lab_journal`), so 135 + 2 =
-137 tags. (Data subjects are not published as tags.) The description is
+The extension adds two categories (`user.education.lab_notebook` and `user.education.lab_journal`), so 137 + 2 =
+139 tags. (Data subjects are not published as tags.) The description is
 `Former name of the lab notebook key. Deprecated: use user.education.lab_notebook.`
 
 **Quiz**

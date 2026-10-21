@@ -41,7 +41,7 @@ annotations once the extension is applied.
 
 ```java
 Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
-// Taxonomy[156 data categories, 90 data uses, 34 data subjects]
+// Taxonomy[158 data categories, 90 data uses, 34 data subjects]
 ```
 
 `Taxonomy.load()` applies it only if the application registers it; see
@@ -183,7 +183,12 @@ Means-tested aid and fee exemptions sit below the standard financial terms `user
 - **Disciplinary records, advising notes, risk indicators, admission evaluations, reference letters, internship
   evaluations, equity indicators, means assessments, fee exemptions and wealth assessments** have high
   confidentiality: they are evaluations, predictions or vulnerability data about the subject, often written by others,
-  or they reveal the household's income or circumstances.
+  or they reveal the household's income or circumstances. A disciplinary record is data about administrative
+  infringements and sanctions, whose processing LOPDGDD article 27 restricts, which is why it is `ORDINARY` with high
+  confidentiality and not `CRIMINAL_OFFENCE`. The grounds of a fee exemption can reveal that the subject is a victim
+  of gender-based violence or terrorism: classify the recognition as a victim itself as `user.victim_status`
+  (`ORDINARY`, `HIGH`, `HIGH`), and a sanction imposed outside the institution's own disciplinary regime as
+  `user.administrative_sanction`.
 - The **emergency contact** is raised to medium confidentiality, above the rest of `user.contact`: it reveals who
   the subject's close relations are.
 - The other categories inherit the medium confidentiality and high integrity of `user.education` (or
@@ -199,6 +204,8 @@ with the stricter standard key, not with the extension's:
 | The medical reason for an absence | `user.health_and_medical` (not `user.education.attendance`) | `SPECIAL_CATEGORY`, `HIGH`, `HIGH` |
 | A disciplinary case about a criminal offence | `user.criminal_history` (not `user.education.disciplinary_record`) | `CRIMINAL_OFFENCE`, `HIGH`, `HIGH` |
 | Membership of a religious or political society | `user.demographic.religious_belief` or `user.demographic.political_opinion` (not `user.education.extracurricular`) | `SPECIAL_CATEGORY`, `HIGH`, `HIGH` |
+| The recognition as a victim of gender-based violence or terrorism behind a fee exemption | `user.victim_status` (not `user.financial.fee.exemption`) | `ORDINARY`, `HIGH`, `HIGH` |
+| A sanction imposed outside the institution's own disciplinary regime | `user.administrative_sanction` (not `user.education.disciplinary_record`) | `ORDINARY`, `HIGH`, `HIGH` |
 | A fee exemption or a grade adjustment granted for a disability | `user.health_and_medical.disability` (not `user.financial.fee.exemption` or `user.education.grade`) | `SPECIAL_CATEGORY`, `HIGH`, `HIGH` |
 
 The same reasoning applies to other special categories, for example a society linked to a trade union

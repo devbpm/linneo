@@ -20,7 +20,7 @@ Cada una contiene un `public static final String` por clave de la [taxonomía es
 
 | Clase | Claves de | Número |
 |---|---|---|
-| `Categories` | categorías de datos | 123 |
+| `Categories` | categorías de datos | 125 |
 | `DataUses` | usos de datos (finalidades del tratamiento) | 63 |
 | `DataSubjects` | sujetos de datos | 21 |
 

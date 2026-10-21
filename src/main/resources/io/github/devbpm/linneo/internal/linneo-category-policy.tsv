@@ -2,6 +2,15 @@
 # Licensed under the Apache License, Version 2.0. fideslang assigns no protection level to its
 # categories; these are Linneo's defaults. Every root declares all four facets; a key not listed
 # inherits from its parent, and a listed value may only raise what the parent gives (see Taxonomy).
+# Legal basis: Regulation (EU) 2016/679 (GDPR) as corrected (OJ L 127, 23.5.2018; EUR-Lex has no later
+# consolidated text) and Ley Orgánica 3/2018 (LOPDGDD), consolidated text of 27 December 2025
+# (BOE-A-2018-16673). Maximum protection, HIGH confidentiality and integrity (the builder enforces it
+# for SPECIAL_CATEGORY and CRIMINAL_OFFENCE): special categories (GDPR and LOPDGDD art. 9) and criminal
+# data (GDPR and LOPDGDD art. 10). HIGH confidentiality and integrity without that nature: administrative
+# infringements and sanctions (LOPDGDD art. 27) and victim status (gender-based violence, sexual
+# violence, terrorism). HIGH confidentiality: data of vulnerable data subjects (children: GDPR recital 38
+# and art. 8, LOPDGDD art. 7; immigration and asylum status: EDPB WP248 rev.01), what grants access, and
+# payment cards.
 # Columns: key, nature, confidentiality, integrity, secret (empty = inherit)
 key	nature	confidentiality	integrity	secret
 user	ORDINARY	LOW	MEDIUM	false
@@ -12,7 +21,8 @@ user.authorization.password				true
 user.behavior		MEDIUM
 user.behavior.activity_log			HIGH
 user.biometric	SPECIAL_CATEGORY	HIGH	HIGH
-user.childrens		MEDIUM
+user.administrative_sanction		HIGH	HIGH
+user.childrens		HIGH
 user.content.private		MEDIUM
 user.content.self_image		MEDIUM
 user.criminal_history	CRIMINAL_OFFENCE	HIGH	HIGH
@@ -34,9 +44,11 @@ user.financial		MEDIUM	HIGH
 user.financial.credit_card		HIGH
 user.payment		MEDIUM	HIGH
 user.government_id		MEDIUM
+user.government_id.immigration		HIGH
 user.health_and_medical	SPECIAL_CATEGORY	HIGH	HIGH
 user.device.session_id		HIGH		true
 user.location.precise		MEDIUM
+user.victim_status		HIGH	HIGH
 system	NONE	LOW	LOW	false
 system.authentication		HIGH	HIGH
 system.authentication.secret				true

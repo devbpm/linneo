@@ -43,7 +43,7 @@ anotaciones una vez aplicada la extensión.
 
 ```java
 Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
-// Taxonomy[156 data categories, 90 data uses, 34 data subjects]
+// Taxonomy[158 data categories, 90 data uses, 34 data subjects]
 ```
 
 `Taxonomy.load()` solo la aplica si la aplicación la registra; consulta
@@ -189,7 +189,11 @@ Las ayudas sujetas a nivel de renta y las exenciones de tasas cuelgan de los té
   cartas de referencia, las evaluaciones de prácticas, los indicadores de equidad, las valoraciones de renta, las
   exenciones de tasas y las estimaciones de patrimonio** tienen confidencialidad alta: son valoraciones, predicciones o
   datos de vulnerabilidad sobre el interesado, a menudo escritos por otros, o revelan los ingresos o la situación del
-  hogar.
+  hogar. Un expediente disciplinario son datos de infracciones y sanciones administrativas, cuyo tratamiento restringe
+  el artículo 27 de la LOPDGDD, por lo que es `ORDINARY` con confidencialidad alta y no `CRIMINAL_OFFENCE`. Los motivos
+  de una exención de tasas pueden revelar que el interesado es víctima de violencia de género o de terrorismo:
+  clasifica el propio reconocimiento como víctima como `user.victim_status` (`ORDINARY`, `HIGH`, `HIGH`) y una sanción
+  impuesta fuera del régimen disciplinario de la propia institución como `user.administrative_sanction`.
 - El **contacto de emergencia** sube a confidencialidad media, por encima del resto de `user.contact`: revela quiénes
   son las personas cercanas al interesado.
 - Las demás categorías heredan la confidencialidad media y la integridad alta de `user.education` (o de
@@ -205,6 +209,8 @@ campos con la clave estándar más estricta, no con la de la extensión:
 | El motivo médico de una ausencia | `user.health_and_medical` (no `user.education.attendance`) | `SPECIAL_CATEGORY`, `HIGH`, `HIGH` |
 | Un expediente disciplinario por un delito | `user.criminal_history` (no `user.education.disciplinary_record`) | `CRIMINAL_OFFENCE`, `HIGH`, `HIGH` |
 | La pertenencia a una asociación religiosa o política | `user.demographic.religious_belief` o `user.demographic.political_opinion` (no `user.education.extracurricular`) | `SPECIAL_CATEGORY`, `HIGH`, `HIGH` |
+| El reconocimiento como víctima de violencia de género o de terrorismo que está detrás de una exención de tasas | `user.victim_status` (no `user.financial.fee.exemption`) | `ORDINARY`, `HIGH`, `HIGH` |
+| Una sanción impuesta fuera del régimen disciplinario de la propia institución | `user.administrative_sanction` (no `user.education.disciplinary_record`) | `ORDINARY`, `HIGH`, `HIGH` |
 | Una exención de tasas o un ajuste de calificación concedidos por una discapacidad | `user.health_and_medical.disability` (no `user.financial.fee.exemption` ni `user.education.grade`) | `SPECIAL_CATEGORY`, `HIGH`, `HIGH` |
 
 El mismo razonamiento vale para otras categorías especiales, por ejemplo una asociación vinculada a un sindicato

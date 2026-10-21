@@ -49,17 +49,22 @@ import static io.github.devbpm.linneo.extension.university.UniversityDataUses.*;
  * <p>
  * Protection follows the standard policy and only raises it:
  * <ul>
- *   <li>an academic accommodation reveals a disability or health condition, so it is a special category of data;</li>
+ *   <li>an academic accommodation reveals a disability or health condition, so it is a special category of data,
+ *       with the maximum protection;</li>
  *   <li>disciplinary records, advising notes, risk indicators, admission evaluations, reference letters, internship
  *       evaluations, equity indicators, means assessments, fee exemptions and wealth assessments have high
- *       confidentiality;</li>
+ *       confidentiality. A disciplinary record is data about administrative infringements and sanctions, whose
+ *       processing LOPDGDD article 27 restricts; the grounds of a fee exemption can reveal that the subject is a
+ *       victim of gender-based violence or terrorism;</li>
  *   <li>the emergency contact has medium confidentiality, above the rest of {@code user.contact};</li>
  *   <li>the other categories inherit the medium confidentiality and high integrity of {@code user.education}.</li>
  * </ul>
  * Data that reveals more than its category belongs in a stricter key: the medical reason for an absence in
  * {@code user.health_and_medical}, a disciplinary case about a criminal offence in {@code user.criminal_history},
  * membership of a religious or political society in the matching special category, a fee exemption or grade
- * adjustment granted for a disability in {@code user.health_and_medical.disability}.
+ * adjustment granted for a disability in {@code user.health_and_medical.disability}, the recognition as a victim of
+ * gender-based violence or terrorism behind a fee exemption in {@code user.victim_status}, and a sanction imposed
+ * outside the institution's own disciplinary regime in {@code user.administrative_sanction}.
  * <p>
  * The only departure from extending existing classes is two roots of data uses that fideslang lacks,
  * {@link UniversityDataUses#ADVANCEMENT advancement} and {@link UniversityDataUses#RESEARCH research}, whose purposes

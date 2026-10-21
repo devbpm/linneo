@@ -81,7 +81,7 @@ de una petición `CreateClassification` (`PUT /api/v1/classifications`):
 `tags()` devuelve las etiquetas que hay que crear, en un orden que puedes enviar tal cual: primero las etiquetas de
 nivel (cuatro de confidencialidad, tres de integridad, cuatro de identificabilidad), después `DataHandling.Secret` y
 por último una etiqueta por categoría de datos, con **cada madre antes que sus hijas**. Para la taxonomía estándar son
-4 + 3 + 4 + 1 + 123 = 135 etiquetas.
+4 + 3 + 4 + 1 + 125 = 137 etiquetas.
 
 Cada `OmTag` tiene una `classification`, un `parent` (el nombre completo de la etiqueta madre, o `null` en la raíz),
 un `name` (un único segmento, el último de la clave), un `displayName` (el nombre de la categoría), una `description`
@@ -304,7 +304,7 @@ Por defecto (`MEDIUM`): `createdBy`, `id`, `firstName`, `lastName`, `email` y `a
 **Ejercicio 7.4**
 
 La extensión añade dos categorías (`user.education.lab_notebook` y `user.education.lab_journal`), así que son
-135 + 2 = 137 etiquetas. (Los interesados no se publican como etiquetas.) La descripción es
+137 + 2 = 139 etiquetas. (Los interesados no se publican como etiquetas.) La descripción es
 `Nombre anterior de la clave del cuaderno de laboratorio. Deprecated: use user.education.lab_notebook.`
 
 **Cuestionario**

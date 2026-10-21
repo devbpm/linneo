@@ -90,6 +90,13 @@ public record ProcessingViolation(String activity, Severity severity, Code code,
         MISSING_CRIMINAL_DATA_BASIS,
 
         /**
+         * Under {@linkplain Jurisdiction#SPAIN Spanish law}, explicit consent is the only article 9.2 condition of
+         * an activity that processes ideology, trade union membership, religion, sexual orientation, beliefs or
+         * racial or ethnic origin, and consent alone does not lift the prohibition (LOPDGDD article 9.1).
+         */
+        CONSENT_NOT_SUFFICIENT,
+
+        /**
          * Two activities of a record have the same key.
          */
         DUPLICATE_ACTIVITY,

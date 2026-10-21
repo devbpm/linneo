@@ -54,7 +54,7 @@ the build fail when the model and its classification drift apart.
 
 - **One taxonomy, keyed like a tree.** The complete [fideslang](https://github.com/ethyca/fideslang) default
   taxonomy, plus Linneo's extensions for every GDPR article 9 category, education data (`user.education.*`) and
-  non-personal data (`system.*`, `org.*`, `reference.*`): 123 data categories, 63 data uses and 21 data subjects.
+  non-personal data (`system.*`, `org.*`, `reference.*`): 125 data categories, 63 data uses and 21 data subjects.
 - **Protection travels with the category.** Each category carries its GDPR nature (ordinary, special category,
   criminal offence or not personal), its confidentiality, its integrity and whether it is a secret. Children inherit
   them and can only make them stricter.
@@ -205,7 +205,7 @@ For example:
 
 - every GDPR article 9 category (ethnic origin, political opinion, religious or philosophical belief, trade union
   membership, genetic, biometric, health, sex life and sexual orientation) is a special category with high
-  confidentiality;
+  confidentiality and integrity (the builder refuses a special category or criminal offence category below `HIGH`);
 - criminal history is criminal offence data;
 - passwords, credentials and session identifiers are secrets, while a user's permissions (`user.authorization`)
   are confidential but not secret;
@@ -253,7 +253,8 @@ public final class CampusTaxonomy implements TaxonomyExtension {
 Register it in `module-info.java` (`provides io.github.devbpm.linneo.TaxonomyExtension with ...`) or in
 `META-INF/services/io.github.devbpm.linneo.TaxonomyExtension`; `Taxonomy.load()` applies every registered extension.
 An extension adds terms and makes protection stricter, never weaker: the taxonomy refuses to build if a term
-lowers a level inherited from its parent, and a new root must declare its nature, confidentiality and integrity.
+lowers a level inherited from its parent or leaves special category or criminal offence data below `HIGH`
+confidentiality and integrity, and a new root must declare its nature, confidentiality and integrity.
 See [Extending the taxonomy](docs/en/reference/extending.md).
 
 ### The university extension
@@ -315,6 +316,10 @@ basis, an unknown key or an entity that is not fully classified. Gaps in the rec
 points: no retention, a basis resting on law without naming it, legitimate interests without the interest, or an
 activity with special category data, criminal offence data or profiling that refers to no impact assessment. The
 bases use the same values as fideslang's privacy declarations.
+
+`new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)` also applies Spain's LOPDGDD: explicit consent alone is
+an error for the special categories of article 9.1 (ideology, religion, trade union membership, sexual orientation,
+beliefs, racial or ethnic origin), and the missing legal reference warning notes that article 9.2 needs a statute.
 
 Linneo checks what you declare; it is not legal advice and does not replace your own assessment.
 

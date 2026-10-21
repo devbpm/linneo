@@ -91,8 +91,8 @@ DataCategory                                  (nodo)
 ```
 
 Un nodo y un término pueden compartir identificador porque son tipos de entidad distintos (`glossaryNode` y
-`glossaryTerm`). En la taxonomía estándar, 22 de las 123 categorías tienen hijas, así que el glosario tiene
-6 + 22 = 28 nodos y 15 + 123 = 138 términos.
+`glossaryTerm`). En la taxonomía estándar, 22 de las 125 categorías tienen hijas, así que el glosario tiene
+6 + 22 = 28 nodos y 15 + 125 = 140 términos.
 
 ### Relaciones: `isRelatedTerms` y `relatedTerms`
 
@@ -155,12 +155,12 @@ Un **nodo** tiene `customProperties` vacías, un `name`, una `definition` y, sal
 
 ### Orden de las propuestas
 
-`proposals()` devuelve, en este orden (289 propuestas con la taxonomía estándar):
+`proposals()` devuelve, en este orden (293 propuestas con la taxonomía estándar):
 
 1. un `glossaryNodeInfo` para cada uno de los seis nodos raíz y después para cada categoría con hijas, en orden de
    clave, de modo que cada nodo va detrás de su nodo padre (28);
-2. un `glossaryTermInfo` para cada término de nivel (15) y después para cada categoría, en orden de clave (123);
-3. un `glossaryRelatedTerms` para cada categoría, en orden de clave (123).
+2. un `glossaryTermInfo` para cada término de nivel (15) y después para cada categoría, en orden de clave (125);
+3. un `glossaryRelatedTerms` para cada categoría, en orden de clave (125).
 
 Envíalas en este orden: cada nodo existe antes que los nodos y términos que contiene, y cada término existe antes de
 que una relación apunte a él. Cada propuesta es un `UPSERT`, así que volver a enviar la lista actualiza el glosario en

@@ -58,12 +58,36 @@ class TaxonomyBuilderTest {
                 c -> c.confidentiality(Confidentiality.PUBLIC));
         TaxonomyBuilder notPersonal = root().category("data.child", "Child", "", c -> c.nature(LegalNature.NONE));
         TaxonomyBuilder special = root()
-                .category("data.health", "Health", "", c -> c.nature(LegalNature.SPECIAL_CATEGORY))
+                .category("data.health", "Health", "", c -> c.nature(LegalNature.SPECIAL_CATEGORY)
+                        .confidentiality(Confidentiality.HIGH).integrity(Integrity.HIGH))
                 .category("data.health.x", "X", "", c -> c.nature(LegalNature.CRIMINAL_OFFENCE));
         assertAll(
                 () -> assertThrows(TaxonomyException.class, lowered::build),
                 () -> assertThrows(TaxonomyException.class, notPersonal::build),
                 () -> assertThrows(TaxonomyException.class, special::build));
+    }
+
+    @Test
+    @DisplayName("special category and criminal offence data must have HIGH confidentiality and integrity")
+    void maximumProtection() {
+        TaxonomyBuilder lowConfidentiality = root().category("data.health", "Health", "",
+                c -> c.nature(LegalNature.SPECIAL_CATEGORY).integrity(Integrity.HIGH));
+        TaxonomyBuilder lowIntegrity = root().category("data.offence", "Offence", "",
+                c -> c.nature(LegalNature.CRIMINAL_OFFENCE).confidentiality(Confidentiality.HIGH));
+        TaxonomyBuilder specialRoot = Taxonomy.builder().category("health", "Health", "",
+                c -> c.nature(LegalNature.SPECIAL_CATEGORY).confidentiality(Confidentiality.MEDIUM)
+                        .integrity(Integrity.HIGH));
+        Taxonomy taxonomy = root()
+                .category("data.private", "Private", "",
+                        c -> c.confidentiality(Confidentiality.HIGH).integrity(Integrity.HIGH))
+                .category("data.private.health", "Health", "", c -> c.nature(LegalNature.SPECIAL_CATEGORY))
+                .build();
+        assertAll(
+                () -> assertThrows(TaxonomyException.class, lowConfidentiality::build),
+                () -> assertThrows(TaxonomyException.class, lowIntegrity::build),
+                () -> assertThrows(TaxonomyException.class, specialRoot::build),
+                () -> assertEquals(Confidentiality.HIGH,
+                        taxonomy.requireCategory("data.private.health").confidentiality()));
     }
 
     @Test

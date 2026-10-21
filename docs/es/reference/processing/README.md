@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/package-info.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
+  - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
 -->
 
 # Actividades de tratamiento
@@ -30,6 +31,7 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 | `TransferSafeguard` | enum | Lo que permite una transferencia (capítulo V) | [Bases jurídicas](bases.md#transfersafeguard) |
 | `ProcessingChecker` | clase | Comprueba las actividades y construye el registro | [ProcessingChecker](checker.md) |
 | `CheckedActivity` | record | Una actividad con sus términos resueltos, sus datos personales, la protección que requieren y los problemas encontrados | [ProcessingChecker](checker.md#checkedactivity) |
+| `Jurisdiction` | enum | El derecho nacional que un comprobador aplica además del RGPD (`EU`, `SPAIN`) | [ProcessingChecker](checker.md#jurisdiction) |
 | `ProcessingViolation` | record, con `Severity` y `Code` | Un problema encontrado en una actividad | [ProcessingChecker](checker.md#processingviolation) |
 | `ProcessingException` | excepción | La lanza `verify` con todos los errores | [ProcessingChecker](checker.md#processingexception) |
 | `ProcessingRecord` | record | El registro de actividades de tratamiento, en Markdown o JSON | [ProcessingRecord](record.md) |
@@ -65,7 +67,8 @@ la gravedad:
 - **Error**: la actividad, tal como está declarada, sería ilícita o no se puede comprobar. Datos personales sin base
   jurídica, categorías especiales sin una condición del artículo 9.2, datos penales sin una base del artículo 10, una
   clave desconocida, una actividad sin finalidad, sin interesados o sin datos personales, una entidad con errores de
-  clasificación, dos actividades con la misma clave. `verify` lanza una `ProcessingException` y no se genera ningún
+  clasificación, dos actividades con la misma clave. Con `Jurisdiction.SPAIN`, también el consentimiento explícito como única
+  condición para las categorías especiales del artículo 9.1 de la LOPDGDD. `verify` lanza una `ProcessingException` y no se genera ningún
   registro.
 - **Aviso**: el registro está incompleto o algo debe revisarse. Una clave obsoleta, una categoría no personal, una
   base que descansa en una ley sin nombrarla, el interés legítimo sin el interés perseguido, la falta de plazo de

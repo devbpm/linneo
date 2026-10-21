@@ -15,6 +15,7 @@
  */
 package io.github.devbpm.linneo.processing;
 
+import io.github.devbpm.linneo.Categories;
 import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.DataSubject;
@@ -53,11 +54,16 @@ import java.util.function.Function;
  *   <li>an entity that is not fully and correctly {@linkplain Classifier classified};</li>
  *   <li>personal data without a lawful basis (GDPR article 6.1);</li>
  *   <li>special categories of data without an article 9.2 condition, or criminal offence data without an article
- *       10 basis.</li>
+ *       10 basis;</li>
+ *   <li>under {@linkplain Jurisdiction#SPAIN Spanish law}, explicit consent as the only condition for the special
+ *       categories of LOPDGDD article 9.1.</li>
  * </ul>
  * Gaps in the record are warnings: a deprecated key, a non-personal category, a condition that is not needed, a
  * basis resting on law without naming the law, legitimate interests without the interest pursued, no retention,
  * and special category, criminal offence or profiling activities that refer to no impact assessment.
+ * <p>
+ * A checker created for a {@link Jurisdiction} other than {@link Jurisdiction#EU EU} also applies that country's
+ * rules; see {@link Jurisdiction#SPAIN}.
  * <p>
  * The personal data of an activity is the union of its personal category keys and the personal fields of its
  * entities; anonymized and aggregated fields are not personal data. Instances are immutable and thread-safe.
@@ -68,17 +74,50 @@ public final class ProcessingChecker {
 
     private static final Set<String> PROFILING_SEGMENTS = Set.of("profiling", "profiled", "targeted");
 
+    // LOPDGDD article 9.1: ideology, trade union membership, religion, sexual orientation, beliefs and racial or
+    // ethnic origin, for which consent alone does not lift the prohibition.
+    private static final List<String> CONSENT_INSUFFICIENT_IN_SPAIN = List.of(
+            Categories.USER_DEMOGRAPHIC_POLITICAL_OPINION, Categories.USER_DEMOGRAPHIC_PHILOSOPHICAL_BELIEF,
+            Categories.USER_DEMOGRAPHIC_TRADE_UNION_MEMBERSHIP, Categories.USER_DEMOGRAPHIC_RELIGIOUS_BELIEF,
+            Categories.USER_DEMOGRAPHIC_SEXUAL_ORIENTATION, Categories.USER_DEMOGRAPHIC_RACE_ETHNICITY);
+
+    // LOPDGDD article 9.2: these conditions must rest on a law with the rank of statute.
+    private static final Set<SpecialCategoryCondition> STATUTE_REQUIRED_IN_SPAIN = Set.of(
+            SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST, SpecialCategoryCondition.HEALTH_OR_SOCIAL_CARE,
+            SpecialCategoryCondition.PUBLIC_HEALTH);
+
     private final Taxonomy taxonomy;
     private final Classifier classifier;
+    private final Jurisdiction jurisdiction;
 
     /**
-     * Creates a checker.
+     * Creates a checker that applies the GDPR alone ({@link Jurisdiction#EU}).
      *
      * @param taxonomy the taxonomy the keys and entities must belong to
      */
     public ProcessingChecker(Taxonomy taxonomy) {
+        this(taxonomy, Jurisdiction.EU);
+    }
+
+    /**
+     * Creates a checker that applies the GDPR and the national rules of a jurisdiction.
+     *
+     * @param taxonomy the taxonomy the keys and entities must belong to
+     * @param jurisdiction the national law to apply on top of the GDPR
+     */
+    public ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction) {
         this.taxonomy = Objects.requireNonNull(taxonomy, "taxonomy");
+        this.jurisdiction = Objects.requireNonNull(jurisdiction, "jurisdiction");
         this.classifier = new Classifier(taxonomy);
+    }
+
+    /**
+     * The national law this checker applies on top of the GDPR.
+     *
+     * @return the jurisdiction
+     */
+    public Jurisdiction jurisdiction() {
+        return jurisdiction;
     }
 
     /**
@@ -263,6 +302,17 @@ public final class ProcessingChecker {
             } else if (condition != null && condition.requiresLegalReference()) {
                 resting.add(condition.article());
             }
+            if (special && condition == SpecialCategoryCondition.EXPLICIT_CONSENT && jurisdiction == Jurisdiction.SPAIN) {
+                String keys = String.join(", ", categories.keySet().stream()
+                        .filter(key -> CONSENT_INSUFFICIENT_IN_SPAIN.stream()
+                                .anyMatch(k -> key.equals(k) || key.startsWith(k + ".")))
+                        .toList());
+                if (!keys.isEmpty()) {
+                    error(Code.CONSENT_NOT_SUFFICIENT, "Explicit consent alone does not lift the prohibition of"
+                            + " processing " + keys + " (LOPDGDD article 9.1); declare another condition of GDPR"
+                            + " article 9.2");
+                }
+            }
 
             boolean criminal = categories.values().stream().anyMatch(c -> c.nature() == LegalNature.CRIMINAL_OFFENCE);
             CriminalDataBasis criminalBasis = activity.criminalDataBasis();
@@ -277,8 +327,11 @@ public final class ProcessingChecker {
             }
 
             if (!resting.isEmpty() && activity.legalReference() == null) {
+                boolean statute = jurisdiction == Jurisdiction.SPAIN && special
+                        && STATUTE_REQUIRED_IN_SPAIN.contains(condition);
                 warning(Code.MISSING_LEGAL_REFERENCE, "GDPR article(s) " + String.join(", ", resting)
-                        + " rest on Union or Member State law; name it as the legal reference");
+                        + " rest on Union or Member State law; name it as the legal reference"
+                        + (statute ? " (LOPDGDD article 9.2: a law with the rank of statute)" : ""));
             }
             if (activity.retention() == null) {
                 warning(Code.MISSING_RETENTION, "Declare the envisaged time limit for erasure (GDPR article"

@@ -232,7 +232,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-`taxonomy.toString()` imprime `Taxonomy[158 data categories, 90 data uses, 35 data subjects]`: las 123 categorías
+`taxonomy.toString()` imprime `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: las 125 categorías
 estándar, 33 de `university` y 2 de `campus`. Sus claves tienen constantes en `UniversityCategories`,
 `UniversityDataUses` y `UniversityDataSubjects`, así que funcionan en las anotaciones igual que las estándar:
 
@@ -384,9 +384,11 @@ confidencialidad, así que todas heredan `MEDIUM`. `user.contact.email` y las de
 
 1. Falla al construir: `The parent 'user.education.lab_notebook' of data category
    'user.education.lab_notebook.entry' does not exist` (salvo que también se añada `user.education.lab_notebook`).
-2. Funciona: `ORDINARY` admite `SPECIAL_CATEGORY`. La nueva clave es de categoría especial con `MEDIUM`/`HIGH`
-   heredados de `user.education`; plantéate subir también su confidencialidad a `HIGH`, como el resto de datos de
-   salud.
+2. Falla al construir: `ORDINARY` admite `SPECIAL_CATEGORY`, pero los datos de categoría especial deben tener la
+   máxima protección y la clave hereda confidencialidad `MEDIUM` de `user.education`: `Data category
+   'user.education.special_needs' is SPECIAL_CATEGORY data and must have HIGH confidentiality and integrity, not
+   MEDIUM and HIGH`. Declarar `c.nature(LegalNature.SPECIAL_CATEGORY).confidentiality(Confidentiality.HIGH)` hace que
+   funcione.
 3. Falla en `refineCategory`: `Cannot change the nature of 'user.health_and_medical' from SPECIAL_CATEGORY to
    ORDINARY`.
 4. Funciona: las puntuaciones de pruebas pasan a ser secretas (una elección extraña, pero más estricta, así que se
@@ -423,7 +425,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-1. `Taxonomy[158 data categories, 90 data uses, 35 data subjects]`: 123 + 33 + 2 categorías, 63 + 27 usos y
+1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 125 + 33 + 2 categorías, 63 + 27 usos y
    21 + 13 + 1 interesados. Aplicar las dos extensiones en el orden contrario da la misma taxonomía.
 2. `university` y `campus`.
 3. `extend(new CampusTaxonomy())` lanza `TaxonomyException` con `Duplicate key 'user.education.thesis'`.

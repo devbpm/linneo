@@ -64,8 +64,10 @@ hierarchy, but terms may be added in any order: parents are checked by `build()`
 3. A child data category inherits every facet it does not declare; a declared facet may not be weaker than the
    parent's: `nature` must be admitted by the parent's (`LegalNature.admits`), `confidentiality` and `integrity`
    must not be lower.
-4. `secret` is OR-ed down the tree; attributes are inherited and overridden by the child's own.
-5. Every `replacedBy` exists in the same hierarchy, and replacements do not form a cycle (for data categories, data
+4. A category whose nature is `SPECIAL_CATEGORY` or `CRIMINAL_OFFENCE` (`LegalNature.requiresMaximumProtection()`)
+   must resolve, declared or inherited, to `HIGH` confidentiality and `HIGH` integrity.
+5. `secret` is OR-ed down the tree; attributes are inherited and overridden by the child's own.
+6. Every `replacedBy` exists in the same hierarchy, and replacements do not form a cycle (for data categories, data
    uses and data subjects).
 
 See [Protection levels](protection-levels.md#inheritance-rule).
@@ -88,6 +90,7 @@ All are `TaxonomyException` (messages as produced by the source):
 | `build`, nature not admitted | `Data category '<key>' declares nature <n>, which its parent '<parent>' (<pn>) does not admit` |
 | `build`, lower confidentiality | `Data category '<key>' declares confidentiality <c>, lower than its parent's <pc>` |
 | `build`, lower integrity | `Data category '<key>' declares integrity <i>, lower than its parent's <pi>` |
+| `build`, special category or criminal offence below `HIGH` | `Data category '<key>' is <nature> data and must have HIGH confidentiality and integrity, not <c> and <i>` |
 | `build`, missing replacement | `The replacement '<r>' of data category '<key>' does not exist` |
 | `build`, replacement cycle | `The replacements of data category '<key>' form a cycle` |
 

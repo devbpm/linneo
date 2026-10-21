@@ -96,11 +96,11 @@ List<DhProposal> proposals = catalog.proposals();
 
 DataHub is written one **aspect** at a time. A `DhProposal` upserts one aspect of one entity: `entityType`
 (`glossaryNode` or `glossaryTerm`), `entityUrn`, `aspectName` and the `aspect` as JSON. For the standard taxonomy
-`proposals()` returns 289 of them, in an order you can send as is:
+`proposals()` returns 293 of them, in an order you can send as is:
 
 1. 28 `glossaryNodeInfo` — the six roots, then the 22 categories with children, every node after its parent;
-2. 138 `glossaryTermInfo` — the 15 level terms, then the 123 categories;
-3. 123 `glossaryRelatedTerms` — the relations of every category term.
+2. 140 `glossaryTermInfo` — the 15 level terms, then the 125 categories;
+3. 125 `glossaryRelatedTerms` — the relations of every category term.
 
 The `glossaryTermInfo` of `Grade`:
 
@@ -240,7 +240,7 @@ AtlasCatalog atlas = AtlasCatalog.of(Taxonomy.load());
 String typeDefs = atlas.typeDefsJson();
 ```
 
-`classificationDefs()` lists 144 types for the standard taxonomy — six roots, 15 levels, 123 categories, every super
+`classificationDefs()` lists 146 types for the standard taxonomy — six roots, 15 levels, 125 categories, every super
 type first — and `typeDefsJson()` puts them all in one body for `POST /api/atlas/v2/types/typedefs`. The definition
 of `Grade`:
 
@@ -428,7 +428,7 @@ Files.write(Path.of("datahub-proposals.jsonl"),
 Files.writeString(Path.of("atlas-typedefs.json"), AtlasCatalog.of(Taxonomy.load()).typeDefsJson());
 ```
 
-With the standard taxonomy the first file has 289 lines: 28 nodes, 138 terms and 123 relation aspects.
+With the standard taxonomy the first file has 293 lines: 28 nodes, 140 terms and 125 relation aspects.
 
 **Exercise 8.3**
 

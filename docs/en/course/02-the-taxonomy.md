@@ -33,7 +33,7 @@ which matter for a university.
 
 | | fideslang 3.1.4 | Added by Linneo | Standard taxonomy |
 |---|---|---|---|
-| Data categories (*what* a field holds) | 85 | 38 | 123 |
+| Data categories (*what* a field holds) | 85 | 40 | 125 |
 | Data uses (*why* data is processed) | 56 | 7 (`education.*`) | 63 |
 | Data subjects (*whose* data it is) | 15 | 6 (`student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`, `legal_representative`) | 21 |
 
@@ -41,7 +41,7 @@ You can check those numbers yourself:
 
 ```java
 System.out.println(Taxonomy.standard());
-// Taxonomy[123 data categories, 63 data uses, 21 data subjects]
+// Taxonomy[125 data categories, 63 data uses, 21 data subjects]
 ```
 
 The terms are loaded from tab-separated files bundled in the JAR. fideslang's files are kept verbatim; Linneo's
@@ -345,7 +345,7 @@ session is valid it grants access like a credential.
 **Quiz**
 
 1. `user.contact.address`.
-2. 123, of which 85 come from fideslang.
+2. 125, of which 85 come from fideslang.
 3. No: a child may only raise a level. The taxonomy refuses to build.
 4. `requireCategory` returns the category for that exact key, deprecated or not; `resolveCategory` follows
    `replacedBy` to the current category.

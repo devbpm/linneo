@@ -168,6 +168,12 @@ El artículo 9.2.g, como la base de interés público del artículo 6.1.e, debe 
 `MISSING_LEGAL_REFERENCE` con los dos artículos. Un solo texto de `legalReference` cubre todas las bases de la
 actividad, así que nombra en él todas las leyes implicadas.
 
+Por defecto, el comprobador aplica solo el RGPD. Para una institución española, créalo con una jurisdicción:
+`new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)`. Entonces informa también del error
+`CONSENT_NOT_SUFFICIENT` cuando el consentimiento explícito es la única condición para creencias, afiliación
+sindical u otros datos del artículo 9.1 de la LOPDGDD, y avisa en `MISSING_LEGAL_REFERENCE` de que los artículos
+9.2.g, h e i exigen una norma con rango de ley.
+
 La página de referencia [Bases jurídicas](../reference/processing/bases.md) enumera cada constante con su artículo y
 su nombre en fideslang.
 

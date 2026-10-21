@@ -30,20 +30,22 @@ Los cuatro enumerados son `@since 0.1.0`.
 
 ## LegalNature
 
-`io.github.devbpm.linneo.LegalNature` — qué es una categoría de datos según la normativa de protección de datos
-(RGPD).
+`io.github.devbpm.linneo.LegalNature` — qué es una categoría de datos según la normativa de protección de datos: Reglamento (UE) 2016/679 (RGPD, con las
+correcciones de DOUE L 127, 23.5.2018) y, para España, Ley Orgánica 3/2018 (LOPDGDD, texto consolidado de 27 de
+diciembre de 2025).
 
 | Constante | Significado |
 |---|---|
 | `NONE` | No son datos personales: datos del sistema, de la organización o de referencia. |
 | `ORDINARY` | Datos personales (artículo 4.1 del RGPD). |
-| `SPECIAL_CATEGORY` | Categoría especial de datos personales (artículo 9 del RGPD): origen étnico o racial, opiniones políticas, convicciones religiosas o filosóficas, afiliación sindical, datos genéticos, datos biométricos, salud, vida sexual y orientación sexual. |
-| `CRIMINAL_OFFENCE` | Datos personales relativos a condenas e infracciones penales (artículo 10 del RGPD). |
+| `SPECIAL_CATEGORY` | Categoría especial de datos personales (artículo 9 del RGPD): origen étnico o racial, opiniones políticas, convicciones religiosas o filosóficas, afiliación sindical, datos genéticos, datos biométricos tratados para identificar de manera unívoca a una persona, salud, vida sexual y orientación sexual. En España, el consentimiento por sí solo no levanta la prohibición cuando la finalidad principal es identificar ideología, afiliación sindical, religión, orientación sexual, creencias u origen racial o étnico (artículo 9.1 de la LOPDGDD), y el tratamiento amparado en el artículo 9.2 g), h) e i) del RGPD requiere una norma con rango de ley (artículo 9.2 de la LOPDGDD). |
+| `CRIMINAL_OFFENCE` | Datos personales relativos a condenas e infracciones penales o medidas de seguridad conexas (artículo 10 del RGPD y de la LOPDGDD). Los datos de infracciones y sanciones administrativas no son de esta naturaleza: son `ORDINARY` con confidencialidad alta (artículo 27 de la LOPDGDD). |
 
 | Método | Descripción |
 |---|---|
 | `boolean isPersonal()` | `false` solo para `NONE`. |
 | `boolean admits(LegalNature child)` | Si una categoría hija puede tener la naturaleza `child` cuando su padre tiene esta. |
+| `boolean requiresMaximumProtection()` | `true` para `SPECIAL_CATEGORY` y `CRIMINAL_OFFENCE`: los datos de esa naturaleza deben tener confidencialidad `HIGH` e integridad `HIGH`. |
 
 `admits` es la regla que aplica el constructor a la naturaleza de una categoría hija:
 
@@ -57,6 +59,10 @@ Los cuatro enumerados son `@since 0.1.0`.
 Así, la naturaleza la fija la raíz de la jerarquía: una jerarquía `NONE` nunca contiene datos personales, una
 categoría `ORDINARY` puede tener hijas de categoría especial o de infracciones penales, y estas conservan su
 naturaleza en todo el subárbol.
+
+`requiresMaximumProtection()` es la regla que fija los niveles: `TaxonomyBuilder.build()` lanza `TaxonomyException`
+si una categoría `SPECIAL_CATEGORY` o `CRIMINAL_OFFENCE` no resuelve (declarada o heredada) a confidencialidad `HIGH`
+e integridad `HIGH`.
 
 ```java
 LegalNature.ORDINARY.admits(LegalNature.SPECIAL_CATEGORY);           // true
@@ -75,7 +81,7 @@ FIPS 199); `PUBLIC` es para datos destinados a ser públicos.
 | `PUBLIC` | Datos públicos: divulgarlos no causa daño. |
 | `LOW` | La divulgación causaría un daño limitado. |
 | `MEDIUM` | La divulgación causaría un daño grave. |
-| `HIGH` | La divulgación causaría un daño muy grave. |
+| `HIGH` | La divulgación causaría un daño muy grave. Es siempre el nivel de los datos de categoría especial y de condenas e infracciones penales. |
 
 Las constantes se declaran en orden creciente, así que `compareTo` las ordena por exigencia.
 
@@ -134,6 +140,9 @@ identificabilidad.
   - `nature`: debe admitirla la naturaleza del padre (`parent.nature().admits(child)`);
   - `confidentiality`, `integrity`: no pueden ser inferiores a las del padre (`compareTo`).
   En caso contrario, `build()` lanza `TaxonomyException`.
+- Una categoría cuya naturaleza efectiva cumple `requiresMaximumProtection()` (`SPECIAL_CATEGORY` o
+  `CRIMINAL_OFFENCE`) debe acabar con confidencialidad `HIGH` e integridad `HIGH`, declaradas o heredadas. Una hija
+  que pasa a ser categoría especial bajo un padre con niveles inferiores debe, por tanto, subirlos también.
 - `secret` se combina con **OR** hacia abajo: una categoría es secreta si lo declara o si su padre es secreto. Una
   categoría secreta hace secretas a todas sus descendientes, y nada puede revertirlo.
 - `attributes` se heredan: la hija recibe los atributos del padre, sobrescritos por los que declara.

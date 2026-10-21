@@ -97,12 +97,12 @@ categorías**, por dos motivos:
 
 ### Orden de creación y descripciones
 
-`classificationDefs()` devuelve, en este orden (144 tipos con la taxonomía estándar):
+`classificationDefs()` devuelve, en este orden (146 tipos con la taxonomía estándar):
 
 1. las seis raíces, sin supertipos: `PersonalData`, `Confidentiality`, `Integrity`, `Identifiability`,
    `DataHandling`, `DataCategory` (6);
 2. las clasificaciones de nivel de la tabla anterior (15);
-3. una clasificación por categoría, en orden de clave, cada padre antes que sus hijas (123).
+3. una clasificación por categoría, en orden de clave, cada padre antes que sus hijas (125).
 
 Cada supertipo se define antes que los tipos que lo nombran. La descripción de una categoría es su nombre, dos puntos
 y su descripción, más ` Deprecated.` o ` Deprecated: use <key>.` si está obsoleta (las clasificaciones de Atlas no

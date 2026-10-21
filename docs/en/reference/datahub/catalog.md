@@ -88,8 +88,8 @@ DataCategory                                  (node)
 ```
 
 A node and a term may share an id because they are different entity types (`glossaryNode` and `glossaryTerm`).
-For the standard taxonomy, 22 of the 123 categories have children, so the glossary has 6 + 22 = 28 nodes and
-15 + 123 = 138 terms.
+For the standard taxonomy, 22 of the 125 categories have children, so the glossary has 6 + 22 = 28 nodes and
+15 + 125 = 140 terms.
 
 ### Relations: `isRelatedTerms` and `relatedTerms`
 
@@ -152,12 +152,12 @@ A **node** has empty `customProperties`, a `name`, a `definition` and, except fo
 
 ### Proposal order
 
-`proposals()` returns, in this order (289 proposals for the standard taxonomy):
+`proposals()` returns, in this order (293 proposals for the standard taxonomy):
 
 1. a `glossaryNodeInfo` for each of the six root nodes, then for each category with children, in key order, so
    that every node comes after its parent node (28);
-2. a `glossaryTermInfo` for each level term (15), then for each category, in key order (123);
-3. a `glossaryRelatedTerms` for each category, in key order (123).
+2. a `glossaryTermInfo` for each level term (15), then for each category, in key order (125);
+3. a `glossaryRelatedTerms` for each category, in key order (125).
 
 Send them in this order: every node exists before the nodes and terms it holds, and every term exists before a
 relation points to it. Each proposal is an `UPSERT`, so sending the list again updates the glossary in place — and

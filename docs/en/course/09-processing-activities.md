@@ -160,6 +160,12 @@ Article 9.2.g, like the public interest basis of article 6.1.e, must rest on law
 `true` for both. Without `legalReference` the checker would add the warning `MISSING_LEGAL_REFERENCE` naming both
 articles. One `legalReference` text covers every basis of the activity, so name all the laws involved.
 
+The checker applies the GDPR alone by default. For a Spanish institution, create it with a jurisdiction:
+`new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)`. It then also reports the error
+`CONSENT_NOT_SUFFICIENT` when explicit consent is the only condition for beliefs, trade union membership or other
+data of LOPDGDD article 9.1, and says in `MISSING_LEGAL_REFERENCE` that article 9.2.g, h and i need a law with the
+rank of statute.
+
 The reference page [Legal bases](../reference/processing/bases.md) lists every constant with its article and its
 fideslang name.
 

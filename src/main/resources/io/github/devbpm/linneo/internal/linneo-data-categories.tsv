@@ -29,6 +29,8 @@ user.financial.scholarship	user.financial	Scholarship	Scholarships, grants and f
 user.financial.fee	user.financial	Fee	Tuition, fees and charges owed or paid by the subject.	0.1.0
 user.health_and_medical.disability	user.health_and_medical	Disability	Type or degree of a disability of the subject.	0.1.0
 user.behavior.activity_log	user.behavior	Activity Log	Record of the actions the subject performed in a system: who did what and when.	0.1.0
+user.administrative_sanction	user	Administrative Sanction	Administrative infringements committed by the subject, the proceedings about them and the sanctions imposed, such as disciplinary or regulatory sanctions; criminal offences are user.criminal_history.	0.1.0
+user.victim_status	user	Victim Status	Recognition of the subject as a victim of gender-based violence, sexual violence, terrorism, trafficking or another offence, and the protection measures or entitlements it gives.	0.1.0
 system.authentication.secret	system.authentication	Secret	Secret, or a hash of a secret, that grants access: API keys, tokens, signing keys.	0.1.0
 system.security	system	Security Data	Access control definitions that do not identify a person: roles, permission matrices, scopes.	0.1.0
 system.integrity	system	Integrity Data	Evidence that protects the integrity of other data: hashes, chain anchors, checkpoints.	0.1.0

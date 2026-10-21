@@ -130,6 +130,31 @@ class ProcessingCheckerTest {
     }
 
     @Test
+    @DisplayName("in Spain explicit consent alone does not lift the prohibition for the LOPDGDD article 9.1 categories")
+    void spanishConsentRule() {
+        ProcessingActivity.Builder chaplaincy = ProcessingActivity.builder("chaplaincy", "Chaplaincy")
+                .purposes(DataUses.EDUCATION_TEACHING).dataSubjects(DataSubjects.STUDENT)
+                .dataCategories(Categories.USER_DEMOGRAPHIC_RELIGIOUS_BELIEF, Categories.USER_CONTACT_EMAIL)
+                .legalBasis(LegalBasis.CONSENT).specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT)
+                .retention("While the student is enrolled").impactAssessment("DPIA-2026-03");
+        ProcessingChecker spain = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN);
+        CheckedActivity inSpain = spain.check(chaplaincy.build());
+        CheckedActivity health = spain.check(enrollment()
+                .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT).build());
+        CheckedActivity unnamedLaw = spain.check(enrollment().legalReference(null).build());
+        assertAll(
+                () -> assertEquals(Jurisdiction.EU, checker.jurisdiction()),
+                () -> assertEquals(List.of(), checker.check(chaplaincy.build()).violations()),
+                () -> assertEquals(Set.of(Code.CONSENT_NOT_SUFFICIENT), codes(inSpain)),
+                () -> assertTrue(inSpain.errors().get(0).message()
+                        .contains(Categories.USER_DEMOGRAPHIC_RELIGIOUS_BELIEF)),
+                () -> assertFalse(inSpain.errors().get(0).message().contains(Categories.USER_CONTACT_EMAIL)),
+                () -> assertEquals(List.of(), health.violations()),
+                () -> assertEquals(Set.of(Code.MISSING_LEGAL_REFERENCE), codes(unnamedLaw)),
+                () -> assertTrue(unnamedLaw.warnings().get(0).message().contains("LOPDGDD article 9.2")));
+    }
+
+    @Test
     @DisplayName("criminal offence data needs an article 10 basis, and a basis in law needs its reference")
     void criminalOffenceData() {
         ProcessingActivity.Builder screening = ProcessingActivity.builder("screening", "Staff screening")

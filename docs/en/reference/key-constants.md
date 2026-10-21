@@ -20,7 +20,7 @@ Each holds one `public static final String` per key of the [standard taxonomy](s
 
 | Class | Keys of | Count |
 |---|---|---|
-| `Categories` | data categories | 123 |
+| `Categories` | data categories | 125 |
 | `DataUses` | data uses (purposes of processing) | 63 |
 | `DataSubjects` | data subjects | 21 |
 

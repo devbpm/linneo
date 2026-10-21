@@ -70,7 +70,7 @@ Las descripciones se generan en inglés.
 
 ### Etiquetas creadas
 
-`tags()` devuelve, en este orden (12 más una por categoría; 135 con la taxonomía estándar):
+`tags()` devuelve, en este orden (12 más una por categoría; 137 con la taxonomía estándar):
 
 | Etiquetas | Clasificación | `name` / `displayName` | `description` |
 |---|---|---|---|
