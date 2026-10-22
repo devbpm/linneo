@@ -279,6 +279,7 @@ mensajes son:
 | Naturaleza no admitida por la madre | `Data category 'user.education.stats' declares nature NONE, which its parent 'user.education' (ORDINARY) does not admit` | `build()` |
 | Nivel inferior al de la madre | `Data category 'user.education.grade' declares confidentiality LOW, lower than its parent's MEDIUM` | `build()` |
 | La sustituta no existe | `The replacement 'user.education.new' of data category 'user.education.old' does not exist` | `build()` |
+| La sustituta protege menos | `The replacement 'user.education.new' of data category 'user.education.old' has weaker protection: ORDINARY, LOW, LOW instead of ORDINARY, MEDIUM, HIGH` | `build()` |
 | Las sustituciones forman un ciclo | `The replacements of data category 'user.education.a' form a cycle` | `build()` |
 
 Dos casos merecen atención:

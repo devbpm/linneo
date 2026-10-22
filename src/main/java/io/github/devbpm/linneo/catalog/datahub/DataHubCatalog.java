@@ -48,6 +48,9 @@ import java.util.TreeMap;
  * {@code PersonalData}, {@code Confidentiality}, {@code Integrity}, {@code Identifiability} and
  * {@code DataHandling}.
  * <p>
+ * Send each proposal to the metadata service (GMS) with the header {@code X-RestLi-Protocol-Version: 2.0.0}.
+ * Checked against a running DataHub v1.7.0.1; the aspects use only fields present since v0.9.2.
+ * <p>
  * Instances are immutable and thread-safe.
  *
  * @since 0.1.0

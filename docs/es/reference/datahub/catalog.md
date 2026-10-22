@@ -18,7 +18,11 @@ negocio** de [DataHub](https://datahub.com/) (nodos y términos del glosario) y 
 **No hace llamadas de red**: envía cada propuesta con el cliente HTTP que ya uses a
 `POST /aspects?action=ingestProposal` del servicio de metadatos de DataHub (GMS) y después añade los términos a los
 campos de cada dataset. Los aspectos siguen los esquemas `glossaryNodeInfo`, `glossaryTermInfo` y
-`glossaryRelatedTerms` de DataHub; compruébalos con la versión de DataHub que utilices.
+`glossaryRelatedTerms` de DataHub. Envía cada propuesta con la cabecera `X-RestLi-Protocol-Version: 2.0.0`. Se
+comprobaron con DataHub v1.7.0.1 y los aspectos solo usan campos presentes desde la v0.9.2.
+
+El repositorio incluye una prueba de integración, `DataHubIT`, que envía las propuestas a un GMS real; véase
+«Integration tests against catalog servers» en `CONTRIBUTING.md`.
 
 Cómo se compara este exportador con los de OpenMetadata y Atlas: consulta la
 [comparativa de catálogos de datos](../README.md#comparativa-de-catálogos-de-datos).

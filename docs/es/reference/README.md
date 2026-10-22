@@ -153,13 +153,13 @@ las etiquetas a tus tablas: construyen cuerpos de petición y nombres.
 | Punto de entrada | [`OpenMetadataCatalog`](openmetadata/catalog.md) | [`DataHubCatalog`](datahub/catalog.md) | [`AtlasCatalog`](atlas/catalog.md) |
 | Una categoría se convierte en | una etiqueta anidada `DataCategory.<key>` en una clasificación mutuamente excluyente | un término del glosario `urn:li:glossaryTerm:DataCategory.<key>`, más un nodo del glosario si tiene hijas | un tipo de clasificación `DataCategory.<key>` |
 | El árbol se convierte en | el `parent` de la etiqueta | nodos que reflejan el árbol, e `isRelatedTerms` hacia el término del padre | `superTypes`: una búsqueda del padre encuentra sus subclasificaciones |
-| Protección implícita en una categoría | `associatedTags` de su etiqueta | `relatedTerms` de su término | no se guarda en el tipo; `classificationsOf(category)` la enumera |
+| Protección implícita en una categoría | no se guarda en la etiqueta; va en cada columna con `tagsOf(field)` (`tagsOf(category)` la enumera) | `relatedTerms` de su término | no se guarda en el tipo; `classificationsOf(category)` la enumera |
 | Naturaleza jurídica | `PersonalData.Personal` / `SpecialCategory` predefinidas (los datos penales son `SpecialCategory`) | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` |
 | Sensibilidad | `PII.None` / `NonSensitive` / `Sensitive` predefinidas, umbral `sensitiveFrom` | — | — |
 | Niveles y secreto | `Confidentiality.*`, `Integrity.*`, `Identifiability.*`, `DataHandling.Secret` | los mismos, como términos del glosario | los mismos, como clasificaciones (no son supertipos de las categorías) |
 | Se crea con la taxonomía estándar | 5 clasificaciones y 137 etiquetas | 293 propuestas: 28 nodos, 140 términos y 125 aspectos de relaciones | 146 tipos de clasificación |
 | Peticiones | `PUT /api/v1/classifications`, `PUT /api/v1/tags`, una por cuerpo | `POST /aspects?action=ingestProposal`, una por propuesta | un único `POST /api/atlas/v2/types/typedefs` |
-| Volver a enviar | crea o actualiza | `UPSERT` (sustituye cada aspecto) | `POST` rechaza los tipos existentes; se actualizan con `PUT` |
+| Volver a enviar | crea o actualiza | `UPSERT` (sustituye cada aspecto) | `POST` responde 409 si los tipos existen; se actualizan con `PUT` |
 | Etiquetas de un campo | `tagsOf(field)`: nombres de etiqueta | `termsOf(field)`: URN de términos | `classificationsOf(field)`: nombres; `classificationsJson(field)`: cuerpo de la petición |
 | Aplicarlas (tu código) | la API de tablas que ya uses | por ejemplo, la mutación GraphQL `addTerms` con la ruta del campo como `subResource` | `POST /api/atlas/v2/entity/guid/{guid}/classifications` |
 | Nombres | [`OpenMetadataMapping`](openmetadata/mapping.md): siete nombres y un umbral | [`DataHubMapping`](datahub/mapping.md): seis nombres de nodo | [`AtlasMapping`](atlas/mapping.md): seis nombres de raíz |

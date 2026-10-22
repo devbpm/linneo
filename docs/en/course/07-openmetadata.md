@@ -49,7 +49,7 @@ OpenMetadata ships two built-in classifications that Linneo **reuses and never c
 | Not personal | `PII.None` |
 | Confidentiality, integrity, identifiability | `Confidentiality.*`, `Integrity.*`, `Identifiability.*` (for example `Confidentiality.High`) |
 | Secret | `DataHandling.Secret` |
-| Protection implied by a category | `associatedTags` of the category tag |
+| Protection implied by a category | goes on each column: `tagsOf(field)` (and `tagsOf(category)` for the category alone) |
 
 ## The catalog
 
@@ -80,17 +80,17 @@ three integrity, four identifiability), then `DataHandling.Secret`, then one tag
 parent before its children**. For the standard taxonomy that is 4 + 3 + 4 + 1 + 125 = 137 tags.
 
 Each `OmTag` has a `classification`, a `parent` (the fully qualified name of the parent tag, or `null` at the root),
-a `name` (one segment, the last of the key), a `displayName` (the category's name), a `description` and its
-`associatedTags`. `fullyQualifiedName()` gives the name used to apply it, and `toJson()` the body of a `CreateTag`
+a `name` (one segment, the last of the key), a `displayName` (the category's name), and a `description`.
+`fullyQualifiedName()` gives the name used to apply it, and `toJson()` the body of a `CreateTag`
 request (`PUT /api/v1/tags`). The tag of `user.education.grade`:
 
 ```json
-{"classification":"DataCategory","parent":"DataCategory.user.education","name":"grade","displayName":"Grade","description":"Marks, grades or assessment results obtained by the subject.","associatedTags":["PersonalData.Personal","PII.Sensitive","Confidentiality.Medium","Integrity.High"]}
+{"classification":"DataCategory","parent":"DataCategory.user.education","name":"grade","displayName":"Grade","description":"Marks, grades or assessment results obtained by the subject."}
 ```
 
-The `associatedTags` carry the protection the category implies, so that whoever applies the category tag by hand in
-the OpenMetadata UI gets the right protection tags too. For a deprecated category, the description ends with
-`Deprecated: use <replacement>.` (or just `Deprecated.`).
+The tag carries no `associatedTags`: OpenMetadata accepts that field but never stores it, so the protection a category
+implies goes on each column instead (see [The tags of a column](#the-tags-of-a-column)). For a deprecated category,
+the description ends with `Deprecated: use <replacement>.` (or just `Deprecated.`).
 
 ## Sending the bodies
 
@@ -141,8 +141,8 @@ public final class PublishToOpenMetadata {
 }
 ```
 
-The bodies follow OpenMetadata's `CreateClassification` and `CreateTag` schemas, including the `parent` and
-`associatedTags` fields; check them against the OpenMetadata version you run. Classifications must exist before
+The bodies follow OpenMetadata's `CreateClassification` and `CreateTag` schemas, including the `parent` field. They
+were checked against OpenMetadata 2.0.6 and use only fields present since 0.13.2. Classifications must exist before
 their tags, and parent tags before their children: the order of `classifications()` and `tags()` guarantees both.
 
 ## The tags of a column
@@ -184,8 +184,8 @@ Notice:
   personal data.
 - Non-personal fields have no `Identifiability` tag.
 
-There is also `tagsOf(DataCategory)`: the category's tag followed by the tags it implies (the same list as its
-`associatedTags`, without identifiability). Use it when you only know the category, not the field.
+There is also `tagsOf(DataCategory)`: the category's tag followed by the tags it implies (the implied protection,
+without identifiability). Use it when you only know the category, not the field.
 
 Applying the tags to the columns of your tables is your integration's job: map each field to its table and column
 (your persistence naming rules) and use the OpenMetadata API you already use for table metadata.
@@ -250,7 +250,7 @@ does `catalog.tags()` return? What is the `description` of the tag `DataCategory
 
 1. Which two OpenMetadata classifications does Linneo reuse and never create?
 2. Which `PersonalData` tag does criminal offence data get?
-3. What does `associatedTags` contain for a category tag?
+3. What does `tagsOf(category)` return, and where does the implied protection go when you tag a column?
 4. Why are the level tags created before the category tags?
 5. Which `PII` tag does a pseudonymised field with confidentiality `LOW` get with the default mapping?
 
@@ -303,9 +303,10 @@ The extension adds two categories (`user.education.lab_notebook` and `user.educa
 
 1. `PersonalData` and `PII`.
 2. `PersonalData.SpecialCategory`.
-3. The protection the category implies: `PersonalData.*` (if personal), `PII.*`, `Confidentiality.*`,
-   `Integrity.*` and, for secrets, `DataHandling.Secret`.
-4. Because category tags reference them in `associatedTags`, and parents must exist before children.
+3. The category tag followed by the protection the category implies: `PersonalData.*` (if personal), `PII.*`,
+   `Confidentiality.*`, `Integrity.*` and, for secrets, `DataHandling.Secret`. The implied protection goes on each
+   column, because OpenMetadata does not store `associatedTags`.
+4. Because the tags a column gets refer to them, and parents must exist before children.
 5. `PII.NonSensitive` (personal, below `MEDIUM`).
 
 </details>

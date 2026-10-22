@@ -17,7 +17,11 @@ El paquete `io.github.devbpm.linneo.catalog.atlas` traduce una [`Taxonomy`](../t
 clasificación** de [Apache Atlas](https://atlas.apache.org/) y calcula las clasificaciones de cada columna clasificada. **No hace
 llamadas de red**: envía las definiciones de tipos con el cliente HTTP que ya uses a
 `POST /api/atlas/v2/types/typedefs` y después añade las clasificaciones a las entidades de columna con
-`POST /api/atlas/v2/entity/guid/{guid}/classifications`. Comprueba los cuerpos con la versión de Atlas que utilices.
+`POST /api/atlas/v2/entity/guid/{guid}/classifications`. Los cuerpos se comprobaron con Apache Atlas 2.3.0; los
+nombres de clasificación con puntos son válidos desde Atlas 1.0 y la API no cambia hasta la 2.5.0.
+
+El repositorio incluye una prueba de integración, `AtlasIT`, que envía estos cuerpos a un servidor real; véase
+«Integration tests against catalog servers» en `CONTRIBUTING.md`.
 
 Cómo se compara este exportador con los de OpenMetadata y DataHub: consulta la
 [comparativa de catálogos de datos](../README.md#comparativa-de-catálogos-de-datos).
@@ -124,10 +128,10 @@ plus extensions).` Las descripciones se generan en inglés.
 {"classificationDefs":[{"name":"PersonalData","description":"Legal nature of personal data under the GDPR.","superTypes":[],"attributeDefs":[]},{"name":"Confidentiality","description":"Harm that disclosing the data would cause.","superTypes":[],"attributeDefs":[]}, …]}
 ```
 
-`POST /api/atlas/v2/types/typedefs` **crea** tipos; Atlas rechaza un tipo que ya existe. En ejecuciones posteriores
-—por ejemplo, después de añadir términos a la taxonomía— envía con `POST` solo las definiciones nuevas (Atlas
-enumera las existentes en `GET /api/atlas/v2/types/typedefs/headers`) y modifica las existentes con
-`PUT /api/atlas/v2/types/typedefs`. Construye esos cuerpos a partir de `classificationDefs()`.
+`POST /api/atlas/v2/types/typedefs` **crea** tipos y responde 409 si ya existen. En ejecuciones posteriores
+—por ejemplo, después de añadir términos a la taxonomía— envía el mismo cuerpo con `PUT /api/atlas/v2/types/typedefs`
+para actualizarlos. Para enviar solo lo nuevo, enumera los tipos existentes en
+`GET /api/atlas/v2/types/typedefs/headers` y construye los cuerpos a partir de `classificationDefs()`.
 
 ## Clasificaciones de una categoría
 

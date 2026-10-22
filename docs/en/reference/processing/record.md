@@ -62,7 +62,7 @@ The record states the protection the data **requires** (the highest levels of it
 for the description of security measures of article 30.1.g; it does not describe the measures themselves.
 
 Every text written into the document — title, names, description and cells — has `|` escaped as `\|` and line
-breaks (with the white space around them) collapsed to one space, so that a value cannot break the table. The
+breaks (`\n` or `\r`, with the white space around them) collapsed to one space, so that a value cannot break the table. The
 activity key is written as code, unescaped.
 
 ### Example

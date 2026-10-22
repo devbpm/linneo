@@ -56,7 +56,7 @@ public record ProcessingActivity(String key, String name, String description, Li
                                  CriminalDataBasis criminalDataBasis, String legalReference, String retention,
                                  List<String> recipients, List<Transfer> transfers, String impactAssessment) {
 
-    private static final Pattern KEY = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*");
+    private static final Pattern KEY_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*+");
 
     /**
      * Checks the identity, makes the lists immutable and turns blank texts into {@code null}.
@@ -81,7 +81,7 @@ public record ProcessingActivity(String key, String name, String description, Li
     public ProcessingActivity {
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(name, "name");
-        if (!KEY.matcher(key).matches()) {
+        if (!KEY_PATTERN.matcher(key).matches()) {
             throw new IllegalArgumentException("Invalid processing activity key '" + key + "': use letters, digits,"
                     + " dots, underscores and hyphens, starting with a letter or digit");
         }

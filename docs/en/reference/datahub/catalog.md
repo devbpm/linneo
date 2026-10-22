@@ -18,7 +18,11 @@ The package `io.github.devbpm.linneo.catalog.datahub` translates a [`Taxonomy`](
 each classified field. It makes **no network calls**: send each proposal with the HTTP client you already use to
 `POST /aspects?action=ingestProposal` of the DataHub metadata service (GMS), then add the terms to the fields of
 each dataset. The aspects follow DataHub's `glossaryNodeInfo`, `glossaryTermInfo` and `glossaryRelatedTerms`
-schemas; check them against the DataHub version you run.
+schemas. Send every proposal with the header `X-RestLi-Protocol-Version: 2.0.0`. They were checked against DataHub
+v1.7.0.1, and the aspects use only fields present since v0.9.2.
+
+The repository has an integration test, `DataHubIT`, that sends the proposals to a real GMS; see "Integration tests
+against catalog servers" in `CONTRIBUTING.md`.
 
 How this exporter compares with the OpenMetadata and Atlas ones: see
 [Data catalogues compared](../README.md#data-catalogues-compared).

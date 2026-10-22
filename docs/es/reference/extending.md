@@ -71,6 +71,9 @@ existir en la misma jerarquía, pero los términos pueden añadirse en cualquier
 5. `secret` se combina con OR hacia abajo; los atributos se heredan y los de la hija prevalecen.
 6. Que todo `replacedBy` exista en la misma jerarquía y que las sustituciones no formen un ciclo (para categorías,
    usos y sujetos).
+7. Que la sustituta de una categoría obsoleta proteja al menos tanto: una naturaleza que la obsoleta admita,
+   confidencialidad e integridad no inferiores, y `secret` si la obsoleta es secreta. Una declaración que nombra la
+   clave obsoleta se clasifica con su sustituta, así que una más débil rebajaría la protección sin avisar.
 
 Consulta [Niveles de protección](protection-levels.md#regla-de-herencia).
 
@@ -95,6 +98,7 @@ Todos son `TaxonomyException` (mensajes tal como los produce el código):
 | `build`, categoría especial o de infracciones penales por debajo de `HIGH` | `Data category '<key>' is <nature> data and must have HIGH confidentiality and integrity, not <c> and <i>` |
 | `build`, falta la sustituta | `The replacement '<r>' of data category '<key>' does not exist` |
 | `build`, ciclo de sustituciones | `The replacements of data category '<key>' form a cycle` |
+| `build`, la sustituta protege menos | `The replacement '<r>' of data category '<key>' has weaker protection: <nature>, <c>, <i>[, secret] instead of <nature>, <c>, <i>[, secret]` |
 
 ### Ejemplo
 

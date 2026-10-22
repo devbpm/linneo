@@ -93,6 +93,7 @@ public final class UniversityTaxonomy implements TaxonomyExtension {
     /**
      * The extension's name, recorded as the origin of its terms.
      */
+    @SuppressWarnings("java:S1845") // NAME is the value name() returns; the shared name is intended
     public static final String NAME = "university";
 
     /**

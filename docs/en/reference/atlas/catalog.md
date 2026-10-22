@@ -17,7 +17,11 @@ The package `io.github.devbpm.linneo.catalog.atlas` translates a [`Taxonomy`](..
 [Apache Atlas](https://atlas.apache.org/) **classification types** and computes the classifications of each
 classified column. It makes **no network calls**: send the type definitions with the HTTP client you already use to
 `POST /api/atlas/v2/types/typedefs`, then add the classifications to the column entities with
-`POST /api/atlas/v2/entity/guid/{guid}/classifications`. Check the bodies against the Atlas version you run.
+`POST /api/atlas/v2/entity/guid/{guid}/classifications`. The bodies were checked against Apache Atlas 2.3.0;
+classification names with dots are valid since Atlas 1.0 and the API is unchanged up to 2.5.0.
+
+The repository has an integration test, `AtlasIT`, that sends these bodies to a real server; see "Integration tests
+against catalog servers" in `CONTRIBUTING.md`.
 
 How this exporter compares with the OpenMetadata and DataHub ones: see
 [Data catalogues compared](../README.md#data-catalogues-compared).
@@ -122,10 +126,10 @@ extensions).`
 {"classificationDefs":[{"name":"PersonalData","description":"Legal nature of personal data under the GDPR.","superTypes":[],"attributeDefs":[]},{"name":"Confidentiality","description":"Harm that disclosing the data would cause.","superTypes":[],"attributeDefs":[]}, …]}
 ```
 
-`POST /api/atlas/v2/types/typedefs` **creates** types; Atlas rejects a type that already exists. On later runs —
-for instance after adding terms to the taxonomy — send with `POST` only the definitions that are new (Atlas lists the
-existing ones at `GET /api/atlas/v2/types/typedefs/headers`) and change existing ones with
-`PUT /api/atlas/v2/types/typedefs`. Build those bodies from `classificationDefs()`.
+`POST /api/atlas/v2/types/typedefs` **creates** types and answers 409 when they already exist. On later runs —
+for instance after adding terms to the taxonomy — send the same body with `PUT /api/atlas/v2/types/typedefs` to
+update them. To send only what is new, list the existing types at `GET /api/atlas/v2/types/typedefs/headers` and
+build the bodies from `classificationDefs()`.
 
 ## Classifications of a category
 

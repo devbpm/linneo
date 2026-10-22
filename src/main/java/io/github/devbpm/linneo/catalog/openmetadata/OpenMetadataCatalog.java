@@ -32,10 +32,13 @@ import java.util.Objects;
  * The taxonomy translated to OpenMetadata: the classifications and tags to create, and the tags of each column.
  * <p>
  * The category hierarchy becomes nested tags of one mutually exclusive classification, so
- * {@code user.contact.email} is the tag {@code DataCategory.user.contact.email}. Each category tag lists as
- * associated tags the protection it implies: the built-in {@code PersonalData} and {@code PII} tags plus the
- * confidentiality, integrity and secret tags. Special categories and criminal offence data are both tagged
+ * {@code user.contact.email} is the tag {@code DataCategory.user.contact.email}. OpenMetadata does not keep links
+ * between tags, so the protection a category implies (the built-in {@code PersonalData} and {@code PII} tags plus
+ * the confidentiality, integrity and secret tags) goes on each column, together with its category tag:
+ * {@link #tagsOf(FieldClassification)}. Special categories and criminal offence data are both tagged
  * {@code PersonalData.SpecialCategory}, the only OpenMetadata tag for data with reinforced protection.
+ * <p>
+ * Checked against a running OpenMetadata 2.0.6 server; the request bodies use only fields present since 0.13.2.
  * <p>
  * Instances are immutable and thread-safe.
  *
@@ -115,7 +118,7 @@ public final class OpenMetadataCatalog {
                     .toLowerCase(Locale.ROOT) + "."));
         }
         tags.add(new OmTag(mapping.handling(), null, SECRET, SECRET, "A secret that grants access: it must never "
-                + "be read back, exported or published, only verified.", List.of()));
+                + "be read back, exported or published, only verified."));
         for (DataCategory category : taxonomy.categories()) {
             tags.add(categoryTag(category));
         }
@@ -181,7 +184,7 @@ public final class OpenMetadataCatalog {
             description += " Deprecated" + (category.info().replacedBy() == null ? "."
                     : ": use " + category.info().replacedBy() + ".");
         }
-        return new OmTag(mapping.categories(), parent, segment, category.name(), description, impliedBy(category));
+        return new OmTag(mapping.categories(), parent, segment, category.name(), description);
     }
 
     private List<String> impliedBy(DataCategory category) {
@@ -215,7 +218,7 @@ public final class OpenMetadataCatalog {
     }
 
     private static OmTag levelTag(String classification, Enum<?> level, String description) {
-        return new OmTag(classification, null, label(level), label(level), description, List.of());
+        return new OmTag(classification, null, label(level), label(level), description);
     }
 
     private static String label(Enum<?> level) {

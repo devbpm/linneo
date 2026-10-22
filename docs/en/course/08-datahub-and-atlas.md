@@ -163,7 +163,9 @@ public final class PublishToDataHub {
 ```
 
 The URL is the DataHub metadata service (GMS); behind the DataHub frontend it is usually
-`/api/gms/aspects?action=ingestProposal`. Every proposal is an `UPSERT`, so you can run the publisher again after
+`/api/gms/aspects?action=ingestProposal`. Do not leave out the `X-RestLi-Protocol-Version: 2.0.0` header: GMS needs it
+to read the proposal (with `curl`, add `-H 'X-RestLi-Protocol-Version: 2.0.0'`). The bodies were checked against
+DataHub v1.7.0.1 and the aspects use only fields present since v0.9.2. Every proposal is an `UPSERT`, so you can run the publisher again after
 changing the taxonomy — but it replaces the whole aspect each time, so do not curate Linneo's terms by hand in the
 DataHub UI.
 
@@ -288,25 +290,31 @@ public final class PublishToAtlas {
             (System.getenv("ATLAS_USER") + ":" + System.getenv("ATLAS_PASSWORD")).getBytes(StandardCharsets.UTF_8));
     private final AtlasCatalog catalog = AtlasCatalog.of(Taxonomy.load());
 
-    /** Creates every classification type in one request. */
+    /** Creates every classification type in one request; Atlas answers 409 if they already exist. */
     void createTypes() throws IOException, InterruptedException {
-        post(API.resolve("types/typedefs"), catalog.typeDefsJson());
+        send("POST", API.resolve("types/typedefs"), catalog.typeDefsJson());
+    }
+
+    /** Updates the types that already exist, with the same body. */
+    void updateTypes() throws IOException, InterruptedException {
+        send("PUT", API.resolve("types/typedefs"), catalog.typeDefsJson());
     }
 
     /** Adds the classifications of a field to the column entity with the given guid. */
     void classify(String columnGuid, FieldClassification field) throws IOException, InterruptedException {
-        post(API.resolve("entity/guid/" + columnGuid + "/classifications"), catalog.classificationsJson(field));
+        send("POST", API.resolve("entity/guid/" + columnGuid + "/classifications"),
+                catalog.classificationsJson(field));
     }
 
-    private void post(URI uri, String json) throws IOException, InterruptedException {
+    private void send(String method, URI uri, String json) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .header("Authorization", authorization)
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .method(method, HttpRequest.BodyPublishers.ofString(json))
                 .build();
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 300) {
-            throw new IOException("POST " + uri + " failed: " + response.statusCode() + " " + response.body());
+            throw new IOException(method + " " + uri + " failed: " + response.statusCode() + " " + response.body());
         }
     }
 }
@@ -316,9 +324,10 @@ Three things are left to your integration:
 
 - **Finding the column.** Linneo does not know the `guid` of the column entity; look it up in Atlas from the
   column's qualified name.
-- **Running it again.** `POST /types/typedefs` creates types and rejects those that already exist: on later runs send
-  only the new definitions, and update changed ones with `PUT`. Likewise, Atlas rejects a classification a column
-  already has.
+- **Running it again.** `POST /types/typedefs` creates types and answers 409 when they already exist: on later runs
+  send the same body with `PUT` to update them (`updateTypes()` above). Likewise, Atlas rejects a classification a
+  column already has. The bodies were checked against Apache Atlas 2.3.0; classification names with dots are valid
+  since Atlas 1.0 and the API is unchanged up to 2.5.0.
 - **Propagation.** The body sets no `propagate` flag, so Atlas applies its default: in a stock installation the
   classifications flow along lineage to derived columns. A statistics column computed from `Grade.mark` would then carry
   `PersonalData.Personal` and `Identifiability.Identified` next to its own `Identifiability.Aggregated`. Decide what
@@ -359,7 +368,7 @@ Linneo, so you can rename all of them freely.
 - **Editing Linneo's terms in the DataHub UI.** The next run of the publisher replaces those aspects.
 - **Attaching only the category classification in Atlas.** `DataCategory.user.health_and_medical.disability` does not
   carry `Confidentiality.High` through its super types; send `classificationsJson(field)`, which lists every label.
-- **Posting the Atlas typedefs a second time unchanged.** Existing types are rejected; send only new ones.
+- **Posting the Atlas typedefs a second time unchanged.** `POST` answers 409 for existing types; send the same body with `PUT`.
 - **Ignoring Atlas propagation.** Derived columns may receive the personal-data classifications of their sources.
 - **Computing labels from the category instead of the field** (`termsOf(field.category())`): you lose the raised
   levels, the identifiability and the aggregated/anonymised distinction, as in module 7.

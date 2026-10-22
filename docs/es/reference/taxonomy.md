@@ -65,7 +65,8 @@ hasta llegar a una categoría sin sustituta:
 - obsoleta sin `replacedBy` → la propia categoría obsoleta.
 
 `TaxonomyBuilder.build()` garantiza que toda sustituta existe en la misma jerarquía y que las sustituciones no forman
-ciclos, así que la cadena siempre termina. El [`Classifier`](classify/classifier.md) usa `resolveCategory` con las
+ciclos, así que la cadena siempre termina, y que la sustituta de una categoría obsoleta no protege menos
+(naturaleza, confidencialidad, integridad, secreto) que la categoría a la que sustituye. El [`Classifier`](classify/classifier.md) usa `resolveCategory` con las
 claves obsoletas y emite un aviso `DEPRECATED_CATEGORY`.
 
 ```java

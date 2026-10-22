@@ -269,6 +269,7 @@ extension stops the application (or the test) instead of producing a weaker taxo
 | Nature not admitted by the parent | `Data category 'user.education.stats' declares nature NONE, which its parent 'user.education' (ORDINARY) does not admit` | `build()` |
 | Level lower than the parent's | `Data category 'user.education.grade' declares confidentiality LOW, lower than its parent's MEDIUM` | `build()` |
 | Replacement does not exist | `The replacement 'user.education.new' of data category 'user.education.old' does not exist` | `build()` |
+| Replacement protects less | `The replacement 'user.education.new' of data category 'user.education.old' has weaker protection: ORDINARY, LOW, LOW instead of ORDINARY, MEDIUM, HIGH` | `build()` |
 | Replacements form a cycle | `The replacements of data category 'user.education.a' form a cycle` | `build()` |
 
 Two cases deserve attention:

@@ -335,7 +335,7 @@ table column a Java field maps to.
 | Category tree | Nested tags of the `DataCategory` classification | Glossary nodes and terms; each term *is a* term of its parent | Classification types whose super type is the parent's |
 | `user.contact.email` | `DataCategory.user.contact.email` | `urn:li:glossaryTerm:DataCategory.user.contact.email` | `DataCategory.user.contact.email` |
 | Protection | Built-in `PersonalData` and `PII`, plus `Confidentiality`, `Integrity`, `Identifiability`, `DataHandling` | Terms of the `PersonalData`, `Confidentiality`, `Integrity`, `Identifiability` and `DataHandling` nodes | Classifications of the same names |
-| Create | `PUT /api/v1/classifications`, `PUT /api/v1/tags` | `POST /aspects?action=ingestProposal` | `POST /api/atlas/v2/types/typedefs` |
+| Create | `PUT /api/v1/classifications`, `PUT /api/v1/tags` | `POST /aspects?action=ingestProposal` | `POST /api/atlas/v2/types/typedefs` (`PUT` to update) |
 | Per column | `tagsOf(field)` | `termsOf(field)` | `classificationsOf(field)`, `classificationsJson(field)` |
 
 ```java
@@ -354,8 +354,11 @@ In Atlas a search for `DataCategory.user` also finds the columns of every sub-cl
 classifications (`Confidentiality.High`, `DataHandling.Secret`…) can drive Apache Ranger tag-based policies.
 
 The names of the root classifications, nodes and tags are configurable with `OpenMetadataMapping`,
-`DataHubMapping` and `AtlasMapping`. The request bodies follow the published APIs of each catalog; check them
-against the version you run.
+`DataHubMapping` and `AtlasMapping`. The request bodies follow the published APIs of each catalog and were checked
+against real servers: OpenMetadata 2.0.6 (only fields present since 0.13.2), DataHub v1.7.0.1 (aspects valid since
+v0.9.2; send each proposal with the header `X-RestLi-Protocol-Version: 2.0.0`) and Apache Atlas 2.3.0 (dotted
+classification names valid since 1.0, API unchanged to 2.5.0; `POST /types/typedefs` answers 409 when the types exist,
+send the same body with `PUT` to update them).
 
 ### OpenMetadata
 
@@ -366,11 +369,11 @@ against the version you run.
 | Personal data by confidentiality | Built-in `PII.NonSensitive` below `MEDIUM`, `PII.Sensitive` from `MEDIUM`; `PII.None` when not personal (threshold configurable) |
 | Confidentiality, integrity, identifiability | `Confidentiality.*`, `Integrity.*`, `Identifiability.*` |
 | Secret | `DataHandling.Secret` |
-| Protection implied by a category | `associatedTags` of the category tag |
+| Protection implied by a category | On each column, with `tagsOf(field)`; OpenMetadata does not store `associatedTags` |
 
 The PII sensitivity threshold is configurable with
 [`OpenMetadataMapping`](docs/en/reference/openmetadata/mapping.md). The request bodies follow the
-`CreateClassification` and `CreateTag` schemas of OpenMetadata, including the `parent` and `associatedTags` fields.
+`CreateClassification` and `CreateTag` schemas of OpenMetadata, including the `parent` field.
 
 ## Design principles
 

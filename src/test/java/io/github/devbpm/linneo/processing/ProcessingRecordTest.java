@@ -21,6 +21,7 @@ import io.github.devbpm.linneo.DataUses;
 import io.github.devbpm.linneo.Taxonomy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,6 +61,60 @@ class ProcessingRecordTest {
                 () -> assertTrue(markdown.contains("\nOpen points:\n\n- GDPR article(s) 6.1.e rest on Union or Member "
                         + "State law; name it as the legal reference\n")),
                 () -> assertTrue(!markdown.contains("| Legitimate interest |")));
+    }
+
+    @Test
+    @DisplayName("a complete record lists legitimate interest, article 10 basis, reference, retention, DPIA and secrets")
+    void completeRecord() {
+        ProcessingActivity screening = ProcessingActivity.builder("screening", "Staff screening")
+                .purposes(DataUses.EMPLOYMENT_RECRUITMENT).dataSubjects(DataSubjects.JOB_APPLICANT)
+                .dataCategories(Categories.USER_CRIMINAL_HISTORY, Categories.USER_AUTHORIZATION_PASSWORD)
+                .legitimateInterest("Protecting minors on campus")
+                .criminalDataBasis(CriminalDataBasis.AUTHORISED_BY_LAW)
+                .legalReference("Ley Orgánica 1/1996, art. 13.5")
+                .retention("Until the end of the contract")
+                .impactAssessment("DPIA-2026-07")
+                .build();
+        ProcessingRecord record = checker.verify(screening);
+        String markdown = record.toMarkdown("Example University");
+        String json = record.toJson();
+        assertAll(
+                () -> assertTrue(markdown.contains("`screening`\n\n| Record item |"), markdown),
+                () -> assertTrue(markdown.contains("| Legitimate interest | Protecting minors on campus |\n")),
+                () -> assertTrue(markdown.contains("| Criminal offence data (art. 10) | Art. 10: Authorised by law |\n")),
+                () -> assertTrue(markdown.contains("| Legal reference | Ley Orgánica 1/1996, art. 13.5 |\n")),
+                () -> assertTrue(markdown.contains("(`user.criminal_history`, criminal offence data)")),
+                () -> assertTrue(markdown.contains("| Recipients (art. 30.1.d) | None declared |\n")),
+                () -> assertTrue(markdown.contains("| Transfers (art. 30.1.e) | None declared |\n")),
+                () -> assertTrue(markdown.contains("| Retention (art. 30.1.f) | Until the end of the contract |\n")),
+                () -> assertTrue(markdown.contains("integrity High, includes secrets |\n")),
+                () -> assertTrue(markdown.contains("| Impact assessment (art. 35) | DPIA-2026-07 |\n")),
+                () -> assertTrue(!markdown.contains("Open points"), markdown),
+                () -> assertTrue(!json.contains("\"description\"")),
+                () -> assertTrue(json.contains("\"legitimateInterest\":\"Protecting minors on campus\"")),
+                () -> assertTrue(json.contains("\"criminalDataBasis\":{\"code\":\"AUTHORISED_BY_LAW\",\"article\":\"10\"}")),
+                () -> assertTrue(json.contains("\"legalReference\":\"Ley Orgánica 1/1996, art. 13.5\"")),
+                () -> assertTrue(json.contains("\"recipients\":[],\"transfers\":[]")),
+                () -> assertTrue(json.contains("\"retention\":\"Until the end of the contract\"")),
+                () -> assertTrue(json.contains("\"impactAssessment\":\"DPIA-2026-07\"")),
+                () -> assertTrue(json.contains("\"secret\":true")),
+                () -> assertTrue(json.contains("\"openPoints\":[]")));
+    }
+
+    @Test
+    @DisplayName("table cells join lines in linear time, even for long runs of blanks")
+    @Timeout(5)
+    void cellsInLinearTime() {
+        String blanks = " ".repeat(200_000);
+        ProcessingActivity activity = ProcessingActivity.builder("notes", "Notes")
+                .description("first" + blanks + "x\r\n  \n second third")
+                .purposes(DataUses.EDUCATION_ADMISSION).dataSubjects(DataSubjects.APPLICANT)
+                .dataCategories(Categories.USER_NAME).legalBasis(LegalBasis.CONTRACT).retention("One year")
+                .recipients("Board\nof admissions").build();
+        String markdown = checker.verify(activity).toMarkdown("Example University");
+        assertAll(
+                () -> assertTrue(markdown.contains("`notes`: first" + blanks + "x second third\n")),
+                () -> assertTrue(markdown.contains("| Recipients (art. 30.1.d) | Board of admissions |\n")));
     }
 
     @Test

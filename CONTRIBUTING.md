@@ -16,6 +16,24 @@ the taxonomy are reviewed with special care, because applications store and publ
 The build requires JDK 21 or later, compiles with every lint warning as an error and runs `javadoc` with full
 doclint. Every pull request must keep the build green and add tests for new behaviour.
 
+### Integration tests against catalog servers
+
+`OpenMetadataIT`, `DataHubIT` and `AtlasIT` send the bodies built by the catalog exporters to a real server. They
+are skipped unless a system property gives the server URL, so `./mvnw verify` never needs Docker. Start a server and
+run one test class, for example:
+
+```bash
+./mvnw test -Dtest=OpenMetadataIT -Dsurefire.failIfNoSpecifiedTests=false -Dlinneo.it.openmetadata=http://localhost:8585
+```
+
+| Test | Property | Server |
+|---|---|---|
+| `OpenMetadataIT` | `-Dlinneo.it.openmetadata=http://localhost:8585` | The official release `docker-compose.yml` of OpenMetadata, `docker compose up -d openmetadata-server` |
+| `DataHubIT` | `-Dlinneo.it.datahub=http://localhost:8080` | DataHub's `docker/quickstart/docker-compose.quickstart-profile.yml` with `--profile quickstart-backend`; set `DATAHUB_TOKEN_SERVICE_SIGNING_KEY` and `DATAHUB_TOKEN_SERVICE_SALT` to random values first |
+| `AtlasIT` | `-Dlinneo.it.atlas=http://localhost:21000` | `docker run -d -p 21000:21000 sburn/apache-atlas:2.3.0` (Atlas takes a few minutes to start) |
+
+They were written against OpenMetadata 2.0.6, DataHub v1.7.0.1 and Apache Atlas 2.3.0.
+
 ## Rules for the taxonomy
 
 - Never change the meaning of an existing key and never reuse a removed one.

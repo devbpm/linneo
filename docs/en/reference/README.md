@@ -150,13 +150,13 @@ labels to your tables: they build request bodies and names.
 | Entry point | [`OpenMetadataCatalog`](openmetadata/catalog.md) | [`DataHubCatalog`](datahub/catalog.md) | [`AtlasCatalog`](atlas/catalog.md) |
 | A category becomes | a nested tag `DataCategory.<key>` in a mutually exclusive classification | a glossary term `urn:li:glossaryTerm:DataCategory.<key>`, plus a glossary node if it has children | a classification type `DataCategory.<key>` |
 | The tree becomes | tag `parent` | nodes that mirror the tree, and `isRelatedTerms` to the parent's term | `superTypes`: a search for a parent finds its sub-classifications |
-| Protection implied by a category | `associatedTags` of its tag | `relatedTerms` of its term | not stored in the type; `classificationsOf(category)` lists it |
+| Protection implied by a category | not stored in the tag; goes on each column with `tagsOf(field)` (`tagsOf(category)` lists it) | `relatedTerms` of its term | not stored in the type; `classificationsOf(category)` lists it |
 | Legal nature | built-in `PersonalData.Personal` / `SpecialCategory` (criminal offence data is `SpecialCategory`) | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` |
 | Sensitivity | built-in `PII.None` / `NonSensitive` / `Sensitive`, threshold `sensitiveFrom` | — | — |
 | Levels and secret | `Confidentiality.*`, `Integrity.*`, `Identifiability.*`, `DataHandling.Secret` | the same, as glossary terms | the same, as classifications (not super types of the categories) |
 | Created for the standard taxonomy | 5 classifications and 137 tags | 293 proposals: 28 nodes, 140 terms, 125 relation aspects | 146 classification types |
 | Requests | `PUT /api/v1/classifications`, `PUT /api/v1/tags`, one per body | `POST /aspects?action=ingestProposal`, one per proposal | one `POST /api/atlas/v2/types/typedefs` |
-| Sending again | create or update | `UPSERT` (replaces each aspect) | `POST` rejects existing types; update with `PUT` |
+| Sending again | create or update | `UPSERT` (replaces each aspect) | `POST` answers 409 if the types exist; update with `PUT` |
 | Labels of a field | `tagsOf(field)`: tag names | `termsOf(field)`: term URNs | `classificationsOf(field)`: names; `classificationsJson(field)`: request body |
 | Applying them (your code) | the table API you already use | for example GraphQL `addTerms` with the field path as `subResource` | `POST /api/atlas/v2/entity/guid/{guid}/classifications` |
 | Names | [`OpenMetadataMapping`](openmetadata/mapping.md): seven names and a threshold | [`DataHubMapping`](datahub/mapping.md): six node names | [`AtlasMapping`](atlas/mapping.md): six root names |

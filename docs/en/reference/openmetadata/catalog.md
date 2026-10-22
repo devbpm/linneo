@@ -18,8 +18,13 @@ The package `io.github.devbpm.linneo.catalog.openmetadata` translates a [`Taxono
 [OpenMetadata](https://open-metadata.org/) classifications and tags, and computes the tags of each classified column.
 It makes **no network calls**: send the JSON bodies with the HTTP client you already use to
 `PUT /api/v1/classifications` and `PUT /api/v1/tags`, then add the tags to the columns of each table. The bodies
-follow OpenMetadata's `CreateClassification` and `CreateTag` schemas, including `parent` and `associatedTags`;
-check them against the OpenMetadata version you run.
+follow OpenMetadata's `CreateClassification` and `CreateTag` schemas, including `parent`. They were checked against
+OpenMetadata 2.0.6 and use only fields present since 0.13.2. OpenMetadata accepts `associatedTags` on a tag but never
+stores them, so Linneo does not send them: the protection a category implies goes on each column, see
+[Tags of a column](#tags-of-a-column).
+
+The repository has an integration test, `OpenMetadataIT`, that sends these bodies to a real server; see
+"Integration tests against catalog servers" in `CONTRIBUTING.md`.
 
 ## OpenMetadataCatalog
 
@@ -34,7 +39,7 @@ Immutable and thread-safe. There is no public constructor.
 | `List<OmClassification> classifications()` | immutable list | The classifications to create, in creation order. The built-in `PersonalData` and `PII` classifications are **not** included: they are reused. |
 | `List<OmTag> tags()` | list | The tags to create, in creation order: the level tags first, then one tag per data category, every parent before its children. |
 | `String tagOf(DataCategory category)` | `String` | The fully qualified name of the category's tag, such as `DataCategory.user.contact.email`. |
-| `List<String> tagsOf(DataCategory category)` | list | The category's own tag followed by the tags it implies (its `associatedTags`). |
+| `List<String> tagsOf(DataCategory category)` | list | The category's own tag followed by the tags it implies (the tags the category implies). |
 | `List<String> tagsOf(FieldClassification field)` | list | The tags of a classified column: its category, whether and how it is personal data, and the field's effective protection. |
 
 ```java
@@ -79,7 +84,7 @@ With the default mapping, `classifications()` returns:
 | one per data category, in key order | `DataCategory` | `name`: last key segment; `displayName`: the category's name | the category's description, plus ` Deprecated.` or ` Deprecated: use <key>.` for a deprecated category |
 
 A category tag has `parent` = `DataCategory.<parent key>` (none for a root), so the hierarchy becomes nested tags:
-`user.contact.email` is the tag `DataCategory.user.contact.email`. Level tags have no parent and no associated tags.
+`user.contact.email` is the tag `DataCategory.user.contact.email`. Level tags have no parent.
 
 ## How tags map
 
@@ -102,7 +107,7 @@ classification names are configurable with [`OpenMetadataMapping`](mapping.md).
 
 ### Tags of a category
 
-`tagsOf(DataCategory)` and a category tag's `associatedTags` are computed from the category's facets, in this order:
+`tagsOf(DataCategory)` computes the tags a category implies from its facets, in this order:
 
 1. `PersonalData.Personal` or `PersonalData.SpecialCategory` — only if the category is personal;
 2. `PII.None`, `PII.NonSensitive` or `PII.Sensitive`;
@@ -160,8 +165,7 @@ entity can carry only one of its tags. The constructor throws `NullPointerExcept
 `io.github.devbpm.linneo.catalog.openmetadata.OmTag` — `public record`, `@since 0.1.0`
 
 ```java
-public record OmTag(String classification, String parent, String name, String displayName, String description,
-                    List<String> associatedTags)
+public record OmTag(String classification, String parent, String name, String displayName, String description)
 ```
 
 An OpenMetadata tag to create: the body of `PUT /api/v1/tags`.
@@ -173,7 +177,6 @@ An OpenMetadata tag to create: the body of `PUT /api/v1/tags`.
 | `name` | no | The tag name, one segment without dots. |
 | `displayName` | no | The human-readable name. |
 | `description` | no | What it means. |
-| `associatedTags` | no | Fully qualified names of tags that go with it, so whoever applies it by hand gets them too. A `null` argument becomes an empty list; the list is copied into an immutable one. |
 
 The constructor throws `NullPointerException` if `classification`, `name`, `displayName` or `description` is `null`.
 
@@ -183,7 +186,7 @@ The constructor throws `NullPointerException` if `classification`, `name`, `disp
 | `String toJson()` | The JSON body of a `CreateTag` request. |
 
 ```json
-{"classification":"DataCategory","parent":"DataCategory.user.contact","name":"email","displayName":"User Contact Email","description":"User's contact email address.","associatedTags":["PersonalData.Personal","PII.NonSensitive","Confidentiality.Low","Integrity.Medium"]}
+{"classification":"DataCategory","parent":"DataCategory.user.contact","name":"email","displayName":"User Contact Email","description":"User's contact email address."}
 ```
 
 ## JSON output
@@ -193,9 +196,9 @@ The constructor throws `NullPointerException` if `classification`, `name`, `disp
 the library needs no JSON dependency:
 
 - **Field order** — `OmClassification`: `name`, `description`, `mutuallyExclusive`. `OmTag`: `classification`,
-  `parent`, `name`, `displayName`, `description`, `associatedTags`.
-- **Omitted fields** — `OmTag` omits `parent` when it is `null` and `associatedTags` when the list is empty.
-- **Types** — strings, a boolean (`mutuallyExclusive`) and an array of strings (`associatedTags`).
+  `parent`, `name`, `displayName`, `description`.
+- **Omitted fields** — `OmTag` omits `parent` when it is `null`.
+- **Types** — strings and a boolean (`mutuallyExclusive`).
 - **Escaping** — `"` → `\"`, `\` → `\\`, newline → `\n`, carriage return → `\r`, tab → `\t`, backspace → `\b`, form
   feed → `\f`, other control characters below U+0020 → `\u00XX`. All other characters, including non-ASCII ones, are
   written as they are (the output is a Java `String`; encode it as UTF-8 when sending it).

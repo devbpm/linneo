@@ -65,7 +65,7 @@ El registro indica la protección que los datos **requieren** (los niveles más 
 punto de partida para la descripción de las medidas de seguridad del artículo 30.1.g; no describe las medidas.
 
 En todo texto que se escribe en el documento —título, nombres, descripción y celdas— `|` se escapa como `\|` y los
-saltos de línea (con los espacios que los rodean) se reducen a un espacio, para que ningún valor rompa la tabla. La
+saltos de línea (`\n` o `\r`, con los espacios que los rodean) se reducen a un espacio, para que ningún valor rompa la tabla. La
 clave de la actividad se escribe como código, sin escapar.
 
 ### Ejemplo

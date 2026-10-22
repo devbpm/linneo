@@ -18,6 +18,17 @@ All notable changes to this project are documented in this file. The format foll
   (consolidated text of 27 December 2025). Special category and criminal offence data always have `HIGH`
   confidentiality and integrity (`LegalNature.requiresMaximumProtection()`, enforced by `TaxonomyBuilder`); data of
   vulnerable data subjects (`user.childrens`, `user.government_id.immigration`) has `HIGH` confidentiality.
+- `TaxonomyBuilder` refuses a deprecated data category whose replacement protects less (a nature it does not
+  admit, lower confidentiality or integrity, or not secret), since every use of the deprecated key is checked with
+  the replacement.
+- Integration tests against real servers, skipped in the normal build: `OpenMetadataIT` (checked with
+  OpenMetadata 2.0.6), `DataHubIT` (DataHub v1.7.0.1) and `AtlasIT` (Apache Atlas 2.3.0). Each publishes the
+  standard taxonomy with the university extension, reads it back, and checks the tags, terms or classifications
+  stored on columns.
+- Linear-time handling of long inputs: Markdown table cells no longer use a backtracking regular expression, and
+  key validation uses possessive quantifiers, so very long text or keys cannot slow down or overflow the stack.
+- `Classifier` ignores fields that bytecode tools add (names starting with `$$_`, such as Hibernate's enhancement
+  fields) and classifies a Hibernate proxy class as the entity it extends.
 - Data categories `user.administrative_sanction` (administrative infringements and sanctions, LOPDGDD article 27)
   and `user.victim_status` (victims of gender-based violence, sexual violence, terrorism and other offences):
   ordinary personal data with `HIGH` confidentiality and integrity.
@@ -29,7 +40,8 @@ All notable changes to this project are documented in this file. The format foll
 - `TaxonomyBuilder` and `TaxonomyExtension` (loaded with `ServiceLoader`) to add terms and make protection stricter.
 - Annotations `@Category`, `@DefaultCategory`, `@CategoryByRow` and `@Exempt`, and the `Classifier` that reads and
   verifies them.
-- `OpenMetadataCatalog`: classifications, nested tags with associated tags, and the tags of each column.
+- `OpenMetadataCatalog`: classifications, nested tags, and the tags of each column. Tags carry no
+  `associatedTags`, which OpenMetadata accepts but does not store: the protection goes on each column.
 - `UniversityTaxonomy`: an optional taxonomy extension for higher education (33 data categories focused on the
   student record, 27 data uses including the new roots `advancement` and `research`, 13 data subjects), informed by
   the Open Education API (OEAPI) and following fideslang's rules for custom labels. Not applied by default; keys in

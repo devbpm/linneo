@@ -17,7 +17,6 @@ package io.github.devbpm.linneo.catalog.openmetadata;
 
 import io.github.devbpm.linneo.internal.Json;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -28,29 +27,24 @@ import java.util.Objects;
  * @param name the tag name, one segment without dots
  * @param displayName the human-readable name
  * @param description what it means
- * @param associatedTags fully qualified names of tags that go with it, so that whoever applies it by hand gets them
- *        too
  * @since 0.1.0
  */
-public record OmTag(String classification, String parent, String name, String displayName, String description,
-                    List<String> associatedTags) {
+public record OmTag(String classification, String parent, String name, String displayName, String description) {
 
     /**
-     * Checks the mandatory components and makes the list immutable.
+     * Checks the mandatory components.
      *
      * @param classification the classification
      * @param parent the parent's fully qualified name or {@code null}
      * @param name the name
      * @param displayName the display name
      * @param description the description
-     * @param associatedTags the associated tags
      */
     public OmTag {
         Objects.requireNonNull(classification, "classification");
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(displayName, "displayName");
         Objects.requireNonNull(description, "description");
-        associatedTags = associatedTags == null ? List.of() : List.copyOf(associatedTags);
     }
 
     /**
@@ -72,10 +66,6 @@ public record OmTag(String classification, String parent, String name, String di
         if (parent != null) {
             json.field("parent", parent);
         }
-        json.field("name", name).field("displayName", displayName).field("description", description);
-        if (!associatedTags.isEmpty()) {
-            json.field("associatedTags", associatedTags);
-        }
-        return json.end();
+        return json.field("name", name).field("displayName", displayName).field("description", description).end();
     }
 }

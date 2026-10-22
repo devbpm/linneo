@@ -18,7 +18,7 @@ doc-sources:
 Excludes from classification a field that holds no data of the model: a value computed from other fields, a cache or
 a technical handle.
 
-Static, synthetic and `transient` fields are **always** excluded and need no annotation. An `@Exempt` on such a field
+Static, synthetic, `transient` and `$$_...` fields (added by Hibernate) are **always** excluded and need no annotation. An `@Exempt` on such a field
 is ignored entirely (not even its reason is checked).
 
 ## Elements

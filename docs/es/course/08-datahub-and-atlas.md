@@ -167,7 +167,9 @@ public final class PublishToDataHub {
 ```
 
 La URL es la del servicio de metadatos de DataHub (GMS); detrás del frontend de DataHub suele ser
-`/api/gms/aspects?action=ingestProposal`. Cada propuesta es un `UPSERT`, así que puedes volver a ejecutar el emisor
+`/api/gms/aspects?action=ingestProposal`. No omitas la cabecera `X-RestLi-Protocol-Version: 2.0.0`: GMS la necesita
+para leer la propuesta (con `curl`, añade `-H 'X-RestLi-Protocol-Version: 2.0.0'`). Los cuerpos se comprobaron con
+DataHub v1.7.0.1 y los aspectos solo usan campos presentes desde la v0.9.2. Cada propuesta es un `UPSERT`, así que puedes volver a ejecutar el emisor
 después de cambiar la taxonomía… pero cada vez sustituye el aspecto completo, así que no retoques a mano los términos
 de Linneo en la interfaz de DataHub.
 
@@ -295,25 +297,31 @@ public final class PublishToAtlas {
             (System.getenv("ATLAS_USER") + ":" + System.getenv("ATLAS_PASSWORD")).getBytes(StandardCharsets.UTF_8));
     private final AtlasCatalog catalog = AtlasCatalog.of(Taxonomy.load());
 
-    /** Creates every classification type in one request. */
+    /** Creates every classification type in one request; Atlas answers 409 if they already exist. */
     void createTypes() throws IOException, InterruptedException {
-        post(API.resolve("types/typedefs"), catalog.typeDefsJson());
+        send("POST", API.resolve("types/typedefs"), catalog.typeDefsJson());
+    }
+
+    /** Updates the types that already exist, with the same body. */
+    void updateTypes() throws IOException, InterruptedException {
+        send("PUT", API.resolve("types/typedefs"), catalog.typeDefsJson());
     }
 
     /** Adds the classifications of a field to the column entity with the given guid. */
     void classify(String columnGuid, FieldClassification field) throws IOException, InterruptedException {
-        post(API.resolve("entity/guid/" + columnGuid + "/classifications"), catalog.classificationsJson(field));
+        send("POST", API.resolve("entity/guid/" + columnGuid + "/classifications"),
+                catalog.classificationsJson(field));
     }
 
-    private void post(URI uri, String json) throws IOException, InterruptedException {
+    private void send(String method, URI uri, String json) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .header("Authorization", authorization)
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .method(method, HttpRequest.BodyPublishers.ofString(json))
                 .build();
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 300) {
-            throw new IOException("POST " + uri + " failed: " + response.statusCode() + " " + response.body());
+            throw new IOException(method + " " + uri + " failed: " + response.statusCode() + " " + response.body());
         }
     }
 }
@@ -323,9 +331,10 @@ Tres cosas quedan para tu integración:
 
 - **Encontrar la columna.** Linneo no conoce el `guid` de la entidad de la columna; búscalo en Atlas a partir del
   nombre cualificado de la columna.
-- **Volver a ejecutarlo.** `POST /types/typedefs` crea tipos y rechaza los que ya existen: en ejecuciones posteriores
-  envía solo las definiciones nuevas y actualiza las que hayan cambiado con `PUT`. Del mismo modo, Atlas rechaza una
-  clasificación que la columna ya tiene.
+- **Volver a ejecutarlo.** `POST /types/typedefs` crea tipos y responde 409 si ya existen: en ejecuciones posteriores
+  envía el mismo cuerpo con `PUT` para actualizarlos (`updateTypes()` arriba). Del mismo modo, Atlas rechaza una
+  clasificación que la columna ya tiene. Los cuerpos se comprobaron con Apache Atlas 2.3.0; los nombres de
+  clasificación con puntos son válidos desde Atlas 1.0 y la API no cambia hasta la 2.5.0.
 - **La propagación.** El cuerpo no indica ningún `propagate`, así que Atlas aplica su valor por defecto: en una
   instalación estándar las clasificaciones fluyen por el linaje hacia las columnas derivadas. Una columna de
   estadísticas calculada a partir de `Grade.mark` llevaría entonces `PersonalData.Personal` e
@@ -369,7 +378,7 @@ las raíces, así que puedes renombrarlas todas libremente.
 - **Asignar en Atlas solo la clasificación de la categoría.** `DataCategory.user.health_and_medical.disability` no
   lleva `Confidentiality.High` a través de sus supertipos; envía `classificationsJson(field)`, que enumera todas las
   etiquetas.
-- **Enviar dos veces sin cambios los typedefs de Atlas.** Los tipos existentes se rechazan; envía solo los nuevos.
+- **Enviar dos veces sin cambios los typedefs de Atlas.** `POST` responde 409 si los tipos existen; envía el mismo cuerpo con `PUT`.
 - **Olvidar la propagación de Atlas.** Las columnas derivadas pueden recibir las clasificaciones de datos personales
   de sus orígenes.
 - **Calcular las etiquetas a partir de la categoría en lugar del campo** (`termsOf(field.category())`): pierdes los

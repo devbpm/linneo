@@ -42,6 +42,9 @@ import java.util.Objects;
  * tag-based policies, such as those of Apache Ranger, can act on them directly. They are not super types of the
  * categories, because a child category may raise a level its parent implies.
  * <p>
+ * Checked against a running Apache Atlas 2.3.0 server; classification type names may contain dots since Atlas 1.0,
+ * and the API is unchanged up to 2.5.0.
+ * <p>
  * Instances are immutable and thread-safe.
  *
  * @since 0.1.0
@@ -118,7 +121,8 @@ public final class AtlasCatalog {
     }
 
     /**
-     * The body of {@code POST /api/atlas/v2/types/typedefs} that creates every classification type at once.
+     * The body of {@code POST /api/atlas/v2/types/typedefs} that creates every classification type at once. Atlas
+     * answers 409 when the types already exist; send the same body with {@code PUT} to update them.
      *
      * @return a JSON object with the member {@code classificationDefs}
      */

@@ -50,7 +50,13 @@ new Classifier(Taxonomy.load()).verify(entities);
 - De cada clase, los campos que devuelve `getDeclaredFields()`. La lista `fields()` resultante contiene primero los
   campos de las superclases, en orden de declaración.
 - Se **excluyen** sin necesidad de anotación los campos `static`, `transient` y sintéticos (como la referencia a la
-  instancia contenedora en una clase interna).
+  instancia contenedora en una clase interna) y los campos cuyo nombre empieza por `$$_` (los añaden herramientas de
+  bytecode, por ejemplo la mejora de Hibernate: `$$_hibernate_interceptor`).
+- **Proxies de Hibernate.** Una clase cuyo nombre contiene `$HibernateProxy$` se clasifica como la entidad que
+  extiende: el `type()` de su [`ClassClassification`](results.md#classclassification) es la entidad, no el proxy.
+- **No se entra en los objetos incrustados.** El clasificador no desciende al tipo de un campo: una dirección
+  `@Embedded` de JPA es un campo, clasificado por sus propias anotaciones, y la clase incrustable debe verificarse
+  también, por ejemplo pasándola a `verify` junto con las entidades.
 - Los campos marcados con [`@Exempt`](../annotations/exempt.md) se omiten tras comprobar su anotación.
 - Las anotaciones se leen del propio campo (`getDeclaredAnnotation`), así que en un record deben aplicarse al campo
   del componente, cosa que hacen `@Category`, `@CategoryByRow` y `@Exempt`.

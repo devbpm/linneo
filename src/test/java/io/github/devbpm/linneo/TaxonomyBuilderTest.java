@@ -102,6 +102,16 @@ class TaxonomyBuilderTest {
         assertThrows(TaxonomyException.class, () -> builder.refineCategory(Categories.USER_GOVERNMENT_ID,
                 c -> c.confidentiality(Confidentiality.LOW)));
         assertThrows(TaxonomyException.class, () -> builder.refineCategory("user.unknown", c -> c.secret()));
+        assertThrows(TaxonomyException.class, () -> builder.refineCategory(Categories.USER_HEALTH_AND_MEDICAL,
+                c -> c.nature(LegalNature.ORDINARY)));
+        assertThrows(TaxonomyException.class, () -> builder.refineCategory(Categories.USER_EDUCATION,
+                c -> c.integrity(Integrity.LOW)));
+        Taxonomy kept = Taxonomy.builder().withStandard()
+                .refineCategory(Categories.USER_HEALTH_AND_MEDICAL, c -> c.nature(LegalNature.SPECIAL_CATEGORY)
+                        .integrity(Integrity.HIGH))
+                .build();
+        assertEquals(LegalNature.SPECIAL_CATEGORY,
+                kept.requireCategory(Categories.USER_HEALTH_AND_MEDICAL_GENETIC).nature());
     }
 
     @Test
@@ -135,6 +145,45 @@ class TaxonomyBuilderTest {
                 .category("data.c", "C", "")
                 .build();
         assertEquals("data.c", taxonomy.resolveCategory("data.a").key());
+    }
+
+    @Test
+    @DisplayName("checks keys of any length without exhausting the stack")
+    void longKeys() {
+        String valid = "data" + ".segment_1".repeat(20_000);
+        String invalid = valid + ".Upper";
+        TaxonomyBuilder builder = root();
+        assertAll(
+                () -> assertThrows(TaxonomyException.class, () -> root().category(invalid, "X", "")),
+                () -> assertThrows(TaxonomyException.class, () -> root().category("data..x", "X", "")),
+                () -> assertThrows(TaxonomyException.class, () -> root().category("data.", "X", "")),
+                () -> builder.category(valid, "Valid", ""));
+    }
+
+    @Test
+    @DisplayName("a deprecated category cannot be replaced by one with weaker protection")
+    void replacementKeepsProtection() {
+        TaxonomyBuilder toOrdinary = Taxonomy.builder().withStandard().refineCategory(
+                Categories.USER_HEALTH_AND_MEDICAL_DISABILITY, c -> c.deprecated("0.2.0", Categories.USER_CONTACT_EMAIL));
+        TaxonomyBuilder lowerConfidentiality = root()
+                .category("data.a", "A", "", c -> c.confidentiality(Confidentiality.HIGH).deprecated("2.0", "data.b"))
+                .category("data.b", "B", "");
+        TaxonomyBuilder lostSecret = root()
+                .category("data.a", "A", "", c -> c.secret().deprecated("2.0", "data.b"))
+                .category("data.b", "B", "");
+        TaxonomyBuilder toNonPersonal = Taxonomy.builder().withStandard().refineCategory(
+                Categories.USER_NAME, c -> c.deprecated("0.2.0", Categories.SYSTEM_OPERATIONS));
+        Taxonomy stricter = root()
+                .category("data.a", "A", "", c -> c.deprecated("2.0", "data.b"))
+                .category("data.b", "B", "", c -> c.nature(LegalNature.SPECIAL_CATEGORY)
+                        .confidentiality(Confidentiality.HIGH).integrity(Integrity.HIGH).secret())
+                .build();
+        assertAll(
+                () -> assertThrows(TaxonomyException.class, toOrdinary::build),
+                () -> assertThrows(TaxonomyException.class, lowerConfidentiality::build),
+                () -> assertThrows(TaxonomyException.class, lostSecret::build),
+                () -> assertThrows(TaxonomyException.class, toNonPersonal::build),
+                () -> assertEquals("data.b", stricter.resolveCategory("data.a").key()));
     }
 
     @Test

@@ -52,6 +52,12 @@ import java.util.Optional;
  * replacement, and is reported as a warning. The classifier only reads annotations, never field values, so it needs
  * no access to the classes beyond what {@link Class#getDeclaredFields()} requires.
  * <p>
+ * Fields that bytecode tools generate are ignored: synthetic fields and fields whose name starts with {@code $$_}, as
+ * Hibernate's enhancement adds. A Hibernate proxy class ({@code Entity$HibernateProxy$...}) is classified as the
+ * entity it extends. The classifier does not descend into the type of a field: an embedded object such as a JPA
+ * {@code @Embedded} address is one field, and its own class must be verified as well, for example by passing the
+ * metamodel's embeddables together with its entities.
+ * <p>
  * Typical use, in a test of the application:
  * <pre>{@code
  * new Classifier(Taxonomy.load()).verify(List.of(Customer.class, Invoice.class, MenuGroup.class));
@@ -61,6 +67,11 @@ import java.util.Optional;
  * @since 0.1.0
  */
 public final class Classifier {
+
+    // Prefix of the fields that bytecode tools add to classes, such as Hibernate's $$_hibernate_interceptor or
+    // $$_hibernate_entityEntryHolder; source code does not use it.
+    private static final String GENERATED_FIELD_PREFIX = "$$_";
+    private static final String HIBERNATE_PROXY = "$HibernateProxy$";
 
     private final Taxonomy taxonomy;
 
@@ -81,6 +92,7 @@ public final class Classifier {
      */
     public ClassClassification classify(Class<?> type) {
         Objects.requireNonNull(type, "type");
+        type = unproxied(type);
         List<FieldClassification> fields = new ArrayList<>();
         List<Violation> violations = new ArrayList<>();
         List<Class<?>> hierarchy = hierarchyOf(type);
@@ -267,7 +279,18 @@ public final class Classifier {
 
     private static boolean isExcluded(Field field) {
         int modifiers = field.getModifiers();
-        return Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || field.isSynthetic();
+        return Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers) || field.isSynthetic()
+                || field.getName().startsWith(GENERATED_FIELD_PREFIX);
+    }
+
+    // A Hibernate proxy subclass (Entity$HibernateProxy$...) adds only the proxy's own state: classify the entity.
+    private static Class<?> unproxied(Class<?> type) {
+        Class<?> current = type;
+        while (current.getName().contains(HIBERNATE_PROXY) && current.getSuperclass() != null
+                && current.getSuperclass() != Object.class) {
+            current = current.getSuperclass();
+        }
+        return current;
     }
 
     private static List<Class<?>> hierarchyOf(Class<?> type) {

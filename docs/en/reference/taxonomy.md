@@ -65,7 +65,8 @@ until it reaches a category without a replacement:
 - deprecated without `replacedBy` → the deprecated category itself.
 
 `TaxonomyBuilder.build()` guarantees that every replacement exists in the same hierarchy and that replacements form
-no cycle, so the chain always ends. The [`Classifier`](classify/classifier.md) uses `resolveCategory` for deprecated
+no cycle, so the chain always ends, and that the replacement of a deprecated data category does not protect less
+(nature, confidentiality, integrity, secret) than the category it replaces. The [`Classifier`](classify/classifier.md) uses `resolveCategory` for deprecated
 keys and reports a `DEPRECATED_CATEGORY` warning.
 
 ```java

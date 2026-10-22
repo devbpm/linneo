@@ -69,6 +69,9 @@ hierarchy, but terms may be added in any order: parents are checked by `build()`
 5. `secret` is OR-ed down the tree; attributes are inherited and overridden by the child's own.
 6. Every `replacedBy` exists in the same hierarchy, and replacements do not form a cycle (for data categories, data
    uses and data subjects).
+7. The replacement of a deprecated data category protects at least as much: a nature the deprecated category admits,
+   confidentiality and integrity not lower, and `secret` if the deprecated category is secret. A declaration that
+   names the deprecated key is classified with its replacement, so a weaker one would silently lower the protection.
 
 See [Protection levels](protection-levels.md#inheritance-rule).
 
@@ -93,6 +96,7 @@ All are `TaxonomyException` (messages as produced by the source):
 | `build`, special category or criminal offence below `HIGH` | `Data category '<key>' is <nature> data and must have HIGH confidentiality and integrity, not <c> and <i>` |
 | `build`, missing replacement | `The replacement '<r>' of data category '<key>' does not exist` |
 | `build`, replacement cycle | `The replacements of data category '<key>' form a cycle` |
+| `build`, replacement protects less | `The replacement '<r>' of data category '<key>' has weaker protection: <nature>, <c>, <i>[, secret] instead of <nature>, <c>, <i>[, secret]` |
 
 ### Example
 

@@ -32,7 +32,7 @@ clasificador.
 ## Qué campos se clasifican
 
 El clasificador recorre la clase y sus superclases (se detiene antes de `Object`, `Record` y `Enum`) y considera
-todos los campos que declaran salvo los **estáticos**, **transient** y **sintéticos**, que se omiten siempre sin
+todos los campos que declaran salvo los **estáticos**, **transient** y **sintéticos** (y los llamados `$$_...`, que añade Hibernate), que se omiten siempre sin
 necesidad de anotación. Consulta [Classifier](../classify/classifier.md#qué-campos-se-examinan).
 
 ## Orden de resolución

@@ -18,8 +18,13 @@ El paquete `io.github.devbpm.linneo.catalog.openmetadata` traduce una [`Taxonomy
 etiquetas de [OpenMetadata](https://open-metadata.org/) y calcula las etiquetas de cada columna clasificada. **No
 hace llamadas de red**: envía los cuerpos JSON con el cliente HTTP que ya uses a `PUT /api/v1/classifications` y
 `PUT /api/v1/tags`, y después añade las etiquetas a las columnas de cada tabla. Los cuerpos siguen los esquemas
-`CreateClassification` y `CreateTag` de OpenMetadata, incluidos `parent` y `associatedTags`; compruébalos con la
-versión de OpenMetadata que utilices.
+`CreateClassification` y `CreateTag` de OpenMetadata, incluido `parent`. Se comprobaron con OpenMetadata 2.0.6 y solo
+usan campos presentes desde la 0.13.2. OpenMetadata acepta `associatedTags` en una etiqueta pero nunca las guarda, así
+que Linneo no las envía: la protección que implica una categoría va en cada columna, véase
+[Etiquetas de una columna](#etiquetas-de-una-columna).
+
+El repositorio incluye una prueba de integración, `OpenMetadataIT`, que envía estos cuerpos a un servidor real; véase
+«Integration tests against catalog servers» en `CONTRIBUTING.md`.
 
 ## OpenMetadataCatalog
 
@@ -34,7 +39,7 @@ Inmutable y seguro entre hilos. No tiene constructor público.
 | `List<OmClassification> classifications()` | lista inmutable | Las clasificaciones que hay que crear, en orden de creación. **No** incluye las clasificaciones predefinidas `PersonalData` y `PII`: se reutilizan. |
 | `List<OmTag> tags()` | lista | Las etiquetas que hay que crear, en orden de creación: primero las de niveles y después una por categoría, cada padre antes que sus hijas. |
 | `String tagOf(DataCategory category)` | `String` | El nombre completo de la etiqueta de la categoría, como `DataCategory.user.contact.email`. |
-| `List<String> tagsOf(DataCategory category)` | lista | La etiqueta propia de la categoría seguida de las que implica (sus `associatedTags`). |
+| `List<String> tagsOf(DataCategory category)` | lista | La etiqueta propia de la categoría seguida de las que implica (las etiquetas que implica la categoría). |
 | `List<String> tagsOf(FieldClassification field)` | lista | Las etiquetas de una columna clasificada: su categoría, si es dato personal y de qué tipo, y la protección efectiva del campo. |
 
 ```java
@@ -82,7 +87,7 @@ Las descripciones se generan en inglés.
 
 Una etiqueta de categoría tiene `parent` = `DataCategory.<clave del padre>` (ninguno en una raíz), así que la
 jerarquía se convierte en etiquetas anidadas: `user.contact.email` es la etiqueta `DataCategory.user.contact.email`.
-Las etiquetas de nivel no tienen padre ni etiquetas asociadas.
+Las etiquetas de nivel no tienen padre.
 
 ## Correspondencia de etiquetas
 
@@ -105,8 +110,7 @@ nombres de las clasificaciones se configuran con [`OpenMetadataMapping`](mapping
 
 ### Etiquetas de una categoría
 
-`tagsOf(DataCategory)` y las `associatedTags` de una etiqueta de categoría se calculan a partir de sus facetas, en
-este orden:
+`tagsOf(DataCategory)` calcula las etiquetas que implica una categoría a partir de sus facetas, en este orden:
 
 1. `PersonalData.Personal` o `PersonalData.SpecialCategory` — solo si la categoría es personal;
 2. `PII.None`, `PII.NonSensitive` o `PII.Sensitive`;
@@ -165,8 +169,7 @@ Una clasificación de OpenMetadata que hay que crear: el cuerpo de `PUT /api/v1/
 `io.github.devbpm.linneo.catalog.openmetadata.OmTag` — `public record`, `@since 0.1.0`
 
 ```java
-public record OmTag(String classification, String parent, String name, String displayName, String description,
-                    List<String> associatedTags)
+public record OmTag(String classification, String parent, String name, String displayName, String description)
 ```
 
 Una etiqueta de OpenMetadata que hay que crear: el cuerpo de `PUT /api/v1/tags`.
@@ -178,7 +181,6 @@ Una etiqueta de OpenMetadata que hay que crear: el cuerpo de `PUT /api/v1/tags`.
 | `name` | no | El nombre de la etiqueta, un único segmento sin puntos. |
 | `displayName` | no | El nombre legible. |
 | `description` | no | Qué significa. |
-| `associatedTags` | no | Nombres completos de las etiquetas que la acompañan, para que quien la aplique a mano reciba también esas. Un argumento `null` se convierte en una lista vacía; la lista se copia en una inmutable. |
 
 El constructor lanza `NullPointerException` si `classification`, `name`, `displayName` o `description` son `null`.
 
@@ -188,7 +190,7 @@ El constructor lanza `NullPointerException` si `classification`, `name`, `displa
 | `String toJson()` | El cuerpo JSON de una petición `CreateTag`. |
 
 ```json
-{"classification":"DataCategory","parent":"DataCategory.user.contact","name":"email","displayName":"User Contact Email","description":"User's contact email address.","associatedTags":["PersonalData.Personal","PII.NonSensitive","Confidentiality.Low","Integrity.Medium"]}
+{"classification":"DataCategory","parent":"DataCategory.user.contact","name":"email","displayName":"User Contact Email","description":"User's contact email address."}
 ```
 
 ## Salida JSON
@@ -198,9 +200,9 @@ El constructor lanza `NullPointerException` si `classification`, `name`, `displa
 para que la biblioteca no necesite ninguna dependencia JSON:
 
 - **Orden de los campos** — `OmClassification`: `name`, `description`, `mutuallyExclusive`. `OmTag`:
-  `classification`, `parent`, `name`, `displayName`, `description`, `associatedTags`.
-- **Campos omitidos** — `OmTag` omite `parent` cuando es `null` y `associatedTags` cuando la lista está vacía.
-- **Tipos** — cadenas, un booleano (`mutuallyExclusive`) y un array de cadenas (`associatedTags`).
+  `classification`, `parent`, `name`, `displayName`, `description`.
+- **Campos omitidos** — `OmTag` omite `parent` cuando es `null`.
+- **Tipos** — cadenas y un booleano (`mutuallyExclusive`).
 - **Escapado** — `"` → `\"`, `\` → `\\`, salto de línea → `\n`, retorno de carro → `\r`, tabulador → `\t`, retroceso
   → `\b`, avance de página → `\f`, otros caracteres de control por debajo de U+0020 → `\u00XX`. El resto de
   caracteres, incluidos los no ASCII, se escriben tal cual (el resultado es un `String` de Java; codifícalo en UTF-8

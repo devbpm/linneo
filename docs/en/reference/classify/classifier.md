@@ -50,7 +50,13 @@ new Classifier(Taxonomy.load()).verify(entities);
 - For each class, the fields returned by `getDeclaredFields()`. The resulting `fields()` list holds superclass fields
   first, in declaration order.
 - **Excluded** without any annotation: `static`, `transient` and synthetic fields (such as the reference to the
-  enclosing instance in an inner class).
+  enclosing instance in an inner class), and fields whose name starts with `$$_` (added by bytecode tools, for
+  example Hibernate's enhancement: `$$_hibernate_interceptor`).
+- **Hibernate proxies.** A class whose name contains `$HibernateProxy$` is classified as the entity it extends: the
+  `type()` of its [`ClassClassification`](results.md#classclassification) is the entity, not the proxy.
+- **Embedded objects are not entered.** The classifier does not descend into the type of a field: a JPA `@Embedded`
+  address is one field, classified by its own annotations, and the embeddable class must be verified as well, for
+  example by passing it to `verify` together with the entities.
 - Fields marked [`@Exempt`](../annotations/exempt.md) are skipped after their annotation is checked.
 - Annotations are read from the field itself (`getDeclaredAnnotation`), so on a record they must target the
   component's field, which `@Category`, `@CategoryByRow` and `@Exempt` do.

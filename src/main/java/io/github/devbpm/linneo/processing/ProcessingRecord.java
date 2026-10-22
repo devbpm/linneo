@@ -200,8 +200,14 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
         }
     }
 
+    // A table cell is one line: line breaks and the blanks around them become a single space. Done line by line,
+    // without a regular expression, so the time stays linear for any text.
     private static String cell(String text) {
-        return text.replace("|", "\\|").replaceAll("\\s*\\R\\s*", " ");
+        String escaped = text.replace("|", "\\|");
+        if (escaped.indexOf('\n') < 0 && escaped.indexOf('\r') < 0) {
+            return escaped;
+        }
+        return String.join(" ", escaped.lines().map(String::strip).filter(line -> !line.isEmpty()).toList());
     }
 
     private static String label(Enum<?> value) {

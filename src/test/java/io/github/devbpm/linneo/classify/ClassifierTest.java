@@ -72,6 +72,19 @@ class ClassifierTest {
         private String undecided;
     }
 
+    // An entity after Hibernate's bytecode enhancement, and the proxy subclass Hibernate generates for it.
+    @SuppressWarnings("unused")
+    static class Enhanced {
+        @Category(Categories.USER_NAME)
+        private String name;
+        private Object $$_hibernate_entityEntryHolder;
+    }
+
+    @SuppressWarnings("unused")
+    static class Enhanced$HibernateProxy$x9Kq extends Enhanced {
+        private Object handler;
+    }
+
     record Contact(@Category(Categories.USER_CONTACT_EMAIL) String email,
                    @Category(value = Categories.USER_CONTACT, identifiability = Identifiability.AGGREGATED) String stats) {
     }
@@ -95,6 +108,18 @@ class ClassifierTest {
         @Exempt("")
         @Category(Categories.USER_NAME)
         private String conflicting;
+    }
+
+    @Test
+    @DisplayName("ignores fields added by bytecode enhancement and classifies a Hibernate proxy as its entity")
+    void generatedCode() {
+        ClassClassification enhanced = classifier.classify(Enhanced.class);
+        ClassClassification proxy = classifier.classify(Enhanced$HibernateProxy$x9Kq.class);
+        assertAll(
+                () -> assertTrue(enhanced.isValid(), () -> enhanced.violations().toString()),
+                () -> assertEquals(List.of("name"), enhanced.fields().stream().map(FieldClassification::field).toList()),
+                () -> assertEquals(Enhanced.class, proxy.type()),
+                () -> assertTrue(proxy.isValid(), () -> proxy.violations().toString()));
     }
 
     @Test

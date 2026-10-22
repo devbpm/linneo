@@ -18,7 +18,7 @@ doc-sources:
 Excluye de la clasificación un campo que no contiene datos del modelo: un valor calculado a partir de otros campos,
 una caché o un manejador técnico.
 
-Los campos estáticos, sintéticos y `transient` se excluyen **siempre** y no necesitan anotación. Un `@Exempt` en uno
+Los campos estáticos, sintéticos, `transient` y `$$_...` (los añade Hibernate) se excluyen **siempre** y no necesitan anotación. Un `@Exempt` en uno
 de esos campos se ignora por completo (ni siquiera se comprueba su motivo).
 
 ## Elementos

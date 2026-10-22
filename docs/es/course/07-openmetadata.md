@@ -50,7 +50,7 @@ OpenMetadata incluye dos clasificaciones predefinidas que Linneo **reutiliza y n
 | No personal | `PII.None` |
 | Confidencialidad, integridad, identificabilidad | `Confidentiality.*`, `Integrity.*`, `Identifiability.*` (por ejemplo, `Confidentiality.High`) |
 | Secreto | `DataHandling.Secret` |
-| Protección implícita en una categoría | `associatedTags` de la etiqueta de la categoría |
+| Protección implícita en una categoría | va en cada columna: `tagsOf(field)` (y `tagsOf(category)` para la categoría sola) |
 
 ## El catálogo
 
@@ -84,17 +84,17 @@ por último una etiqueta por categoría de datos, con **cada madre antes que sus
 4 + 3 + 4 + 1 + 125 = 137 etiquetas.
 
 Cada `OmTag` tiene una `classification`, un `parent` (el nombre completo de la etiqueta madre, o `null` en la raíz),
-un `name` (un único segmento, el último de la clave), un `displayName` (el nombre de la categoría), una `description`
-y sus `associatedTags`. `fullyQualifiedName()` da el nombre con el que se aplica y `toJson()` el cuerpo de una
+un `name` (un único segmento, el último de la clave), un `displayName` (el nombre de la categoría), y una `description`.
+`fullyQualifiedName()` da el nombre con el que se aplica y `toJson()` el cuerpo de una
 petición `CreateTag` (`PUT /api/v1/tags`). La etiqueta de `user.education.grade`:
 
 ```json
-{"classification":"DataCategory","parent":"DataCategory.user.education","name":"grade","displayName":"Grade","description":"Marks, grades or assessment results obtained by the subject.","associatedTags":["PersonalData.Personal","PII.Sensitive","Confidentiality.Medium","Integrity.High"]}
+{"classification":"DataCategory","parent":"DataCategory.user.education","name":"grade","displayName":"Grade","description":"Marks, grades or assessment results obtained by the subject."}
 ```
 
-Las `associatedTags` llevan la protección que implica la categoría, para que quien aplique a mano la etiqueta de la
-categoría en la interfaz de OpenMetadata obtenga también las etiquetas de protección adecuadas. En una categoría
-obsoleta, la descripción termina con `Deprecated: use <sustituta>.` (o solo `Deprecated.`).
+La etiqueta no lleva `associatedTags`: OpenMetadata acepta ese campo pero nunca lo guarda, así que la protección que
+implica una categoría va en cada columna (véase [Las etiquetas de una columna](#las-etiquetas-de-una-columna)). En una
+categoría obsoleta, la descripción termina con `Deprecated: use <sustituta>.` (o solo `Deprecated.`).
 
 ## Enviar los cuerpos
 
@@ -145,8 +145,8 @@ public final class PublishToOpenMetadata {
 }
 ```
 
-Los cuerpos siguen los esquemas `CreateClassification` y `CreateTag` de OpenMetadata, incluidos los campos `parent`
-y `associatedTags`; compruébalos con la versión de OpenMetadata que uses. Las clasificaciones deben existir antes que
+Los cuerpos siguen los esquemas `CreateClassification` y `CreateTag` de OpenMetadata, incluido el campo `parent`.
+Se comprobaron con OpenMetadata 2.0.6 y solo usan campos presentes desde la 0.13.2. Las clasificaciones deben existir antes que
 sus etiquetas, y las etiquetas madre antes que sus hijas: el orden de `classifications()` y `tags()` garantiza ambas
 cosas.
 
@@ -189,8 +189,8 @@ Observa que:
   valores agregados no son datos personales.
 - Los campos no personales no tienen etiqueta `Identifiability`.
 
-Existe también `tagsOf(DataCategory)`: la etiqueta de la categoría seguida de las que implica (la misma lista que sus
-`associatedTags`, sin identificabilidad). Úsala cuando solo conozcas la categoría y no el campo.
+Existe también `tagsOf(DataCategory)`: la etiqueta de la categoría seguida de las que implica (la protección implícita,
+sin identificabilidad). Úsala cuando solo conozcas la categoría y no el campo.
 
 Aplicar las etiquetas a las columnas de tus tablas es tarea de tu integración: relaciona cada campo con su tabla y su
 columna (según las reglas de nombrado de tu persistencia) y usa la API de OpenMetadata que ya utilices para los
@@ -258,7 +258,7 @@ etiquetas devuelve `catalog.tags()`? ¿Cuál es la `description` de la etiqueta
 
 1. ¿Qué dos clasificaciones de OpenMetadata reutiliza Linneo sin crearlas nunca?
 2. ¿Qué etiqueta `PersonalData` reciben los datos penales?
-3. ¿Qué contiene `associatedTags` en la etiqueta de una categoría?
+3. ¿Qué devuelve `tagsOf(category)` y dónde va la protección implícita al etiquetar una columna?
 4. ¿Por qué se crean las etiquetas de nivel antes que las de categoría?
 5. ¿Qué etiqueta `PII` recibe, con el mapping por defecto, un campo seudonimizado con confidencialidad `LOW`?
 
@@ -311,10 +311,10 @@ La extensión añade dos categorías (`user.education.lab_notebook` y `user.educ
 
 1. `PersonalData` y `PII`.
 2. `PersonalData.SpecialCategory`.
-3. La protección que implica la categoría: `PersonalData.*` (si es personal), `PII.*`, `Confidentiality.*`,
-   `Integrity.*` y, en los secretos, `DataHandling.Secret`.
-4. Porque las etiquetas de categoría las referencian en `associatedTags`, y las madres deben existir antes que sus
-   hijas.
+3. La etiqueta de la categoría seguida de la protección que implica: `PersonalData.*` (si es personal), `PII.*`,
+   `Confidentiality.*`, `Integrity.*` y, en los secretos, `DataHandling.Secret`. La protección implícita va en cada
+   columna, porque OpenMetadata no guarda las `associatedTags`.
+4. Porque las etiquetas que recibe una columna las referencian, y las madres deben existir antes que sus hijas.
 5. `PII.NonSensitive` (personal, por debajo de `MEDIUM`).
 
 </details>

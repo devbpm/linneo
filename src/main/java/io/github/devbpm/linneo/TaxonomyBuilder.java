@@ -44,7 +44,9 @@ import java.util.regex.Pattern;
  *       end up with {@link Confidentiality#HIGH HIGH} confidentiality and {@link Integrity#HIGH HIGH} integrity,
  *       declared or inherited;</li>
  *   <li>a secret category makes all its children secret;</li>
- *   <li>a replacement must exist in the same hierarchy, and replacements must not form a cycle.</li>
+ *   <li>a replacement must exist in the same hierarchy, and replacements must not form a cycle;</li>
+ *   <li>the replacement of a deprecated data category must protect at least as much: a nature the deprecated
+ *       category admits, confidentiality and integrity no lower, and secret if the deprecated category is.</li>
  * </ul>
  * A builder is not thread-safe and is meant to be used once.
  *
@@ -57,7 +59,8 @@ public final class TaxonomyBuilder {
      */
     public static final String DEFAULT_ORIGIN = "application";
 
-    private static final Pattern KEY = Pattern.compile("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*");
+    // Possessive quantifiers: no backtracking, so a very long key cannot exhaust the stack.
+    private static final Pattern KEY = Pattern.compile("[a-z][a-z0-9_]*+(?:\\.[a-z][a-z0-9_]*+)*+");
 
     private final Map<String, CategoryDraft> categories = new LinkedHashMap<>();
     private final Map<String, TermDraft> uses = new LinkedHashMap<>();
@@ -276,7 +279,8 @@ public final class TaxonomyBuilder {
      * @return the immutable taxonomy
      * @throws TaxonomyException if a parent or replacement is missing, a root category lacks a facet, a category
      *         weakens its parent's protection, a special category or criminal offence category is not at
-     *         {@code HIGH} confidentiality and integrity, or replacements form a cycle
+     *         {@code HIGH} confidentiality and integrity, a deprecated category is replaced by one with weaker
+     *         protection, or replacements form a cycle
      */
     public Taxonomy build() {
         Map<String, DataCategory> builtCategories = new LinkedHashMap<>();
@@ -286,6 +290,7 @@ public final class TaxonomyBuilder {
             builtCategories.put(draft.key(), resolve(draft, parentKey, parent));
         }
         checkReplacements(categories, "data category");
+        checkReplacementProtection(builtCategories);
         checkReplacements(uses, "data use");
         checkReplacements(subjects, "data subject");
         return new Taxonomy(builtCategories.values(), buildTerms(uses, "data use", DataUse::new),
@@ -389,6 +394,31 @@ public final class TaxonomyBuilder {
                 current = next;
             }
         }
+    }
+
+    // A field or activity that names a deprecated category is checked with its replacement, so a replacement with
+    // weaker protection would lower the protection of every use of the deprecated key.
+    private static void checkReplacementProtection(Map<String, DataCategory> built) {
+        for (DataCategory category : built.values()) {
+            String replacedBy = category.info().replacedBy();
+            if (replacedBy == null) {
+                continue;
+            }
+            DataCategory replacement = built.get(replacedBy);
+            if (!category.nature().admits(replacement.nature())
+                    || replacement.confidentiality().compareTo(category.confidentiality()) < 0
+                    || replacement.integrity().compareTo(category.integrity()) < 0
+                    || category.secret() && !replacement.secret()) {
+                throw new TaxonomyException("The replacement '" + replacedBy + "' of data category '"
+                        + category.key() + "' has weaker protection: " + describe(replacement) + " instead of "
+                        + describe(category));
+            }
+        }
+    }
+
+    private static String describe(DataCategory category) {
+        return category.nature() + ", " + category.confidentiality() + ", " + category.integrity()
+                + (category.secret() ? ", secret" : "");
     }
 
     private static String checkKey(String key, Map<String, ?> existing) {

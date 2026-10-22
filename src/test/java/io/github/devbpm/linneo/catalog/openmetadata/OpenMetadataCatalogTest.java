@@ -53,20 +53,19 @@ class OpenMetadataCatalogTest {
     }
 
     @Test
-    @DisplayName("a category tag carries the protection it implies as associated tags")
-    void associatedTags() {
+    @DisplayName("the tags of a category are its own tag plus the protection it implies")
+    void impliedTags() {
         OmTag health = catalog.tags().stream()
                 .filter(t -> t.fullyQualifiedName().equals("DataCategory.user.health_and_medical"))
                 .findFirst().orElseThrow();
-        OmTag secret = catalog.tags().stream()
-                .filter(t -> t.fullyQualifiedName().equals("DataCategory.system.authentication.secret"))
-                .findFirst().orElseThrow();
         assertAll(
                 () -> assertEquals("DataCategory.user", health.parent()),
-                () -> assertEquals(List.of("PersonalData.SpecialCategory", "PII.Sensitive", "Confidentiality.High",
-                        "Integrity.High"), health.associatedTags()),
-                () -> assertEquals(List.of("PII.None", "Confidentiality.High", "Integrity.High",
-                        "DataHandling.Secret"), secret.associatedTags()));
+                () -> assertEquals(List.of("DataCategory.user.health_and_medical", "PersonalData.SpecialCategory",
+                        "PII.Sensitive", "Confidentiality.High", "Integrity.High"),
+                        catalog.tagsOf(taxonomy.requireCategory(Categories.USER_HEALTH_AND_MEDICAL))),
+                () -> assertEquals(List.of("DataCategory.system.authentication.secret", "PII.None",
+                        "Confidentiality.High", "Integrity.High", "DataHandling.Secret"),
+                        catalog.tagsOf(taxonomy.requireCategory(Categories.SYSTEM_AUTHENTICATION_SECRET))));
     }
 
     @Test
@@ -89,6 +88,48 @@ class OpenMetadataCatalogTest {
     }
 
     @Test
+    @DisplayName("creates the five Linneo classifications; only DataHandling allows several tags per column")
+    void classifications() {
+        List<OmClassification> classifications = catalog.classifications();
+        assertAll(
+                () -> assertEquals(List.of("DataCategory", "Confidentiality", "Integrity", "Identifiability",
+                        "DataHandling"), classifications.stream().map(OmClassification::name).toList()),
+                () -> assertEquals(List.of(true, true, true, true, false),
+                        classifications.stream().map(OmClassification::mutuallyExclusive).toList()),
+                () -> assertTrue(classifications.stream().noneMatch(c -> c.name().equals("PII")
+                        || c.name().equals("PersonalData"))));
+    }
+
+    @Test
+    @DisplayName("a non-personal secret column gets PII.None and DataHandling.Secret, without identifiability")
+    void secretColumn() {
+        @SuppressWarnings("unused")
+        class Credentials {
+            @Category(Categories.SYSTEM_AUTHENTICATION_SECRET)
+            private String apiKey;
+        }
+        FieldClassification field = new Classifier(taxonomy).classify(Credentials.class).fields().get(0);
+        assertEquals(List.of("DataCategory.system.authentication.secret", "PII.None", "Confidentiality.High",
+                "Integrity.High", "DataHandling.Secret"), catalog.tagsOf(field));
+    }
+
+    @Test
+    @DisplayName("the tag of a deprecated category says so in its description, with the replacement")
+    void deprecatedTag() {
+        Taxonomy withDeprecated = Taxonomy.builder().withStandard()
+                .category("user.contact.pager", "Pager", "Pager number.", c -> c.deprecated("0.2.0",
+                        Categories.USER_CONTACT_PHONE_NUMBER))
+                .category("user.contact.telex", "Telex", "Telex number.", c -> c.deprecated("0.2.0", null))
+                .build();
+        List<OmTag> tags = OpenMetadataCatalog.of(withDeprecated).tags();
+        assertAll(
+                () -> assertTrue(tags.stream().anyMatch(t -> t.fullyQualifiedName().equals("DataCategory.user.contact.pager")
+                        && t.description().equals("Pager number. Deprecated: use user.contact.phone_number."))),
+                () -> assertTrue(tags.stream().anyMatch(t -> t.fullyQualifiedName().equals("DataCategory.user.contact.telex")
+                        && t.description().equals("Telex number. Deprecated."))));
+    }
+
+    @Test
     @DisplayName("the mapping renames classifications and moves the sensitivity threshold")
     void mapping() {
         OpenMetadataCatalog custom = OpenMetadataCatalog.of(taxonomy, OpenMetadataMapping.defaults()
@@ -103,11 +144,9 @@ class OpenMetadataCatalogTest {
     @Test
     @DisplayName("request bodies are valid, escaped JSON")
     void json() {
-        OmTag tag = new OmTag("DataCategory", "DataCategory.user", "x", "Say \"hi\"", "line\nbreak\\",
-                List.of("PII.None"));
+        OmTag tag = new OmTag("DataCategory", "DataCategory.user", "x", "Say \"hi\"", "line\nbreak\\");
         assertEquals("{\"classification\":\"DataCategory\",\"parent\":\"DataCategory.user\",\"name\":\"x\","
-                + "\"displayName\":\"Say \\\"hi\\\"\",\"description\":\"line\\nbreak\\\\\","
-                + "\"associatedTags\":[\"PII.None\"]}", tag.toJson());
+                + "\"displayName\":\"Say \\\"hi\\\"\",\"description\":\"line\\nbreak\\\\\"}", tag.toJson());
         assertEquals("{\"name\":\"Integrity\",\"description\":\"d\",\"mutuallyExclusive\":true}",
                 new OmClassification("Integrity", "d", true).toJson());
     }
