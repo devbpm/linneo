@@ -29,7 +29,9 @@ import java.lang.annotation.Target;
  * private byte[] content;
  * }</pre>
  * Wherever a single category is needed for the whole field (a catalogue, an export label) the {@link #ceiling()}
- * is used: the most protective category any row may hold.
+ * is used: the most protective category any row may hold. When a row is written, check that its category stays
+ * below the ceiling with {@link io.github.devbpm.linneo.classify.FieldClassification#covers
+ * FieldClassification.covers}.
  *
  * @since 0.1.0
  */

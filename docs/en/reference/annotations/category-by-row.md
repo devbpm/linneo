@@ -48,6 +48,18 @@ There are no level or identifiability elements: the field takes the ceiling's le
 | `confidentiality` / `integrity` | the ceiling's levels |
 | `identifiability` | `IDENTIFIED` if the ceiling is personal, otherwise `null` |
 
+## Checking a row
+
+The classifier never reads values, so it cannot know the category of a row. When your code writes a row, check that
+the category chosen for it stays below the ceiling with
+[`FieldClassification.covers`](../classify/results.md#checking-against-a-category):
+
+```java
+FieldClassification content = classifier.classify(Document.class).field("content").orElseThrow();
+String rowCategoryKey = "user.contact.email";   // what decides it for this row, e.g. the type of the document
+boolean allowed = content.covers(taxonomy.requireCategory(rowCategoryKey));   // false if the row is above the ceiling
+```
+
 ## Example
 
 ```java

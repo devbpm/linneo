@@ -120,6 +120,7 @@ their own.
 | `boolean isSecret()` | The category's `secret` flag: the field holds a secret that must never be read back, exported or published. |
 | `String fieldName()` | The name of the field: the last segment of its `path`, as declared in `declaringClass()`. |
 | `Protection protection()` | The [protection](../protection-levels.md#protection) the stored values require: the category's nature when the values are personal data (`isPersonal()`) and `LegalNature.NONE` when they are anonymized or aggregated, with the field's effective `confidentiality` and `integrity` and the category's secret flag. |
+| `boolean covers(DataCategory category)` | Whether the field protects data of `category` at least as much as that category requires: `protection().covers(category.protection())`. It answers two questions an application asks at run time, see [Checking against a category](#checking-against-a-category). `NullPointerException` if `category` is `null`. |
 | `String toString()` | `<path> = <category key> (<BASIS>)`, for example `email = user.contact.email (DECLARED)`. |
 
 ```java
@@ -131,6 +132,32 @@ for (FieldClassification field : person.fields()) {
     }
 }
 ```
+
+### Checking against a category
+
+`covers(category)` compares the [protection](../protection-levels.md#protection) of the field with the one the category
+requires, with [`Protection.covers`](../protection-levels.md#protection): every nature of the category is covered by one
+of the field, the levels are not lower and a secret stays a secret. Two questions use it:
+
+- **A row of a [`@CategoryByRow`](../annotations/category-by-row.md) field.** The field takes the protection of its
+  ceiling, so `covers` tells whether the category chosen for a row stays below the ceiling, that is, whether the field
+  may hold data of that category.
+- **A classification the data protection officer raises.** Called on the raised classification of a field with the
+  category the code declared, it tells whether the raised one still covers what the code declared.
+
+```java
+// Attachment.content: BY_ROW, ceiling user.health_and_medical (special category, HIGH / HIGH)
+FieldClassification content = classifier.classify(Attachment.class).field("content").orElseThrow();
+Taxonomy taxonomy = Taxonomy.load();
+
+content.covers(taxonomy.requireCategory(USER_HEALTH_AND_MEDICAL_DISABILITY));   // true: at the ceiling or below it
+content.covers(taxonomy.requireCategory(USER_CONTACT_EMAIL));                   // true: ordinary data
+content.covers(taxonomy.requireCategory(USER_CRIMINAL_HISTORY));                // false: criminal offence data is not
+                                                                                // below a special category ceiling
+```
+
+The legal natures are compared with a partial order: `NONE` is below every nature, `ORDINARY` below
+`SPECIAL_CATEGORY` and `CRIMINAL_OFFENCE`, and those two are not comparable.
 
 See also: [Classifier](classifier.md) · [Violations](violations.md) · [Protection levels](../protection-levels.md) ·
 [OpenMetadata catalog](../openmetadata/catalog.md) · course: [Using the classification](../../course/05-using-the-classification.md)

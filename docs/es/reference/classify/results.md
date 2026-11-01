@@ -120,6 +120,7 @@ propia.
 | `boolean isSecret()` | La marca `secret` de la categoría: el campo guarda un secreto que no debe leerse de vuelta, exportarse ni publicarse nunca. |
 | `String fieldName()` | El nombre del campo: el último segmento de su `path`, tal como se declara en `declaringClass()`. |
 | `Protection protection()` | La [protección](../protection-levels.md#protection) que requieren los valores almacenados: la naturaleza de la categoría cuando los valores son datos personales (`isPersonal()`) y `LegalNature.NONE` cuando están anonimizados o agregados, con la `confidentiality` y la `integrity` efectivas del campo y la marca de secreto de la categoría. |
+| `boolean covers(DataCategory category)` | Si el campo protege datos de `category` al menos tanto como esa categoría requiere: `protection().covers(category.protection())`. Responde a dos preguntas que una aplicación se hace en ejecución; consulta [Comprobar frente a una categoría](#comprobar-frente-a-una-categoría). `NullPointerException` si `category` es `null`. |
 | `String toString()` | `<path> = <clave de la categoría> (<BASIS>)`, por ejemplo `email = user.contact.email (DECLARED)`. |
 
 ```java
@@ -131,6 +132,32 @@ for (FieldClassification field : person.fields()) {
     }
 }
 ```
+
+### Comprobar frente a una categoría
+
+`covers(category)` compara la [protección](../protection-levels.md#protection) del campo con la que requiere la
+categoría, con [`Protection.covers`](../protection-levels.md#protection): cada naturaleza de la categoría está cubierta
+por una del campo, los niveles no son inferiores y un secreto sigue siendo secreto. Lo usan dos preguntas:
+
+- **Una fila de un campo [`@CategoryByRow`](../annotations/category-by-row.md).** El campo toma la protección de su
+  techo, así que `covers` dice si la categoría elegida para una fila queda por debajo del techo, es decir, si el campo
+  puede contener datos de esa categoría.
+- **Una clasificación que eleva el delegado de protección de datos.** Llamado sobre la clasificación elevada de un
+  campo con la categoría que declaró el código, dice si la elevada sigue cubriendo lo que declaró el código.
+
+```java
+// Attachment.content: BY_ROW, techo user.health_and_medical (categoría especial, HIGH / HIGH)
+FieldClassification content = classifier.classify(Attachment.class).field("content").orElseThrow();
+Taxonomy taxonomy = Taxonomy.load();
+
+content.covers(taxonomy.requireCategory(USER_HEALTH_AND_MEDICAL_DISABILITY));   // true: en el techo o por debajo
+content.covers(taxonomy.requireCategory(USER_CONTACT_EMAIL));                   // true: datos ordinarios
+content.covers(taxonomy.requireCategory(USER_CRIMINAL_HISTORY));                // false: los datos penales no están
+                                                                                // por debajo de un techo de categoría especial
+```
+
+Las naturalezas jurídicas se comparan con un orden parcial: `NONE` está por debajo de cualquier naturaleza,
+`ORDINARY` por debajo de `SPECIAL_CATEGORY` y `CRIMINAL_OFFENCE`, y estas dos no son comparables.
 
 Véase también: [Classifier](classifier.md) · [Violaciones](violations.md) ·
 [Niveles de protección](../protection-levels.md) · [Catálogo de OpenMetadata](../openmetadata/catalog.md) ·

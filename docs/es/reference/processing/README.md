@@ -7,6 +7,7 @@ permalink: "/es/reference/processing/"
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/package-info.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
   - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
@@ -23,7 +24,8 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 
 | Tipo | Declaración | Papel | Página |
 |---|---|---|---|
-| `ProcessingActivity` | record, con un `Builder` | Una actividad de tratamiento tal como se declara: finalidades, interesados, datos personales, bases, conservación, destinatarios, transferencias | [ProcessingActivity](activity.md) |
+| `ProcessingActivity` | record, con un `Builder` | Una actividad de tratamiento tal como se declara: su alcance (finalidades, interesados, datos personales) y su gobernanza | [ProcessingActivity](activity.md) |
+| `Governance` | record, con un `Builder` | La parte que posee la función de protección de datos: bases, referencia legal, conservación, destinatarios, transferencias, evaluación de impacto | [ProcessingActivity](activity.md#governance) |
 | `Transfer` | record | Una transferencia a un tercer país o a una organización internacional | [ProcessingActivity](activity.md#transfer) |
 | `LegalBasis` | enum | La base jurídica (artículo 6.1) | [Bases jurídicas](bases.md#legalbasis) |
 | `SpecialCategoryCondition` | enum | La excepción para categorías especiales de datos (artículo 9.2) | [Bases jurídicas](bases.md#specialcategorycondition) |
@@ -32,7 +34,7 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 | `ProcessingChecker` | clase | Comprueba las actividades y construye el registro | [ProcessingChecker](checker.md) |
 | `CheckedActivity` | record | Una actividad con sus términos resueltos, sus datos personales, la protección que requieren y los problemas encontrados | [ProcessingChecker](checker.md#checkedactivity) |
 | `Jurisdiction` | enum | El derecho nacional que un comprobador aplica además del RGPD (`EU`, `SPAIN`) | [ProcessingChecker](checker.md#jurisdiction) |
-| `ProcessingViolation` | record, con `Severity` y `Code` | Un problema encontrado en una actividad | [ProcessingChecker](checker.md#processingviolation) |
+| `ProcessingViolation` | record, con `Severity`, `Code` y `Element` | Un problema encontrado en una actividad, y la parte de ella en la que está | [ProcessingChecker](checker.md#processingviolation) |
 | `ProcessingException` | excepción | La lanza `verify` con todos los errores | [ProcessingChecker](checker.md#processingexception) |
 | `ProcessingRecord` | record | El registro de actividades de tratamiento, en Markdown o JSON | [ProcessingRecord](record.md) |
 
@@ -59,6 +61,17 @@ Los vocabularios de las bases siguen las declaraciones de privacidad de fideslan
 `SpecialCategoryCondition` y `TransferSafeguard` llevan en `fideslangName()` los valores de
 `legal_basis_for_processing`, `special_category_legal_basis` y `legal_basis_for_transfers`.
 
+## Alcance y gobernanza
+
+Una actividad tiene dos partes con responsables distintos. Su **alcance**, las finalidades, los interesados y los datos
+personales, es lo que el código de la aplicación sabe con certeza. Su **gobernanza** (`Governance`) es lo que decide y
+mantiene al día la función de protección de datos: las bases jurídicas, la referencia legal, el plazo de conservación,
+los destinatarios, las transferencias y la evaluación de impacto. Una aplicación puede declarar el alcance en el código,
+guardar en su propio almacenamiento la gobernanza que edita su delegado de protección de datos y combinar ambos con
+`ProcessingActivity.withGovernance(...)` antes de comprobar. Cada problema que notifica el comprobador lleva el
+`Element` de la actividad en el que está, y `element().isGovernance()` distingue el alcance, para los desarrolladores,
+de la gobernanza, para el delegado; consulta [`Element`](checker.md#element).
+
 ## Errores y avisos
 
 El [`ProcessingChecker`](checker.md) sigue el mismo enfoque de fallo seguro que el clasificador, con una regla para
@@ -76,7 +89,8 @@ la gravedad:
   datos penales o elaboración de perfiles sin evaluación de impacto. La verificación pasa y los avisos aparecen en el
   registro como **puntos abiertos**.
 
-La lista completa está en la [tabla de códigos](checker.md#códigos).
+La lista completa está en la [tabla de códigos](checker.md#códigos), con el elemento en el que se notifica cada código.
+`verify` falla con todos los errores, sea cual sea su elemento.
 
 ## Lo que Linneo no hace
 

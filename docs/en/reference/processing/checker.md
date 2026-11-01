@@ -30,8 +30,8 @@ activity unlawful as declared (errors) and reports gaps in the record as warning
 | `ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction)` | — | The same, applying also the national rules of `jurisdiction` (see [Jurisdiction](#jurisdiction)). `NullPointerException` if either argument is `null`. |
 | `Jurisdiction jurisdiction()` | [`Jurisdiction`](#jurisdiction) | The national law this checker applies on top of the GDPR. |
 | `CheckedActivity check(ProcessingActivity activity)` | [`CheckedActivity`](#checkedactivity) | Checks one activity: its terms resolved, its personal data, the protection that data requires and every violation found. Never throws for a problem in the activity. `NullPointerException` if `activity` is `null`. |
-| `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | list | One result per activity, in the given order. An activity whose key was already used by an earlier one also gets the error `DUPLICATE_ACTIVITY`; the first one does not. |
-| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Runs `checkAll` and throws a [`ProcessingException`](#processingexception) carrying **every error of every activity** if there is any (its message lists the first 50). Warnings do not fail. |
+| `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | list | One result per activity, in the given order. An activity whose key was already used by an earlier one also gets the error `DUPLICATE_ACTIVITY`; the first one does not. Each entity is classified once for all the activities, however many list it. |
+| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Runs `checkAll` and throws a [`ProcessingException`](#processingexception) carrying **every error of every activity**, governance ones included, if there is any (its message lists the first 50). Warnings do not fail. |
 | `ProcessingRecord verify(ProcessingActivity... activities)` | [`ProcessingRecord`](record.md) | The same, for activities given one by one. |
 
 ```java
@@ -56,7 +56,9 @@ For each activity, in this order (the violations of a `CheckedActivity` follow i
 2. **Personal data** (see [below](#how-the-personal-data-is-gathered)). If there is none, and nothing was left
    unresolved by an unknown category key or an entity with classification errors, the error is
    `MISSING_PERSONAL_DATA`.
-3. **Lawfulness**, only when the activity processes personal data:
+3. **Lawfulness**, only when the activity processes personal data. It checks the activity's
+   [governance](activity.md#governance), and every problem it finds is reported on the
+   [element](#element) of the governance it is about:
    - no `legalBasis`: error `MISSING_LEGAL_BASIS`;
    - `LEGITIMATE_INTERESTS` without `legitimateInterest`: warning `MISSING_LEGITIMATE_INTEREST`; a
      `legitimateInterest` with another basis: warning `UNNEEDED_CONDITION`;
@@ -95,6 +97,8 @@ The personal data of an activity is the union of two sources:
   `AGGREGATED` or `ANONYMIZED` — aggregated and anonymized data is not personal data. Deprecated keys in the
   annotations are already resolved to their replacement by the classifier, and its warnings are not repeated here.
   Each field contributes its **effective** levels, so a confidentiality or integrity raised on the field counts.
+  `checkAll` and `verify` classify each entity once for all the activities that list it; `check` classifies the
+  entities of the one activity it is given.
 
 The categories are kept once each, ordered by key, in `CheckedActivity.dataCategories()`. The protection the
 activity requires, `CheckedActivity.protection()`, is the [join](../protection-levels.md#protection) of all those
@@ -152,7 +156,7 @@ checked.warnings();                     // []
 `io.github.devbpm.linneo.processing.ProcessingViolation` — `public record`, `@since 0.1.0`
 
 ```java
-public record ProcessingViolation(String activity, Severity severity, Code code, String message)
+public record ProcessingViolation(String activity, Severity severity, Code code, Element element, String message)
 ```
 
 | Component | Description |
@@ -160,6 +164,7 @@ public record ProcessingViolation(String activity, Severity severity, Code code,
 | `activity` | The key of the activity. |
 | `severity` | Whether it fails verification. |
 | `code` | What kind of problem it is. |
+| `element` | The part of the activity the problem is in, which tells who should fix it; see [`Element`](#element). |
 | `message` | A description naming the key or provision involved. |
 
 The canonical constructor throws `NullPointerException` if any component is `null`.
@@ -167,7 +172,7 @@ The canonical constructor throws `NullPointerException` if any component is `nul
 | Method | Description |
 |---|---|
 | `boolean isError()` | `true` for severity `ERROR`. |
-| `String toString()` | `<SEVERITY> <CODE> <activity>: <message>`, for example `ERROR MISSING_LEGAL_BASIS newsletter: Personal data needs a lawful basis (GDPR article 6.1)`. |
+| `String toString()` | `<SEVERITY> <CODE> <activity>: <message>`, for example `ERROR MISSING_LEGAL_BASIS newsletter: Personal data needs a lawful basis (GDPR article 6.1)`. It does not show the element. |
 
 ### Severity
 
@@ -180,28 +185,29 @@ The canonical constructor throws `NullPointerException` if any component is `nul
 
 ### Codes
 
-`ProcessingViolation.Code` — every value, errors first, with the message the checker gives it (`<k>` for a key,
-`<a>` for an article).
+`ProcessingViolation.Code` — every value, errors first, with the [element](#element) it is reported on and the
+message the checker gives it (`<k>` for a key, `<a>` for an article). The element of a code that applies to several
+parts depends on the part.
 
-| Code | Severity | Raised when | Message |
-|---|---|---|---|
-| `UNKNOWN_KEY` | error | A purpose, data subject or data category key is not in the taxonomy. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` |
-| `MISSING_PURPOSE` | error | `purposes` is empty. | `No data use declared` |
-| `MISSING_DATA_SUBJECTS` | error | `dataSubjects` is empty. | `No data subject declared` |
-| `MISSING_PERSONAL_DATA` | error | No personal category and no entity with personal fields, and no unknown category key or entity error that could explain it. | `The activity processes no personal data` |
-| `ENTITY_NOT_CLASSIFIED` | error | A listed entity has classification errors. | `<binary class name> has <n> classification error(s)` |
-| `MISSING_LEGAL_BASIS` | error | Personal data and no `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
-| `MISSING_SPECIAL_CATEGORY_CONDITION` | error | Special category data and no `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
-| `MISSING_CRIMINAL_DATA_BASIS` | error | Criminal offence data and no `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
-| `CONSENT_NOT_SUFFICIENT` | error | `Jurisdiction.SPAIN` only: the activity processes `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` or `race_ethnicity` (or a descendant) and its only article 9.2 condition is `EXPLICIT_CONSENT` (LOPDGDD article 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
-| `DUPLICATE_ACTIVITY` | error | `checkAll`/`verify` only: an earlier activity has the same key. | `Another activity of the record has the key '<k>'` |
-| `DEPRECATED_KEY` | **warning** | A purpose, data subject or data category key is deprecated; the activity is checked with its replacement. | `The data use '<k>' is deprecated; checked as '<r>'` (likewise `data subject`, `data category`; without the `; checked as` part when the key has no replacement) |
-| `NOT_PERSONAL_DATA` | **warning** | A declared category is not personal data; it is left out of the record. | `The data category '<k>' is not personal data and is left out of the record` |
-| `UNNEEDED_CONDITION` | **warning** | An article 9.2 condition or article 10 basis is declared for data the activity does not process, or a legitimate interest is stated with another lawful basis. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
-| `MISSING_LEGAL_REFERENCE` | **warning** | A basis that rests on law applies and `legalReference` is not set. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; with `Jurisdiction.SPAIN` and a condition of `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` or `PUBLIC_HEALTH`, it ends with ` (LOPDGDD article 9.2: a law with the rank of statute)` |
-| `MISSING_LEGITIMATE_INTEREST` | **warning** | The basis is `LEGITIMATE_INTERESTS` and `legitimateInterest` is not set. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
-| `MISSING_RETENTION` | **warning** | Personal data and no `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
-| `IMPACT_ASSESSMENT_RECOMMENDED` | **warning** | Special category data, criminal offence data or a profiling purpose, and no `impactAssessment`. | `The activity involves <reasons>; GDPR article 35 may require an impact assessment`, where `<reasons>` joins `special categories of data`, `criminal offence data` and `profiling` with `and` |
+| Code | Severity | Element | Raised when | Message |
+|---|---|---|---|---|
+| `UNKNOWN_KEY` | error | `PURPOSES`, `DATA_SUBJECTS` or `PERSONAL_DATA`, by the kind of key | A purpose, data subject or data category key is not in the taxonomy. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` |
+| `MISSING_PURPOSE` | error | `PURPOSES` | `purposes` is empty. | `No data use declared` |
+| `MISSING_DATA_SUBJECTS` | error | `DATA_SUBJECTS` | `dataSubjects` is empty. | `No data subject declared` |
+| `MISSING_PERSONAL_DATA` | error | `PERSONAL_DATA` | No personal category and no entity with personal fields, and no unknown category key or entity error that could explain it. | `The activity processes no personal data` |
+| `ENTITY_NOT_CLASSIFIED` | error | `PERSONAL_DATA` | A listed entity has classification errors. | `<binary class name> has <n> classification error(s)` |
+| `MISSING_LEGAL_BASIS` | error | `LEGAL_BASIS` | Personal data and no `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
+| `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Special category data and no `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
+| `MISSING_CRIMINAL_DATA_BASIS` | error | `CRIMINAL_DATA_BASIS` | Criminal offence data and no `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
+| `CONSENT_NOT_SUFFICIENT` | error | `SPECIAL_CATEGORY_CONDITION` | `Jurisdiction.SPAIN` only: the activity processes `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` or `race_ethnicity` (or a descendant) and its only article 9.2 condition is `EXPLICIT_CONSENT` (LOPDGDD article 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
+| `DUPLICATE_ACTIVITY` | error | `KEY` | `checkAll`/`verify` only: an earlier activity has the same key. | `Another activity of the record has the key '<k>'` |
+| `DEPRECATED_KEY` | **warning** | `PURPOSES`, `DATA_SUBJECTS` or `PERSONAL_DATA`, by the kind of key | A purpose, data subject or data category key is deprecated; the activity is checked with its replacement. | `The data use '<k>' is deprecated; checked as '<r>'` (likewise `data subject`, `data category`; without the `; checked as` part when the key has no replacement) |
+| `NOT_PERSONAL_DATA` | **warning** | `PERSONAL_DATA` | A declared category is not personal data; it is left out of the record. | `The data category '<k>' is not personal data and is left out of the record` |
+| `UNNEEDED_CONDITION` | **warning** | `SPECIAL_CATEGORY_CONDITION` for an article 9.2 condition, `CRIMINAL_DATA_BASIS` for an article 10 basis, `LEGITIMATE_INTEREST` for a legitimate interest | An article 9.2 condition or article 10 basis is declared for data the activity does not process, or a legitimate interest is stated with another lawful basis. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
+| `MISSING_LEGAL_REFERENCE` | **warning** | `LEGAL_REFERENCE` | A basis that rests on law applies and `legalReference` is not set. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; with `Jurisdiction.SPAIN` and a condition of `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` or `PUBLIC_HEALTH`, it ends with ` (LOPDGDD article 9.2: a law with the rank of statute)` |
+| `MISSING_LEGITIMATE_INTEREST` | **warning** | `LEGITIMATE_INTEREST` | The basis is `LEGITIMATE_INTERESTS` and `legitimateInterest` is not set. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
+| `MISSING_RETENTION` | **warning** | `RETENTION` | Personal data and no `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
+| `IMPACT_ASSESSMENT_RECOMMENDED` | **warning** | `IMPACT_ASSESSMENT` | Special category data, criminal offence data or a profiling purpose, and no `impactAssessment`. | `The activity involves <reasons>; GDPR article 35 may require an impact assessment`, where `<reasons>` joins `special categories of data`, `criminal offence data` and `profiling` with `and` |
 
 Real output for an activity that misses both conditions:
 
@@ -220,6 +226,55 @@ and for one with three unneeded declarations (`legitimateInterest(...)` followed
 WARNING UNNEEDED_CONDITION newsletter: A legitimate interest is stated but the lawful basis is article 6.1.a
 WARNING UNNEEDED_CONDITION newsletter: Article 9.2.a is declared but the activity processes no special category of data
 WARNING UNNEEDED_CONDITION newsletter: Article 10 is declared but the activity processes no criminal offence data
+```
+
+### Element
+
+`ProcessingViolation.Element` — `public enum`, `@since 0.1.0`
+
+The part of a processing activity a problem is in. The **scope** of the activity (`KEY`, `PURPOSES`, `DATA_SUBJECTS`,
+`PERSONAL_DATA`) is declared in code, so a problem there is for developers and should fail the build. The rest is the
+[governance](activity.md#governance) the data protection function keeps, so a problem there belongs on the screen
+where it is edited.
+
+| Constant | `isGovernance()` | The part |
+|---|---|---|
+| `KEY` | `false` | The key that identifies the activity in the record. |
+| `PURPOSES` | `false` | The purposes (`ProcessingActivity.purposes()`). |
+| `DATA_SUBJECTS` | `false` | The data subjects (`ProcessingActivity.dataSubjects()`). |
+| `PERSONAL_DATA` | `false` | The personal data: data categories and entities. |
+| `LEGAL_BASIS` | `true` | The lawful basis (`Governance.legalBasis()`). |
+| `LEGITIMATE_INTEREST` | `true` | The legitimate interest pursued (`Governance.legitimateInterest()`). |
+| `SPECIAL_CATEGORY_CONDITION` | `true` | The article 9.2 condition (`Governance.specialCategoryCondition()`). |
+| `CRIMINAL_DATA_BASIS` | `true` | The article 10 basis (`Governance.criminalDataBasis()`). |
+| `LEGAL_REFERENCE` | `true` | The law the bases rest on (`Governance.legalReference()`). |
+| `RETENTION` | `true` | The time limit for erasure (`Governance.retention()`). |
+| `IMPACT_ASSESSMENT` | `true` | The impact assessment (`Governance.impactAssessment()`). |
+
+`boolean isGovernance()` is `true` for the elements of [`Governance`](activity.md#governance) and `false` for those of
+the scope. There is no element for the recipients or the transfers, because the checker does not inspect them. The
+element of each code is in the [table above](#codes).
+
+Use it to send each problem to whoever can fix it: fail the build on the errors of the scope, and show the gaps of
+the governance where the officer edits them. `verify` fails on **every** error, governance ones included, so a build
+check that should fail only on the scope uses `checkAll` and filters by element:
+
+```java
+import io.github.devbpm.linneo.processing.ProcessingViolation.Element;
+
+// In a test: the scope is declared in code, so its errors are the developers' to fix.
+List<ProcessingViolation> scopeErrors = checker.checkAll(activities).stream()
+        .flatMap(checked -> checked.errors().stream())
+        .filter(violation -> !violation.element().isGovernance())
+        .toList();
+assertTrue(scopeErrors.isEmpty(), () -> "Fix the scope of the activities: " + scopeErrors);
+
+// Where the officer edits the governance of one activity: each gap beside its field.
+CheckedActivity edited = checker.check(activity.withGovernance(stored));
+Map<Element, List<ProcessingViolation>> gaps = edited.violations().stream()
+        .filter(violation -> violation.element().isGovernance())
+        .collect(Collectors.groupingBy(ProcessingViolation::element));
+List<ProcessingViolation> beside = gaps.getOrDefault(Element.RETENTION, List.of());
 ```
 
 ## Jurisdiction

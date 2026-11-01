@@ -62,6 +62,9 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
 - **`processing`** — GDPR processing activities. `ProcessingActivity` (builder) declares purposes (data use keys),
   data subjects, personal data (category keys and/or annotated entity classes) and the lawful bases
   (`LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, with fideslang's values).
+  The bases, retention, recipients, transfers and impact assessment form the activity's `Governance`, owned by the
+  data protection function and combined with the code's scope through `withGovernance`; every
+  `ProcessingViolation` names its `Element`, which says whether the problem is in the scope or in the governance.
   `ProcessingChecker` resolves them against the taxonomy, runs the `Classifier` on the entities and reports
   `ProcessingViolation`s with the same fail-closed split as `classify`: unlawful-as-declared is an error, a gap in
   the record is a warning. `verify` returns a `ProcessingRecord` (article 30 record, `toMarkdown`/`toJson`).

@@ -24,10 +24,17 @@ import java.util.regex.Pattern;
 /**
  * A processing activity of the controller, as declared in its record of processing activities (GDPR article 30.1).
  * <p>
- * Purposes, data subjects and data categories are keys of the taxonomy. The personal data processed can be listed
- * as category keys, as classified model classes ({@link #entities()}), whose personal fields contribute their
- * categories, or both. Build one with {@link #builder(String, String)} and check it with a
- * {@link ProcessingChecker}; the activity itself only holds what was declared.
+ * An activity has two parts with different owners. Its scope is what the code of the application knows for
+ * certain: the purposes it serves, the data subjects and the personal data it processes. Purposes, data subjects and
+ * data categories are keys of the taxonomy; the personal data can be listed as category keys, as classified model
+ * classes ({@link #entities()}), whose personal fields contribute their categories, or both. Its
+ * {@linkplain Governance governance} is what the data protection function decides: the lawful bases, retention,
+ * recipients, transfers and impact assessment. Code may give initial values for the governance with the builder;
+ * an application that lets its data protection officer edit them combines the stored values with
+ * {@link #withGovernance(Governance)}.
+ * <p>
+ * Build one with {@link #builder(String, String)} and check it with a {@link ProcessingChecker}; the activity itself
+ * only holds what was declared.
  *
  * @param key a stable identifier, unique within the record: letters, digits, dots, underscores and hyphens, starting
  *        with a letter or digit
@@ -37,29 +44,17 @@ import java.util.regex.Pattern;
  * @param dataSubjects keys of the categories of data subjects (article 30.1.c)
  * @param dataCategories keys of the categories of personal data it processes beyond those of {@code entities}
  * @param entities classified model classes whose personal fields it processes
- * @param legalBasis the lawful basis (article 6.1), or {@code null} if not declared
- * @param legitimateInterest the interest pursued, when the basis is {@link LegalBasis#LEGITIMATE_INTERESTS}, or
- *        {@code null}
- * @param specialCategoryCondition the article 9.2 condition for special categories of data, or {@code null}
- * @param criminalDataBasis what allows processing criminal offence data (article 10), or {@code null}
- * @param legalReference the Union or Member State law the bases rest on, or {@code null}
- * @param retention the envisaged time limit for erasure (article 30.1.f), or {@code null}
- * @param recipients the categories of recipients (article 30.1.d)
- * @param transfers the transfers to third countries or international organisations (article 30.1.e)
- * @param impactAssessment a reference to the data protection impact assessment (article 35), or {@code null}
+ * @param governance the lawful bases, retention, recipients, transfers and impact assessment
  * @since 0.1.0
  */
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 LegalBasis legalBasis, String legitimateInterest,
-                                 SpecialCategoryCondition specialCategoryCondition,
-                                 CriminalDataBasis criminalDataBasis, String legalReference, String retention,
-                                 List<String> recipients, List<Transfer> transfers, String impactAssessment) {
+                                 Governance governance) {
 
     private static final Pattern KEY_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*+");
 
     /**
-     * Checks the identity, makes the lists immutable and turns blank texts into {@code null}.
+     * Checks the identity, makes the lists immutable and turns a blank description into {@code null}.
      *
      * @param key the key
      * @param name the name
@@ -68,15 +63,7 @@ public record ProcessingActivity(String key, String name, String description, Li
      * @param dataSubjects the data subject keys
      * @param dataCategories the data category keys
      * @param entities the model classes
-     * @param legalBasis the lawful basis
-     * @param legitimateInterest the legitimate interest
-     * @param specialCategoryCondition the article 9.2 condition
-     * @param criminalDataBasis the article 10 basis
-     * @param legalReference the law
-     * @param retention the retention
-     * @param recipients the recipients
-     * @param transfers the transfers
-     * @param impactAssessment the impact assessment reference
+     * @param governance the governance; {@code null} means {@link Governance#NONE}
      */
     public ProcessingActivity {
         Objects.requireNonNull(key, "key");
@@ -89,17 +76,12 @@ public record ProcessingActivity(String key, String name, String description, Li
             throw new IllegalArgumentException("The processing activity '" + key + "' needs a name");
         }
         name = name.strip();
-        description = blankToNull(description);
+        description = Governance.blankToNull(description);
         purposes = List.copyOf(purposes);
         dataSubjects = List.copyOf(dataSubjects);
         dataCategories = List.copyOf(dataCategories);
         entities = List.copyOf(entities);
-        legitimateInterest = blankToNull(legitimateInterest);
-        legalReference = blankToNull(legalReference);
-        retention = blankToNull(retention);
-        recipients = List.copyOf(recipients);
-        transfers = List.copyOf(transfers);
-        impactAssessment = blankToNull(impactAssessment);
+        governance = governance == null ? Governance.NONE : governance;
     }
 
     /**
@@ -113,12 +95,22 @@ public record ProcessingActivity(String key, String name, String description, Li
         return new Builder(key, name);
     }
 
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
+    /**
+     * The same activity with another governance, such as the one the data protection officer keeps up to date. The
+     * scope declared in code is kept as is.
+     *
+     * @param governance the governance that replaces the current one
+     * @return a new activity
+     */
+    public ProcessingActivity withGovernance(Governance governance) {
+        return new ProcessingActivity(key, name, description, purposes, dataSubjects, dataCategories, entities,
+                Objects.requireNonNull(governance, "governance"));
     }
 
     /**
-     * Declares a {@link ProcessingActivity} step by step. List methods add to what was given before.
+     * Declares a {@link ProcessingActivity} step by step. List methods add to what was given before. The governance
+     * methods give initial values that {@link #governance(Governance)} or
+     * {@link ProcessingActivity#withGovernance(Governance)} can replace.
      *
      * @since 0.1.0
      */
@@ -131,15 +123,7 @@ public record ProcessingActivity(String key, String name, String description, Li
         private final List<String> dataSubjects = new ArrayList<>();
         private final List<String> dataCategories = new ArrayList<>();
         private final List<Class<?>> entities = new ArrayList<>();
-        private LegalBasis legalBasis;
-        private String legitimateInterest;
-        private SpecialCategoryCondition specialCategoryCondition;
-        private CriminalDataBasis criminalDataBasis;
-        private String legalReference;
-        private String retention;
-        private final List<String> recipients = new ArrayList<>();
-        private final List<Transfer> transfers = new ArrayList<>();
-        private String impactAssessment;
+        private Governance.Builder governance = Governance.builder();
 
         private Builder(String key, String name) {
             this.key = key;
@@ -203,25 +187,36 @@ public record ProcessingActivity(String key, String name, String description, Li
         }
 
         /**
-         * Declares the lawful basis.
+         * Replaces the governance declared so far.
+         *
+         * @param governance the governance
+         * @return this builder
+         */
+        public Builder governance(Governance governance) {
+            this.governance = Objects.requireNonNull(governance, "governance").toBuilder();
+            return this;
+        }
+
+        /**
+         * Declares the lawful basis; see {@link Governance.Builder#legalBasis(LegalBasis)}.
          *
          * @param basis the basis
          * @return this builder
          */
         public Builder legalBasis(LegalBasis basis) {
-            this.legalBasis = basis;
+            governance.legalBasis(basis);
             return this;
         }
 
         /**
-         * Declares legitimate interests as the lawful basis, with the interest pursued.
+         * Declares legitimate interests as the lawful basis, with the interest pursued; see
+         * {@link Governance.Builder#legitimateInterest(String)}.
          *
          * @param interest the interest of the controller or third party
          * @return this builder
          */
         public Builder legitimateInterest(String interest) {
-            this.legalBasis = LegalBasis.LEGITIMATE_INTERESTS;
-            this.legitimateInterest = interest;
+            governance.legitimateInterest(interest);
             return this;
         }
 
@@ -232,7 +227,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          * @return this builder
          */
         public Builder specialCategoryCondition(SpecialCategoryCondition condition) {
-            this.specialCategoryCondition = condition;
+            governance.specialCategoryCondition(condition);
             return this;
         }
 
@@ -243,7 +238,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          * @return this builder
          */
         public Builder criminalDataBasis(CriminalDataBasis basis) {
-            this.criminalDataBasis = basis;
+            governance.criminalDataBasis(basis);
             return this;
         }
 
@@ -254,7 +249,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          * @return this builder
          */
         public Builder legalReference(String reference) {
-            this.legalReference = reference;
+            governance.legalReference(reference);
             return this;
         }
 
@@ -265,7 +260,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          * @return this builder
          */
         public Builder retention(String retention) {
-            this.retention = retention;
+            governance.retention(retention);
             return this;
         }
 
@@ -276,7 +271,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          * @return this builder
          */
         public Builder recipients(String... recipients) {
-            this.recipients.addAll(Arrays.asList(recipients));
+            governance.recipients(recipients);
             return this;
         }
 
@@ -288,7 +283,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          * @return this builder
          */
         public Builder transfer(String destination, TransferSafeguard safeguard) {
-            transfers.add(new Transfer(destination, safeguard));
+            governance.transfer(destination, safeguard);
             return this;
         }
 
@@ -299,7 +294,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          * @return this builder
          */
         public Builder impactAssessment(String reference) {
-            this.impactAssessment = reference;
+            governance.impactAssessment(reference);
             return this;
         }
 
@@ -310,8 +305,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          */
         public ProcessingActivity build() {
             return new ProcessingActivity(key, name, description, purposes, dataSubjects, dataCategories, entities,
-                    legalBasis, legitimateInterest, specialCategoryCondition, criminalDataBasis, legalReference,
-                    retention, recipients, transfers, impactAssessment);
+                    governance.build());
         }
     }
 }

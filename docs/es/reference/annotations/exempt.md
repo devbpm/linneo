@@ -15,8 +15,9 @@ doc-sources:
 `io.github.devbpm.linneo.annotation.Exempt` —
 `@Documented @Retention(RUNTIME) @Target({FIELD, RECORD_COMPONENT})`, `@since 0.1.0`
 
-Excluye de la clasificación un campo técnico que no contiene datos del modelo: una caché, un manejador o un estado
-que mantiene un framework.
+Excluye de la clasificación un campo que no contiene datos del modelo: una caché, un manejador técnico, un estado que
+mantiene un framework o una colección de otros registros que se clasifican por sí mismos, como los hijos de una
+asociación uno a muchos.
 
 Un valor calculado a partir de otros campos **no** es un campo así: la edad calculada a partir de una fecha de
 nacimiento es un dato personal. Se clasifica con [`@DerivedFrom`](derived-from.md) o [`@Category`](category.md),
@@ -69,6 +70,14 @@ public class Person {
 
     private transient Object cache; // excluido sin anotación
 }
+```
+
+Eximir una colección de otros registros es correcto cuando cada uno de ellos se clasifica por sí mismo, con su propia
+clase (aquí `Attachment`):
+
+```java
+@Exempt("relationship: each Attachment is classified on its own")
+private List<Attachment> attachments;   // los hijos de una asociación uno a muchos
 ```
 
 Véase también: [Visión general de las anotaciones](README.md) · [`@DerivedFrom`](derived-from.md) · [Classifier](../classify/classifier.md) ·

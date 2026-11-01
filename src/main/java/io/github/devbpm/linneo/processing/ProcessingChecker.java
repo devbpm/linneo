@@ -27,11 +27,13 @@ import io.github.devbpm.linneo.classify.ClassClassification;
 import io.github.devbpm.linneo.classify.Classifier;
 import io.github.devbpm.linneo.classify.FieldClassification;
 import io.github.devbpm.linneo.processing.ProcessingViolation.Code;
+import io.github.devbpm.linneo.processing.ProcessingViolation.Element;
 import io.github.devbpm.linneo.processing.ProcessingViolation.Severity;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -126,11 +128,17 @@ public final class ProcessingChecker {
      * @return the resolved activity and the problems found
      */
     public CheckedActivity check(ProcessingActivity activity) {
+        return check(activity, new HashMap<>());
+    }
+
+    private CheckedActivity check(ProcessingActivity activity, Map<Class<?>, ClassClassification> classified) {
         Objects.requireNonNull(activity, "activity");
-        Check check = new Check(activity);
-        List<DataUse> purposes = check.terms(activity.purposes(), "data use", Code.MISSING_PURPOSE,
+        Check check = new Check(activity, classified);
+        List<DataUse> purposes = check.terms(activity.purposes(), "data use", Element.PURPOSES,
+                Code.MISSING_PURPOSE,
                 taxonomy::dataUse, taxonomy::requireDataUse);
-        List<DataSubject> subjects = check.terms(activity.dataSubjects(), "data subject", Code.MISSING_DATA_SUBJECTS,
+        List<DataSubject> subjects = check.terms(activity.dataSubjects(), "data subject", Element.DATA_SUBJECTS,
+                Code.MISSING_DATA_SUBJECTS,
                 taxonomy::dataSubject, taxonomy::requireDataSubject);
         check.personalData();
         check.lawfulness(purposes);
@@ -147,12 +155,13 @@ public final class ProcessingChecker {
     public List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities) {
         List<CheckedActivity> checked = new ArrayList<>();
         Set<String> keys = new HashSet<>();
+        Map<Class<?>, ClassClassification> classified = new HashMap<>();
         for (ProcessingActivity activity : activities) {
-            CheckedActivity result = check(activity);
+            CheckedActivity result = check(activity, classified);
             if (!keys.add(activity.key())) {
                 List<ProcessingViolation> violations = new ArrayList<>(result.violations());
                 violations.add(new ProcessingViolation(activity.key(), Severity.ERROR, Code.DUPLICATE_ACTIVITY,
-                        "Another activity of the record has the key '" + activity.key() + "'"));
+                        Element.KEY, "Another activity of the record has the key '" + activity.key() + "'"));
                 result = new CheckedActivity(result.activity(), result.purposes(), result.dataSubjects(),
                         result.dataCategories(), result.protection(), violations);
             }
@@ -196,28 +205,30 @@ public final class ProcessingChecker {
     private final class Check {
 
         private final ProcessingActivity activity;
+        private final Map<Class<?>, ClassClassification> classified;
         private final List<ProcessingViolation> violations = new ArrayList<>();
         private final Map<String, DataCategory> categories = new TreeMap<>();
         private Protection protection = Protection.LOWEST;
         private boolean dataUnresolved;
 
-        Check(ProcessingActivity activity) {
+        Check(ProcessingActivity activity, Map<Class<?>, ClassClassification> classified) {
             this.activity = activity;
+            this.classified = classified;
         }
 
-        <T extends Term> List<T> terms(List<String> keys, String kind, Code missing,
+        <T extends Term> List<T> terms(List<String> keys, String kind, Element element, Code missing,
                                        Function<String, Optional<T>> lookup, Function<String, T> require) {
             Map<String, T> resolved = new LinkedHashMap<>();
             for (String key : keys) {
                 Optional<T> found = lookup.apply(key);
                 if (found.isEmpty()) {
-                    error(Code.UNKNOWN_KEY, "Unknown " + kind + " '" + key + "'");
+                    error(element, Code.UNKNOWN_KEY, "Unknown " + kind + " '" + key + "'");
                     continue;
                 }
                 T term = found.get();
                 if (term.info().isDeprecated()) {
                     String replacement = term.info().replacedBy();
-                    warning(Code.DEPRECATED_KEY, "The " + kind + " '" + key + "' is deprecated"
+                    warning(element, Code.DEPRECATED_KEY, "The " + kind + " '" + key + "' is deprecated"
                             + (replacement == null ? "" : "; checked as '" + replacement + "'"));
                     while (term.info().replacedBy() != null) {
                         term = require.apply(term.info().replacedBy());
@@ -226,7 +237,7 @@ public final class ProcessingChecker {
                 resolved.putIfAbsent(term.key(), term);
             }
             if (keys.isEmpty()) {
-                error(missing, "No " + kind + " declared");
+                error(element, missing, "No " + kind + " declared");
             }
             return List.copyOf(resolved.values());
         }
@@ -234,26 +245,28 @@ public final class ProcessingChecker {
         void personalData() {
             for (String key : activity.dataCategories()) {
                 if (taxonomy.category(key).isEmpty()) {
-                    error(Code.UNKNOWN_KEY, "Unknown data category '" + key + "'");
+                    error(Element.PERSONAL_DATA, Code.UNKNOWN_KEY, "Unknown data category '" + key + "'");
                     dataUnresolved = true;
                     continue;
                 }
                 DataCategory category = taxonomy.resolveCategory(key);
                 if (taxonomy.requireCategory(key).info().isDeprecated()) {
-                    warning(Code.DEPRECATED_KEY, "The data category '" + key + "' is deprecated"
+                    warning(Element.PERSONAL_DATA, Code.DEPRECATED_KEY, "The data category '" + key
+                            + "' is deprecated"
                             + (category.key().equals(key) ? "" : "; checked as '" + category.key() + "'"));
                 }
                 if (!category.isPersonal()) {
-                    warning(Code.NOT_PERSONAL_DATA, "The data category '" + category.key()
+                    warning(Element.PERSONAL_DATA, Code.NOT_PERSONAL_DATA, "The data category '" + category.key()
                             + "' is not personal data and is left out of the record");
                     continue;
                 }
                 add(category, category.protection());
             }
             for (Class<?> entity : activity.entities()) {
-                ClassClassification classification = classifier.classify(entity);
+                ClassClassification classification = classified.computeIfAbsent(entity, classifier::classify);
                 if (!classification.isValid()) {
-                    error(Code.ENTITY_NOT_CLASSIFIED, entity.getName() + " has " + classification.errors().size()
+                    error(Element.PERSONAL_DATA, Code.ENTITY_NOT_CLASSIFIED, entity.getName() + " has "
+                            + classification.errors().size()
                             + " classification error(s)");
                     dataUnresolved = true;
                 }
@@ -262,7 +275,7 @@ public final class ProcessingChecker {
                 }
             }
             if (categories.isEmpty() && !dataUnresolved) {
-                error(Code.MISSING_PERSONAL_DATA, "The activity processes no personal data");
+                error(Element.PERSONAL_DATA, Code.MISSING_PERSONAL_DATA, "The activity processes no personal data");
             }
         }
 
@@ -271,66 +284,78 @@ public final class ProcessingChecker {
                 return;
             }
             List<String> resting = new ArrayList<>();
-            LegalBasis basis = activity.legalBasis();
+            Governance governance = activity.governance();
+            LegalBasis basis = governance.legalBasis();
             if (basis == null) {
-                error(Code.MISSING_LEGAL_BASIS, "Personal data needs a lawful basis (GDPR article 6.1)");
+                error(Element.LEGAL_BASIS, Code.MISSING_LEGAL_BASIS,
+                        "Personal data needs a lawful basis (GDPR article 6.1)");
             } else {
                 if (basis.requiresLegalReference()) {
                     resting.add(basis.article());
                 }
-                if (basis == LegalBasis.LEGITIMATE_INTERESTS && activity.legitimateInterest() == null) {
-                    warning(Code.MISSING_LEGITIMATE_INTEREST, "State the legitimate interest pursued (GDPR article"
+                if (basis == LegalBasis.LEGITIMATE_INTERESTS && governance.legitimateInterest() == null) {
+                    warning(Element.LEGITIMATE_INTEREST, Code.MISSING_LEGITIMATE_INTEREST,
+                            "State the legitimate interest pursued (GDPR article"
                             + " 6.1.f)");
-                } else if (basis != LegalBasis.LEGITIMATE_INTERESTS && activity.legitimateInterest() != null) {
-                    warning(Code.UNNEEDED_CONDITION, "A legitimate interest is stated but the lawful basis is article "
+                } else if (basis != LegalBasis.LEGITIMATE_INTERESTS && governance.legitimateInterest() != null) {
+                    warning(Element.LEGITIMATE_INTEREST, Code.UNNEEDED_CONDITION,
+                            "A legitimate interest is stated but the lawful basis is article "
                             + basis.article());
                 }
             }
 
             boolean special = categories.values().stream().anyMatch(c -> c.nature() == LegalNature.SPECIAL_CATEGORY);
-            SpecialCategoryCondition condition = activity.specialCategoryCondition();
+            SpecialCategoryCondition condition = governance.specialCategoryCondition();
             if (special && condition == null) {
-                error(Code.MISSING_SPECIAL_CATEGORY_CONDITION, "Special categories of data ("
+                error(Element.SPECIAL_CATEGORY_CONDITION, Code.MISSING_SPECIAL_CATEGORY_CONDITION,
+                        "Special categories of data ("
                         + keysOf(LegalNature.SPECIAL_CATEGORY) + ") need a condition of GDPR article 9.2");
             } else if (!special && condition != null) {
-                warning(Code.UNNEEDED_CONDITION, "Article " + condition.article()
+                warning(Element.SPECIAL_CATEGORY_CONDITION, Code.UNNEEDED_CONDITION, "Article "
+                        + condition.article()
                         + " is declared but the activity processes no special category of data");
             } else if (condition != null && condition.requiresLegalReference()) {
                 resting.add(condition.article());
             }
-            if (special && condition == SpecialCategoryCondition.EXPLICIT_CONSENT && jurisdiction == Jurisdiction.SPAIN) {
+            if (special && condition == SpecialCategoryCondition.EXPLICIT_CONSENT
+                    && jurisdiction == Jurisdiction.SPAIN) {
                 String keys = String.join(", ", categories.keySet().stream()
                         .filter(key -> CONSENT_INSUFFICIENT_IN_SPAIN.stream()
                                 .anyMatch(k -> key.equals(k) || key.startsWith(k + ".")))
                         .toList());
                 if (!keys.isEmpty()) {
-                    error(Code.CONSENT_NOT_SUFFICIENT, "Explicit consent alone does not lift the prohibition of"
+                    error(Element.SPECIAL_CATEGORY_CONDITION, Code.CONSENT_NOT_SUFFICIENT,
+                            "Explicit consent alone does not lift the prohibition of"
                             + " processing " + keys + " (LOPDGDD article 9.1); declare another condition of GDPR"
                             + " article 9.2");
                 }
             }
 
             boolean criminal = categories.values().stream().anyMatch(c -> c.nature() == LegalNature.CRIMINAL_OFFENCE);
-            CriminalDataBasis criminalBasis = activity.criminalDataBasis();
+            CriminalDataBasis criminalBasis = governance.criminalDataBasis();
             if (criminal && criminalBasis == null) {
-                error(Code.MISSING_CRIMINAL_DATA_BASIS, "Criminal offence data (" + keysOf(LegalNature.CRIMINAL_OFFENCE)
+                error(Element.CRIMINAL_DATA_BASIS, Code.MISSING_CRIMINAL_DATA_BASIS, "Criminal offence data ("
+                        + keysOf(LegalNature.CRIMINAL_OFFENCE)
                         + ") needs a basis of GDPR article 10");
             } else if (!criminal && criminalBasis != null) {
-                warning(Code.UNNEEDED_CONDITION, "Article 10 is declared but the activity processes no criminal"
+                warning(Element.CRIMINAL_DATA_BASIS, Code.UNNEEDED_CONDITION,
+                        "Article 10 is declared but the activity processes no criminal"
                         + " offence data");
             } else if (criminalBasis != null && criminalBasis.requiresLegalReference()) {
                 resting.add(criminalBasis.article());
             }
 
-            if (!resting.isEmpty() && activity.legalReference() == null) {
+            if (!resting.isEmpty() && governance.legalReference() == null) {
                 boolean statute = jurisdiction == Jurisdiction.SPAIN && special
                         && STATUTE_REQUIRED_IN_SPAIN.contains(condition);
-                warning(Code.MISSING_LEGAL_REFERENCE, "GDPR article(s) " + String.join(", ", resting)
+                warning(Element.LEGAL_REFERENCE, Code.MISSING_LEGAL_REFERENCE, "GDPR article(s) "
+                        + String.join(", ", resting)
                         + " rest on Union or Member State law; name it as the legal reference"
                         + (statute ? " (LOPDGDD article 9.2: a law with the rank of statute)" : ""));
             }
-            if (activity.retention() == null) {
-                warning(Code.MISSING_RETENTION, "Declare the envisaged time limit for erasure (GDPR article"
+            if (governance.retention() == null) {
+                warning(Element.RETENTION, Code.MISSING_RETENTION,
+                        "Declare the envisaged time limit for erasure (GDPR article"
                         + " 30.1.f)");
             }
             List<String> reasons = new ArrayList<>();
@@ -343,8 +368,9 @@ public final class ProcessingChecker {
             if (purposes.stream().anyMatch(ProcessingChecker::profiles)) {
                 reasons.add("profiling");
             }
-            if (!reasons.isEmpty() && activity.impactAssessment() == null) {
-                warning(Code.IMPACT_ASSESSMENT_RECOMMENDED, "The activity involves " + String.join(" and ", reasons)
+            if (!reasons.isEmpty() && governance.impactAssessment() == null) {
+                warning(Element.IMPACT_ASSESSMENT, Code.IMPACT_ASSESSMENT_RECOMMENDED, "The activity involves "
+                        + String.join(" and ", reasons)
                         + "; GDPR article 35 may require an impact assessment");
             }
         }
@@ -359,12 +385,12 @@ public final class ProcessingChecker {
                     .filter(c -> c.nature() == nature).map(DataCategory::key).toList());
         }
 
-        private void error(Code code, String message) {
-            violations.add(new ProcessingViolation(activity.key(), Severity.ERROR, code, message));
+        private void error(Element element, Code code, String message) {
+            violations.add(new ProcessingViolation(activity.key(), Severity.ERROR, code, element, message));
         }
 
-        private void warning(Code code, String message) {
-            violations.add(new ProcessingViolation(activity.key(), Severity.WARNING, code, message));
+        private void warning(Element element, Code code, String message) {
+            violations.add(new ProcessingViolation(activity.key(), Severity.WARNING, code, element, message));
         }
     }
 }

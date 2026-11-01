@@ -274,7 +274,7 @@ class ProcessingCheckerTest {
                 () -> assertEquals(Set.of(Code.MISSING_LEGITIMATE_INTEREST, Code.MISSING_RETENTION,
                         Code.UNNEEDED_CONDITION), codes(checked)),
                 () -> assertTrue(checked.isValid()),
-                () -> assertEquals(LegalBasis.LEGITIMATE_INTERESTS, stated.activity().legalBasis()),
+                () -> assertEquals(LegalBasis.LEGITIMATE_INTERESTS, stated.activity().governance().legalBasis()),
                 () -> assertEquals(List.of(), stated.violations()),
                 () -> assertEquals(Set.of(Code.UNNEEDED_CONDITION), codes(checker.check(ProcessingActivity
                         .builder("newsletter", "Alumni newsletter").purposes(DataUses.MARKETING_COMMUNICATIONS_EMAIL)

@@ -136,6 +136,20 @@ public record FieldClassification(Class<?> declaringClass, String path, DataCate
                 isSecret());
     }
 
+    /**
+     * Whether the field protects data of a category at least as much as that category requires. It answers two
+     * questions an application asks at run time: whether a row of a
+     * {@link io.github.devbpm.linneo.annotation.CategoryByRow @CategoryByRow} field may hold data of the category
+     * chosen for it, which must stay below the ceiling, and, with the categories swapped, whether a classification
+     * the data protection officer raises for a field still covers what the code declared.
+     *
+     * @param category a data category
+     * @return {@code true} if {@link #protection()} covers the category's protection
+     */
+    public boolean covers(DataCategory category) {
+        return protection().covers(category.protection());
+    }
+
     @Override
     public String toString() {
         return path + " = " + category.key() + " (" + basis + ")";

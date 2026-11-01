@@ -79,6 +79,7 @@ document.exempted().get(0).path();                        // "attachments"
 | `isPersonal()` | personal category **and** stored `IDENTIFIED` or `PSEUDONYMIZED` |
 | `isSecret()` | the category's secret flag |
 | `protection()` | the `Protection` of the stored values (see below) |
+| `covers(category)` | whether the field protects data of that `DataCategory` at least as much as the category requires: for a `@CategoryByRow` field, whether the category chosen for a row stays below the ceiling |
 | `derivedFrom()` | for a `DERIVED` field, its sources; empty for any other |
 
 `toString()` gives a compact line with the path, the category and the basis, handy in logs and assertions. It does
@@ -166,6 +167,17 @@ staffCeiling.secret();           // true: passwordHash
 
 `ceilingOf(path)` does the same for one field and every field whose path starts with it followed by a dot: for a
 composite field such as `home`, everything the composite holds (`home.street`, `home.city`, ...).
+
+`covers(category)` compares the protection of a field with the one a category requires. It is how the application
+checks, when it writes a row of a `@CategoryByRow` field, that the category chosen for the row stays below the
+ceiling:
+
+```java
+Taxonomy taxonomy = Taxonomy.load();
+FieldClassification content = classifier.classify(Attachment.class).field("content").orElseThrow();
+content.covers(taxonomy.requireCategory(USER_CONTACT_EMAIL));       // true: ordinary data, below the ceiling
+content.covers(taxonomy.requireCategory(USER_CRIMINAL_HISTORY));    // false: the ceiling is a special category
+```
 
 ## A data inventory
 

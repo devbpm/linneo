@@ -22,8 +22,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Excludes a field that holds no data of the model from classification: a cache, a technical handle or state that
- * a framework keeps. Static, synthetic and {@code transient} fields are always excluded.
+ * Excludes a field that holds no data of the model from classification: a cache, a technical handle, state that a
+ * framework keeps, or a collection of other records that are classified on their own, such as the children of a
+ * one-to-many association. Static, synthetic and {@code transient} fields are always excluded.
  * <p>
  * A value computed from other fields is data, not an exemption: the age computed from a date of birth is personal
  * data. Classify it with {@link DerivedFrom @DerivedFrom} or {@link Category @Category}. Exempted fields are listed by

@@ -48,6 +48,18 @@ No hay elementos de nivel ni de identificabilidad: el campo toma los niveles del
 | `confidentiality` / `integrity` | los niveles del techo |
 | `identifiability` | `IDENTIFIED` si el techo es personal; si no, `null` |
 
+## Comprobar una fila
+
+El clasificador nunca lee valores, así que no puede conocer la categoría de una fila. Cuando tu código escribe una
+fila, comprueba que la categoría elegida para ella queda por debajo del techo con
+[`FieldClassification.covers`](../classify/results.md#comprobar-frente-a-una-categoría):
+
+```java
+FieldClassification content = classifier.classify(Document.class).field("content").orElseThrow();
+String rowCategoryKey = "user.contact.email";   // lo que decide la categoría de esta fila, p. ej. el tipo de documento
+boolean allowed = content.covers(taxonomy.requireCategory(rowCategoryKey));   // false si la fila supera el techo
+```
+
 ## Ejemplo
 
 ```java

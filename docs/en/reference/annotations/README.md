@@ -29,7 +29,7 @@ reads field values.
 | `@CategoryByRow` | field, record component | a field whose category depends on each row, with the most protective category a row may hold | [category-by-row.md](category-by-row.md) |
 | `@DerivedFrom` | field, record component | a field whose value is computed from other fields: it takes their classification, or declares one that protects at least as much | [derived-from.md](derived-from.md) |
 | `@Composite` | type | a class that is part of another record, such as an embedded address: the fields that hold it are classified by its own fields | [composite.md](composite.md) |
-| `@Exempt` | field, record component | a technical field (cache, handle, framework state) that holds no data of the model, with the reason | [exempt.md](exempt.md) |
+| `@Exempt` | field, record component | a field that holds no data of the model (cache, handle, framework state, or a collection of other records classified on their own), with the reason | [exempt.md](exempt.md) |
 
 On a record component, the annotations also apply to the component's field, which is what the classifier reads.
 

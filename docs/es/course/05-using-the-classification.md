@@ -81,6 +81,7 @@ document.exempted().get(0).path();                        // "attachments"
 | `isPersonal()` | categoría personal **y** almacenada `IDENTIFIED` o `PSEUDONYMIZED` |
 | `isSecret()` | la marca de secreto de la categoría |
 | `protection()` | la `Protection` de los valores almacenados (ver más abajo) |
+| `covers(category)` | si el campo protege datos de esa `DataCategory` al menos tanto como la categoría requiere: en un campo `@CategoryByRow`, si la categoría elegida para una fila queda por debajo del techo |
 | `derivedFrom()` | en un campo `DERIVED`, sus fuentes; vacía en cualquier otro |
 
 `toString()` produce una línea compacta con la ruta, la categoría y el origen, útil en logs y aserciones. No nombra la
@@ -168,6 +169,17 @@ staffCeiling.secret();           // true: passwordHash
 
 `ceilingOf(path)` hace lo mismo para un campo y para todo campo cuya ruta empiece por la suya seguida de un punto: en
 un campo compuesto como `home`, todo lo que contiene el compuesto (`home.street`, `home.city`, ...).
+
+`covers(category)` compara la protección de un campo con la que requiere una categoría. Así comprueba la aplicación,
+cuando escribe una fila de un campo `@CategoryByRow`, que la categoría elegida para la fila queda por debajo del
+techo:
+
+```java
+Taxonomy taxonomy = Taxonomy.load();
+FieldClassification content = classifier.classify(Attachment.class).field("content").orElseThrow();
+content.covers(taxonomy.requireCategory(USER_CONTACT_EMAIL));       // true: datos ordinarios, por debajo del techo
+content.covers(taxonomy.requireCategory(USER_CRIMINAL_HISTORY));    // false: el techo es una categoría especial
+```
 
 ## Un inventario de datos
 

@@ -81,6 +81,15 @@ All notable changes to this project are documented in this file. The format foll
   such as `home.street`, under the composite's own default. A composite stored as one value must protect at least
   as much as its fields (`WEAKER_THAN_PARTS`); a composite that contains itself is a `CYCLE`. `Classifier` reads each
   class once per call and stays immutable.
+- `Governance`: the part of a processing activity the data protection function decides (lawful bases, legal
+  reference, retention, recipients, transfers, impact assessment), separate from the scope the code declares
+  (purposes, data subjects, personal data). `ProcessingActivity.governance()` and `withGovernance(...)` combine what
+  an officer keeps in the application's storage with the scope in code; the builder's governance methods give initial
+  values. `ProcessingViolation.element()` tells which part a problem is in and `Element.isGovernance()` who should fix
+  it, so an application can fail the build on scope errors and show governance gaps where they are edited.
+- `ProcessingChecker.checkAll` and `verify` classify each entity once for all the activities.
+- `FieldClassification.covers(DataCategory)`: whether a row of a `@CategoryByRow` field may hold a category, and
+  whether a classification raised at run time still covers the code's.
 - `ClassificationException` and `ProcessingException` list the first 50 errors and count all of them by code, so
   the message of a large model stays readable.
 - `AtlasCatalog`: the taxonomy as Apache Atlas classification types (category tree as super types, protection

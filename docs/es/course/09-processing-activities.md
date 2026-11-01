@@ -6,6 +6,7 @@ nav_order: 9
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/LegalBasis.java
   - src/main/java/io/github/devbpm/linneo/processing/SpecialCategoryCondition.java
   - src/main/java/io/github/devbpm/linneo/processing/CriminalDataBasis.java
@@ -30,6 +31,9 @@ Al terminar este módulo serás capaz de:
   aporta cada opción;
 - leer las infracciones de un `ProcessingChecker` y distinguir un error (ilícito tal como está declarado) de un aviso
   (una laguna del registro);
+- distinguir lo que declara el código de la aplicación (el alcance de una actividad) de lo que decide el delegado de
+  protección de datos (su gobernanza), y usar `element().isGovernance()` para enviar cada problema a quien puede
+  corregirlo;
 - verificar las actividades en un test y generar el registro de actividades de tratamiento en Markdown y JSON.
 
 Los módulos 3 y 4 son necesarios: las actividades reutilizan el modelo clasificado de la universidad.
@@ -52,7 +56,9 @@ dimensiones de la taxonomía que presentó el módulo 2:
 
 y añade lo que la taxonomía no puede saber: la base jurídica (art. 6.1), la condición para las categorías especiales
 (art. 9.2), la base para los datos penales (art. 10), la ley en la que descansan esas bases, la conservación, los
-destinatarios, las transferencias y la evaluación de impacto.
+destinatarios, las transferencias y la evaluación de impacto. Esto forma la **gobernanza** de la actividad, que el
+paquete mantiene aparte de su **alcance** (las tres filas de la tabla) porque ambos tienen responsables distintos;
+consulta [Alcance y gobernanza](#alcance-y-gobernanza).
 
 > **Nota de protección de datos.** Linneo comprueba *declaraciones*: que se nombra una base donde el RGPD la exige,
 > que las claves existen, que las entidades están clasificadas. Si una base es la adecuada, si un interés prevalece
@@ -373,6 +379,71 @@ módulo 4, para que se conozcan los términos de tu extensión.
 
 La [tabla de códigos](../reference/processing/checker.md#códigos) enumera cada código con su gravedad y su mensaje.
 
+## Alcance y gobernanza
+
+Hasta ahora las actividades lo declaraban todo en el código. En muchas organizaciones no es así como se reparte el
+conocimiento. Los desarrolladores conocen con certeza el **alcance** de una actividad: sus finalidades, sus interesados
+y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`). La **gobernanza** la decide
+y la mantiene al día el delegado de protección de datos: las bases jurídicas, la referencia legal, el plazo de
+conservación, los destinatarios, las transferencias y la evaluación de impacto. Es un record propio, `Governance`, y
+una actividad lo guarda en su `governance()`.
+
+Una aplicación puede declarar el alcance en el código, guardar en su propio almacenamiento la gobernanza que edita el
+delegado y combinar ambos con `withGovernance` antes de comprobar, por ejemplo cada vez que se guarda un cambio:
+
+```java
+// En el código, junto al modelo: lo que la aplicación sabe con certeza.
+ProcessingActivity support = ProcessingActivity.builder("learning-support", "Learning support")
+        .purposes(DataUses.EDUCATION_TEACHING)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_HEALTH_AND_MEDICAL_DISABILITY)
+        .build();
+
+// En el almacenamiento del delegado: lo que decide.
+Governance stored = Governance.builder()
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, arts. 12 and 31")
+        .retention("Until the end of the studies")
+        .impactAssessment("DPIA-2026-07")
+        .build();
+
+CheckedActivity checked = checker.check(support.withGovernance(stored));   // válida, sin infracciones
+```
+
+El alcance en el código todavía no tiene gobernanza, así que su comprobación solo encuentra problemas de gobernanza.
+Cada `ProcessingViolation` lleva el `element()` de la actividad en el que está:
+
+```java
+checker.check(support).violations().forEach(v -> System.out.println(v.element() + " " + v));
+```
+
+```text
+LEGAL_BASIS ERROR MISSING_LEGAL_BASIS learning-support: Personal data needs a lawful basis (GDPR article 6.1)
+SPECIAL_CATEGORY_CONDITION ERROR MISSING_SPECIAL_CATEGORY_CONDITION learning-support: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+IMPACT_ASSESSMENT WARNING IMPACT_ASSESSMENT_RECOMMENDED learning-support: The activity involves special categories of data; GDPR article 35 may require an impact assessment
+```
+
+`element().isGovernance()` es `true` en las cuatro. Es `false` para los elementos del alcance (`KEY`, `PURPOSES`,
+`DATA_SUBJECTS`, `PERSONAL_DATA`), y para eso sirve: un problema del alcance es de los desarrolladores, así que hace
+fallar la compilación; una laguna de la gobernanza corresponde a la pantalla donde la edita el delegado. `verify` falla
+con todos los errores, también los de gobernanza, así que un test que deba fallar solo por el alcance filtra los
+errores de `checkAll`:
+
+```java
+List<ProcessingViolation> scopeErrors = checker.checkAll(activities).stream()
+        .flatMap(checked -> checked.errors().stream())
+        .filter(violation -> !violation.element().isGovernance())
+        .toList();
+assertTrue(scopeErrors.isEmpty(), () -> "Fix the scope of the activities: " + scopeErrors);
+```
+
+Las actividades de este módulo declaran la gobernanza en el código con el builder, cuyos métodos de gobernanza dan sus
+valores iniciales; `governance(Governance)` los sustituye todos de golpe. La página de referencia
+[ProcessingActivity](../reference/processing/activity.md#governance) tiene los detalles, y
+[ProcessingChecker](../reference/processing/checker.md#element) el elemento de cada código.
+
 ## El registro
 
 Con las cuatro actividades definitivas el test pasa y escribe el registro. **Sus textos están en inglés** —las
@@ -456,6 +527,9 @@ adecuadas y completa lo que el registro no puede saber, como los datos de contac
   `UNNEEDED_CONDITION`: el registro debe reflejar lo que se aplica, no todo lo que podría aplicarse.
 - **Tratar los avisos como ruido.** Son los puntos abiertos del registro; cada uno es algo por lo que preguntará la
   delegada de protección de datos.
+- **Hacer fallar la compilación con `verify` en actividades cuya gobernanza mantiene el delegado en otro sitio.**
+  `verify` falla con todos los errores. Filtra los errores de `checkAll` por `element().isGovernance()` para fallar
+  solo por el alcance.
 - **Comprobar con `Taxonomy.standard()` cuando las actividades usan términos de una extensión** → `UNKNOWN_KEY`.
 - **Reutilizar una clave para una segunda actividad** → `DUPLICATE_ACTIVITY`. Las claves identifican las actividades
   en el registro y en las herramientas que leen el JSON; mantenlas estables.
@@ -503,6 +577,19 @@ test que falle cuando el registro tenga algún punto abierto, con un mensaje que
 conservación). Predice qué notifica el comprobador, teniendo en cuenta la clase `Staff` del módulo 3, y decide cómo
 corregirlo.
 
+**Ejercicio 9.6 — Alcance y gobernanza.** El delegado guarda esta gobernanza para la actividad `learning-support` de
+este módulo, que se declaró en el código sin gobernanza:
+
+```java
+Governance saved = Governance.builder()
+        .legalBasis(LegalBasis.CONSENT)
+        .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .build();
+```
+
+¿Qué infracciones notifica `checker.check(support.withGovernance(saved))`, con sus elementos? ¿Es válida la
+actividad? ¿Cuáles mostrarías en la pantalla del delegado y cuáles harían fallar la compilación?
+
 ## Cuestionario de autoevaluación
 
 1. ¿La falta de plazo de conservación hace que `verify` lance una excepción?
@@ -512,6 +599,7 @@ corregirlo.
 5. ¿Qué bases hacen que el comprobador pida una `legalReference`?
 6. ¿En qué idioma están los textos del registro en Markdown?
 7. ¿Un registro válido significa que el tratamiento es lícito?
+8. ¿Qué te dice `violation.element().isGovernance()`?
 
 ## Lecturas recomendadas
 
@@ -597,6 +685,20 @@ declara `.criminalDataBasis(CriminalDataBasis.AUTHORISED_BY_LAW)`, la referencia
 no, declara por clave las categorías que sí trata en lugar de incluir `Staff` y deja los datos penales a la actividad
 de verificación. La segunda limita cada actividad a lo que necesita.
 
+**Ejercicio 9.6**
+
+Dos avisos, y la actividad es válida:
+
+```text
+RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+IMPACT_ASSESSMENT WARNING IMPACT_ASSESSMENT_RECOMMENDED learning-support: The activity involves special categories of data; GDPR article 35 may require an impact assessment
+```
+
+El consentimiento explícito es una condición válida del artículo 9.2 para datos de discapacidad, así que no hay error,
+y ninguno de los dos consentimientos descansa en una ley, así que no se pide referencia legal. Los dos avisos tienen un
+elemento de gobernanza (`RETENTION` e `IMPACT_ASSESSMENT`): van a la pantalla del delegado, junto a los campos de
+conservación y de evaluación de impacto. Nada hace fallar la compilación, porque no hay ningún error en el alcance.
+
 **Cuestionario**
 
 1. No. `MISSING_RETENTION` es un aviso: el registro muestra `Not declared` y lo enumera como punto abierto.
@@ -611,5 +713,9 @@ de verificación. La segunda limita cada actividad a lo que necesita.
    se escribe tal como se declaró.
 7. No. Significa que cada actividad declara lo que pide el RGPD y que sus claves y entidades son correctas. Si las
    declaraciones son ciertas y las bases adecuadas es la evaluación del responsable.
+8. Si el problema está en la parte de la actividad que mantiene la función de protección de datos (su `Governance`) y
+   no en el alcance declarado en el código (clave, finalidades, interesados, datos personales). Los problemas del
+   alcance son de los desarrolladores y hacen fallar la compilación; los de gobernanza se muestran donde los edita el
+   delegado.
 
 </details>

@@ -77,36 +77,38 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
         StringBuilder out = new StringBuilder("# ").append(cell(title)).append("\n");
         for (CheckedActivity checked : activities) {
             ProcessingActivity activity = checked.activity();
+            Governance governance = activity.governance();
             out.append("\n## ").append(cell(activity.name())).append("\n\n`").append(activity.key()).append('`');
             if (activity.description() != null) {
                 out.append(": ").append(cell(activity.description()));
             }
             out.append("\n\n| Record item | Content |\n|---|---|\n");
             row(out, "Purposes (art. 30.1.b)", terms(checked.purposes()));
-            row(out, "Lawful basis (art. 6.1)", activity.legalBasis() == null ? null
-                    : "Art. " + activity.legalBasis().article() + ": " + activity.legalBasis().fideslangName());
-            row(out, "Legitimate interest", activity.legalBasis() == LegalBasis.LEGITIMATE_INTERESTS
-                    ? activity.legitimateInterest() : null);
-            row(out, "Special categories (art. 9.2)", activity.specialCategoryCondition() == null ? null
-                    : "Art. " + activity.specialCategoryCondition().article() + ": "
-                    + activity.specialCategoryCondition().fideslangName());
-            row(out, "Criminal offence data (art. 10)", activity.criminalDataBasis() == null ? null
-                    : "Art. 10: " + label(activity.criminalDataBasis()));
-            row(out, "Legal reference", activity.legalReference());
+            row(out, "Lawful basis (art. 6.1)", governance.legalBasis() == null ? null
+                    : "Art. " + governance.legalBasis().article() + ": " + governance.legalBasis().fideslangName());
+            row(out, "Legitimate interest", governance.legalBasis() == LegalBasis.LEGITIMATE_INTERESTS
+                    ? governance.legitimateInterest() : null);
+            row(out, "Special categories (art. 9.2)", governance.specialCategoryCondition() == null ? null
+                    : "Art. " + governance.specialCategoryCondition().article() + ": "
+                    + governance.specialCategoryCondition().fideslangName());
+            row(out, "Criminal offence data (art. 10)", governance.criminalDataBasis() == null ? null
+                    : "Art. 10: " + label(governance.criminalDataBasis()));
+            row(out, "Legal reference", governance.legalReference());
             row(out, "Data subjects (art. 30.1.c)", terms(checked.dataSubjects()));
             row(out, "Personal data (art. 30.1.c)", categories(checked.dataCategories()));
-            row(out, "Recipients (art. 30.1.d)", activity.recipients().isEmpty() ? "None declared"
-                    : String.join("; ", activity.recipients()));
-            row(out, "Transfers (art. 30.1.e)", activity.transfers().isEmpty() ? "None declared"
-                    : String.join("; ", activity.transfers().stream().map(t -> t.destination() + " (art. "
+            row(out, "Recipients (art. 30.1.d)", governance.recipients().isEmpty() ? "None declared"
+                    : String.join("; ", governance.recipients()));
+            row(out, "Transfers (art. 30.1.e)", governance.transfers().isEmpty() ? "None declared"
+                    : String.join("; ", governance.transfers().stream().map(t -> t.destination() + " (art. "
                     + t.safeguard().article() + ": " + t.safeguard().fideslangName() + ")").toList()));
-            row(out, "Retention (art. 30.1.f)", activity.retention() == null ? "Not declared" : activity.retention());
+            row(out, "Retention (art. 30.1.f)", governance.retention() == null ? "Not declared"
+                    : governance.retention());
             Protection protection = checked.protection();
             row(out, "Required protection (art. 30.1.g)", "Confidentiality " + label(protection.confidentiality())
                     + ", integrity " + label(protection.integrity())
                     + (protection.secret() ? ", includes secrets" : ""));
-            row(out, "Impact assessment (art. 35)", activity.impactAssessment() == null ? "None"
-                    : activity.impactAssessment());
+            row(out, "Impact assessment (art. 35)", governance.impactAssessment() == null ? "None"
+                    : governance.impactAssessment());
             if (!checked.warnings().isEmpty()) {
                 out.append("\nOpen points:\n\n");
                 checked.warnings().forEach(w -> out.append("- ").append(cell(w.message())).append('\n'));
@@ -125,40 +127,41 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
         List<String> items = new ArrayList<>();
         for (CheckedActivity checked : activities) {
             ProcessingActivity activity = checked.activity();
+            Governance governance = activity.governance();
             Json json = new Json().field("key", activity.key()).field("name", activity.name());
             if (activity.description() != null) {
                 json.field("description", activity.description());
             }
             json.field("purposes", keys(checked.purposes())).field("dataSubjects", keys(checked.dataSubjects()))
                     .field("dataCategories", keys(checked.dataCategories()));
-            if (activity.legalBasis() != null) {
-                json.raw("legalBasis", basis(activity.legalBasis().name(), activity.legalBasis().article(),
-                        activity.legalBasis().fideslangName()));
+            if (governance.legalBasis() != null) {
+                json.raw("legalBasis", basis(governance.legalBasis().name(), governance.legalBasis().article(),
+                        governance.legalBasis().fideslangName()));
             }
-            if (activity.legalBasis() == LegalBasis.LEGITIMATE_INTERESTS && activity.legitimateInterest() != null) {
-                json.field("legitimateInterest", activity.legitimateInterest());
+            if (governance.legalBasis() == LegalBasis.LEGITIMATE_INTERESTS && governance.legitimateInterest() != null) {
+                json.field("legitimateInterest", governance.legitimateInterest());
             }
-            if (activity.specialCategoryCondition() != null) {
-                SpecialCategoryCondition condition = activity.specialCategoryCondition();
+            if (governance.specialCategoryCondition() != null) {
+                SpecialCategoryCondition condition = governance.specialCategoryCondition();
                 json.raw("specialCategoryCondition", basis(condition.name(), condition.article(),
                         condition.fideslangName()));
             }
-            if (activity.criminalDataBasis() != null) {
-                json.raw("criminalDataBasis", basis(activity.criminalDataBasis().name(), "10", null));
+            if (governance.criminalDataBasis() != null) {
+                json.raw("criminalDataBasis", basis(governance.criminalDataBasis().name(), "10", null));
             }
-            if (activity.legalReference() != null) {
-                json.field("legalReference", activity.legalReference());
+            if (governance.legalReference() != null) {
+                json.field("legalReference", governance.legalReference());
             }
-            json.field("recipients", activity.recipients());
-            json.raw("transfers", Json.array(activity.transfers().stream()
+            json.field("recipients", governance.recipients());
+            json.raw("transfers", Json.array(governance.transfers().stream()
                     .map(t -> new Json().field("destination", t.destination())
                             .raw("safeguard", basis(t.safeguard().name(), t.safeguard().article(),
                                     t.safeguard().fideslangName())).end()).toList()));
-            if (activity.retention() != null) {
-                json.field("retention", activity.retention());
+            if (governance.retention() != null) {
+                json.field("retention", governance.retention());
             }
-            if (activity.impactAssessment() != null) {
-                json.field("impactAssessment", activity.impactAssessment());
+            if (governance.impactAssessment() != null) {
+                json.field("impactAssessment", governance.impactAssessment());
             }
             json.raw("protection", new Json()
                     .field("natures", checked.natures().stream().map(LegalNature::name).toList())

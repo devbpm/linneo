@@ -90,7 +90,8 @@ class ClassifierTest {
     }
 
     record Contact(@Category(Categories.USER_CONTACT_EMAIL) String email,
-                   @Category(value = Categories.USER_CONTACT, identifiability = Identifiability.AGGREGATED) String stats) {
+                   @Category(value = Categories.USER_CONTACT, identifiability = Identifiability.AGGREGATED)
+                   String stats) {
     }
 
     @SuppressWarnings("unused")
@@ -264,6 +265,24 @@ class ClassifierTest {
                 () -> assertEquals(notes.protection(), person.ceilingOf("notes")),
                 () -> assertEquals(Protection.LOWEST, person.ceilingOf("missing")),
                 () -> assertTrue(person.ceiling().covers(contact.ceiling())));
+    }
+
+    @Test
+    @DisplayName("a by-row field accepts categories below its ceiling; a raised classification covers the code's")
+    void coversAtRunTime() {
+        Taxonomy taxonomy = Taxonomy.standard();
+        ClassClassification person = classifier.classify(Person.class);
+        FieldClassification attachment = person.field("attachment").orElseThrow();
+        FieldClassification name = person.field("name").orElseThrow();
+        assertAll(
+                () -> assertTrue(attachment.covers(taxonomy.requireCategory(Categories.USER_CONTACT_EMAIL))),
+                () -> assertTrue(attachment.covers(taxonomy.requireCategory(Categories.USER_HEALTH_AND_MEDICAL))),
+                () -> assertFalse(attachment.covers(taxonomy.requireCategory(Categories.USER_CRIMINAL_HISTORY))),
+                // the officer may raise the name to a stricter category, never lower it
+                () -> assertTrue(taxonomy.requireCategory(Categories.USER_HEALTH_AND_MEDICAL).protection()
+                        .covers(name.protection())),
+                () -> assertFalse(taxonomy.requireCategory(Categories.SYSTEM_OPERATIONS).protection()
+                        .covers(name.protection())));
     }
 
     @Test

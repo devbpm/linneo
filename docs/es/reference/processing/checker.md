@@ -30,8 +30,8 @@ consulta [Errores y avisos](README.md#errores-y-avisos). Las instancias son inmu
 | `ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction)` | — | Lo mismo, aplicando además las normas nacionales de `jurisdiction` (véase [Jurisdiction](#jurisdiction)). `NullPointerException` si algún argumento es `null`. |
 | `Jurisdiction jurisdiction()` | [`Jurisdiction`](#jurisdiction) | El derecho nacional que este comprobador aplica además del RGPD. |
 | `CheckedActivity check(ProcessingActivity activity)` | [`CheckedActivity`](#checkedactivity) | Comprueba una actividad: sus términos resueltos, sus datos personales, la protección que requieren y cada infracción encontrada. Nunca lanza excepciones por un problema de la actividad. `NullPointerException` si `activity` es `null`. |
-| `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | lista | Un resultado por actividad, en el orden dado. Una actividad cuya clave ya usó otra anterior recibe además el error `DUPLICATE_ACTIVITY`; la primera no. |
-| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Ejecuta `checkAll` y lanza una [`ProcessingException`](#processingexception) con **todos los errores de todas las actividades** si hay alguno (su mensaje lista los 50 primeros). Los avisos no hacen fallar. |
+| `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | lista | Un resultado por actividad, en el orden dado. Una actividad cuya clave ya usó otra anterior recibe además el error `DUPLICATE_ACTIVITY`; la primera no. Cada entidad se clasifica una sola vez para todas las actividades, por muchas que la incluyan. |
+| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Ejecuta `checkAll` y lanza una [`ProcessingException`](#processingexception) con **todos los errores de todas las actividades**, también los de gobernanza, si hay alguno (su mensaje lista los 50 primeros). Los avisos no hacen fallar. |
 | `ProcessingRecord verify(ProcessingActivity... activities)` | [`ProcessingRecord`](record.md) | Lo mismo, con las actividades una a una. |
 
 ```java
@@ -56,7 +56,9 @@ Para cada actividad, en este orden (las infracciones de una `CheckedActivity` lo
 2. **Datos personales** (consulta [más abajo](#cómo-se-reúnen-los-datos-personales)). Si no hay ninguno y nada quedó
    sin resolver por una clave de categoría desconocida o una entidad con errores de clasificación, el error es
    `MISSING_PERSONAL_DATA`.
-3. **Licitud**, solo cuando la actividad trata datos personales:
+3. **Licitud**, solo cuando la actividad trata datos personales. Comprueba la
+   [gobernanza](activity.md#governance) de la actividad, y cada problema que encuentra se notifica en el
+   [elemento](#element) de la gobernanza al que se refiere:
    - sin `legalBasis`: error `MISSING_LEGAL_BASIS`;
    - `LEGITIMATE_INTERESTS` sin `legitimateInterest`: aviso `MISSING_LEGITIMATE_INTEREST`; un `legitimateInterest`
      con otra base: aviso `UNNEEDED_CONDITION`;
@@ -95,6 +97,8 @@ Los datos personales de una actividad son la unión de dos fuentes:
   `AGGREGATED` ni `ANONYMIZED`, porque los datos agregados y anonimizados no son datos personales. El clasificador ya
   resuelve las claves obsoletas de las anotaciones a su sustituto, y sus avisos no se repiten aquí. Cada campo aporta
   sus niveles **efectivos**, de modo que cuenta una confidencialidad o integridad elevada en el campo.
+  `checkAll` y `verify` clasifican cada entidad una sola vez para todas las actividades que la incluyen; `check`
+  clasifica las entidades de la única actividad que recibe.
 
 Las categorías se guardan una sola vez cada una, ordenadas por clave, en `CheckedActivity.dataCategories()`. La
 protección que requiere la actividad, `CheckedActivity.protection()`, es la
@@ -152,7 +156,7 @@ checked.warnings();                     // []
 `io.github.devbpm.linneo.processing.ProcessingViolation` — `public record`, `@since 0.1.0`
 
 ```java
-public record ProcessingViolation(String activity, Severity severity, Code code, String message)
+public record ProcessingViolation(String activity, Severity severity, Code code, Element element, String message)
 ```
 
 | Componente | Descripción |
@@ -160,6 +164,7 @@ public record ProcessingViolation(String activity, Severity severity, Code code,
 | `activity` | La clave de la actividad. |
 | `severity` | Si hace fallar la verificación. |
 | `code` | Qué tipo de problema es. |
+| `element` | La parte de la actividad en la que está el problema, que dice quién debe corregirlo; consulta [`Element`](#element). |
 | `message` | Una descripción que nombra la clave o la disposición implicada. |
 
 El constructor canónico lanza `NullPointerException` si algún componente es `null`.
@@ -167,7 +172,7 @@ El constructor canónico lanza `NullPointerException` si algún componente es `n
 | Método | Descripción |
 |---|---|
 | `boolean isError()` | `true` para la gravedad `ERROR`. |
-| `String toString()` | `<SEVERITY> <CODE> <activity>: <message>`, por ejemplo `ERROR MISSING_LEGAL_BASIS newsletter: Personal data needs a lawful basis (GDPR article 6.1)`. |
+| `String toString()` | `<SEVERITY> <CODE> <activity>: <message>`, por ejemplo `ERROR MISSING_LEGAL_BASIS newsletter: Personal data needs a lawful basis (GDPR article 6.1)`. No muestra el elemento. |
 
 ### Severity
 
@@ -180,28 +185,29 @@ El constructor canónico lanza `NullPointerException` si algún componente es `n
 
 ### Códigos
 
-`ProcessingViolation.Code`: todos los valores, primero los errores, con el mensaje que les da el comprobador (`<k>`
-para una clave, `<a>` para un artículo). Los mensajes están en inglés.
+`ProcessingViolation.Code`: todos los valores, primero los errores, con el [elemento](#element) en el que se notifican y
+el mensaje que les da el comprobador (`<k>` para una clave, `<a>` para un artículo). El elemento de un código que se
+aplica a varias partes depende de la parte. Los mensajes están en inglés.
 
-| Código | Gravedad | Cuándo se produce | Mensaje |
-|---|---|---|---|
-| `UNKNOWN_KEY` | error | Una clave de finalidad, interesado o categoría de datos no está en la taxonomía. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` |
-| `MISSING_PURPOSE` | error | `purposes` está vacía. | `No data use declared` |
-| `MISSING_DATA_SUBJECTS` | error | `dataSubjects` está vacía. | `No data subject declared` |
-| `MISSING_PERSONAL_DATA` | error | Ninguna categoría personal ni entidad con campos personales, y ninguna clave de categoría desconocida ni error de entidad que lo explique. | `The activity processes no personal data` |
-| `ENTITY_NOT_CLASSIFIED` | error | Una entidad de la lista tiene errores de clasificación. | `<nombre binario de la clase> has <n> classification error(s)` |
-| `MISSING_LEGAL_BASIS` | error | Datos personales sin `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
-| `MISSING_SPECIAL_CATEGORY_CONDITION` | error | Datos de categorías especiales sin `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
-| `MISSING_CRIMINAL_DATA_BASIS` | error | Datos penales sin `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
-| `CONSENT_NOT_SUFFICIENT` | error | Solo con `Jurisdiction.SPAIN`: la actividad trata `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` o `race_ethnicity` (o un descendiente) y su única condición del artículo 9.2 es `EXPLICIT_CONSENT` (LOPDGDD, artículo 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
-| `DUPLICATE_ACTIVITY` | error | Solo en `checkAll`/`verify`: una actividad anterior tiene la misma clave. | `Another activity of the record has the key '<k>'` |
-| `DEPRECATED_KEY` | **aviso** | Una clave de finalidad, interesado o categoría está obsoleta; la actividad se comprueba con su sustituta. | `The data use '<k>' is deprecated; checked as '<r>'` (igual con `data subject` y `data category`; sin la parte `; checked as` cuando la clave no tiene sustituto) |
-| `NOT_PERSONAL_DATA` | **aviso** | Una categoría declarada no es dato personal; queda fuera del registro. | `The data category '<k>' is not personal data and is left out of the record` |
-| `UNNEEDED_CONDITION` | **aviso** | Se declara una condición del artículo 9.2 o una base del artículo 10 para datos que la actividad no trata, o se indica un interés legítimo con otra base jurídica. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
-| `MISSING_LEGAL_REFERENCE` | **aviso** | Se aplica una base que descansa en una ley y no se indica `legalReference`. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; con `Jurisdiction.SPAIN` y una condición `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH`, termina con ` (LOPDGDD article 9.2: a law with the rank of statute)` |
-| `MISSING_LEGITIMATE_INTEREST` | **aviso** | La base es `LEGITIMATE_INTERESTS` y no se indica `legitimateInterest`. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
-| `MISSING_RETENTION` | **aviso** | Datos personales sin `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
-| `IMPACT_ASSESSMENT_RECOMMENDED` | **aviso** | Datos de categorías especiales, datos penales o una finalidad de elaboración de perfiles, sin `impactAssessment`. | `The activity involves <reasons>; GDPR article 35 may require an impact assessment`, donde `<reasons>` une `special categories of data`, `criminal offence data` y `profiling` con `and` |
+| Código | Gravedad | Elemento | Cuándo se produce | Mensaje |
+|---|---|---|---|---|
+| `UNKNOWN_KEY` | error | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría de datos no está en la taxonomía. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` |
+| `MISSING_PURPOSE` | error | `PURPOSES` | `purposes` está vacía. | `No data use declared` |
+| `MISSING_DATA_SUBJECTS` | error | `DATA_SUBJECTS` | `dataSubjects` está vacía. | `No data subject declared` |
+| `MISSING_PERSONAL_DATA` | error | `PERSONAL_DATA` | Ninguna categoría personal ni entidad con campos personales, y ninguna clave de categoría desconocida ni error de entidad que lo explique. | `The activity processes no personal data` |
+| `ENTITY_NOT_CLASSIFIED` | error | `PERSONAL_DATA` | Una entidad de la lista tiene errores de clasificación. | `<nombre binario de la clase> has <n> classification error(s)` |
+| `MISSING_LEGAL_BASIS` | error | `LEGAL_BASIS` | Datos personales sin `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
+| `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Datos de categorías especiales sin `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
+| `MISSING_CRIMINAL_DATA_BASIS` | error | `CRIMINAL_DATA_BASIS` | Datos penales sin `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
+| `CONSENT_NOT_SUFFICIENT` | error | `SPECIAL_CATEGORY_CONDITION` | Solo con `Jurisdiction.SPAIN`: la actividad trata `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` o `race_ethnicity` (o un descendiente) y su única condición del artículo 9.2 es `EXPLICIT_CONSENT` (LOPDGDD, artículo 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
+| `DUPLICATE_ACTIVITY` | error | `KEY` | Solo en `checkAll`/`verify`: una actividad anterior tiene la misma clave. | `Another activity of the record has the key '<k>'` |
+| `DEPRECATED_KEY` | **aviso** | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría está obsoleta; la actividad se comprueba con su sustituta. | `The data use '<k>' is deprecated; checked as '<r>'` (igual con `data subject` y `data category`; sin la parte `; checked as` cuando la clave no tiene sustituto) |
+| `NOT_PERSONAL_DATA` | **aviso** | `PERSONAL_DATA` | Una categoría declarada no es dato personal; queda fuera del registro. | `The data category '<k>' is not personal data and is left out of the record` |
+| `UNNEEDED_CONDITION` | **aviso** | `SPECIAL_CATEGORY_CONDITION` para una condición del artículo 9.2, `CRIMINAL_DATA_BASIS` para una base del artículo 10, `LEGITIMATE_INTEREST` para un interés legítimo | Se declara una condición del artículo 9.2 o una base del artículo 10 para datos que la actividad no trata, o se indica un interés legítimo con otra base jurídica. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
+| `MISSING_LEGAL_REFERENCE` | **aviso** | `LEGAL_REFERENCE` | Se aplica una base que descansa en una ley y no se indica `legalReference`. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; con `Jurisdiction.SPAIN` y una condición `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH`, termina con ` (LOPDGDD article 9.2: a law with the rank of statute)` |
+| `MISSING_LEGITIMATE_INTEREST` | **aviso** | `LEGITIMATE_INTEREST` | La base es `LEGITIMATE_INTERESTS` y no se indica `legitimateInterest`. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
+| `MISSING_RETENTION` | **aviso** | `RETENTION` | Datos personales sin `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
+| `IMPACT_ASSESSMENT_RECOMMENDED` | **aviso** | `IMPACT_ASSESSMENT` | Datos de categorías especiales, datos penales o una finalidad de elaboración de perfiles, sin `impactAssessment`. | `The activity involves <reasons>; GDPR article 35 may require an impact assessment`, donde `<reasons>` une `special categories of data`, `criminal offence data` y `profiling` con `and` |
 
 Salida real para una actividad a la que le faltan ambas condiciones:
 
@@ -220,6 +226,56 @@ y para una con tres declaraciones innecesarias (`legitimateInterest(...)` seguid
 WARNING UNNEEDED_CONDITION newsletter: A legitimate interest is stated but the lawful basis is article 6.1.a
 WARNING UNNEEDED_CONDITION newsletter: Article 9.2.a is declared but the activity processes no special category of data
 WARNING UNNEEDED_CONDITION newsletter: Article 10 is declared but the activity processes no criminal offence data
+```
+
+### Element
+
+`ProcessingViolation.Element` — `public enum`, `@since 0.1.0`
+
+La parte de una actividad de tratamiento en la que está un problema. El **alcance** de la actividad (`KEY`, `PURPOSES`,
+`DATA_SUBJECTS`, `PERSONAL_DATA`) se declara en el código, así que un problema ahí es para los desarrolladores y debe
+hacer fallar la compilación. El resto es la [gobernanza](activity.md#governance) que mantiene la función de protección
+de datos, así que un problema ahí corresponde a la pantalla donde se edita.
+
+| Constante | `isGovernance()` | La parte |
+|---|---|---|
+| `KEY` | `false` | La clave que identifica la actividad en el registro. |
+| `PURPOSES` | `false` | Las finalidades (`ProcessingActivity.purposes()`). |
+| `DATA_SUBJECTS` | `false` | Los interesados (`ProcessingActivity.dataSubjects()`). |
+| `PERSONAL_DATA` | `false` | Los datos personales: categorías de datos y entidades. |
+| `LEGAL_BASIS` | `true` | La base jurídica (`Governance.legalBasis()`). |
+| `LEGITIMATE_INTEREST` | `true` | El interés legítimo perseguido (`Governance.legitimateInterest()`). |
+| `SPECIAL_CATEGORY_CONDITION` | `true` | La condición del artículo 9.2 (`Governance.specialCategoryCondition()`). |
+| `CRIMINAL_DATA_BASIS` | `true` | La base del artículo 10 (`Governance.criminalDataBasis()`). |
+| `LEGAL_REFERENCE` | `true` | La norma en la que descansan las bases (`Governance.legalReference()`). |
+| `RETENTION` | `true` | El plazo previsto para la supresión (`Governance.retention()`). |
+| `IMPACT_ASSESSMENT` | `true` | La evaluación de impacto (`Governance.impactAssessment()`). |
+
+`boolean isGovernance()` es `true` para los elementos de [`Governance`](activity.md#governance) y `false` para los del
+alcance. No hay elemento para los destinatarios ni para las transferencias, porque el comprobador no los examina. El
+elemento de cada código está en la [tabla de arriba](#códigos).
+
+Úsalo para enviar cada problema a quien puede corregirlo: haz fallar la compilación con los errores del alcance y
+muestra las lagunas de la gobernanza donde las edita el delegado. `verify` falla con **todos** los errores, también los
+de gobernanza, así que una comprobación de compilación que deba fallar solo por el alcance usa `checkAll` y filtra por
+elemento:
+
+```java
+import io.github.devbpm.linneo.processing.ProcessingViolation.Element;
+
+// En un test: el alcance se declara en el código, así que sus errores son de los desarrolladores.
+List<ProcessingViolation> scopeErrors = checker.checkAll(activities).stream()
+        .flatMap(checked -> checked.errors().stream())
+        .filter(violation -> !violation.element().isGovernance())
+        .toList();
+assertTrue(scopeErrors.isEmpty(), () -> "Fix the scope of the activities: " + scopeErrors);
+
+// Donde el delegado edita la gobernanza de una actividad: cada laguna junto a su campo.
+CheckedActivity edited = checker.check(activity.withGovernance(stored));
+Map<Element, List<ProcessingViolation>> gaps = edited.violations().stream()
+        .filter(violation -> violation.element().isGovernance())
+        .collect(Collectors.groupingBy(ProcessingViolation::element));
+List<ProcessingViolation> beside = gaps.getOrDefault(Element.RETENTION, List.of());
 ```
 
 ## Jurisdiction

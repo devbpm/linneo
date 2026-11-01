@@ -7,6 +7,7 @@ nav_order: 1
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/Transfer.java
 -->
 
@@ -17,16 +18,24 @@ doc-sources:
 ```java
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 LegalBasis legalBasis, String legitimateInterest,
-                                 SpecialCategoryCondition specialCategoryCondition,
-                                 CriminalDataBasis criminalDataBasis, String legalReference, String retention,
-                                 List<String> recipients, List<Transfer> transfers, String impactAssessment)
+                                 Governance governance)
 ```
 
 A processing activity of the controller, as declared in its record of processing activities (GDPR article 30.1).
 The activity only **holds what was declared**: its constructor does not look keys up in a taxonomy, classify the
 entities or check the bases. That is the job of the [`ProcessingChecker`](checker.md). Build one with
 [`builder(key, name)`](#builder).
+
+An activity has two parts with different owners:
+
+- its **scope** is what the code of the application knows for certain: the purposes it serves, the data subjects and
+  the personal data it processes (`purposes`, `dataSubjects`, `dataCategories`, `entities`);
+- its [**governance**](#governance) is what the controller's data protection function decides and keeps up to date:
+  the lawful bases, the legal reference, the retention, the recipients, the transfers and the impact assessment.
+
+Code can give initial values for the governance with the builder. An application whose data protection officer edits
+them keeps the governance in its own storage and combines it with the scope declared in code using
+[`withGovernance`](#withgovernance).
 
 ## Components
 
@@ -39,15 +48,10 @@ entities or check the bases. That is the job of the [`ProcessingChecker`](checke
 | `dataSubjects` | 30.1.c | empty | Keys of the categories of data subjects, preferably `DataSubjects` constants. |
 | `dataCategories` | 30.1.c | empty | Keys of personal data categories processed beyond those of `entities`, preferably `Categories` constants. |
 | `entities` | 30.1.c | empty | Classified model classes; the categories of their personal fields are processed by the activity. |
-| `legalBasis` | 6.1 | `null` | The lawful basis; see [`LegalBasis`](bases.md#legalbasis). `null` means not declared. |
-| `legitimateInterest` | 6.1.f | `null` | The interest pursued, when the basis is `LEGITIMATE_INTERESTS`. |
-| `specialCategoryCondition` | 9.2 | `null` | The condition for special categories of data; see [`SpecialCategoryCondition`](bases.md#specialcategorycondition). |
-| `criminalDataBasis` | 10 | `null` | What allows processing criminal offence data; see [`CriminalDataBasis`](bases.md#criminaldatabasis). |
-| `legalReference` | 6.3 | `null` | The Union or Member State law the bases rest on, as free text. One text covers every basis of the activity. |
-| `retention` | 30.1.f | `null` | The envisaged time limit for erasure, as free text. |
-| `recipients` | 30.1.d | empty | The categories of recipients, as free text. |
-| `transfers` | 30.1.e | empty | Transfers to third countries or international organisations; see [`Transfer`](#transfer). |
-| `impactAssessment` | 35 | `null` | A reference to the data protection impact assessment, such as its identifier or location. |
+| `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | The lawful bases, legal reference, retention, recipients, transfers and impact assessment; see [Governance](#governance). `null` means `Governance.NONE`. |
+
+The governance components are read through it: `activity.governance().legalBasis()`,
+`activity.governance().retention()`, and so on.
 
 ### Canonical constructor
 
@@ -60,18 +64,23 @@ entities or check the bases. That is the job of the [`ProcessingChecker`](checke
 - The lists are copied with `List.copyOf`: the result is immutable, and a `null` list or a `null` element throws
   `NullPointerException`. The elements are kept as given; a blank key in a list is reported by the checker as an
   unknown key.
-- The optional texts `description`, `legitimateInterest`, `legalReference`, `retention` and `impactAssessment` are
-  **normalized**: a blank text becomes `null` and any other text is stripped of leading and trailing white space.
-  The texts of `recipients` are not normalized.
+- A blank `description` becomes `null` and any other text is stripped of leading and trailing white space.
+- A `null` `governance` becomes [`Governance.NONE`](#governance).
 
 ```java
 ProcessingActivity activity = ProcessingActivity.builder("newsletter", "Alumni newsletter")
         .description("  Monthly news for former students.  ")
         .retention("   ")
         .build();
-activity.description();   // "Monthly news for former students."
-activity.retention();     // null
+activity.description();               // "Monthly news for former students."
+activity.governance().retention();    // null
 ```
+
+### withGovernance
+
+`ProcessingActivity withGovernance(Governance governance)` returns the same activity with another governance, such as
+the one the data protection officer keeps up to date. The scope declared in code is kept as is, and the original
+activity is not changed. `NullPointerException` if `governance` is `null`; to clear it, pass `Governance.NONE`.
 
 ## Builder
 
@@ -85,6 +94,7 @@ activity.retention();     // null
 | `Builder dataSubjects(String... keys)` | **Adds** data subject keys. |
 | `Builder dataCategories(String... keys)` | **Adds** data category keys, for personal data that no listed entity declares. |
 | `Builder entities(Class<?>... types)` | **Adds** classified model classes. |
+| `Builder governance(Governance governance)` | **Replaces** the governance declared so far with `governance`; the governance methods below that follow it start from it. `NullPointerException` if `governance` is `null`. |
 | `Builder legalBasis(LegalBasis basis)` | Sets the lawful basis; `null` clears it. |
 | `Builder legitimateInterest(String interest)` | Sets the basis to `LEGITIMATE_INTERESTS` **and** the interest pursued. |
 | `Builder specialCategoryCondition(SpecialCategoryCondition condition)` | Sets the article 9.2 condition. |
@@ -96,9 +106,22 @@ activity.retention();     // null
 | `Builder impactAssessment(String reference)` | Sets the reference to the impact assessment. |
 | `ProcessingActivity build()` | Creates the activity with the canonical constructor. |
 
+The methods from `legalBasis` to `impactAssessment` are those of the [`Governance.Builder`](#governancebuilder): they
+give the initial values of the governance of the activity.
+
 Every list method adds to what was given before (`purposes("a").purposes("b", "c")` gives `[a, b, c]`); every other
-method replaces the previous value, so the last call wins. `build()` can be called more than once, and a builder can
-be kept to derive variants of an activity.
+method replaces the previous value, so the last call wins. `governance(...)` replaces everything declared by the
+governance methods before it, and the ones after it change the governance it gave:
+
+```java
+ProcessingActivity.builder("a", "A")
+        .retention("One year")
+        .governance(stored)          // retention of the activity: that of `stored`, not "One year"
+        .recipients("Auditors")      // added to the recipients of `stored`
+        .build();
+```
+
+`build()` can be called more than once, and a builder can be kept to derive variants of an activity.
 
 `legitimateInterest(interest)` is the usual way to declare legitimate interests: it sets both components. Because
 the last call wins, a later `legalBasis(...)` replaces the basis but **keeps the interest**:
@@ -134,6 +157,86 @@ ProcessingActivity admissions = ProcessingActivity.builder("admissions", "Admiss
 ```
 
 (`USER_NAME` and the other category constants come from `import static io.github.devbpm.linneo.Categories.*;`.)
+
+## Governance
+
+`io.github.devbpm.linneo.processing.Governance` — `public record`, `@since 0.1.0`
+
+```java
+public record Governance(LegalBasis legalBasis, String legitimateInterest,
+                         SpecialCategoryCondition specialCategoryCondition, CriminalDataBasis criminalDataBasis,
+                         String legalReference, String retention, List<String> recipients, List<Transfer> transfers,
+                         String impactAssessment)
+```
+
+The part of a processing activity that the controller's data protection function decides and keeps up to date: why
+the processing is lawful, how long the data is kept, who receives it, where it goes and the impact assessment. It is
+separate from the scope of the activity (purposes, data subjects and personal data) because the two have different
+owners. The problems the [checker](checker.md) finds in this part are those whose
+[element](checker.md#element) `isGovernance()`.
+
+| Component | Article | Default | Description |
+|---|---|---|---|
+| `legalBasis` | 6.1 | `null` | The lawful basis; see [`LegalBasis`](bases.md#legalbasis). `null` means not declared. |
+| `legitimateInterest` | 6.1.f | `null` | The interest pursued, when the basis is `LEGITIMATE_INTERESTS`. |
+| `specialCategoryCondition` | 9.2 | `null` | The condition for special categories of data; see [`SpecialCategoryCondition`](bases.md#specialcategorycondition). |
+| `criminalDataBasis` | 10 | `null` | What allows processing criminal offence data; see [`CriminalDataBasis`](bases.md#criminaldatabasis). |
+| `legalReference` | 6.3 | `null` | The Union or Member State law the bases rest on, as free text. One text covers every basis of the activity. |
+| `retention` | 30.1.f | `null` | The envisaged time limit for erasure, as free text. |
+| `recipients` | 30.1.d | empty | The categories of recipients, as free text. |
+| `transfers` | 30.1.e | empty | Transfers to third countries or international organisations; see [`Transfer`](#transfer). |
+| `impactAssessment` | 35 | `null` | A reference to the data protection impact assessment, such as its identifier or location. |
+
+The canonical constructor **normalizes** the optional texts `legitimateInterest`, `legalReference`, `retention` and
+`impactAssessment`: a blank text becomes `null` and any other text is stripped of leading and trailing white space.
+The texts of `recipients` are not normalized. The lists are copied (immutable); a `null` list is an empty one and a
+`null` element throws `NullPointerException`.
+
+| Member | Description |
+|---|---|
+| `static final Governance NONE` | Governance with nothing declared yet: every component `null` or empty. It is the governance of an activity that was given none. |
+| `static Builder builder()` | Starts declaring governance from nothing. |
+| `Builder toBuilder()` | A builder that starts from these values, to change part of them: list methods add to the lists, the other methods replace the value. The governance itself is not changed. |
+
+### Governance.Builder
+
+`Governance.Builder` — `public static final class`, `@since 0.1.0`. It has the same methods, with the same effect, as
+the governance methods of the [`ProcessingActivity.Builder`](#builder): `legalBasis`, `legitimateInterest`,
+`specialCategoryCondition`, `criminalDataBasis`, `legalReference`, `retention`, `recipients`, `transfer` and
+`impactAssessment`, plus `Governance build()`. List methods add to what was given before and every other method
+replaces the previous value. `build()` can be called more than once.
+
+### Scope in code, governance from storage
+
+An application can declare the scope in code and read the governance from where its data protection officer edits it,
+then combine both before checking, for example each time the officer saves a change:
+
+```java
+// In code: what the application knows for certain.
+ProcessingActivity support = ProcessingActivity.builder("learning-support", "Learning support")
+        .purposes(DataUses.EDUCATION_TEACHING)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_HEALTH_AND_MEDICAL_DISABILITY)
+        .build();
+
+// In the officer's storage: what the data protection function decides.
+Governance stored = Governance.builder()
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, arts. 12 and 31")
+        .retention("Until the end of the studies")
+        .recipients("Teaching staff")
+        .impactAssessment("DPIA-2026-07")
+        .build();
+
+ProcessingChecker checker = new ProcessingChecker(Taxonomy.load());
+checker.check(support).violations();                          // 4: no basis, no condition, no retention, no assessment
+checker.check(support.withGovernance(stored)).violations();   // []
+```
+
+The four violations of the first check are all about governance: their elements are `LEGAL_BASIS`,
+`SPECIAL_CATEGORY_CONDITION`, `RETENTION` and `IMPACT_ASSESSMENT`. See
+[what to do with the element of a violation](checker.md#element).
 
 ## Transfer
 

@@ -66,7 +66,7 @@ module io.github.devbpm.linneo {
 | `io.github.devbpm.linneo` | sí | La taxonomía (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), sus términos (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), los enumerados de protección y `Protection`, y las constantes de claves (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | sí | Las anotaciones que declaran qué contiene cada campo de un modelo: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite`, `@Exempt` |
 | `io.github.devbpm.linneo.classify` | sí | Lectura y verificación de las anotaciones de un modelo: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException` |
-| `io.github.devbpm.linneo.processing` | sí | Las actividades de tratamiento y el registro de actividades de tratamiento del RGPD: `ProcessingActivity`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord` |
+| `io.github.devbpm.linneo.processing` | sí | Las actividades de tratamiento y el registro de actividades de tratamiento del RGPD: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord` |
 | `io.github.devbpm.linneo.catalog.openmetadata` | sí | La taxonomía como clasificaciones y etiquetas de OpenMetadata: `OpenMetadataCatalog`, `OpenMetadataMapping`, `OmClassification`, `OmTag`. Sin llamadas de red |
 | `io.github.devbpm.linneo.catalog.datahub` | sí | La taxonomía como glosario de negocio de DataHub: `DataHubCatalog`, `DataHubMapping`, `DhProposal`. Sin llamadas de red |
 | `io.github.devbpm.linneo.catalog.atlas` | sí | La taxonomía como clasificaciones de Apache Atlas: `AtlasCatalog`, `AtlasMapping`, `AtlasClassificationDef`. Sin llamadas de red |
@@ -139,11 +139,11 @@ module com.example.app {
 
 - [Visión general de los tratamientos](processing/README.md) — cómo se relacionan las actividades con la taxonomía y
   el clasificador, errores y avisos.
-- [ProcessingActivity](processing/activity.md) — `ProcessingActivity`, su `Builder`, `Transfer`.
+- [ProcessingActivity](processing/activity.md) — `ProcessingActivity`, su `Builder`, `Governance`, `Transfer`.
 - [Bases jurídicas](processing/bases.md) — `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`,
   `TransferSafeguard`.
-- [ProcessingChecker](processing/checker.md) — `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation` y
-  cada `Code`, `ProcessingException`.
+- [ProcessingChecker](processing/checker.md) — `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation` con
+  cada `Code` y `Element`, `ProcessingException`.
 - [ProcessingRecord](processing/record.md) — el registro en Markdown y en JSON.
 
 **OpenMetadata** (`io.github.devbpm.linneo.catalog.openmetadata`)

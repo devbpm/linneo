@@ -256,6 +256,9 @@ used. The field therefore gets the ceiling's protection (`SPECIAL_CATEGORY`, `HI
 `declaredBy` must not be blank (`MISSING_REASON`). `@CategoryByRow` and `@Category` on the same field is a
 `CONFLICTING_ANNOTATIONS` error.
 
+The classifier never reads values, so it cannot check the rows. When your code writes one, it can check that the
+category it chose stays below the ceiling with `FieldClassification.covers` (module 5).
+
 ## `@DerivedFrom`: values computed from other fields
 
 Some fields are not captured but computed: an age from a date of birth, a full name from a first and a last name.
@@ -356,8 +359,9 @@ the composite's fields, with the path `field.part`: `home.street`, `previous.cit
 
 ## `@Exempt`: technical fields
 
-Some fields hold no data of the model: a cache, a technical handle, state that a framework keeps, a relationship to
-another entity. `@Exempt` excludes them, with a reason:
+Some fields hold no data of the model: a cache, a technical handle, state that a framework keeps, or a collection of
+other records that are classified on their own, such as the children of a one-to-many association. `@Exempt`
+excludes them, with a reason:
 
 ```java
 @Exempt("cache of the rendered menu, rebuilt on demand")

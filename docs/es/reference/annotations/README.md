@@ -29,7 +29,7 @@ nunca lee los valores de los campos.
 | `@CategoryByRow` | campo, componente de record | un campo cuya categoría depende de cada fila, con la categoría más protectora que puede tener una fila | [category-by-row.md](category-by-row.md) |
 | `@DerivedFrom` | campo, componente de record | un campo cuyo valor se calcula a partir de otros campos: toma su clasificación, o declara una que protege al menos tanto | [derived-from.md](derived-from.md) |
 | `@Composite` | tipo | una clase que forma parte de otro registro, como una dirección embebida: los campos que la contienen se clasifican por los campos de la propia clase | [composite.md](composite.md) |
-| `@Exempt` | campo, componente de record | un campo técnico (caché, manejador, estado de un framework) que no contiene datos del modelo, con el motivo | [exempt.md](exempt.md) |
+| `@Exempt` | campo, componente de record | un campo que no contiene datos del modelo (caché, manejador, estado de un framework o una colección de otros registros que se clasifican por sí mismos), con el motivo | [exempt.md](exempt.md) |
 
 En un componente de record, las anotaciones se aplican también al campo del componente, que es lo que lee el
 clasificador.

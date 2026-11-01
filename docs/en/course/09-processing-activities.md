@@ -6,6 +6,7 @@ nav_order: 9
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/LegalBasis.java
   - src/main/java/io/github/devbpm/linneo/processing/SpecialCategoryCondition.java
   - src/main/java/io/github/devbpm/linneo/processing/CriminalDataBasis.java
@@ -29,6 +30,8 @@ After this module you will be able to:
 - choose between listing the personal data as category keys or as classified entities, and know what each brings in;
 - read the violations of a `ProcessingChecker` and tell an error (unlawful as declared) from a warning (a gap in the
   record);
+- tell what the code of the application declares (the scope of an activity) from what the data protection officer
+  decides (its governance), and use `element().isGovernance()` to send each problem to whoever can fix it;
 - verify the activities in a test and produce the record of processing activities as Markdown and JSON.
 
 Modules 3 and 4 are required: the activities reuse the classified model of the university.
@@ -51,7 +54,9 @@ three dimensions of the taxonomy that module 2 introduced:
 
 and adds what the taxonomy cannot know: the lawful basis (art. 6.1), the condition for special categories (art.
 9.2), the basis for criminal offence data (art. 10), the law those bases rest on, the retention, the recipients, the
-transfers and the impact assessment.
+transfers and the impact assessment. These make up the **governance** of the activity, which the package keeps apart
+from its **scope** (the three rows of the table) because the two have different owners; see
+[Scope and governance](#scope-and-governance).
 
 > **Data protection note.** Linneo checks *declarations*: that a basis is named where the GDPR requires one, that the
 > keys exist, that the entities are classified. Whether a basis is the right one, whether an interest outweighs the
@@ -365,6 +370,69 @@ extension are known.
 
 The [codes table](../reference/processing/checker.md#codes) lists every code with its severity and message.
 
+## Scope and governance
+
+So far the activities declared everything in code. In many organisations that is not who knows what. The developers
+know the **scope** of an activity for certain: its purposes, its data subjects and the personal data it processes
+(`purposes`, `dataSubjects`, `dataCategories`, `entities`). The **governance** is decided and kept up to date by the
+data protection officer: the lawful bases, the legal reference, the retention, the recipients, the transfers and the
+impact assessment. It is a record of its own, `Governance`, and an activity holds it in its `governance()`.
+
+An application can declare the scope in code, keep the governance the officer edits in its own storage, and combine
+both with `withGovernance` before checking, for example each time she saves a change:
+
+```java
+// In code, next to the model: what the application knows for certain.
+ProcessingActivity support = ProcessingActivity.builder("learning-support", "Learning support")
+        .purposes(DataUses.EDUCATION_TEACHING)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_HEALTH_AND_MEDICAL_DISABILITY)
+        .build();
+
+// In the officer's storage: what she decides.
+Governance stored = Governance.builder()
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, arts. 12 and 31")
+        .retention("Until the end of the studies")
+        .impactAssessment("DPIA-2026-07")
+        .build();
+
+CheckedActivity checked = checker.check(support.withGovernance(stored));   // valid, no violations
+```
+
+The scope in code has no governance yet, so its check finds only governance problems. Each `ProcessingViolation`
+carries the `element()` of the activity it is in:
+
+```java
+checker.check(support).violations().forEach(v -> System.out.println(v.element() + " " + v));
+```
+
+```text
+LEGAL_BASIS ERROR MISSING_LEGAL_BASIS learning-support: Personal data needs a lawful basis (GDPR article 6.1)
+SPECIAL_CATEGORY_CONDITION ERROR MISSING_SPECIAL_CATEGORY_CONDITION learning-support: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+IMPACT_ASSESSMENT WARNING IMPACT_ASSESSMENT_RECOMMENDED learning-support: The activity involves special categories of data; GDPR article 35 may require an impact assessment
+```
+
+`element().isGovernance()` is `true` for all four. It is `false` for the elements of the scope (`KEY`, `PURPOSES`,
+`DATA_SUBJECTS`, `PERSONAL_DATA`), and that is what it is for: a problem in the scope is for developers, so it fails
+the build; a gap in the governance belongs on the screen where the officer edits it. `verify` fails on every error,
+governance ones included, so a test that should fail only on the scope filters the errors of `checkAll`:
+
+```java
+List<ProcessingViolation> scopeErrors = checker.checkAll(activities).stream()
+        .flatMap(checked -> checked.errors().stream())
+        .filter(violation -> !violation.element().isGovernance())
+        .toList();
+assertTrue(scopeErrors.isEmpty(), () -> "Fix the scope of the activities: " + scopeErrors);
+```
+
+The activities of this module declare the governance in code with the builder, whose governance methods give its
+initial values; `governance(Governance)` replaces them all at once. The reference page
+[ProcessingActivity](../reference/processing/activity.md#governance) has the details, and
+[ProcessingChecker](../reference/processing/checker.md#element) has the element of each code.
+
 ## The record
 
 With the four final activities the test passes and writes the record. **Its texts are in English** — the row labels,
@@ -447,6 +515,8 @@ cannot know, such as the controller's contact details.
   warning `UNNEEDED_CONDITION`: the record should state what applies, not everything that might.
 - **Treating warnings as noise.** They are the open points of the record; each one is something the data protection
   officer will ask about.
+- **Failing the build with `verify` on activities whose governance the officer keeps elsewhere.** `verify` fails on
+  every error. Filter the errors of `checkAll` by `element().isGovernance()` to fail only on the scope.
 - **Checking with `Taxonomy.standard()` when the activities use extension terms** → `UNKNOWN_KEY`.
 - **Reusing a key for a second activity** → `DUPLICATE_ACTIVITY`. Keys identify activities in the record and in the
   tools that read the JSON; keep them stable.
@@ -492,6 +562,19 @@ when the record has any open point, with a message that lists them.
 subjects `EMPLOYEE` and `STAFF_MEMBER`, entity `Staff`, basis `CONTRACT`, a retention). Predict what the checker
 reports, given the `Staff` class of module 3, and decide how to fix it.
 
+**Exercise 9.6 — Scope and governance.** The officer saves this governance for the `learning-support` activity of
+this module, which was declared in code with no governance:
+
+```java
+Governance saved = Governance.builder()
+        .legalBasis(LegalBasis.CONSENT)
+        .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .build();
+```
+
+Which violations does `checker.check(support.withGovernance(saved))` report, with their elements? Is the activity
+valid? Which of them would you show on the officer's screen and which would fail the build?
+
 ## Self-check quiz
 
 1. Does a missing retention period make `verify` throw?
@@ -501,6 +584,7 @@ reports, given the `Staff` class of module 3, and decide how to fix it.
 5. Which bases make the checker ask for a `legalReference`?
 6. In which language are the texts of the Markdown record?
 7. Does a valid record mean that the processing is lawful?
+8. What does `violation.element().isGovernance()` tell you?
 
 ## Further reading
 
@@ -585,6 +669,20 @@ are possible: if staff administration really keeps the result of the screening, 
 not, declare the categories it does process by key instead of listing `Staff`, and leave criminal offence data to the
 screening activity. The second keeps each activity to what it needs.
 
+**Exercise 9.6**
+
+Two warnings, and the activity is valid:
+
+```text
+RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+IMPACT_ASSESSMENT WARNING IMPACT_ASSESSMENT_RECOMMENDED learning-support: The activity involves special categories of data; GDPR article 35 may require an impact assessment
+```
+
+Explicit consent is a valid article 9.2 condition for disability data, so there is no error, and neither consent
+rests on law, so no legal reference is asked for. Both warnings have a governance element (`RETENTION` and
+`IMPACT_ASSESSMENT`): they go on the officer's screen, next to the retention and impact assessment fields. Nothing
+fails the build, because there is no error in the scope.
+
 **Quiz**
 
 1. No. `MISSING_RETENTION` is a warning: the record shows `Not declared` and lists it as an open point.
@@ -599,5 +697,8 @@ screening activity. The second keeps each activity to what it needs.
    declared.
 7. No. It means every activity declares what the GDPR asks for and that its keys and entities check out. Whether
    the declarations are true and the bases appropriate is the controller's assessment.
+8. Whether the problem is in the part of the activity the data protection function keeps (its `Governance`) rather
+   than in the scope declared in code (key, purposes, data subjects, personal data). Scope problems are for
+   developers and fail the build; governance problems are shown where the officer edits them.
 
 </details>

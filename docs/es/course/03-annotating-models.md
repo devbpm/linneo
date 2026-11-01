@@ -262,6 +262,9 @@ OpenMetadata— se usa el techo. Por tanto, el campo recibe la protección del t
 `declaredBy` no puede estar vacío (`MISSING_REASON`). `@CategoryByRow` y `@Category` en el mismo campo es un error
 `CONFLICTING_ANNOTATIONS`.
 
+El clasificador nunca lee valores, así que no puede comprobar las filas. Cuando tu código escribe una, puede comprobar
+que la categoría que eligió queda por debajo del techo con `FieldClassification.covers` (módulo 5).
+
 ## `@DerivedFrom`: valores calculados a partir de otros campos
 
 Algunos campos no se capturan sino que se calculan: una edad a partir de una fecha de nacimiento, un nombre completo
@@ -363,8 +366,9 @@ campos del compuesto, con la ruta `campo.parte`: `home.street`, `previous.city`.
 
 ## `@Exempt`: campos técnicos
 
-Algunos campos no contienen datos del modelo: una caché, un manejador técnico, un estado que mantiene un framework,
-una relación con otra entidad. `@Exempt` los excluye, con un motivo:
+Algunos campos no contienen datos del modelo: una caché, un manejador técnico, un estado que mantiene un framework o
+una colección de otros registros que se clasifican por sí mismos, como los hijos de una asociación uno a muchos.
+`@Exempt` los excluye, con un motivo:
 
 ```java
 @Exempt("caché del menú renderizado, se reconstruye bajo demanda")

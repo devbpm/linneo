@@ -15,8 +15,9 @@ doc-sources:
 `io.github.devbpm.linneo.annotation.Exempt` —
 `@Documented @Retention(RUNTIME) @Target({FIELD, RECORD_COMPONENT})`, `@since 0.1.0`
 
-Excludes from classification a technical field that holds no data of the model: a cache, a handle or state that a
-framework keeps.
+Excludes from classification a field that holds no data of the model: a cache, a technical handle, state that a
+framework keeps, or a collection of other records that are classified on their own, such as the children of a
+one-to-many association.
 
 A value computed from other fields is **not** such a field: the age computed from a date of birth is personal data.
 Classify it with [`@DerivedFrom`](derived-from.md) or [`@Category`](category.md), never with `@Exempt`.
@@ -68,6 +69,14 @@ public class Person {
 
     private transient Object cache; // excluded without annotation
 }
+```
+
+Exempting a collection of other records is right when each of them is classified on its own, with its own class (here
+`Attachment`):
+
+```java
+@Exempt("relationship: each Attachment is classified on its own")
+private List<Attachment> attachments;   // the children of a one-to-many association
 ```
 
 See also: [Annotations overview](README.md) · [`@DerivedFrom`](derived-from.md) · [Classifier](../classify/classifier.md) ·

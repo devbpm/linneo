@@ -7,6 +7,7 @@ permalink: "/en/reference/processing/"
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/package-info.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
   - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
@@ -23,7 +24,8 @@ taxonomy and the classification of the model, and renders the record.
 
 | Type | Kind | Role | Page |
 |---|---|---|---|
-| `ProcessingActivity` | record, with a `Builder` | One processing activity as declared: purposes, data subjects, personal data, bases, retention, recipients, transfers | [ProcessingActivity](activity.md) |
+| `ProcessingActivity` | record, with a `Builder` | One processing activity as declared: its scope (purposes, data subjects, personal data) and its governance | [ProcessingActivity](activity.md) |
+| `Governance` | record, with a `Builder` | The part the data protection function owns: bases, legal reference, retention, recipients, transfers, impact assessment | [ProcessingActivity](activity.md#governance) |
 | `Transfer` | record | A transfer to a third country or an international organisation | [ProcessingActivity](activity.md#transfer) |
 | `LegalBasis` | enum | The lawful basis (article 6.1) | [Legal bases](bases.md#legalbasis) |
 | `SpecialCategoryCondition` | enum | The exception for special categories of data (article 9.2) | [Legal bases](bases.md#specialcategorycondition) |
@@ -32,7 +34,7 @@ taxonomy and the classification of the model, and renders the record.
 | `ProcessingChecker` | class | Checks activities and builds the record | [ProcessingChecker](checker.md) |
 | `CheckedActivity` | record | An activity with its terms resolved, its personal data, the protection it requires and the problems found | [ProcessingChecker](checker.md#checkedactivity) |
 | `Jurisdiction` | enum | The national law a checker applies on top of the GDPR (`EU`, `SPAIN`) | [ProcessingChecker](checker.md#jurisdiction) |
-| `ProcessingViolation` | record, with `Severity` and `Code` | A problem found in an activity | [ProcessingChecker](checker.md#processingviolation) |
+| `ProcessingViolation` | record, with `Severity`, `Code` and `Element` | A problem found in an activity, and the part of it the problem is in | [ProcessingChecker](checker.md#processingviolation) |
 | `ProcessingException` | exception | Thrown by `verify` with every error | [ProcessingChecker](checker.md#processingexception) |
 | `ProcessingRecord` | record | The record of processing activities, as Markdown or JSON | [ProcessingRecord](record.md) |
 
@@ -57,6 +59,17 @@ The vocabularies of the bases follow fideslang's privacy declarations: `LegalBas
 `TransferSafeguard` carry the values of `legal_basis_for_processing`, `special_category_legal_basis` and
 `legal_basis_for_transfers` in `fideslangName()`.
 
+## Scope and governance
+
+An activity has two parts with different owners. Its **scope**, the purposes, the data subjects and the personal data,
+is what the code of the application knows for certain. Its **governance** (`Governance`) is what the data protection
+function decides and keeps up to date: the lawful bases, the legal reference, the retention, the recipients, the
+transfers and the impact assessment. An application can declare the scope in code, keep the governance its data
+protection officer edits in its own storage and combine both with `ProcessingActivity.withGovernance(...)` before
+checking. Each problem the checker reports carries the `Element` of the activity it is in, and
+`element().isGovernance()` tells the scope, for developers, from the governance, for the officer; see
+[`Element`](checker.md#element).
+
 ## Errors and warnings
 
 The [`ProcessingChecker`](checker.md) follows the same fail-closed approach as the classifier, with one rule for the
@@ -73,7 +86,8 @@ severity:
   activities with no impact assessment. Verification passes and the warnings appear in the record as **open
   points**.
 
-The full list is in the [codes table](checker.md#codes).
+The full list is in the [codes table](checker.md#codes), with the element each code is reported on. `verify` fails
+on every error, whichever its element.
 
 ## What Linneo does not do
 
