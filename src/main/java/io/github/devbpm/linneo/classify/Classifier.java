@@ -40,15 +40,14 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -76,8 +75,11 @@ import java.util.function.Function;
  * Protection never drops silently: a derived field must protect at least as much as each of its sources
  * ({@link Code#WEAKER_THAN_SOURCE}) unless it declares an anonymized or aggregated value, and a composite field
  * stored as one value must protect at least as much as everything the composite contains
- * ({@link Code#WEAKER_THAN_PARTS}). A composite that contains itself, or derivations that depend on each other, are
- * a {@link Code#CYCLE}.
+ * ({@link Code#WEAKER_THAN_PARTS}). A composite that contains itself, and derived fields that depend on each other,
+ * in one class or across classes, are a {@link Code#CYCLE}; a field that derives from a field with an error is an
+ * {@link Code#UNKNOWN_SOURCE}. Sources are resolved field by field, so classes may derive from each other's other
+ * fields and a composite from a class that holds it, and the result does not depend on the order in which classes
+ * are classified.
  * <p>
  * Fields that bytecode tools generate are ignored: synthetic fields and fields whose name starts with {@code $$_}, as
  * Hibernate's enhancement adds. A Hibernate proxy class ({@code Entity$HibernateProxy$...}) is classified as the
@@ -210,64 +212,102 @@ public final class Classifier {
     }
 
     /**
-     * One classification request: classes are read once, and the classes being read are tracked to find cycles.
+     * One classification request. Each class is read once, in two steps: its fields are collected (derived fields
+     * wait), and a derived field is resolved when something needs it, so a source in another class resolves only the
+     * fields it depends on. The derived fields being resolved, across classes, form one depth-first search, in which
+     * Tarjan's algorithm finds the fields that are in a cycle.
      */
     final class Run {
 
-        private final Map<Class<?>, Unit> done = new HashMap<>();
-        private final Set<Class<?>> inProgress = new HashSet<>();
+        private final Map<Class<?>, ClassRun> runs = new HashMap<>();
+        // The derived fields being resolved, innermost last.
+        private final List<Slot> derivations = new ArrayList<>();
+        // The fields of the search not yet assigned to a strongly connected component.
+        private final List<Slot> component = new ArrayList<>();
+        private int counter;
 
         /**
-         * The unit of a class.
+         * The run of a class with all its fields collected.
          *
          * @param type the class, not a proxy
-         * @return the unit, or {@code null} if the class is already being classified: a cycle
+         * @return the run, or {@code null} while the class is still collecting its fields: it holds the class that
+         *         asks, through composites
+         */
+        ClassRun collected(Class<?> type) {
+            ClassRun classRun = runs.get(type);
+            if (classRun == null) {
+                classRun = new ClassRun(this, type);
+                runs.put(type, classRun);
+                classRun.collect();
+            }
+            return classRun.collected ? classRun : null;
+        }
+
+        /**
+         * The unit of a class, every derived field resolved.
+         *
+         * @param type the class, not a proxy
+         * @return the unit, or {@code null} if the class is still collecting its fields or resolving them, because it
+         *         needs, through composites or derivations, the class that asks
          */
         Unit unit(Class<?> type) {
-            Unit unit = done.get(type);
-            if (unit != null) {
-                return unit;
-            }
-            if (!inProgress.add(type)) {
-                return null;
-            }
-            try {
-                unit = new ClassRun(this, type).run();
-            } finally {
-                inProgress.remove(type);
-            }
-            done.put(type, unit);
-            return unit;
+            ClassRun classRun = collected(type);
+            return classRun == null ? null : classRun.finish();
         }
     }
 
     private enum State { PENDING, VISITING, DONE }
 
-    /** A classified field, or a derived field waiting for its sources. */
+    /**
+     * A classified field; a derived field waiting for its sources; or a part of an embedded composite that is still
+     * to be derived, linked to its slot in the composite's run.
+     */
     private static final class Slot {
         private final Field field;
+        private final ClassRun link;
+        private final String linkPath;
         private State state;
         private FieldClassification result;
         private Declared declared;
         private boolean inCycle;
+        // Tarjan's bookkeeping for a derived field: order of discovery, lowest discovery order it reaches, and
+        // whether it still waits on the component stack.
+        private int index;
+        private int low;
+        private boolean onComponentStack;
 
-        private Slot(Field field, State state, FieldClassification result, Declared declared) {
+        private Slot(Field field, ClassRun link, String linkPath, State state, FieldClassification result,
+                     Declared declared) {
             this.field = field;
+            this.link = link;
+            this.linkPath = linkPath;
             this.state = state;
             this.result = result;
             this.declared = declared;
         }
 
         static Slot done(FieldClassification result, Declared declared) {
-            return new Slot(null, State.DONE, result, declared);
+            return new Slot(null, null, null, State.DONE, result, declared);
         }
 
         static Slot pending(Field field) {
-            return new Slot(field, State.PENDING, null, null);
+            return new Slot(field, null, null, State.PENDING, null, null);
+        }
+
+        static Slot linked(ClassRun composite, String path) {
+            return new Slot(null, composite, path, State.PENDING, null, null);
         }
     }
 
     private record Classified(FieldClassification classification, Declared declared) {
+    }
+
+    /** A composite embedded under a field: its problems join those of the class when the class is finished. */
+    private record Embedded(String name, ClassRun run) {
+    }
+
+    /** A field of a composite type stored as one value, checked against the composite's fields at the end. */
+    private record Whole(Field field, FieldClassification classification) {
     }
 
     /** The classification of one class. */
@@ -278,14 +318,23 @@ public final class Classifier {
         private final Map<String, Slot> slots = new LinkedHashMap<>();
         private final List<Exemption> exempted = new ArrayList<>();
         private final List<Violation> violations = new ArrayList<>();
-        private final List<String> stack = new ArrayList<>();
+        private final List<Embedded> embedded = new ArrayList<>();
+        private final List<Whole> wholes = new ArrayList<>();
+        // The position of each field name, to report problems in the order of the fields.
+        private final Map<String, Integer> positions = new HashMap<>();
+        // Every field has a slot: another class may resolve a source here.
+        private boolean collected;
+        // Resolving every derived field, to build the unit.
+        private boolean finishing;
+        private Unit unit;
 
         ClassRun(Run run, Class<?> type) {
             this.run = run;
             this.type = type;
         }
 
-        Unit run() {
+        // Reads every field once; nothing is derived yet, so collecting never needs another class's derivations.
+        void collect() {
             List<Class<?>> hierarchy = hierarchyOf(type);
             for (Class<?> declaring : hierarchy) {
                 checkDefault(declaring);
@@ -296,6 +345,7 @@ public final class Classifier {
                     if (isExcluded(field)) {
                         continue;
                     }
+                    positions.putIfAbsent(field.getName(), positions.size());
                     Class<?> earlier = declaredBy.putIfAbsent(field.getName(), declaring);
                     if (earlier != null) {
                         error(field.getName(), Code.DUPLICATE_FIELD, "hides the field of the same name declared by "
@@ -305,11 +355,36 @@ public final class Classifier {
                     classifyField(field);
                 }
             }
+            collected = true;
+        }
+
+        // The unit, once every derived field is resolved, every composite stored as one value checked and the
+        // problems of the embedded composites taken over; null while that is under way.
+        Unit finish() {
+            if (unit != null || finishing) {
+                return unit;
+            }
+            finishing = true;
             for (Map.Entry<String, Slot> entry : List.copyOf(slots.entrySet())) {
                 if (entry.getValue().state != State.DONE) {
                     derive(entry.getKey());
                 }
             }
+            for (Whole whole : wholes) {
+                checkParts(whole.field(), whole.classification());
+            }
+            for (Embedded part : embedded) {
+                Unit inner = part.run().finish();
+                if (inner != null) {
+                    for (Violation violation : inner.classification().violations()) {
+                        violations.add(new Violation(type, violation.path() == null ? part.name()
+                                : part.name() + "." + violation.path(), violation.severity(), violation.code(),
+                                violation.message()));
+                    }
+                }
+            }
+            // Problems in the order of the fields, whichever order the derivations of the run took.
+            violations.sort(Comparator.comparingInt(violation -> position(violation.path())));
             List<FieldClassification> fields = new ArrayList<>();
             Map<String, Declared> declared = new HashMap<>();
             slots.forEach((path, slot) -> {
@@ -318,8 +393,18 @@ public final class Classifier {
                     declared.put(path, slot.declared);
                 }
             });
-            return new Unit(new ClassClassification(type, fields, exempted, violations),
+            unit = new Unit(new ClassClassification(type, fields, exempted, violations),
                     Collections.unmodifiableMap(declared));
+            finishing = false;
+            return unit;
+        }
+
+        private int position(String path) {
+            if (path == null) {
+                return -1;
+            }
+            int dot = path.indexOf('.');
+            return positions.getOrDefault(dot < 0 ? path : path.substring(0, dot), Integer.MAX_VALUE);
         }
 
         private void classifyField(Field field) {
@@ -364,7 +449,9 @@ public final class Classifier {
             }
             classified.ifPresent(c -> {
                 slots.put(name, Slot.done(c.classification(), c.declared()));
-                checkParts(field, c.classification());
+                if (compositeType(field) != null) {
+                    wholes.add(new Whole(field, c.classification()));
+                }
             });
         }
 
@@ -438,26 +525,28 @@ public final class Classifier {
                             new Declared(found.value(), null, null)));
         }
 
-        // A field of a composite type without an annotation of its own: one entry per field of the composite.
+        // A field of a composite type without an annotation of its own: one entry per field of the composite. The
+        // composite's derived fields are linked, not derived, so embedding never needs a derivation: a part is
+        // derived when this class, or a source lookup, needs it.
         private void embed(String name, Class<?> composite) {
-            Unit unit = run.unit(composite);
-            if (unit == null) {
+            ClassRun inner = run.collected(composite);
+            if (inner == null) {
                 error(name, Code.CYCLE, "the composite " + composite.getSimpleName() + " contains itself; classify"
                         + " the field as one value with @Category or @CategoryByRow");
                 return;
             }
             String prefix = name + ".";
-            ClassClassification inner = unit.classification();
-            for (FieldClassification field : inner.fields()) {
-                slots.put(prefix + field.path(), Slot.done(prefixed(prefix, field), unit.declared().get(field.path())));
-            }
-            for (Exemption exemption : inner.exempted()) {
+            inner.slots.forEach((path, slot) -> {
+                if (slot.state != State.DONE) {
+                    slots.put(prefix + path, Slot.linked(inner, path));
+                } else if (slot.result != null) {
+                    slots.put(prefix + path, Slot.done(prefixed(prefix, slot.result), slot.declared));
+                }
+            });
+            for (Exemption exemption : inner.exempted) {
                 exempted.add(new Exemption(exemption.declaringClass(), prefix + exemption.path(), exemption.reason()));
             }
-            for (Violation violation : inner.violations()) {
-                violations.add(new Violation(type, violation.path() == null ? name : prefix + violation.path(),
-                        violation.severity(), violation.code(), violation.message()));
-            }
+            embedded.add(new Embedded(name, inner));
         }
 
         // A field of a composite type stored as one value: its classification must cover the composite's fields.
@@ -478,23 +567,58 @@ public final class Classifier {
             }
         }
 
-        // Resolves a derived field after its sources; a source may be a derived field itself.
+        // Resolves a derived field after its sources; a source may be a derived field itself, here or in another
+        // class. The derivations of a run are one depth-first search with Tarjan's bookkeeping: a field is in a cycle
+        // exactly when it shares a strongly connected component with another field or depends on itself, so the
+        // same fields are found whichever field the search starts from.
         private FieldClassification derive(String path) {
             Slot slot = slots.get(path);
-            if (slot.state == State.DONE) {
+            Slot caller = run.derivations.isEmpty() ? null : run.derivations.getLast();
+            if (slot.state != State.PENDING) {
+                if (caller != null && slot.onComponentStack) {
+                    caller.low = Math.min(caller.low, slot.index);
+                    slot.inCycle |= caller == slot;
+                }
                 return slot.result;
             }
-            if (slot.state == State.VISITING) {
-                for (int i = stack.indexOf(path); i < stack.size(); i++) {
-                    slots.get(stack.get(i)).inCycle = true;
-                }
-                return null;
-            }
             slot.state = State.VISITING;
-            stack.add(path);
-            List<Source> sources = sources(path, slot.field.getDeclaredAnnotation(DerivedFrom.class));
-            stack.removeLast();
+            slot.index = run.counter++;
+            slot.low = slot.index;
+            slot.onComponentStack = true;
+            run.component.add(slot);
+            run.derivations.add(slot);
+            List<Source> sources = null;
+            FieldClassification part = null;
+            if (slot.link != null) {
+                part = slot.link.derive(slot.linkPath);
+            } else {
+                sources = sources(path, slot.field.getDeclaredAnnotation(DerivedFrom.class));
+            }
+            run.derivations.removeLast();
             slot.state = State.DONE;
+            if (caller != null) {
+                caller.low = Math.min(caller.low, slot.low);
+            }
+            if (slot.low < slot.index) {
+                slot.inCycle = true;
+            } else {
+                // The root of a component: the fields above it on the component stack belong to it.
+                Slot member;
+                do {
+                    member = run.component.removeLast();
+                    member.onComponentStack = false;
+                    slot.inCycle |= member != slot;
+                } while (member != slot);
+            }
+            if (slot.link != null) {
+                // A part of an embedded composite: its problems, a cycle included, are the composite's own and join
+                // this class's when it is finished.
+                if (part != null) {
+                    slot.result = prefixed(path.substring(0, path.length() - slot.linkPath.length()), part);
+                    slot.declared = slot.link.slots.get(slot.linkPath).declared;
+                }
+                return slot.result;
+            }
             if (slot.inCycle) {
                 error(path, Code.CYCLE, "is derived from itself through other derived fields");
                 return null;
@@ -533,59 +657,67 @@ public final class Classifier {
             return failed ? null : sources;
         }
 
-        private List<Source> local(String path, String source) {
+        // The classified fields of this class at a path: the field, derived first if needed, or the parts of a
+        // composite. Empty if there is none or it has an error.
+        private List<Source> classifiedAt(String source, String reference) {
             Slot slot = slots.get(source);
             if (slot != null) {
                 FieldClassification classification = derive(source);
-                if (classification == null) {
-                    if (!slots.get(path).inCycle) {
-                        error(path, Code.UNKNOWN_SOURCE, "the source '" + source + "' has an error");
-                    }
-                    return null;
-                }
-                return List.of(new Source(source, classification, slot.declared));
+                return classification == null ? List.of()
+                        : List.of(new Source(reference + source, classification, slot.declared));
             }
             List<Source> parts = new ArrayList<>();
-            slots.forEach((p, s) -> {
-                if (p.startsWith(source + ".") && s.result != null) {
-                    parts.add(new Source(p, s.result, s.declared));
+            for (Map.Entry<String, Slot> entry : List.copyOf(slots.entrySet())) {
+                if (entry.getKey().startsWith(source + ".")) {
+                    FieldClassification classification = derive(entry.getKey());
+                    if (classification != null) {
+                        parts.add(new Source(reference + entry.getKey(), classification, entry.getValue().declared));
+                    }
                 }
-            });
-            if (parts.isEmpty()) {
-                error(path, Code.UNKNOWN_SOURCE, "the source '" + source + "' is not a classified field of "
-                        + type.getSimpleName());
-                return null;
             }
             return parts;
         }
 
+        private List<Source> local(String path, String source) {
+            List<Source> found = classifiedAt(source, "");
+            if (!found.isEmpty()) {
+                return found;
+            }
+            if (!slots.containsKey(source)) {
+                error(path, Code.UNKNOWN_SOURCE, "the source '" + source + "' is not a classified field of "
+                        + type.getSimpleName());
+            } else if (!inOpenComponent(source)) {
+                error(path, Code.UNKNOWN_SOURCE, "the source '" + source + "' has an error");
+            }
+            return null;
+        }
+
+        // Whether a source is in the component the search is in: then it is in a cycle with the field that asks,
+        // which reports the CYCLE, and its own error says nothing more.
+        private boolean inOpenComponent(String source) {
+            Slot slot = slots.get(source);
+            return slot != null && slot.onComponentStack;
+        }
+
+        // A source in another class: only that field, and what it depends on, is resolved there, so classes may
+        // derive from each other's fields and only fields that depend on each other are a cycle.
         private List<Source> foreign(String path, Class<?> sourceType, String source) {
-            if (unproxied(sourceType) == type) {
+            Class<?> other = unproxied(sourceType);
+            if (other == type) {
                 return local(path, source);
             }
-            Unit unit = run.unit(unproxied(sourceType));
-            String reference = sourceType.getName() + "#";
-            if (unit == null) {
-                error(path, Code.CYCLE, "derives from " + sourceType.getSimpleName() + ", which needs "
-                        + type.getSimpleName() + " to be classified first");
-                return null;
+            ClassRun owner = run.collected(other);
+            if (owner == null) {
+                // Collecting derives nothing, so no derivation runs while a class collects its fields.
+                throw new IllegalStateException(other.getName() + " is collecting its fields during a derivation");
             }
-            ClassClassification classification = unit.classification();
-            List<Source> found = new ArrayList<>();
-            for (FieldClassification field : classification.fields()) {
-                if (field.path().equals(source) || field.path().startsWith(source + ".")) {
-                    found.add(new Source(reference + field.path(), field, unit.declared().get(field.path())));
-                }
+            List<Source> found = owner.classifiedAt(source, sourceType.getName() + "#");
+            if (found.isEmpty() && !owner.inOpenComponent(source)) {
+                error(path, Code.UNKNOWN_SOURCE, owner.slots.containsKey(source)
+                        ? "the source '" + other.getSimpleName() + "." + source + "' has an error"
+                        : "the source '" + source + "' is not a classified field of " + other.getSimpleName());
             }
-            if (found.isEmpty()) {
-                boolean cycle = classification.violations().stream()
-                        .anyMatch(v -> v.code() == Code.CYCLE && source.equals(v.path()));
-                error(path, cycle ? Code.CYCLE : Code.UNKNOWN_SOURCE, cycle
-                        ? "derives from " + sourceType.getSimpleName() + "." + source + ", which derives from it"
-                        : "the source '" + source + "' is not a classified field of " + sourceType.getSimpleName());
-                return null;
-            }
-            return found;
+            return found.isEmpty() ? null : found;
         }
 
         private Optional<Classified> derived(Field field, List<Source> sources) {

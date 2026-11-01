@@ -62,15 +62,22 @@ message, and whether the field still appears in `ClassClassification.fields()`.
 | `AMBIGUOUS_VALUE` | error | An optional element of `@Category` (`confidentiality`, `integrity`, or `identifiability` on a personal category) has more than one value. | `<element> must have at most one value` | no |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `@Category` declares an `identifiability` for a category that is not personal. | `'<key>' is not personal data and has no identifiability` | no |
 | `DUPLICATE_FIELD` | error | A field has the name of a field of a superclass, so its path would not identify it. Raised for the field that hides, not for the superclass field. | `hides the field of the same name declared by <Superclass>; rename one of them` | no (the superclass field is) |
-| `UNKNOWN_SOURCE` | error | A [`@DerivedFrom`](../annotations/derived-from.md) field names no source, or a source that is not a classified field of the class given by `type` (or of the classified class): it does not exist, is exempted or has an error. | `@DerivedFrom needs at least one source` / `the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` | no |
+| `UNKNOWN_SOURCE` | error | A [`@DerivedFrom`](../annotations/derived-from.md) field names no source, or a source that is not a classified field of the class given by `type` (or of the classified class): it does not exist, is exempted or has an error, a field in a cycle included. | `@DerivedFrom needs at least one source` / `the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` / `the source '<Class>.<s>' has an error` (a field of another class) | no |
 | `AMBIGUOUS_DERIVATION` | error | A derived field without `@Category` has sources whose classifications differ in category, confidentiality, integrity or identifiability. | `its sources [<s>, ...] have different classifications; declare the category of the derived value with @Category` | no |
 | `WEAKER_THAN_SOURCE` | error | A derived field declares a category that protects less than one of its sources, without declaring the value anonymized or aggregated. | `'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, unless it is declared anonymized or aggregated` | no |
 | `WEAKER_THAN_PARTS` | error | A field that stores a [`@Composite`](../annotations/composite.md) as one value declares, with `@Category` or `@CategoryByRow`, a category that protects less than the fields of the composite. | `'<key>' protects less than the fields of <Composite> need (<natures>, <confidentiality>, <integrity>[, secret])` | **yes** (the error is still reported) |
-| `CYCLE` | error | A composite contains itself, or derived fields depend on each other, within one class or across classes. | `the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow` / `is derived from itself through other derived fields` / `derives from <Type>, which needs <Class> to be classified first` / `derives from <Type>.<source>, which derives from it` | no (for a composite, the field that closes the loop) |
+| `CYCLE` | error | A composite contains itself, or derived fields depend on each other, within one class or across classes, also through the parts of a composite. | `the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow` / `is derived from itself through other derived fields` | no (for a composite, the field that closes the loop) |
 
 In `AMBIGUOUS_DERIVATION` and `WEAKER_THAN_SOURCE` the sources `[<s>, ...]` are written as in
 `FieldClassification.derivedFrom()`: paths of the same class (a composite expanded to its fields), or `ClassName#path`.
 In `UNKNOWN_SOURCE`, `<s>` is the path as written in the annotation.
+
+Classes that derive from each other's other fields, and a composite that derives from a class that holds it, are not a
+`CYCLE`: only derived fields that depend on each other are, and each of them gets the second message. A field that
+derives from one of them without being in the cycle is an `UNKNOWN_SOURCE`. A field of a composite in a cycle is
+reported with the composite and by each class that holds it, at `field.part`.
+
+The same fields have errors, with the same codes and messages, whatever the order the classes are classified in.
 
 Violations about a `@DefaultCategory` are raised for the classified class and for each superclass that carries one,
 and are reported in the `ClassClassification` of the class being classified (so a faulty superclass default appears

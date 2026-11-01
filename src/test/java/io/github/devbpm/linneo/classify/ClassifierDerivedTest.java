@@ -21,6 +21,7 @@ import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.annotation.Category;
 import io.github.devbpm.linneo.annotation.CategoryByRow;
+import io.github.devbpm.linneo.annotation.Composite;
 import io.github.devbpm.linneo.annotation.DefaultCategory;
 import io.github.devbpm.linneo.annotation.DerivedFrom;
 import io.github.devbpm.linneo.annotation.Exempt;
@@ -29,6 +30,7 @@ import io.github.devbpm.linneo.classify.Violation.Code;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -227,6 +229,184 @@ class ClassifierDerivedTest {
                 () -> assertEquals(List.of(Code.CYCLE),
                         classifier.classify(Ping.class).errors().stream().map(Violation::code).toList()));
     }
+    @SuppressWarnings("unused")
+    static class Order {
+        @Category(Categories.USER_FINANCIAL_FEE)
+        private BigDecimal total;
+        @DerivedFrom(type = Customer.class, value = "name")
+        private String customerName;
+        // A derived source in a class that derives from this one: a chain, not a cycle.
+        @DerivedFrom(type = Customer.class, value = "lastOrderTotal")
+        private BigDecimal echo;
+        // Depends on a cycle without being part of it.
+        @DerivedFrom(type = Invoice.class, value = "reference")
+        private String invoice;
+    }
+
+    @SuppressWarnings("unused")
+    static class Customer {
+        @Category(Categories.USER_NAME)
+        private String name;
+        @DerivedFrom(type = Order.class, value = "total")
+        private BigDecimal lastOrderTotal;
+        @DerivedFrom(type = Invoice.class, value = "reference")
+        private String lastInvoice;
+    }
+
+    @SuppressWarnings("unused")
+    static class Invoice {
+        @DerivedFrom(type = Customer.class, value = "lastInvoice")
+        private String reference;
+    }
+
+    @Test
+    @DisplayName("classes may derive from each other's fields; only fields that depend on each other are a cycle")
+    void classesDerivingFromEachOther() {
+        List<ClassClassification> forward = classifier.classifyAll(List.of(Order.class, Customer.class,
+                Invoice.class));
+        List<ClassClassification> backward = classifier.classifyAll(List.of(Invoice.class, Customer.class,
+                Order.class));
+        ClassClassification order = forward.getFirst();
+        ClassClassification customer = forward.get(1);
+        assertAll(
+                () -> assertEquals(List.of("invoice"), order.errors().stream().map(Violation::path).toList()),
+                () -> assertEquals(Code.UNKNOWN_SOURCE, order.errors().getFirst().code()),
+                () -> assertEquals(Categories.USER_NAME, order.field("customerName").orElseThrow().category().key()),
+                () -> assertEquals(Categories.USER_FINANCIAL_FEE, order.field("echo").orElseThrow().category().key()),
+                () -> assertEquals(Categories.USER_FINANCIAL_FEE,
+                        customer.field("lastOrderTotal").orElseThrow().category().key()),
+                () -> assertEquals(List.of("lastInvoice"), customer.errors().stream()
+                        .filter(v -> v.code() == Code.CYCLE).map(Violation::path).toList()),
+                () -> assertEquals(List.of("reference"), forward.get(2).errors().stream()
+                        .filter(v -> v.code() == Code.CYCLE).map(Violation::path).toList()),
+                () -> assertEquals(forward, backward.reversed()),
+                () -> assertEquals(forward.get(1), classifier.classify(Customer.class)),
+                () -> assertEquals(forward.get(2), classifier.classify(Invoice.class)));
+    }
+
+    // Two cycles that share fields, across three classes: a -> b -> c -> a and a -> d -> b. Every field is in a
+    // cycle, which a search that only marks the path back to a field met again misses for d when it starts at a.
+    @SuppressWarnings("unused")
+    static class Tangle1 {
+        @DerivedFrom(value = {"b", "d"}, type = Tangle2.class)
+        private String a;
+    }
+
+    @SuppressWarnings("unused")
+    static class Tangle2 {
+        @DerivedFrom(type = Tangle3.class, value = "c")
+        private String b;
+        @DerivedFrom("b")
+        private String d;
+    }
+
+    @SuppressWarnings("unused")
+    static class Tangle3 {
+        @DerivedFrom(type = Tangle1.class, value = "a")
+        private String c;
+        @DerivedFrom(type = Tangle2.class, value = "d")
+        private String afterD;
+    }
+
+    @Test
+    @DisplayName("every field of a tangle of cycles is a CYCLE, and a field depending on one has an unknown source")
+    void tangledCycles() {
+        List<Class<?>> classes = List.of(Tangle1.class, Tangle2.class, Tangle3.class);
+        for (List<Class<?>> order : List.of(classes, classes.reversed(),
+                List.of(Tangle2.class, Tangle1.class, Tangle3.class))) {
+            List<ClassClassification> result = classifier.classifyAll(order);
+            List<String> cycles = result.stream().flatMap(c -> c.errors().stream())
+                    .filter(v -> v.code() == Code.CYCLE).map(v -> v.type().getSimpleName() + "." + v.path())
+                    .sorted().toList();
+            List<String> unknown = result.stream().flatMap(c -> c.errors().stream())
+                    .filter(v -> v.code() == Code.UNKNOWN_SOURCE).map(v -> v.type().getSimpleName() + "." + v.path())
+                    .toList();
+            assertAll(order.toString(),
+                    () -> assertEquals(List.of("Tangle1.a", "Tangle2.b", "Tangle2.d", "Tangle3.c"), cycles),
+                    () -> assertEquals(List.of("Tangle3.afterD"), unknown));
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Composite
+    static class Label {
+        @DerivedFrom(type = Labelled.class, value = "name")
+        private String text;
+    }
+
+    @SuppressWarnings("unused")
+    static class Labelled {
+        @Category(Categories.USER_NAME)
+        private String name;
+        private Label label;
+    }
+
+    // A chain through a composite: Stamp.by <- Author.signature <- Article.writer, and Article holds a Stamp.
+    @SuppressWarnings("unused")
+    @Composite
+    static class Stamp {
+        @DerivedFrom(type = Author.class, value = "signature")
+        private String by;
+    }
+
+    @SuppressWarnings("unused")
+    static class Author {
+        @DerivedFrom(type = Article.class, value = "writer")
+        private String signature;
+    }
+
+    @SuppressWarnings("unused")
+    static class Article {
+        @Category(Categories.USER_NAME)
+        private String writer;
+        private Stamp stamp;
+    }
+
+    // A real cycle through a composite: Ring.x <- ring.link, and Link.back <- Ring.x.
+    @SuppressWarnings("unused")
+    @Composite
+    static class Link {
+        @DerivedFrom(type = Ring.class, value = "x")
+        private String back;
+    }
+
+    @SuppressWarnings("unused")
+    static class Ring {
+        @DerivedFrom("link.back")
+        private String x;
+        private Link link;
+    }
+
+    @Test
+    @DisplayName("a composite may derive from a class that holds it; only fields that depend on each other cycle")
+    void compositesAndDerivations() {
+        List<List<Class<?>>> orders = List.of(List.of(Label.class, Labelled.class), List.of(Labelled.class,
+                Label.class), List.of(Stamp.class, Author.class, Article.class), List.of(Article.class, Author.class,
+                Stamp.class), List.of(Link.class, Ring.class), List.of(Ring.class, Link.class));
+        for (List<Class<?>> order : orders) {
+            for (ClassClassification result : classifier.classifyAll(order)) {
+                Class<?> type = result.type();
+                if (type == Ring.class) {
+                    assertEquals(List.of("x", "link.back"), result.errors().stream().map(Violation::path).toList(),
+                            order::toString);
+                    assertTrue(result.errors().stream().allMatch(v -> v.code() == Code.CYCLE), order::toString);
+                } else if (type == Link.class) {
+                    assertEquals(List.of(Code.CYCLE), result.errors().stream().map(Violation::code).toList(),
+                            order::toString);
+                } else {
+                    assertEquals(List.of(), result.errors(), () -> order + ": " + result);
+                }
+            }
+        }
+        assertAll(
+                () -> assertEquals(Categories.USER_NAME, classifier.classify(Labelled.class).field("label.text")
+                        .orElseThrow().category().key()),
+                () -> assertEquals(Categories.USER_NAME, classifier.classify(Article.class).field("stamp.by")
+                        .orElseThrow().category().key()),
+                () -> assertEquals(List.of(Author.class.getName() + "#signature"),
+                        classifier.classify(Article.class).field("stamp.by").orElseThrow().derivedFrom()));
+    }
+
     @Test
     @DisplayName("naming the class being classified as the type of the sources is the same as omitting it")
     void ownType() {

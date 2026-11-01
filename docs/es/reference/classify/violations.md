@@ -62,15 +62,23 @@ producen, el mensaje y si el campo sigue apareciendo en `ClassClassification.fie
 | `AMBIGUOUS_VALUE` | error | Un elemento opcional de `@Category` (`confidentiality`, `integrity`, o `identifiability` en una categoría personal) tiene más de un valor. | `<element> must have at most one value` | no |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `@Category` declara una `identifiability` para una categoría que no es personal. | `'<key>' is not personal data and has no identifiability` | no |
 | `DUPLICATE_FIELD` | error | Un campo tiene el nombre de un campo de una superclase, así que su ruta no lo identificaría. Se produce para el campo que oculta, no para el de la superclase. | `hides the field of the same name declared by <Superclass>; rename one of them` | no (el de la superclase sí) |
-| `UNKNOWN_SOURCE` | error | Un campo [`@DerivedFrom`](../annotations/derived-from.md) no nombra ninguna fuente, o nombra una que no es un campo clasificado de la clase indicada por `type` (o de la clase clasificada): no existe, está exenta o tiene un error. | `@DerivedFrom needs at least one source` / `the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` | no |
+| `UNKNOWN_SOURCE` | error | Un campo [`@DerivedFrom`](../annotations/derived-from.md) no nombra ninguna fuente, o nombra una que no es un campo clasificado de la clase indicada por `type` (o de la clase clasificada): no existe, está exenta o tiene un error, incluso un campo en un ciclo. | `@DerivedFrom needs at least one source` / `the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` / `the source '<Class>.<s>' has an error` (un campo de otra clase) | no |
 | `AMBIGUOUS_DERIVATION` | error | Un campo derivado sin `@Category` tiene fuentes cuyas clasificaciones difieren en categoría, confidencialidad, integridad o identificabilidad. | `its sources [<s>, ...] have different classifications; declare the category of the derived value with @Category` | no |
 | `WEAKER_THAN_SOURCE` | error | Un campo derivado declara una categoría que protege menos que una de sus fuentes, sin declarar el valor anonimizado o agregado. | `'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, unless it is declared anonymized or aggregated` | no |
 | `WEAKER_THAN_PARTS` | error | Un campo que guarda un [`@Composite`](../annotations/composite.md) como un solo valor declara, con `@Category` o `@CategoryByRow`, una categoría que protege menos que los campos del compuesto. | `'<key>' protects less than the fields of <Composite> need (<natures>, <confidentiality>, <integrity>[, secret])` | **sí** (el error se informa igualmente) |
-| `CYCLE` | error | Un compuesto se contiene a sí mismo, o campos derivados dependen unos de otros, dentro de una clase o entre clases. | `the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow` / `is derived from itself through other derived fields` / `derives from <Type>, which needs <Class> to be classified first` / `derives from <Type>.<source>, which derives from it` | no (en un compuesto, el campo que cierra el bucle) |
+| `CYCLE` | error | Un compuesto se contiene a sí mismo, o campos derivados dependen unos de otros, dentro de una clase o entre clases, también a través de las partes de un compuesto. | `the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow` / `is derived from itself through other derived fields` | no (en un compuesto, el campo que cierra el bucle) |
 
 En `AMBIGUOUS_DERIVATION` y `WEAKER_THAN_SOURCE` las fuentes `[<s>, ...]` se escriben como en
 `FieldClassification.derivedFrom()`: rutas de la misma clase (un compuesto expandido a sus campos), o
 `ClassName#path`. En `UNKNOWN_SOURCE`, `<s>` es la ruta tal como está escrita en la anotación.
+
+Las clases que derivan de los otros campos de la otra, y un compuesto que deriva de una clase que lo contiene, no son un
+`CYCLE`: solo lo son los campos derivados que dependen unos de otros, y cada uno recibe el segundo mensaje. Un campo
+que deriva de uno de ellos sin estar en el ciclo es un `UNKNOWN_SOURCE`. Un campo de un compuesto que está en un ciclo
+se informa con el compuesto y con cada clase que lo contiene, en `campo.parte`.
+
+Los mismos campos tienen errores, con los mismos códigos y mensajes, sea cual sea el orden en que se clasifiquen las
+clases.
 
 Las violaciones sobre un `@DefaultCategory` se comprueban en la clase clasificada y en cada superclase que lo tenga,
 y se informan en la `ClassClassification` de la clase que se clasifica (así, un valor por defecto erróneo en una

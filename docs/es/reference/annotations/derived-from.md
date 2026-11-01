@@ -43,6 +43,12 @@ clase que se clasifica equivale a omitirlo. Así una vista se mantiene coherente
 `@Category` sigue la clasificación de la entidad, y con `@Category` debe estar a la altura si más adelante se da al
 campo de la entidad una categoría más estricta.
 
+Las fuentes se resuelven campo a campo, así que dos clases pueden derivar de los *otros* campos de la otra:
+`Order.customerName` desde `Customer.name` y `Customer.lastOrderTotal` desde `Order.total` no es un ciclo, y un
+[`@Composite`](composite.md) puede derivar de una clase que lo contiene. Solo son un ciclo los campos derivados que
+dependen unos de otros, dentro de una clase, entre clases o a través de las partes de un compuesto. El resultado no
+depende del orden en que se clasifiquen las clases.
+
 ## Qué obtiene el campo
 
 | | Sin `@Category` | Con `@Category` |
@@ -62,15 +68,16 @@ personal para un valor derivado de datos personales es un error.
 | Regla | Violación | Gravedad | ¿Se clasifica el campo? |
 |---|---|---|---|
 | Al menos una fuente | `UNKNOWN_SOURCE` (`@DerivedFrom needs at least one source`) | error | no |
-| Cada fuente es un campo clasificado | `UNKNOWN_SOURCE` (`the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error`) | error | no |
+| Cada fuente es un campo clasificado | `UNKNOWN_SOURCE` (`the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` / `the source '<Class>.<s>' has an error` para un campo de otra clase) | error | no |
 | Sin `@Category`, las varias fuentes coinciden | `AMBIGUOUS_DERIVATION` (`its sources [<s>, ...] have different classifications; declare the category of the derived value with @Category`) | error | no |
 | Con `@Category`, protege al menos tanto como cada fuente, salvo que sea anonimizado o agregado | `WEAKER_THAN_SOURCE` (`'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, unless it is declared anonymized or aggregated`) | error | no |
-| Ninguna derivación depende de sí misma, ni de una clase que depende de esta | `CYCLE` | error | no |
+| Ningún campo derivado depende de sí mismo, dentro de una clase o entre clases | `CYCLE` (`is derived from itself through other derived fields`) | error | no |
 | Las comprobaciones habituales de `@Category`, cuando está presente | como en [`@Category`](category.md) | | |
 | No combinarla con `@Exempt` ni con `@CategoryByRow` | `CONFLICTING_ANNOTATIONS` | error | no |
 
-Se informa de cada campo derivado que forma parte de un ciclo. Una fuente de otra clase (`type`) que tiene un error en
-su propia clase es desconocida aquí.
+Se informa de cada campo derivado que forma parte de un ciclo. Un campo que deriva de un campo con error, incluso uno
+en un ciclo, sin estar él mismo en el ciclo, es un `UNKNOWN_SOURCE`. Una fuente de otra clase (`type`) que tiene un
+error en su propia clase es desconocida aquí.
 
 ## FieldClassification resultante
 

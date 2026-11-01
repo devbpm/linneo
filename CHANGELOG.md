@@ -75,7 +75,10 @@ All notable changes to this project are documented in this file. The format foll
   object built from an entity): without `@Category` the field takes the classification of its source; with it, the
   category must protect at least as much as every source (`WEAKER_THAN_SOURCE`), unless the value is declared
   anonymized or aggregated. Errors `UNKNOWN_SOURCE`, `AMBIGUOUS_DERIVATION` and `CYCLE`; basis `DERIVED` with
-  `FieldClassification.derivedFrom()`. `@Exempt` is only for technical fields: a derived value is data.
+  `FieldClassification.derivedFrom()`. `@Exempt` is only for technical fields: a derived value is data. Sources are
+  resolved field by field, so classes may derive from each other's other fields and a composite from a class that
+  holds it; only derived fields that depend on each other are a `CYCLE` (found exactly, with Tarjan's algorithm), and
+  the result does not depend on the order in which classes are classified.
 - `@Composite` for classes that are part of other records, such as an embedded address: an unannotated field of a
   composite type, or an array, collection or `Optional` of one, is classified by the composite's fields with paths
   such as `home.street`, under the composite's own default. A composite stored as one value must protect at least

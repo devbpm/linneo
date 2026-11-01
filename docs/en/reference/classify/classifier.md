@@ -69,6 +69,8 @@ new Classifier(Taxonomy.load()).verify(entities);
 - **Derived fields.** A field marked [`@DerivedFrom`](../annotations/derived-from.md) takes the classification of its
   source, or declares one that protects at least as much. Its sources may be declared after it, be derived fields
   themselves, be parts of a composite, or belong to another class (`type`), which the classifier reads as well.
+  Sources are resolved field by field, so two classes may derive from each other's *other* fields, and a composite
+  from a class that holds it. The result does not depend on the order the classes are classified in.
 - Fields marked [`@Exempt`](../annotations/exempt.md) are not classified after their annotation is checked, and
   `ClassClassification.exempted()` lists them with their reasons. `@Exempt` is for technical fields; a value computed
   from other fields is data and uses `@DerivedFrom` or `@Category`.
@@ -80,13 +82,17 @@ Each remaining field is resolved by the [resolution order](../annotations/README
 a field of a composite type, the fields of the composite; then the `@DefaultCategory` of the declaring class, then the
 `@DefaultCategory` of the classified class, otherwise `UNCLASSIFIED_FIELD`.
 
-Order of violations in a `ClassClassification`: first the checks of each `@DefaultCategory` in the hierarchy (top
-down), then the field checks in the order of the fields (the problems of a composite at the position of the field that
-holds it), and last the checks of the derived fields, which wait for their sources.
+Order of violations in a `ClassClassification`: the problems of a class are listed in the order of its fields. The
+problems with no path come first, such as the checks of each `@DefaultCategory` in the hierarchy (top down), and the
+problems of a composite are at the position of the field that holds it (path `field.part`). The order does not depend
+on the order the classes are classified in.
 
 Protection never drops silently: a derived field must protect at least as much as each of its sources unless it
 declares an anonymized or aggregated value, and a composite stored as one value must protect at least as much as the
-fields of the composite. A composite that contains itself, or derivations that depend on each other, are a `CYCLE`.
+fields of the composite. A composite that contains itself, and derived fields that depend on each other (within one
+class or across classes, also through the parts of a composite), are a `CYCLE`. Classes that derive from each other's
+other fields are not. A field that derives from a field with an error, even one in a cycle, but is not itself in the
+cycle, is an `UNKNOWN_SOURCE`.
 
 ## Fail-closed behaviour
 

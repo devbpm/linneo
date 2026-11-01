@@ -46,7 +46,9 @@ recibe una clasificación por cada campo del compuesto, con la ruta `campo.parte
 - **Protección.** `ClassClassification.ceilingOf("home")` es la protección que cubre todo lo que contiene el
   compuesto; `ceiling()` hace lo mismo para toda la clase.
 - **Fuentes de derivaciones.** Un [`@DerivedFrom`](derived-from.md) puede nombrar una parte (`"home.city"`) o el
-  compuesto entero (`"home"`).
+  compuesto entero (`"home"`). Un campo del compuesto puede a su vez derivar de una clase que contiene el compuesto:
+  solo es un `CYCLE` si campos derivados dependen unos de otros, también a través de las partes del compuesto. Un campo
+  del compuesto que está en un ciclo se informa con el compuesto y, en `campo.parte`, con la clase contenedora.
 - Las clases compuestas no hace falta pasarlas por separado a `Classifier.verify`: se clasifican como parte de cada
   clase que las contiene. Clasificar una directamente también funciona, como con cualquier clase.
 

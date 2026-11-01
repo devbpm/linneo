@@ -43,6 +43,12 @@ With `type`, the paths name fields of that class, classified as that class is. G
 `@Category` it follows the entity's classification, and with `@Category` it must keep up if the entity's field is
 later given a stricter one.
 
+Sources are resolved field by field, so two classes may derive from each other's *other* fields: `Order.customerName`
+from `Customer.name` and `Customer.lastOrderTotal` from `Order.total` is not a cycle, and a
+[`@Composite`](composite.md) may derive from a class that holds it. Only derived fields that depend on each other are a
+cycle, whether in one class, across classes or through the parts of a composite. The result does not depend on the
+order the classes are classified in.
+
 ## What the field gets
 
 | | Without `@Category` | With `@Category` |
@@ -62,15 +68,16 @@ from personal data is an error.
 | Rule | Violation | Severity | Field classified? |
 |---|---|---|---|
 | At least one source | `UNKNOWN_SOURCE` (`@DerivedFrom needs at least one source`) | error | no |
-| Each source is a classified field | `UNKNOWN_SOURCE` (`the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error`) | error | no |
+| Each source is a classified field | `UNKNOWN_SOURCE` (`the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` / `the source '<Class>.<s>' has an error` for a field of another class) | error | no |
 | Without `@Category`, several sources agree | `AMBIGUOUS_DERIVATION` (`its sources [<s>, ...] have different classifications; declare the category of the derived value with @Category`) | error | no |
 | With `@Category`, it protects at least as much as every source, unless anonymized or aggregated | `WEAKER_THAN_SOURCE` (`'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, unless it is declared anonymized or aggregated`) | error | no |
-| No derivation depends on itself, nor on a class that depends on this one | `CYCLE` | error | no |
+| No derived field depends on itself, within a class or across classes | `CYCLE` (`is derived from itself through other derived fields`) | error | no |
 | The usual checks of `@Category`, when it is present | as in [`@Category`](category.md) | | |
 | Not combined with `@Exempt` or `@CategoryByRow` | `CONFLICTING_ANNOTATIONS` | error | no |
 
-Every derived field in a cycle is reported. A source of another class (`type`) that has an error in its own class is
-unknown here.
+Every derived field in a cycle is reported. A field that derives from a field with an error, a field in a cycle
+included, without being in the cycle itself, is an `UNKNOWN_SOURCE`. A source of another class (`type`) that has an
+error in its own class is unknown here.
 
 ## Resulting FieldClassification
 

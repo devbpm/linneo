@@ -56,8 +56,11 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   checked here too. The built `Taxonomy` is immutable.
 - **`classify`** — `Classifier` reflects over a class hierarchy's fields (never reads values), resolves each field
   through its annotations, a `@Composite` type (one entry per part, path `field.part`), a `@DerivedFrom` source or a
-  class-level `@DefaultCategory`, and collects `Violation`s. Each call runs a private `Run` that reads every class
-  once and detects cycles, so the `Classifier` itself stays immutable; it also records what each field declares
+  class-level `@DefaultCategory`, and collects `Violation`s. Each call runs a private `Run` that collects every
+  class once and derives a derived field only when something needs it, across classes (an embedded composite links
+  its derived parts instead of deriving them). All derivations of a run are one depth-first search where Tarjan's
+  algorithm marks exactly the fields in a cycle, so results do not depend on the order of the classes, and problems
+  are sorted in field order. The `Classifier` itself stays immutable; it also records what each field declares
   (`Classifier.Declared`) for the data inventory. `Classifier.inventory` builds a `DataInventory` (objects under keys
   the application chooses, `InventoryField`s with the declared key and raised levels, never the taxonomy's levels,
   so a taxonomy change never changes an inventory); `InventoryDiff` compares two inventories under one taxonomy and

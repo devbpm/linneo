@@ -71,6 +71,8 @@ new Classifier(Taxonomy.load()).verify(entities);
 - **Campos derivados.** Un campo marcado con [`@DerivedFrom`](../annotations/derived-from.md) toma la clasificación de
   su fuente, o declara una que protege al menos tanto. Sus fuentes pueden estar declaradas después de él, ser a su vez
   campos derivados, ser partes de un compuesto o pertenecer a otra clase (`type`), que el clasificador también lee.
+  Las fuentes se resuelven campo a campo, así que dos clases pueden derivar de los *otros* campos de la otra, y un
+  compuesto de una clase que lo contiene. El resultado no depende del orden en que se clasifiquen las clases.
 - Los campos marcados con [`@Exempt`](../annotations/exempt.md) no se clasifican tras comprobar su anotación, y
   `ClassClassification.exempted()` los lista con sus motivos. `@Exempt` es para campos técnicos; un valor calculado a
   partir de otros campos es un dato y usa `@DerivedFrom` o `@Category`.
@@ -82,14 +84,17 @@ propio `@Category` o `@CategoryByRow`; para un campo `@DerivedFrom` sin categor�
 un campo de tipo compuesto, los campos del compuesto; después el `@DefaultCategory` de la clase que lo declara, después
 el `@DefaultCategory` de la clase clasificada y, si no, `UNCLASSIFIED_FIELD`.
 
-Orden de las violaciones en una `ClassClassification`: primero las comprobaciones de cada `@DefaultCategory` de la
-jerarquía (de arriba abajo), después las de los campos, en el orden de los campos (los problemas de un compuesto, en la
-posición del campo que lo contiene) y, al final, las de los campos derivados, que esperan a sus fuentes.
+Orden de las violaciones en una `ClassClassification`: los problemas de una clase se listan en el orden de sus campos.
+Los que no tienen ruta van primero, como las comprobaciones de cada `@DefaultCategory` de la jerarquía (de arriba
+abajo), y los problemas de un compuesto están en la posición del campo que lo contiene (ruta `campo.parte`). El orden
+no depende del orden en que se clasifiquen las clases.
 
 La protección nunca baja en silencio: un campo derivado debe proteger al menos tanto como cada una de sus fuentes,
 salvo que declare un valor anonimizado o agregado, y un compuesto guardado como un solo valor debe proteger al menos
-tanto como los campos del compuesto. Un compuesto que se contiene a sí mismo, o derivaciones que dependen unas de
-otras, son un `CYCLE`.
+tanto como los campos del compuesto. Un compuesto que se contiene a sí mismo, y campos derivados que dependen unos de
+otros (dentro de una clase o entre clases, también a través de las partes de un compuesto), son un `CYCLE`. Las clases
+que derivan de los otros campos de la otra no lo son. Un campo que deriva de un campo con error, incluso uno en un
+ciclo, pero que no está él mismo en el ciclo, es un `UNKNOWN_SOURCE`.
 
 ## Comportamiento cerrado ante fallos (fail-closed)
 

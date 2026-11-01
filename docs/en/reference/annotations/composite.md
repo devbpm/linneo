@@ -45,7 +45,9 @@ A field with **no annotation of its own** whose type is a composite class, or an
 - **Protection.** `ClassClassification.ceilingOf("home")` is the protection that covers everything the composite
   holds; so does `ceiling()` for the whole class.
 - **Sources of derivations.** A [`@DerivedFrom`](derived-from.md) can name a part (`"home.city"`) or the whole
-  composite (`"home"`).
+  composite (`"home"`). A field of the composite may itself derive from a class that holds the composite: that is a
+  `CYCLE` only if derived fields depend on each other, through the parts of the composite too. A field of the
+  composite in a cycle is reported with the composite and, at `field.part`, with the holder.
 - The composite classes need not be passed to `Classifier.verify` separately: they are classified as part of every
   class that holds them. Classifying one directly works too, as for any class.
 
