@@ -16,6 +16,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingException.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
 -->
 
 # Módulo 9 — Actividades de tratamiento y el registro
@@ -34,7 +35,8 @@ Al terminar este módulo serás capaz de:
 - distinguir lo que declara el código de la aplicación (el alcance de una actividad) de lo que decide el delegado de
   protección de datos (su gobernanza), y usar `element().isGovernance()` para enviar cada problema a quien puede
   corregirlo;
-- verificar las actividades en un test y generar el registro de actividades de tratamiento en Markdown y JSON.
+- verificar las actividades en un test y generar el registro de actividades de tratamiento en Markdown y JSON;
+- empezar la respuesta a la solicitud de un interesado desde el registro con `SubjectRights`.
 
 Los módulos 3 y 4 son necesarios: las actividades reutilizan el modelo clasificado de la universidad.
 
@@ -521,6 +523,59 @@ El registro es un punto de partida para la delegada de protección de datos, gen
 declaraciones que comprueba la compilación. No sustituye su revisión: ella sigue decidiendo si las bases son las
 adecuadas y completa lo que el registro no puede saber, como los datos de contacto del responsable.
 
+## Responder a la solicitud de un interesado
+
+Un antiguo alumno escribe a la universidad: ¿qué hacéis con mis datos y podéis borrarlos? El registro ya contiene la
+mayor parte de la respuesta, y `SubjectRights` lo lee para una categoría de interesados:
+
+```java
+ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
+SubjectRights alumni = SubjectRights.of(record, DataSubjects.ALUMNUS);
+
+for (SubjectRights.ActivityRights activity : alumni.activities()) {
+    System.out.println(activity.activity().activity().name());
+    for (SubjectRights.Entitlement entitlement : activity.entitlements()) {
+        System.out.println("  " + entitlement.right() + ": " + entitlement.availability());
+    }
+}
+```
+
+`activities()` contiene las actividades cuyos interesados incluyen `alumnus`: aquí, solo el boletín. Para cada una,
+`entitlements()` tiene una entrada por cada derecho de los artículos 15 a 21, decidida por su base jurídica:
+
+| Derecho | Disponibilidad | Por qué |
+|---|---|---|
+| `ACCESS` | `YES` | Art. 15: siempre, con las finalidades, destinatarios, transferencias y conservación de la actividad |
+| `RECTIFICATION` | `YES` | Art. 16 |
+| `ERASURE` | `YES` | La finalidad es mercadotecnia directa: la persona puede oponerse en cualquier momento y los datos se suprimen entonces |
+| `RESTRICTION` | `CONDITIONAL` | El art. 18.1 enumera los casos |
+| `PORTABILITY` | `NO` | Solo en el tratamiento basado en el consentimiento o en un contrato; este se basa en intereses legítimos |
+| `OBJECTION` | `YES` | Art. 21.2: mercadotecnia directa |
+
+La misma llamada para un estudiante muestra qué cambia la base. La matrícula se basa en una misión de interés público:
+
+```java
+SubjectRights students = SubjectRights.of(record, DataSubjects.STUDENT);
+SubjectRights.Entitlement erasure = students.activity("enrollment").orElseThrow()
+        .entitlement(SubjectRights.Right.ERASURE);
+System.out.println(erasure.availability() + ": " + erasure.explanation());
+```
+
+```text
+NO: Art. 17.3.b: the data is kept while the task in the public interest requires it (retention: not declared), and erased afterwards.
+```
+
+Cada `Entitlement` lleva una explicación en inglés que cita los artículos. Para encontrar los datos,
+`dataCategories()`, `entities()`, `objects()` y, con un [inventario de datos](10-reconciliation.md),
+`storedFields(inventory, taxonomy)` dan los campos personales que hay que mirar, objeto por objeto. Con
+`SubjectRights.of(record, DataSubjects.ALUMNUS, Jurisdiction.SPAIN)` las explicaciones de la rectificación y la
+supresión añaden que los datos se bloquean antes de borrarse (LOPDGDD, art. 32).
+
+Esto es el comienzo de la respuesta, no la respuesta. `CONDITIONAL` significa que el artículo enumera casos, y si esta
+solicitud los cumple lo decide la delegada de protección de datos, como toda solicitud. Linneo lee el registro; dar a la
+persona sus datos, corregirlos o suprimirlos es trabajo de la aplicación. La página de referencia
+[SubjectRights](../reference/processing/subject-rights.md) tiene la regla de cada base jurídica.
+
 ## Errores frecuentes
 
 - **Esperar que Linneo decida la base jurídica.** Comprueba que hay una declarada y que están las condiciones que
@@ -614,6 +669,7 @@ actividad? ¿Cuáles mostrarías en la pantalla del delegado y cuáles harían f
 - [Referencia — Bases jurídicas](../reference/processing/bases.md)
 - [Referencia — ProcessingChecker](../reference/processing/checker.md): cada código con su mensaje
 - [Referencia — ProcessingRecord](../reference/processing/record.md)
+- [Referencia — SubjectRights](../reference/processing/subject-rights.md): los derechos que da cada base jurídica
 
 ---
 

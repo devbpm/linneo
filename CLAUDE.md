@@ -84,7 +84,9 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   `ProcessingViolation`s with the same fail-closed split as `classify`: unlawful-as-declared is an error, a gap in
   the record is a warning. `verify` returns a `ProcessingRecord` (article 30 record, `toMarkdown`/`toJson`, unique
   activity keys). `RecordDiff` compares two records into `ActivityChange`s; it and `ProcessingRecord.fingerprint()`
-  both use `ActivityChange.content`, so equal fingerprints always mean an empty diff.
+  both use `ActivityChange.content`, so equal fingerprints always mean an empty diff. `SubjectRights` derives, for
+  one data subject category, the activities, stored fields and the rights of articles 15-21 per lawful basis; its
+  legal rules live in `SubjectRights.entitlements` and cite the articles in their explanations.
 - **`extension.university`** — `UniversityTaxonomy`, an optional `TaxonomyExtension` for higher education with its
   key constants (`UniversityCategories`, `UniversityDataUses`, `UniversityDataSubjects`). Deliberately **not**
   declared as a `provides` service in `module-info.java`, so `Taxonomy.load()` never applies it; users call

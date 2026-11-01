@@ -72,7 +72,8 @@ the build fail when the model and its classification drift apart.
 - **GDPR record of processing activities.** Declare each processing activity (purposes, data subjects, the
   annotated entities, lawful basis, article 9.2 and 10 conditions, retention, transfers) and get it checked against
   the classification: special category data without an article 9.2 condition fails the build. The article 30 record
-  comes out as Markdown or JSON.
+  comes out as Markdown or JSON, and `SubjectRights` tells, for a request of a data subject, which activities and
+  stored fields hold their data and which rights each lawful basis gives them.
 - **Stored copies kept in step.** The classification of the whole model as data (`DataInventory`), compared with
   what an application stored (`InventoryDiff`), with fingerprints to skip unchanged starts; the taxonomy as text
   (`Taxonomy.toTsv()`) and its changes between versions (`TaxonomyDiff`), so applications can migrate keys and

@@ -39,6 +39,7 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 | `ProcessingRecord` | record | El registro de actividades de tratamiento, en Markdown o JSON, con su huella | [ProcessingRecord](record.md) |
 | `RecordDiff` | class | Las diferencias entre dos registros, actividad por actividad | [ProcessingRecord](record.md#recorddiff) |
 | `ActivityChange` | record, con `Aspect` | Cómo difiere una actividad entre dos registros, y qué cambió en ella | [ProcessingRecord](record.md#activitychange) |
+| `SubjectRights` | class, con `Right`, `Availability`, `Entitlement` y `ActivityRights` | Lo que el registro dice a una categoría de interesados que ejercen sus derechos: las actividades que tratan sus datos, dónde se guardan y los derechos que da cada base jurídica | [SubjectRights](subject-rights.md) |
 
 ## Relación con la taxonomía
 
@@ -123,5 +124,5 @@ String markdown = record.toMarkdown("Example University");
 ```
 
 Véase también: [ProcessingActivity](activity.md) · [Bases jurídicas](bases.md) · [ProcessingChecker](checker.md) ·
-[ProcessingRecord](record.md) · curso:
+[ProcessingRecord](record.md) · [SubjectRights](subject-rights.md) · curso:
 [Actividades de tratamiento y el registro](../../course/09-processing-activities.md)

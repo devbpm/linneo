@@ -122,6 +122,11 @@ All notable changes to this project are documented in this file. The format foll
 - `DisclosurePolicy`: whether the values of a field may be shown, must be masked or left out (`Treatment`) in a
   channel such as logs, exports or test copies, from thresholds on the `Protection` order, so a field that needs more
   protection never gets a laxer treatment and secrets are always left out; `forLogs()` as a starting point.
+- `SubjectRights.of(record, dataSubject, jurisdiction)`: for a request of a data subject, the activities that
+  process their data, the categories, the stored fields to search (`storedFields(inventory, taxonomy)`) and, per
+  activity, whether access, rectification, erasure, restriction, portability and objection apply under its lawful
+  basis (GDPR articles 15 to 21), with the provisions; under Spanish law, erased or rectified data is blocked first
+  (LOPDGDD article 32).
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
   `module-info.java`.

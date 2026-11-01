@@ -1,0 +1,132 @@
+---
+title: "SubjectRights"
+parent: "Tratamientos"
+grand_parent: "Referencia"
+nav_order: 5
+---
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
+-->
+
+# SubjectRights
+
+`io.github.devbpm.linneo.processing.SubjectRights` — `public final class`, `@since 0.1.0`
+
+Lo que el [registro de actividades de tratamiento](record.md) dice a alguien de una categoría de interesados que ejerce
+sus derechos (RGPD, artículos 15 a 21): las actividades que tratan sus datos, qué trata cada una y por qué, dónde se
+guardan esos datos y qué derechos le da la base jurídica de cada actividad. Las instancias son inmutables; no hay
+constructor público.
+
+Es el **punto de partida de la respuesta, no la respuesta**: el delegado de protección de datos decide cada solicitud,
+porque las condiciones de cada artículo dependen del caso. Linneo lee el registro; localizar, entregar, corregir o
+suprimir los datos corresponde a la aplicación.
+
+```java
+SubjectRights rights = SubjectRights.of(record, DataSubjects.STUDENT, Jurisdiction.SPAIN);
+Map<String, List<InventoryField>> where = rights.storedFields(inventory, taxonomy);   // dónde buscar los datos
+for (SubjectRights.ActivityRights activity : rights.activities()) {
+    SubjectRights.Entitlement erasure = activity.entitlement(SubjectRights.Right.ERASURE);
+    System.out.println(activity.activity().activity().key() + ": " + erasure.availability());
+}
+```
+
+## Miembros
+
+| Miembro | Devuelve | Descripción |
+|---|---|---|
+| `static SubjectRights of(ProcessingRecord record, String dataSubject)` | derechos | Los derechos solo bajo el RGPD (`Jurisdiction.EU`). |
+| `static SubjectRights of(ProcessingRecord record, String dataSubject, Jurisdiction jurisdiction)` | derechos | Los derechos en una [jurisdicción](checker.md#jurisdiction), sobre cada actividad del registro cuyos interesados incluyen la categoría `dataSubject` (una clave como `student`). `NullPointerException` si algún argumento es `null`. |
+| `String dataSubject()` | `String` | La clave de la categoría. |
+| `List<ActivityRights> activities()` | lista inmutable | Las actividades que tratan datos de la categoría, con los derechos sobre cada una, en el orden del registro. |
+| `Optional<ActivityRights> activity(String activity)` | `Optional` | Los derechos sobre una actividad, o vacío si la actividad no trata datos de la categoría. |
+| `boolean isEmpty()` | `boolean` | `true` si ninguna actividad trata datos de la categoría: no hay más que responder. |
+| `List<DataCategory> dataCategories()` | lista inmutable | Las categorías de datos personales que tratan las actividades, en orden de clave. |
+| `Set<String> objects()` | conjunto inmutable | Los objetos de un inventario de datos que nombran las actividades, ordenados: dónde se guardan los datos de la persona. |
+| `List<Class<?>> entities()` | lista inmutable | Las clases de entidad que nombran las actividades, cada una una vez, en el orden de las actividades. |
+| `Map<String, List<InventoryField>> storedFields(DataInventory inventory, Taxonomy taxonomy)` | mapa inmutable | Los campos que contienen datos personales en los `objects()`: dónde buscar los datos de la persona para darle acceso, exportarlos, rectificarlos o suprimirlos. Objetos ordenados y campos en el orden del inventario; un objeto que el inventario no contiene, o sin campos personales, no tiene entrada. `TaxonomyException` si la taxonomía no contiene una clave del inventario. |
+
+Una categoría que ninguna actividad nombra da un resultado vacío, no un error. `entities()` y `objects()` son lo que
+declaran las actividades; el inventario da los campos de los objetos.
+
+## Right
+
+`SubjectRights.Right` — `enum` anidado, `@since 0.1.0`: un derecho del interesado que depende del tratamiento.
+`String article()` es el número de artículo del RGPD.
+
+| Valor | `article()` | Derecho |
+|---|---|---|
+| `ACCESS` | `15` | Acceso a los datos y a la información sobre su tratamiento. |
+| `RECTIFICATION` | `16` | Rectificación de datos inexactos. |
+| `ERASURE` | `17` | Supresión. |
+| `RESTRICTION` | `18` | Limitación del tratamiento. |
+| `PORTABILITY` | `20` | Portabilidad de los datos. |
+| `OBJECTION` | `21` | Oposición. |
+
+## Availability
+
+`SubjectRights.Availability` — `enum` anidado, `@since 0.1.0`: si un derecho se aplica a una actividad.
+
+| Valor | Significado |
+|---|---|
+| `YES` | Se aplica. |
+| `CONDITIONAL` | Se aplica en los casos que enumera el artículo; la explicación dice cuáles. |
+| `NO` | No se aplica a esta actividad, como dice la explicación. |
+
+## Entitlement y ActivityRights
+
+```java
+public record Entitlement(Right right, Availability availability, String explanation)
+```
+
+Un derecho tal como se aplica a una actividad. `explanation` es un texto en inglés que cita las disposiciones. El
+constructor lanza `NullPointerException` si algún componente es `null`.
+
+```java
+public record ActivityRights(CheckedActivity activity, List<Entitlement> entitlements)
+```
+
+Los derechos que tiene un interesado sobre una actividad: `activity` es la
+[`CheckedActivity`](checker.md#checkedactivity) del registro y `entitlements` contiene un `Entitlement` por cada
+`Right`, en el orden de los derechos (una lista inmutable). `Entitlement entitlement(Right right)` devuelve el de un
+derecho.
+
+## Las reglas
+
+La disponibilidad sigue la base jurídica de la actividad (`governance().legalBasis()`):
+
+| Derecho | Consentimiento (`CONSENT`) | Contrato (`CONTRACT`) | Obligación legal (`LEGAL_OBLIGATION`) | Intereses vitales (`VITAL_INTERESTS`) | Interés público (`PUBLIC_INTEREST`) | Intereses legítimos (`LEGITIMATE_INTERESTS`) |
+|---|---|---|---|---|---|---|
+| `ACCESS` (15) | `YES` | `YES` | `YES` | `YES` | `YES` | `YES` |
+| `RECTIFICATION` (16) | `YES` | `YES` | `YES` | `YES` | `YES` | `YES` |
+| `ERASURE` (17) | `YES` (17.1.b) | `CONDITIONAL` (17.1.a) | `NO` (17.3.b) | `CONDITIONAL` (17.1.a) | `NO` (17.3.b) | `CONDITIONAL` (17.1.c) |
+| `RESTRICTION` (18) | `CONDITIONAL` | `CONDITIONAL` | `CONDITIONAL` | `CONDITIONAL` | `CONDITIONAL` | `CONDITIONAL` |
+| `PORTABILITY` (20) | `YES` | `YES` | `NO` | `NO` | `NO` | `NO` |
+| `OBJECTION` (21) | `NO` | `NO` | `NO` | `NO` | `CONDITIONAL` (21.1) | `CONDITIONAL` (21.1) |
+
+- **La supresión** no está disponible mientras una obligación legal o una misión de interés público necesita los datos
+  (artículo 17.3.b), y la explicación incluye entonces la conservación que declara la actividad (`not declared` si no
+  tiene). Con consentimiento sigue a la retirada del consentimiento (17.1.b), con un contrato o intereses vitales a
+  que los datos dejen de ser necesarios (17.1.a), con intereses legítimos a una oposición salvo que haya motivos
+  legítimos imperiosos (17.1.c).
+- **La portabilidad** se aplica al tratamiento basado en el consentimiento o en un contrato (artículo 20.1).
+- **La oposición** se aplica al tratamiento basado en una misión de interés público o en intereses legítimos
+  (artículo 21.1).
+- **La limitación** es `CONDITIONAL` en toda actividad: se aplica mientras se verifica la exactitud de los datos o una
+  oposición, cuando el tratamiento es ilícito y la persona prefiere la limitación, o cuando la persona necesita los
+  datos para reclamaciones (artículo 18.1).
+- **Mercadotecnia directa.** Si una finalidad de la actividad es `marketing` o está bajo `marketing.*`, sea cual sea la
+  base, `ERASURE` es `YES` (artículos 17.1.c y 21.2: la persona puede oponerse en cualquier momento y los datos se
+  suprimen entonces) y `OBJECTION` es `YES` (artículos 21.2 y 21.3: el tratamiento cesa).
+- **El acceso** es `YES` en toda actividad y su explicación enumera por su nombre las finalidades de la actividad. Las
+  explicaciones de los demás derechos citan los artículos anteriores.
+- **`Jurisdiction.SPAIN`.** Las explicaciones de `RECTIFICATION` y `ERASURE` añaden que los datos se bloquean, no se
+  borran, mientras puedan surgir responsabilidades del tratamiento, y se borran después (LOPDGDD, artículo 32). Con
+  `Jurisdiction.EU` no lo añaden.
+
+`SubjectRights` no comprueba si una solicitud concreta cumple las condiciones de un artículo. Un derecho `CONDITIONAL`
+y la explicación de un `NO` son para que el delegado los aplique al caso.
+
+Véase también: [ProcessingRecord](record.md) · [ProcessingChecker](checker.md) · [Bases jurídicas](bases.md) ·
+[Inventario de datos](../classify/inventory.md) · curso:
+[Actividades de tratamiento y el registro](../../course/09-processing-activities.md)

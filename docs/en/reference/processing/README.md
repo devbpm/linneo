@@ -39,6 +39,7 @@ taxonomy and the classification of the model, and renders the record.
 | `ProcessingRecord` | record | The record of processing activities, as Markdown or JSON, with its fingerprint | [ProcessingRecord](record.md) |
 | `RecordDiff` | class | The differences between two records, activity by activity | [ProcessingRecord](record.md#recorddiff) |
 | `ActivityChange` | record, with `Aspect` | How one activity differs between two records, and what changed in it | [ProcessingRecord](record.md#activitychange) |
+| `SubjectRights` | class, with `Right`, `Availability`, `Entitlement` and `ActivityRights` | What the record says to a category of data subjects who exercise their rights: the activities that process their data, where it is stored and the rights each lawful basis gives | [SubjectRights](subject-rights.md) |
 
 ## How it relates to the taxonomy
 
@@ -121,4 +122,5 @@ String markdown = record.toMarkdown("Example University");
 ```
 
 See also: [ProcessingActivity](activity.md) · [Legal bases](bases.md) · [ProcessingChecker](checker.md) ·
-[ProcessingRecord](record.md) · course: [Processing activities and the record](../../course/09-processing-activities.md)
+[ProcessingRecord](record.md) · [SubjectRights](subject-rights.md) · course:
+[Processing activities and the record](../../course/09-processing-activities.md)

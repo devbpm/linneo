@@ -16,6 +16,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingException.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
 -->
 
 # Module 9 — Processing activities and the record
@@ -32,7 +33,8 @@ After this module you will be able to:
   record);
 - tell what the code of the application declares (the scope of an activity) from what the data protection officer
   decides (its governance), and use `element().isGovernance()` to send each problem to whoever can fix it;
-- verify the activities in a test and produce the record of processing activities as Markdown and JSON.
+- verify the activities in a test and produce the record of processing activities as Markdown and JSON;
+- start the answer to a request of a data subject from the record with `SubjectRights`.
 
 Modules 3 and 4 are required: the activities reuse the classified model of the university.
 
@@ -507,6 +509,59 @@ The record is a starting point for the data protection officer, generated from t
 checks. It does not replace her review: she still decides whether the bases are right and completes what the record
 cannot know, such as the controller's contact details.
 
+## Answering a request of a data subject
+
+An alumnus writes to the university: what do you do with my data, and can you delete it? The record already holds most
+of the answer, and `SubjectRights` reads it for one category of data subjects:
+
+```java
+ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
+SubjectRights alumni = SubjectRights.of(record, DataSubjects.ALUMNUS);
+
+for (SubjectRights.ActivityRights activity : alumni.activities()) {
+    System.out.println(activity.activity().activity().name());
+    for (SubjectRights.Entitlement entitlement : activity.entitlements()) {
+        System.out.println("  " + entitlement.right() + ": " + entitlement.availability());
+    }
+}
+```
+
+`activities()` holds the activities whose data subjects include `alumnus`: here only the newsletter. For each one,
+`entitlements()` has one entry per right of articles 15 to 21, decided by its lawful basis:
+
+| Right | Availability | Why |
+|---|---|---|
+| `ACCESS` | `YES` | Art. 15: always, with the purposes, recipients, transfers and retention of the activity |
+| `RECTIFICATION` | `YES` | Art. 16 |
+| `ERASURE` | `YES` | The purpose is direct marketing: the person may object at any time and the data is then erased |
+| `RESTRICTION` | `CONDITIONAL` | Art. 18.1 lists the cases |
+| `PORTABILITY` | `NO` | Only for processing based on consent or a contract; this one rests on legitimate interests |
+| `OBJECTION` | `YES` | Art. 21.2: direct marketing |
+
+The same call for a student shows what the basis changes. Enrollment rests on a task in the public interest:
+
+```java
+SubjectRights students = SubjectRights.of(record, DataSubjects.STUDENT);
+SubjectRights.Entitlement erasure = students.activity("enrollment").orElseThrow()
+        .entitlement(SubjectRights.Right.ERASURE);
+System.out.println(erasure.availability() + ": " + erasure.explanation());
+```
+
+```text
+NO: Art. 17.3.b: the data is kept while the task in the public interest requires it (retention: not declared), and erased afterwards.
+```
+
+Every `Entitlement` carries an English explanation that cites the articles. To find the data,
+`dataCategories()`, `entities()`, `objects()` and, with a [data inventory](10-reconciliation.md),
+`storedFields(inventory, taxonomy)` give the personal fields to look at, object by object. With
+`SubjectRights.of(record, DataSubjects.ALUMNUS, Jurisdiction.SPAIN)` the explanations of rectification and erasure add
+that the data is blocked before it is deleted (LOPDGDD art. 32).
+
+This is the start of the answer, not the answer. `CONDITIONAL` means the article lists cases, and whether this request
+meets them is for the data protection officer to decide, as is every request. Linneo reads the record; giving the
+person their data, correcting it or erasing it is the application's work. The reference page
+[SubjectRights](../reference/processing/subject-rights.md) has the rule for each lawful basis.
+
 ## Common mistakes
 
 - **Expecting Linneo to decide the lawful basis.** It checks that one is declared and that the conditions the data
@@ -597,6 +652,7 @@ valid? Which of them would you show on the officer's screen and which would fail
 - [Reference — Legal bases](../reference/processing/bases.md)
 - [Reference — ProcessingChecker](../reference/processing/checker.md): every code with its message
 - [Reference — ProcessingRecord](../reference/processing/record.md)
+- [Reference — SubjectRights](../reference/processing/subject-rights.md): the rights each lawful basis gives
 
 ---
 
