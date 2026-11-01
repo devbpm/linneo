@@ -118,4 +118,13 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
     public boolean processesCriminalOffenceData() {
         return natures().contains(LegalNature.CRIMINAL_OFFENCE);
     }
+
+    /**
+     * Whether the activity needs a data protection impact assessment (GDPR article 35).
+     *
+     * @return the screening of the activity against article 35.3 and the criteria of the guidelines
+     */
+    public ImpactScreening screening() {
+        return ImpactScreening.of(this);
+    }
 }

@@ -138,8 +138,8 @@ class ProcessingCheckerTest {
         CheckedActivity checked = checker.check(enrollment().specialCategoryCondition(null).impactAssessment(null)
                 .build());
         assertAll(
-                () -> assertEquals(Set.of(Code.MISSING_SPECIAL_CATEGORY_CONDITION, Code.IMPACT_ASSESSMENT_RECOMMENDED),
-                        codes(checked)),
+                () -> assertEquals(Set.of(Code.MISSING_SPECIAL_CATEGORY_CONDITION), codes(checked)),
+                () -> assertEquals(ImpactScreening.Outcome.POSSIBLE, checked.screening().outcome()),
                 () -> assertTrue(checked.errors().get(0).message()
                         .contains(Categories.USER_HEALTH_AND_MEDICAL_DISABILITY)),
                 () -> assertFalse(checked.isValid()));
@@ -231,7 +231,8 @@ class ProcessingCheckerTest {
     }
 
     @Test
-    @DisplayName("a deprecated purpose is resolved to its replacement and profiling suggests an impact assessment")
+    @DisplayName("a deprecated purpose is resolved to its replacement, and profiling special category data makes an"
+            + " impact assessment likely")
     void deprecatedProfiling() {
         CheckedActivity checked = checker.check(enrollment().purposes(DataUses.PERSONALIZE_PROFILING)
                 .impactAssessment(null).build());
@@ -239,8 +240,9 @@ class ProcessingCheckerTest {
                 () -> assertEquals(Set.of(Code.DEPRECATED_KEY, Code.IMPACT_ASSESSMENT_RECOMMENDED), codes(checked)),
                 () -> assertEquals(List.of(DataUses.EDUCATION_ENROLLMENT, DataUses.PERSONALIZE_CONTENT_PROFILING),
                         checked.purposes().stream().map(DataUse::key).toList()),
-                () -> assertTrue(checked.warnings().get(1).message().contains("special categories of data and"
-                        + " profiling")));
+                () -> assertTrue(checked.warnings().get(1).message().contains("Likely required (2 criteria of WP248):"
+                        + " 1. evaluation: purpose personalize.content.profiling; 4. sensitive data: special category"
+                        + " data user.health_and_medical.disability"), () -> checked.warnings().toString()));
     }
 
     @Test

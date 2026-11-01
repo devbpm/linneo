@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
   - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/Transfer.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
 -->
 
 # ProcessingActivity
@@ -32,7 +33,8 @@ Una actividad tiene dos partes con responsables distintos:
   interesados y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`);
 - su [**gobernanza**](#governance) es lo que decide y mantiene al día la función de protección de datos del
   responsable: las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las
-  transferencias y la evaluación de impacto.
+  transferencias, la evaluación de impacto y los factores de riesgo que declara para el
+  [cribado](impact-screening.md) de la necesidad de una.
 
 El código puede dar valores iniciales para la gobernanza con el builder. Una aplicación cuyo delegado de protección de
 datos los edita guarda la gobernanza en su propio almacenamiento y la combina con el alcance declarado en el código
@@ -50,7 +52,7 @@ mediante [`withGovernance`](#withgovernance).
 | `dataCategories` | 30.1.c | vacía | Claves de categorías de datos personales tratadas además de las de `entities`, preferiblemente constantes de `Categories`. |
 | `entities` | 30.1.c | vacía | Clases del modelo clasificadas; la actividad trata las categorías de sus campos personales. |
 | `objects` | 30.1.c | vacía | Claves de objetos de un [inventario de datos](../classify/inventory.md); la actividad trata las categorías de sus campos personales. El [`ProcessingChecker`](checker.md#métodos) debe crearse con ese inventario. |
-| `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | Las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las transferencias y la evaluación de impacto; consulta [Governance](#governance). `null` significa `Governance.NONE`. |
+| `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | Las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las transferencias, la evaluación de impacto y los factores de riesgo; consulta [Governance](#governance). `null` significa `Governance.NONE`. |
 
 Los componentes de la gobernanza se leen a través de ella: `activity.governance().legalBasis()`,
 `activity.governance().retention()`, etcétera.
@@ -108,13 +110,14 @@ actividad original no cambia. `NullPointerException` si `governance` es `null`; 
 | `Builder recipients(String... recipients)` | **Añade** categorías de destinatarios. |
 | `Builder transfer(String destination, TransferSafeguard safeguard)` | **Añade** una `Transfer`. Un destino en blanco lanza `IllegalArgumentException` en ese momento, no en `build()`. |
 | `Builder impactAssessment(String reference)` | Fija la referencia a la evaluación de impacto. |
+| `Builder riskFactors(ImpactScreening.Factor... factors)` | **Añade** factores de riesgo que conoce el delegado, para el [cribado](impact-screening.md) de la necesidad de una evaluación de impacto. |
 | `ProcessingActivity build()` | Crea la actividad con el constructor canónico. |
 
-Los métodos de `legalBasis` a `impactAssessment` son los del [`Governance.Builder`](#governancebuilder): dan los
+Los métodos de `legalBasis` a `riskFactors` son los del [`Governance.Builder`](#governancebuilder): dan los
 valores iniciales de la gobernanza de la actividad.
 
-Cada método de lista añade a lo indicado antes (`purposes("a").purposes("b", "c")` da `[a, b, c]`); los demás
-métodos sustituyen el valor anterior, así que gana la última llamada. `governance(...)` sustituye todo lo que
+Cada método de lista, y `riskFactors`, añade a lo indicado antes (`purposes("a").purposes("b", "c")` da `[a, b, c]`);
+los demás métodos sustituyen el valor anterior, así que gana la última llamada. `governance(...)` sustituye todo lo que
 declararon antes los métodos de gobernanza, y los que van después cambian la gobernanza que dio:
 
 ```java
@@ -170,14 +173,15 @@ ProcessingActivity admissions = ProcessingActivity.builder("admissions", "Admiss
 public record Governance(LegalBasis legalBasis, String legitimateInterest,
                          SpecialCategoryCondition specialCategoryCondition, CriminalDataBasis criminalDataBasis,
                          String legalReference, String retention, List<String> recipients, List<Transfer> transfers,
-                         String impactAssessment)
+                         String impactAssessment, Set<ImpactScreening.Factor> riskFactors)
 ```
 
 La parte de una actividad de tratamiento que decide y mantiene al día la función de protección de datos del
-responsable: por qué es lícito el tratamiento, cuánto tiempo se conservan los datos, quién los recibe, adónde van y la
-evaluación de impacto. Está separada del alcance de la actividad (finalidades, interesados y datos personales) porque
-ambos tienen responsables distintos. Los problemas que el [comprobador](checker.md) encuentra en esta parte son los
-de los [elementos](checker.md#element) cuyo `isGovernance()` es `true`.
+responsable: por qué es lícito el tratamiento, cuánto tiempo se conservan los datos, quién los recibe, adónde van, la
+evaluación de impacto y lo que el delegado sabe del riesgo y el código no. Está separada del alcance de la actividad
+(finalidades, interesados y datos personales) porque ambos tienen responsables distintos. Los problemas que el
+[comprobador](checker.md) encuentra en esta parte son los de los [elementos](checker.md#element) cuyo `isGovernance()`
+es `true`.
 
 | Componente | Artículo | Por defecto | Descripción |
 |---|---|---|---|
@@ -190,25 +194,28 @@ de los [elementos](checker.md#element) cuyo `isGovernance()` es `true`.
 | `recipients` | 30.1.d | vacía | Las categorías de destinatarios, como texto libre. |
 | `transfers` | 30.1.e | vacía | Transferencias a terceros países u organizaciones internacionales; consulta [`Transfer`](#transfer). |
 | `impactAssessment` | 35 | `null` | Una referencia a la evaluación de impacto relativa a la protección de datos, como su identificador o su ubicación. |
+| `riskFactors` | 35 | vacío | Lo que el delegado sabe de la actividad y el código no, como su escala, para el [cribado](impact-screening.md#declarar-factores-de-riesgo) de la necesidad de una evaluación de impacto. |
 
 El constructor canónico **normaliza** los textos opcionales `legitimateInterest`, `legalReference`, `retention` e
 `impactAssessment`: un texto en blanco pasa a ser `null` y a cualquier otro se le quitan los espacios iniciales y
 finales. Los textos de `recipients` no se normalizan. Las listas se copian (inmutables); una lista `null` es una lista
-vacía y un elemento `null` lanza `NullPointerException`.
+vacía y un elemento `null` lanza `NullPointerException`. `riskFactors` se copia en un conjunto inmutable; `null` es un
+conjunto vacío.
 
 | Miembro | Descripción |
 |---|---|
 | `static final Governance NONE` | Gobernanza sin nada declarado todavía: todos los componentes `null` o vacíos. Es la gobernanza de una actividad a la que no se dio ninguna. |
 | `static Builder builder()` | Empieza a declarar una gobernanza desde cero. |
-| `Builder toBuilder()` | Un builder que parte de estos valores, para cambiar una parte: los métodos de lista añaden a las listas y los demás métodos sustituyen el valor. La gobernanza en sí no cambia. |
+| `Builder toBuilder()` | Un builder que parte de estos valores, para cambiar una parte: los métodos de lista y `riskFactors` añaden a lo que hay y los demás métodos sustituyen el valor. La gobernanza en sí no cambia. |
 
 ### Governance.Builder
 
 `Governance.Builder` — `public static final class`, `@since 0.1.0`. Tiene los mismos métodos, con el mismo efecto, que
 los métodos de gobernanza del [`ProcessingActivity.Builder`](#builder): `legalBasis`, `legitimateInterest`,
-`specialCategoryCondition`, `criminalDataBasis`, `legalReference`, `retention`, `recipients`, `transfer` e
-`impactAssessment`, más `Governance build()`. Los métodos de lista añaden a lo indicado antes y los demás métodos
-sustituyen el valor anterior. `build()` puede llamarse más de una vez.
+`specialCategoryCondition`, `criminalDataBasis`, `legalReference`, `retention`, `recipients`, `transfer`,
+`impactAssessment` y `riskFactors(ImpactScreening.Factor...)`, más `Governance build()`. Los métodos de lista y
+`riskFactors` añaden a lo indicado antes y los demás métodos sustituyen el valor anterior. `build()` puede llamarse más
+de una vez.
 
 ### Alcance en el código, gobernanza desde el almacenamiento
 
@@ -234,13 +241,14 @@ Governance stored = Governance.builder()
         .build();
 
 ProcessingChecker checker = new ProcessingChecker(Taxonomy.load());
-checker.check(support).violations();                          // 4: sin base, sin condición, sin conservación, sin evaluación
+checker.check(support).violations();                          // 3: sin base, sin condición, sin conservación
 checker.check(support.withGovernance(stored)).violations();   // []
 ```
 
-Las cuatro infracciones de la primera comprobación son todas de gobernanza: sus elementos son `LEGAL_BASIS`,
-`SPECIAL_CATEGORY_CONDITION`, `RETENTION` e `IMPACT_ASSESSMENT`. Consulta
-[qué hacer con el elemento de una infracción](checker.md#element).
+Las tres infracciones de la primera comprobación son todas de gobernanza: sus elementos son `LEGAL_BASIS`,
+`SPECIAL_CATEGORY_CONDITION` y `RETENTION`. No hay ninguna sobre la evaluación de impacto: los datos de categorías
+especiales son un criterio de su [cribado](impact-screening.md), y un solo criterio no basta para pedir una evaluación.
+Consulta [qué hacer con el elemento de una infracción](checker.md#element).
 
 ## Transfer
 

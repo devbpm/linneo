@@ -130,9 +130,10 @@ class ProcessingRecordTest {
                         + "\"article\":\"9.2.a\",\"fideslang\":\"Explicit consent\"},\"recipients\":[\"Admissions board\"],"
                         + "\"transfers\":[{\"destination\":\"United States\",\"safeguard\":{\"code\":"
                         + "\"STANDARD_CONTRACTUAL_CLAUSES\",\"article\":\"46.2.c\",\"fideslang\":\"SCCs\"}}],"
+                        + "\"screening\":{\"outcome\":\"POSSIBLE\",\"criteria\":[\"SENSITIVE_DATA\"]},"
                         + "\"protection\":{\"natures\":[\"ORDINARY\",\"SPECIAL_CATEGORY\"],\"confidentiality\":\"HIGH\","
-                        + "\"integrity\":\"HIGH\",\"secret\":false},\"openPoints\":[")),
+                        + "\"integrity\":\"HIGH\",\"secret\":false},\"openPoints\":["), json),
                 () -> assertTrue(json.endsWith("]}]}")),
-                () -> assertEquals(3, json.split("\"openPoints\":\\[")[1].split("\",\"").length));
+                () -> assertEquals(2, json.split("\"openPoints\":\\[")[1].split("\",\"").length));
     }
 }

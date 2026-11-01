@@ -142,6 +142,7 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
                     + (protection.secret() ? ", includes secrets" : ""));
             row(out, "Impact assessment (art. 35)", governance.impactAssessment() == null ? "None"
                     : governance.impactAssessment());
+            row(out, "Impact assessment screening", checked.screening().summary());
             if (!checked.warnings().isEmpty()) {
                 out.append("\nOpen points:\n\n");
                 checked.warnings().forEach(w -> out.append("- ").append(cell(w.message())).append('\n'));
@@ -196,6 +197,13 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
             if (governance.impactAssessment() != null) {
                 json.field("impactAssessment", governance.impactAssessment());
             }
+            ImpactScreening screening = checked.screening();
+            Json screened = new Json().field("outcome", screening.outcome().name())
+                    .field("criteria", screening.criteria().stream().map(Enum::name).toList());
+            if (screening.mandatoryCase() != null) {
+                screened.field("mandatoryCase", screening.mandatoryCase());
+            }
+            json.raw("screening", screened.end());
             json.raw("protection", new Json()
                     .field("natures", checked.natures().stream().map(LegalNature::name).toList())
                     .field("confidentiality", checked.protection().confidentiality().name())

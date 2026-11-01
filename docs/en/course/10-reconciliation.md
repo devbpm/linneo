@@ -412,11 +412,12 @@ requests with additions first: the personal data, confidentiality and integrity 
 exclusive, so the server refuses a second level while the first is still on the column.
 
 **Exercise 10.6.** `PERSONAL_DATA` (a new category), `PROTECTION` and `SPECIAL_CATEGORY_CONDITION`, plus
-`OPEN_POINTS` if a warning appears, such as the impact assessment recommendation when no assessment is referenced. The
-direction is `TIGHTENED`: the activity now processes special category data. `isGovernance()` is false, because the
-data changed too; the officer's edit is part of the same change. Note the order of events: until the condition was
-added, the current record could not be built at all, because special category data without an article 9 condition is
-an error.
+`OPEN_POINTS` only if a warning appears or goes away. The impact assessment recommendation is not one of them here: the
+screening counts special category and financial data as one criterion, sensitive data, so the disability adds no
+criterion to an activity that already processes the fee. The direction is `TIGHTENED`: the activity now processes
+special category data. `isGovernance()` is false, because the data changed too; the officer's edit is part of the same
+change. Note the order of events: until the condition was added, the current record could not be built at all, because
+special category data without an article 9 condition is an error.
 
 **Quiz.** 1: Linneo declares, compares and tells the direction; the application reads, writes, locks and audits.
 2: the category's levels belong to the taxonomy, which can change without the code changing; keeping only the

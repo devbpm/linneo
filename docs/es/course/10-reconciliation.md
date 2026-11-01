@@ -422,11 +422,12 @@ peticiones con las nuevas primero: las clasificaciones de datos personales, conf
 mutuamente excluyentes, así que el servidor rechaza un segundo nivel mientras el primero siga en la columna.
 
 **Ejercicio 10.6.** `PERSONAL_DATA` (una categoría nueva), `PROTECTION` y `SPECIAL_CATEGORY_CONDITION`, más
-`OPEN_POINTS` si aparece un aviso, como la recomendación de evaluación de impacto cuando no se cita ninguna. La
-dirección es `TIGHTENED`: la actividad trata ahora datos de categoría especial. `isGovernance()` es falso, porque
-también cambiaron los datos; el cambio del delegado forma parte del mismo cambio. Fíjate en el orden: hasta que se
-añadió la condición, el registro actual ni siquiera podía construirse, porque datos de categoría especial sin condición
-del artículo 9 son un error.
+`OPEN_POINTS` solo si aparece o desaparece un aviso. La recomendación de evaluación de impacto no es uno de ellos aquí:
+el cribado cuenta los datos de categoría especial y los financieros como un solo criterio, los datos sensibles, así
+que la discapacidad no añade ningún criterio a una actividad que ya trata la tasa. La dirección es `TIGHTENED`: la
+actividad trata ahora datos de categoría especial. `isGovernance()` es falso, porque también cambiaron los datos; el
+cambio del delegado forma parte del mismo cambio. Fíjate en el orden: hasta que se añadió la condición, el registro
+actual ni siquiera podía construirse, porque datos de categoría especial sin condición del artículo 9 son un error.
 
 **Autoevaluación.** 1: Linneo declara, compara y dice la dirección; la aplicación lee, escribe, bloquea y audita.
 2: los niveles de la categoría son de la taxonomía, que puede cambiar sin que cambie el código; guardar solo los que

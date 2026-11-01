@@ -127,6 +127,16 @@ All notable changes to this project are documented in this file. The format foll
   activity, whether access, rectification, erasure, restriction, portability and objection apply under its lawful
   basis (GDPR articles 15 to 21), with the provisions; under Spanish law, erased or rectified data is blocked first
   (LOPDGDD article 32).
+- `ImpactScreening`: whether an activity needs a data protection impact assessment, screened against the nine
+  criteria of the EDPB guidelines (WP248) and the mandatory cases of GDPR article 35.3, with the evidence of each
+  criterion. The criteria the code can see (sensitive or highly personal data, vulnerable data subjects, profiling and
+  monitoring purposes) are found; the rest the data protection officer declares as `Governance.riskFactors`. The
+  checker reports a mandatory case without an assessment as the error `IMPACT_ASSESSMENT_REQUIRED` and two criteria
+  or more without one as the warning `IMPACT_ASSESSMENT_RECOMMENDED`; a single criterion, such as special category
+  data alone, no longer raises a warning. The record shows the screening of each activity.
+- `BreachAssessment`: the severity of a personal data breach with ENISA's methodology (context × ease of
+  identification + circumstances), scored from the classification of the affected fields, and whether to notify the
+  supervisory authority (GDPR article 33) and tell the data subjects (article 34).
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
   `module-info.java`.

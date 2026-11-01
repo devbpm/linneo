@@ -17,6 +17,8 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingException.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
   - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
+  - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
 -->
 
 # Módulo 9 — Actividades de tratamiento y el registro
@@ -159,12 +161,15 @@ ProcessingActivity admissions = ProcessingActivity.builder("admissions", "Admiss
 
 ```text
 ERROR MISSING_SPECIAL_CATEGORY_CONDITION admissions: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
-WARNING IMPACT_ASSESSMENT_RECOMMENDED admissions: The activity involves special categories of data; GDPR article 35 may require an impact assessment
 ```
 
-El error nombra la categoría que lo provoca. La solución es una `SpecialCategoryCondition` —la ley de admisión de la
-universidad reserva plazas para estudiantes con discapacidad, así que `SUBSTANTIAL_PUBLIC_INTEREST` (art. 9.2.g)— y
-una referencia a la evaluación de impacto que ha hecho el delegado de protección de datos:
+El error nombra la categoría que lo provoca. No hay ningún aviso sobre una evaluación de impacto: los datos de
+categorías especiales son uno de los nueve criterios que cuenta el comprobador para cribar la necesidad de una, y un
+solo criterio solo hace *posible* una evaluación, no probable (consulta
+[Evaluación de impacto y violaciones de seguridad](#evaluación-de-impacto-y-violaciones-de-seguridad)). La solución es
+una `SpecialCategoryCondition` —la ley de admisión de la universidad reserva plazas para estudiantes con discapacidad,
+así que `SUBSTANTIAL_PUBLIC_INTEREST` (art. 9.2.g)— y, como el delegado de protección de datos hizo de todos modos una
+evaluación de impacto, una referencia a ella:
 
 ```java
         .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
@@ -195,7 +200,6 @@ penales** (art. 10), que necesitan su propia base:
 ```text
 ERROR MISSING_CRIMINAL_DATA_BASIS staff-screening: Criminal offence data (user.criminal_history) needs a basis of GDPR article 10
 WARNING MISSING_LEGAL_REFERENCE staff-screening: GDPR article(s) 6.1.c rest on Union or Member State law; name it as the legal reference
-WARNING IMPACT_ASSESSMENT_RECOMMENDED staff-screening: The activity involves criminal offence data; GDPR article 35 may require an impact assessment
 ```
 
 `CriminalDataBasis` tiene dos valores: `OFFICIAL_AUTHORITY` y `AUTHORISED_BY_LAW`. La verificación la exige la
@@ -233,7 +237,6 @@ ProcessingActivity enrollment = ProcessingActivity.builder("enrollment", "Studen
 
 ```text
 ERROR MISSING_SPECIAL_CATEGORY_CONDITION enrollment: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
-WARNING IMPACT_ASSESSMENT_RECOMMENDED enrollment: The activity involves special categories of data; GDPR article 35 may require an impact assessment
 ```
 
 `Student.disabilityDegree` ha entrado con la entidad, junto con las notas de orientación y el identificador de
@@ -429,10 +432,9 @@ checker.check(support).violations().forEach(v -> System.out.println(v.element() 
 LEGAL_BASIS ERROR MISSING_LEGAL_BASIS learning-support: Personal data needs a lawful basis (GDPR article 6.1)
 SPECIAL_CATEGORY_CONDITION ERROR MISSING_SPECIAL_CATEGORY_CONDITION learning-support: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
 RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
-IMPACT_ASSESSMENT WARNING IMPACT_ASSESSMENT_RECOMMENDED learning-support: The activity involves special categories of data; GDPR article 35 may require an impact assessment
 ```
 
-`element().isGovernance()` es `true` en las cuatro. Es `false` para los elementos del alcance (`KEY`, `PURPOSES`,
+`element().isGovernance()` es `true` en las tres. Es `false` para los elementos del alcance (`KEY`, `PURPOSES`,
 `DATA_SUBJECTS`, `PERSONAL_DATA`), y para eso sirve: un problema del alcance es de los desarrolladores, así que hace
 fallar la compilación; una laguna de la gobernanza corresponde a la pantalla donde la edita el delegado. `verify` falla
 con todos los errores, también los de gobernanza, así que un test que deba fallar solo por el alcance filtra los
@@ -477,6 +479,7 @@ nombres de los términos vienen de la taxonomía y el resto se escribe tal como 
 | Retention (art. 30.1.f) | Not declared |
 | Required protection (art. 30.1.g) | Confidentiality Medium, integrity High |
 | Impact assessment (art. 35) | None |
+| Impact assessment screening | Possible (1 criterion of WP248): 4. sensitive data: highly personal data user.financial.fee; highly personal data user.financial.scholarship |
 
 Open points:
 
@@ -506,22 +509,37 @@ y la sección de la verificación de antecedentes:
 | Retention (art. 30.1.f) | Until the hiring decision; afterwards only whether the certificate was clear |
 | Required protection (art. 30.1.g) | Confidentiality High, integrity High |
 | Impact assessment (art. 35) | DPIA-2026-02 |
+| Impact assessment screening | Possible (1 criterion of WP248): 4. sensitive data: criminal offence data user.criminal_history |
 ```
 
-La fila «Lawful basis» muestra el nombre fideslang de la base (`Legal obligations`), y la fila «Required protection»
+La fila «Lawful basis» muestra el nombre fideslang de la base (`Legal obligations`), la fila «Required protection»
 los niveles más altos de los datos, como punto de partida para la descripción de las medidas de seguridad del
-artículo 30.1.g. Cada fila se explica en la página de referencia [ProcessingRecord](../reference/processing/record.md).
+artículo 30.1.g, y la fila «Impact assessment screening» lo que el comprobador concluyó sobre la necesidad de una
+evaluación de impacto (consulta
+[Evaluación de impacto y violaciones de seguridad](#evaluación-de-impacto-y-violaciones-de-seguridad)). Cada fila se
+explica en la página de referencia [ProcessingRecord](../reference/processing/record.md).
 
 `toJson()` da el mismo contenido para las herramientas. Solo el boletín, con
 `checker.verify(ALUMNI_NEWSLETTER).toJson()`:
 
 ```json
-{"activities":[{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events and alumni services","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
+{"activities":[{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events and alumni services","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","screening":{"outcome":"NOT_INDICATED","criteria":[]},"protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
 ```
 
 El registro es un punto de partida para la delegada de protección de datos, generado a partir de las mismas
 declaraciones que comprueba la compilación. No sustituye su revisión: ella sigue decidiendo si las bases son las
 adecuadas y completa lo que el registro no puede saber, como los datos de contacto del responsable.
+
+## Evaluación de impacto y violaciones de seguridad
+
+El comprobador también criba cada actividad para saber si necesita una evaluación de impacto relativa a la protección
+de datos (`ImpactScreening`). Cuenta los criterios de las directrices del Comité Europeo de Protección de Datos que
+cumple la actividad, avisa cuando se cumplen dos y no se cita ninguna evaluación, y notifica como error un caso del
+artículo 35.3. Lo que solo sabe la delegada, como la escala del tratamiento, lo declara ella con `riskFactors(...)`:
+`Factor.LARGE_SCALE` en `learning-support` lo convertiría en un error hasta que citara una evaluación. Cuando ocurre una
+violación de seguridad, `BreachAssessment` puntúa su gravedad a partir de la clasificación de los campos afectados,
+como orientación para las primeras horas. Consulta [ImpactScreening](../reference/processing/impact-screening.md) y
+[BreachAssessment](../reference/processing/breach-assessment.md).
 
 ## Responder a la solicitud de un interesado
 
@@ -670,6 +688,10 @@ actividad? ¿Cuáles mostrarías en la pantalla del delegado y cuáles harían f
 - [Referencia — ProcessingChecker](../reference/processing/checker.md): cada código con su mensaje
 - [Referencia — ProcessingRecord](../reference/processing/record.md)
 - [Referencia — SubjectRights](../reference/processing/subject-rights.md): los derechos que da cada base jurídica
+- [Referencia — ImpactScreening](../reference/processing/impact-screening.md): cuándo hace falta una evaluación de
+  impacto
+- [Referencia — BreachAssessment](../reference/processing/breach-assessment.md): la gravedad de una violación de
+  seguridad de los datos personales
 
 ---
 
@@ -681,18 +703,23 @@ actividad? ¿Cuáles mostrarías en la pantalla del delegado y cuáles harían f
 
 **Ejercicio 9.1**
 
-Un aviso, y la actividad es válida:
+Dos avisos, y la actividad es válida:
 
 ```text
 WARNING MISSING_LEGAL_REFERENCE grading: GDPR article(s) 6.1.e rest on Union or Member State law; name it as the legal reference
+WARNING IMPACT_ASSESSMENT_RECOMMENDED grading: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 4. sensitive data: highly personal data user.financial.fee; highly personal data user.financial.scholarship; 7. vulnerable subjects: data subjects faculty_member
 ```
 
 La base de interés público descansa en una ley y la actividad no nombra ninguna. Los datos personales vienen de las
 dos entidades: `user.account.username` (de `AuditedEntity.createdBy`), `user.education.course_history`,
 `user.education.enrollment`, `user.education.grade`, `user.education.program`, `user.financial.fee`,
 `user.financial.scholarship` y `user.unique_id.record_reference`, todas ordinarias, así que no hace falta ninguna
-condición ni se sugiere evaluación de impacto. La protección requerida es confidencialidad `MEDIUM` e integridad
-`HIGH` (la integridad de las calificaciones). Añade `.legalReference("Higher Education Act, art. 12")`.
+condición. La protección requerida es confidencialidad `MEDIUM` e integridad `HIGH` (la integridad de las
+calificaciones). El segundo aviso es el cribado: la tasa y la beca son datos financieros, que cuentan como datos de
+naturaleza muy personal (criterio 4), y los profesores (`faculty_member`), como empleados, son interesados vulnerables
+(criterio 7). Dos
+criterios hacen probable una evaluación. Añade `.legalReference("Higher Education Act, art. 12")` y cita la evaluación
+que hace el delegado con `.impactAssessment(...)`; hasta entonces el aviso sigue como punto abierto del registro.
 
 **Ejercicio 9.2**
 
@@ -737,29 +764,34 @@ Con el plazo añadido, `openPoints` queda vacía.
 
 ```text
 ERROR MISSING_CRIMINAL_DATA_BASIS staff-administration: Criminal offence data (user.criminal_history) needs a basis of GDPR article 10
-WARNING IMPACT_ASSESSMENT_RECOMMENDED staff-administration: The activity involves criminal offence data; GDPR article 35 may require an impact assessment
+WARNING IMPACT_ASSESSMENT_RECOMMENDED staff-administration: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 4. sensitive data: criminal offence data user.criminal_history; highly personal data user.financial.bank_account; 7. vulnerable subjects: data subjects employee; data subjects staff_member
 ```
 
 `Staff.sexOffenceCertificateClear` son datos penales, así que incluir `Staff` los lleva a la administración de
 personal. La actividad requiere además confidencialidad `HIGH`, integridad `HIGH` e incluye secretos (`passwordHash`).
-Hay dos soluciones posibles: si la administración de personal guarda de verdad el resultado de la verificación,
-declara `.criminalDataBasis(CriminalDataBasis.AUTHORISED_BY_LAW)`, la referencia legal y la evaluación de impacto; si
-no, declara por clave las categorías que sí trata en lugar de incluir `Staff` y deja los datos penales a la actividad
-de verificación. La segunda limita cada actividad a lo que necesita.
+El aviso es el cribado: los datos penales y la cuenta bancaria son datos sensibles (criterio 4), y los empleados y el
+personal son interesados vulnerables (criterio 7). Hay dos soluciones posibles: si la administración de personal guarda
+de verdad el resultado de la verificación, declara `.criminalDataBasis(CriminalDataBasis.AUTHORISED_BY_LAW)`, la
+referencia legal y la evaluación de impacto; si no, declara por clave las categorías que sí trata en lugar de incluir
+`Staff` y deja los datos penales a la actividad de verificación. La segunda limita cada actividad a lo que necesita,
+pero la cuenta bancaria de los empleados sigue cumpliendo dos criterios, así que el aviso permanece hasta que la
+actividad cite una evaluación.
 
 **Ejercicio 9.6**
 
-Dos avisos, y la actividad es válida:
+Un aviso, y la actividad es válida:
 
 ```text
 RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
-IMPACT_ASSESSMENT WARNING IMPACT_ASSESSMENT_RECOMMENDED learning-support: The activity involves special categories of data; GDPR article 35 may require an impact assessment
 ```
 
 El consentimiento explícito es una condición válida del artículo 9.2 para datos de discapacidad, así que no hay error,
-y ninguno de los dos consentimientos descansa en una ley, así que no se pide referencia legal. Los dos avisos tienen un
-elemento de gobernanza (`RETENTION` e `IMPACT_ASSESSMENT`): van a la pantalla del delegado, junto a los campos de
-conservación y de evaluación de impacto. Nada hace fallar la compilación, porque no hay ningún error en el alcance.
+y ninguno de los dos consentimientos descansa en una ley, así que no se pide referencia legal. Tampoco hay aviso sobre
+una evaluación de impacto: los datos de categorías especiales son un criterio del cribado, y un solo criterio solo hace
+posible una evaluación. El aviso tiene un elemento de gobernanza (`RETENTION`): va a la pantalla del delegado, junto al
+campo de conservación. Nada hace fallar la compilación, porque no hay ningún error en el alcance. Si el delegado
+declarara `Factor.LARGE_SCALE` en la gobernanza, la actividad sería un caso del artículo 35.3.b, y el error
+`IMPACT_ASSESSMENT_REQUIRED` (elemento `IMPACT_ASSESSMENT`, también de gobernanza) le pediría que citara la evaluación.
 
 **Cuestionario**
 

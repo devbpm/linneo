@@ -11,6 +11,8 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
   - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
+  - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
 -->
 
 # Actividades de tratamiento
@@ -25,7 +27,7 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 | Tipo | Declaración | Papel | Página |
 |---|---|---|---|
 | `ProcessingActivity` | record, con un `Builder` | Una actividad de tratamiento tal como se declara: su alcance (finalidades, interesados, datos personales) y su gobernanza | [ProcessingActivity](activity.md) |
-| `Governance` | record, con un `Builder` | La parte que posee la función de protección de datos: bases, referencia legal, conservación, destinatarios, transferencias, evaluación de impacto | [ProcessingActivity](activity.md#governance) |
+| `Governance` | record, con un `Builder` | La parte que posee la función de protección de datos: bases, referencia legal, conservación, destinatarios, transferencias, evaluación de impacto y los factores de riesgo que declara | [ProcessingActivity](activity.md#governance) |
 | `Transfer` | record | Una transferencia a un tercer país o a una organización internacional | [ProcessingActivity](activity.md#transfer) |
 | `LegalBasis` | enum | La base jurídica (artículo 6.1) | [Bases jurídicas](bases.md#legalbasis) |
 | `SpecialCategoryCondition` | enum | La excepción para categorías especiales de datos (artículo 9.2) | [Bases jurídicas](bases.md#specialcategorycondition) |
@@ -40,6 +42,8 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 | `RecordDiff` | class | Las diferencias entre dos registros, actividad por actividad | [ProcessingRecord](record.md#recorddiff) |
 | `ActivityChange` | record, con `Aspect` | Cómo difiere una actividad entre dos registros, y qué cambió en ella | [ProcessingRecord](record.md#activitychange) |
 | `SubjectRights` | class, con `Right`, `Availability`, `Entitlement` y `ActivityRights` | Lo que el registro dice a una categoría de interesados que ejercen sus derechos: las actividades que tratan sus datos, dónde se guardan y los derechos que da cada base jurídica | [SubjectRights](subject-rights.md) |
+| `ImpactScreening` | record, con `Criterion`, `Factor`, `Outcome` y `Finding` | Si una actividad necesita una evaluación de impacto relativa a la protección de datos (artículo 35): los criterios de las directrices del CEPD que cumple y los casos del artículo 35.3 | [ImpactScreening](impact-screening.md) |
+| `BreachAssessment` | class, con un `Builder` y los enumerados de la puntuación | La gravedad de una violación de seguridad de los datos personales según la metodología de ENISA y lo que el RGPD pide al responsable: notificar a la autoridad, informar a los interesados | [BreachAssessment](breach-assessment.md) |
 
 ## Relación con la taxonomía
 
@@ -73,11 +77,12 @@ Los vocabularios de las bases siguen las declaraciones de privacidad de fideslan
 Una actividad tiene dos partes con responsables distintos. Su **alcance**, las finalidades, los interesados y los datos
 personales, es lo que el código de la aplicación sabe con certeza. Su **gobernanza** (`Governance`) es lo que decide y
 mantiene al día la función de protección de datos: las bases jurídicas, la referencia legal, el plazo de conservación,
-los destinatarios, las transferencias y la evaluación de impacto. Una aplicación puede declarar el alcance en el código,
-guardar en su propio almacenamiento la gobernanza que edita su delegado de protección de datos y combinar ambos con
-`ProcessingActivity.withGovernance(...)` antes de comprobar. Cada problema que notifica el comprobador lleva el
-`Element` de la actividad en el que está, y `element().isGovernance()` distingue el alcance, para los desarrolladores,
-de la gobernanza, para el delegado; consulta [`Element`](checker.md#element).
+los destinatarios, las transferencias, la evaluación de impacto y los factores de riesgo que solo ella conoce. Una
+aplicación puede declarar el alcance en el código, guardar en su propio almacenamiento la gobernanza que edita su
+delegado de protección de datos y combinar ambos con `ProcessingActivity.withGovernance(...)` antes de comprobar. Cada
+problema que notifica el comprobador lleva el `Element` de la actividad en el que está, y `element().isGovernance()`
+distingue el alcance, para los desarrolladores, de la gobernanza, para el delegado; consulta
+[`Element`](checker.md#element).
 
 ## Errores y avisos
 
@@ -87,14 +92,16 @@ la gravedad:
 - **Error**: la actividad, tal como está declarada, sería ilícita o no se puede comprobar. Datos personales sin base
   jurídica, categorías especiales sin una condición del artículo 9.2, datos penales sin una base del artículo 10, una
   clave desconocida, una actividad sin finalidad, sin interesados o sin datos personales, una entidad con errores de
-  clasificación, un objeto que el inventario de datos no contiene, dos actividades con la misma clave. Con
-  `Jurisdiction.SPAIN`, también el consentimiento explícito como única condición para las categorías especiales del
-  artículo 9.1 de la LOPDGDD. `verify` lanza una `ProcessingException` y no se genera ningún registro.
+  clasificación, un objeto que el inventario de datos no contiene, dos actividades con la misma clave, una actividad
+  que es un caso del artículo 35.3 del RGPD según su [cribado](impact-screening.md) y no cita ninguna evaluación de
+  impacto. Con `Jurisdiction.SPAIN`, también el consentimiento explícito como única condición para las categorías
+  especiales del artículo 9.1 de la LOPDGDD. `verify` lanza una `ProcessingException` y no se genera ningún registro.
 - **Aviso**: el registro está incompleto o algo debe revisarse. Una clave obsoleta, una categoría no personal, una
   base que descansa en una ley sin nombrarla, el interés legítimo sin el interés perseguido, la falta de plazo de
-  conservación, una condición declarada para datos que la actividad no trata, y actividades con categorías especiales,
-  datos penales o elaboración de perfiles sin evaluación de impacto. La verificación pasa y los avisos aparecen en el
-  registro como **puntos abiertos**.
+  conservación, una condición declarada para datos que la actividad no trata, y una actividad cuyo
+  [cribado](impact-screening.md) hace probable una evaluación de impacto (dos criterios o más) y que no cita ninguna.
+  Los datos de categorías especiales por sí solos son un criterio y no generan nada. La verificación pasa y los avisos
+  aparecen en el registro como **puntos abiertos**.
 
 La lista completa está en la [tabla de códigos](checker.md#códigos), con el elemento en el que se notifica cada código.
 `verify` falla con todos los errores, sea cual sea su elemento.
@@ -124,5 +131,6 @@ String markdown = record.toMarkdown("Example University");
 ```
 
 Véase también: [ProcessingActivity](activity.md) · [Bases jurídicas](bases.md) · [ProcessingChecker](checker.md) ·
-[ProcessingRecord](record.md) · [SubjectRights](subject-rights.md) · curso:
+[ProcessingRecord](record.md) · [SubjectRights](subject-rights.md) · [ImpactScreening](impact-screening.md) ·
+[BreachAssessment](breach-assessment.md) · curso:
 [Actividades de tratamiento y el registro](../../course/09-processing-activities.md)

@@ -17,7 +17,10 @@ package io.github.devbpm.linneo.processing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The part of a processing activity that the controller's data protection function decides and keeps up to date:
@@ -41,12 +44,14 @@ import java.util.List;
  * @param recipients the categories of recipients (article 30.1.d)
  * @param transfers the transfers to third countries or international organisations (article 30.1.e)
  * @param impactAssessment a reference to the data protection impact assessment (article 35), or {@code null}
+ * @param riskFactors what the officer knows of the activity that the code cannot, for the
+ *        {@linkplain ImpactScreening screening} of the need for an impact assessment
  * @since 0.1.0
  */
 public record Governance(LegalBasis legalBasis, String legitimateInterest,
                          SpecialCategoryCondition specialCategoryCondition, CriminalDataBasis criminalDataBasis,
                          String legalReference, String retention, List<String> recipients, List<Transfer> transfers,
-                         String impactAssessment) {
+                         String impactAssessment, Set<ImpactScreening.Factor> riskFactors) {
 
     /**
      * Governance with nothing declared yet.
@@ -65,6 +70,7 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
      * @param recipients the recipients
      * @param transfers the transfers
      * @param impactAssessment the impact assessment reference
+     * @param riskFactors the declared risk factors; {@code null} means none
      */
     public Governance {
         legitimateInterest = blankToNull(legitimateInterest);
@@ -73,6 +79,8 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
         recipients = recipients == null ? List.of() : List.copyOf(recipients);
         transfers = transfers == null ? List.of() : List.copyOf(transfers);
         impactAssessment = blankToNull(impactAssessment);
+        riskFactors = riskFactors == null || riskFactors.isEmpty() ? Set.of()
+                : Collections.unmodifiableSet(EnumSet.copyOf(riskFactors));
     }
 
     /**
@@ -100,6 +108,7 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
         builder.recipients.addAll(recipients);
         builder.transfers.addAll(transfers);
         builder.impactAssessment = impactAssessment;
+        builder.riskFactors.addAll(riskFactors);
         return builder;
     }
 
@@ -123,6 +132,7 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
         private final List<String> recipients = new ArrayList<>();
         private final List<Transfer> transfers = new ArrayList<>();
         private String impactAssessment;
+        private final Set<ImpactScreening.Factor> riskFactors = EnumSet.noneOf(ImpactScreening.Factor.class);
 
         private Builder() {
         }
@@ -229,13 +239,24 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
         }
 
         /**
+         * Adds risk factors the officer knows of, for the screening of the need for an impact assessment.
+         *
+         * @param factors the factors, such as {@link ImpactScreening.Factor#LARGE_SCALE}
+         * @return this builder
+         */
+        public Builder riskFactors(ImpactScreening.Factor... factors) {
+            this.riskFactors.addAll(Arrays.asList(factors));
+            return this;
+        }
+
+        /**
          * Creates the governance.
          *
          * @return the governance
          */
         public Governance build() {
             return new Governance(legalBasis, legitimateInterest, specialCategoryCondition, criminalDataBasis,
-                    legalReference, retention, recipients, transfers, impactAssessment);
+                    legalReference, retention, recipients, transfers, impactAssessment, riskFactors);
         }
     }
 }

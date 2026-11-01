@@ -11,6 +11,8 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
   - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
+  - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
 -->
 
 # Processing activities
@@ -25,7 +27,7 @@ taxonomy and the classification of the model, and renders the record.
 | Type | Kind | Role | Page |
 |---|---|---|---|
 | `ProcessingActivity` | record, with a `Builder` | One processing activity as declared: its scope (purposes, data subjects, personal data) and its governance | [ProcessingActivity](activity.md) |
-| `Governance` | record, with a `Builder` | The part the data protection function owns: bases, legal reference, retention, recipients, transfers, impact assessment | [ProcessingActivity](activity.md#governance) |
+| `Governance` | record, with a `Builder` | The part the data protection function owns: bases, legal reference, retention, recipients, transfers, impact assessment and the risk factors it declares | [ProcessingActivity](activity.md#governance) |
 | `Transfer` | record | A transfer to a third country or an international organisation | [ProcessingActivity](activity.md#transfer) |
 | `LegalBasis` | enum | The lawful basis (article 6.1) | [Legal bases](bases.md#legalbasis) |
 | `SpecialCategoryCondition` | enum | The exception for special categories of data (article 9.2) | [Legal bases](bases.md#specialcategorycondition) |
@@ -40,6 +42,8 @@ taxonomy and the classification of the model, and renders the record.
 | `RecordDiff` | class | The differences between two records, activity by activity | [ProcessingRecord](record.md#recorddiff) |
 | `ActivityChange` | record, with `Aspect` | How one activity differs between two records, and what changed in it | [ProcessingRecord](record.md#activitychange) |
 | `SubjectRights` | class, with `Right`, `Availability`, `Entitlement` and `ActivityRights` | What the record says to a category of data subjects who exercise their rights: the activities that process their data, where it is stored and the rights each lawful basis gives | [SubjectRights](subject-rights.md) |
+| `ImpactScreening` | record, with `Criterion`, `Factor`, `Outcome` and `Finding` | Whether an activity needs a data protection impact assessment (article 35): the criteria of the EDPB guidelines it meets, and the cases of article 35.3 | [ImpactScreening](impact-screening.md) |
+| `BreachAssessment` | class, with a `Builder` and the enums of the scoring | The severity of a personal data breach under ENISA's methodology and what the GDPR asks of the controller: notify the authority, tell the data subjects | [BreachAssessment](breach-assessment.md) |
 
 ## How it relates to the taxonomy
 
@@ -71,11 +75,11 @@ The vocabularies of the bases follow fideslang's privacy declarations: `LegalBas
 An activity has two parts with different owners. Its **scope**, the purposes, the data subjects and the personal data,
 is what the code of the application knows for certain. Its **governance** (`Governance`) is what the data protection
 function decides and keeps up to date: the lawful bases, the legal reference, the retention, the recipients, the
-transfers and the impact assessment. An application can declare the scope in code, keep the governance its data
-protection officer edits in its own storage and combine both with `ProcessingActivity.withGovernance(...)` before
-checking. Each problem the checker reports carries the `Element` of the activity it is in, and
-`element().isGovernance()` tells the scope, for developers, from the governance, for the officer; see
-[`Element`](checker.md#element).
+transfers, the impact assessment and the risk factors that only it knows. An application can declare the scope in code,
+keep the governance its data protection officer edits in its own storage and combine both with
+`ProcessingActivity.withGovernance(...)` before checking. Each problem the checker reports carries the `Element` of the
+activity it is in, and `element().isGovernance()` tells the scope, for developers, from the governance, for the
+officer; see [`Element`](checker.md#element).
 
 ## Errors and warnings
 
@@ -85,14 +89,15 @@ severity:
 - **Error**: the activity, as declared, would be unlawful or cannot be checked. Personal data without a lawful basis,
   special categories without an article 9.2 condition, criminal offence data without an article 10 basis, an unknown
   key, an activity with no purpose, no data subjects or no personal data, an entity with classification errors, an
-  object that the data inventory does not hold, two activities with the same key. With `Jurisdiction.SPAIN`, also
-  explicit consent as the only condition for the special categories of LOPDGDD article 9.1. `verify` throws a
-  `ProcessingException` and no record is produced.
+  object that the data inventory does not hold, two activities with the same key, an activity that is a case of GDPR
+  article 35.3 according to its [screening](impact-screening.md) and refers to no impact assessment. With
+  `Jurisdiction.SPAIN`, also explicit consent as the only condition for the special categories of LOPDGDD article 9.1.
+  `verify` throws a `ProcessingException` and no record is produced.
 - **Warning**: the record is incomplete or should be reviewed. A deprecated key, a non-personal category, a basis
   resting on law without naming the law, legitimate interests without the interest pursued, no retention, a
-  condition declared for data the activity does not process, and special category, criminal offence or profiling
-  activities with no impact assessment. Verification passes and the warnings appear in the record as **open
-  points**.
+  condition declared for data the activity does not process, and an activity whose [screening](impact-screening.md)
+  makes an impact assessment likely (two criteria or more) and that refers to none. Special category data alone is one
+  criterion and raises nothing. Verification passes and the warnings appear in the record as **open points**.
 
 The full list is in the [codes table](checker.md#codes), with the element each code is reported on. `verify` fails
 on every error, whichever its element.
@@ -122,5 +127,6 @@ String markdown = record.toMarkdown("Example University");
 ```
 
 See also: [ProcessingActivity](activity.md) · [Legal bases](bases.md) · [ProcessingChecker](checker.md) ·
-[ProcessingRecord](record.md) · [SubjectRights](subject-rights.md) · course:
+[ProcessingRecord](record.md) · [SubjectRights](subject-rights.md) · [ImpactScreening](impact-screening.md) ·
+[BreachAssessment](breach-assessment.md) · course:
 [Processing activities and the record](../../course/09-processing-activities.md)

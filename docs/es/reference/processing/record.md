@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
   - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
   - src/main/java/io/github/devbpm/linneo/processing/ActivityChange.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
 -->
 
 # ProcessingRecord
@@ -65,6 +66,7 @@ mensajes.
 | `Retention (art. 30.1.f)` | siempre | la conservación, o `Not declared` |
 | `Required protection (art. 30.1.g)` | siempre | `Confidentiality <level>, integrity <level>`, más `, includes secrets` si algún dato es un secreto |
 | `Impact assessment (art. 35)` | siempre | la referencia, o `None` |
+| `Impact assessment screening` | siempre | el [cribado](impact-screening.md) de la actividad tal como lo da `ImpactScreening.summary()`: `Not indicated`, o el resultado con los criterios que se cumplen y lo que muestra cada uno |
 
 El registro indica la protección que los datos **requieren** (los niveles más altos de sus categorías y campos), como
 punto de partida para la descripción de las medidas de seguridad del artículo 30.1.g; no describe las medidas.
@@ -121,6 +123,7 @@ String markdown = record.toMarkdown("Example University | Records");
 | Retention (art. 30.1.f) | Not declared |
 | Required protection (art. 30.1.g) | Confidentiality High, integrity High |
 | Impact assessment (art. 35) | DPIA-2026-01 |
+| Impact assessment screening | Possible (1 criterion of WP248): 4. sensitive data: special category data user.health_and_medical.disability |
 
 Open points:
 
@@ -143,7 +146,11 @@ Open points:
 | Retention (art. 30.1.f) | Until the alumnus unsubscribes |
 | Required protection (art. 30.1.g) | Confidentiality Low, integrity Medium |
 | Impact assessment (art. 35) | None |
+| Impact assessment screening | Not indicated |
 ```
+
+El cribado se muestra tanto si la actividad cita una evaluación de impacto como si no, de modo que el delegado ve lo
+que dicen los criterios junto a lo declarado.
 
 ## JSON
 
@@ -163,13 +170,14 @@ declaración. Los miembros opcionales se omiten cuando la actividad no los decla
 | `recipients` | siempre | array de cadenas |
 | `transfers` | siempre | array de `{"destination": <string>, "safeguard": {"code", "article", "fideslang"}}` |
 | `retention`, `impactAssessment` | si se declaran | cadenas |
+| `screening` | siempre | `{"outcome": <Outcome>, "criteria": [<Criterion>...], "mandatoryCase": <string>}`: los nombres de las constantes; `mandatoryCase` (como `"35.3.b"`) solo cuando el cribado encuentra un caso del artículo 35.3 |
 | `protection` | siempre | `{"natures": [<LegalNature>...], "confidentiality": <level>, "integrity": <level>, "secret": <boolean>}` |
 | `openPoints` | siempre | array con los mensajes de los avisos |
 
 El JSON del registro anterior (en una sola línea):
 
 ```json
-{"activities":[{"key":"admissions","name":"Admissions","description":"Receives and assesses applications,\nincluding requests for the disability quota.","purposes":["education.admission"],"dataSubjects":["applicant"],"dataCategories":["user.contact.email","user.health_and_medical.disability","user.name"],"legalBasis":{"code":"PUBLIC_INTEREST","article":"6.1.e","fideslang":"Public interest"},"specialCategoryCondition":{"code":"SUBSTANTIAL_PUBLIC_INTEREST","article":"9.2.g","fideslang":"Reasons of substantial public interest (with a basis in law)"},"recipients":["Admissions board"],"transfers":[],"impactAssessment":"DPIA-2026-01","protection":{"natures":["ORDINARY","SPECIAL_CATEGORY"],"confidentiality":"HIGH","integrity":"HIGH","secret":false},"openPoints":["GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference","Declare the envisaged time limit for erasure (GDPR article 30.1.f)"]},{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
+{"activities":[{"key":"admissions","name":"Admissions","description":"Receives and assesses applications,\nincluding requests for the disability quota.","purposes":["education.admission"],"dataSubjects":["applicant"],"dataCategories":["user.contact.email","user.health_and_medical.disability","user.name"],"legalBasis":{"code":"PUBLIC_INTEREST","article":"6.1.e","fideslang":"Public interest"},"specialCategoryCondition":{"code":"SUBSTANTIAL_PUBLIC_INTEREST","article":"9.2.g","fideslang":"Reasons of substantial public interest (with a basis in law)"},"recipients":["Admissions board"],"transfers":[],"impactAssessment":"DPIA-2026-01","screening":{"outcome":"POSSIBLE","criteria":["SENSITIVE_DATA"]},"protection":{"natures":["ORDINARY","SPECIAL_CATEGORY"],"confidentiality":"HIGH","integrity":"HIGH","secret":false},"openPoints":["GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference","Declare the envisaged time limit for erasure (GDPR article 30.1.f)"]},{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","screening":{"outcome":"NOT_INDICATED","criteria":[]},"protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
 ```
 
 Los miembros `code` son los nombres de las constantes del enumerado, así que una herramienta puede recuperarlas con
@@ -274,11 +282,14 @@ el aspecto forma parte de la gobernanza y no del alcance declarado en el código
 | `TRANSFERS` | `true` | Las transferencias a terceros países u organizaciones internacionales. |
 | `RETENTION` | `true` | El plazo de supresión. |
 | `IMPACT_ASSESSMENT` | `true` | La evaluación de impacto. |
+| `RISK_FACTORS` | `true` | Los [factores de riesgo](impact-screening.md#declarar-factores-de-riesgo) que declara el delegado para el cribado de la necesidad de una evaluación de impacto. |
 | `OPEN_POINTS` | `false` | Los puntos abiertos: los avisos de la actividad. |
 
-Editar la conservación o los destinatarios es un cambio de gobernanza, y suele cerrar también un punto abierto. Un
-cambio en los datos que alcanza la actividad, como un campo nuevo en una entidad de la lista o una categoría más
-estricta, se ve en `PERSONAL_DATA` o en `PROTECTION` y no lo es.
+Editar la conservación o los destinatarios es un cambio de gobernanza, y suele cerrar también un punto abierto. Editar
+los factores de riesgo lo es también: el aviso sobre la evaluación de impacto nombra los criterios que se cumplen, así
+que cambia `RISK_FACTORS` y, cuando el aviso cambia con ellos, `OPEN_POINTS`. Un cambio en los datos que alcanza la
+actividad, como un campo nuevo en una entidad de la lista o una categoría más estricta, se ve en `PERSONAL_DATA` o en
+`PROTECTION` y no lo es.
 
 Véase también: [ProcessingChecker](checker.md) · [ProcessingActivity](activity.md) · [Bases jurídicas](bases.md) ·
 [Actividades de tratamiento](README.md)

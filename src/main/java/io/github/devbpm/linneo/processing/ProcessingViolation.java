@@ -99,6 +99,12 @@ public record ProcessingViolation(String activity, Severity severity, Code code,
         CONSENT_NOT_SUFFICIENT,
 
         /**
+         * The activity is a case of GDPR article 35.3, as its {@linkplain ImpactScreening screening} shows, and
+         * refers to no impact assessment.
+         */
+        IMPACT_ASSESSMENT_REQUIRED,
+
+        /**
          * Two activities of a record have the same key.
          */
         DUPLICATE_ACTIVITY,
@@ -135,8 +141,8 @@ public record ProcessingViolation(String activity, Severity severity, Code code,
         MISSING_RETENTION,
 
         /**
-         * The activity processes special category or criminal offence data, or profiles people, and refers to no
-         * impact assessment; article 35 may require one. A warning.
+         * The {@linkplain ImpactScreening screening} of the activity meets two criteria or more, so article 35
+         * likely requires an impact assessment, and the activity refers to none. A warning.
          */
         IMPACT_ASSESSMENT_RECOMMENDED
     }

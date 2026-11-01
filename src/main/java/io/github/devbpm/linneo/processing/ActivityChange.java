@@ -176,6 +176,11 @@ public record ActivityChange(String activity, CheckedActivity before, CheckedAct
         IMPACT_ASSESSMENT(true),
 
         /**
+         * The risk factors the officer declares for the screening of the need for an impact assessment.
+         */
+        RISK_FACTORS(true),
+
+        /**
          * The open points: the warnings of the activity.
          */
         OPEN_POINTS(false);
@@ -227,6 +232,7 @@ public record ActivityChange(String activity, CheckedActivity before, CheckedAct
                 .map(transfer -> transfer.safeguard().name() + " " + transfer.destination())));
         content.put(Aspect.RETENTION, value(governance.retention()));
         content.put(Aspect.IMPACT_ASSESSMENT, value(governance.impactAssessment()));
+        content.put(Aspect.RISK_FACTORS, sorted(governance.riskFactors().stream().map(Enum::name)));
         content.put(Aspect.OPEN_POINTS, sorted(checked.warnings().stream()
                 .map(warning -> warning.code() + " " + warning.element() + " " + warning.message())));
         return content;

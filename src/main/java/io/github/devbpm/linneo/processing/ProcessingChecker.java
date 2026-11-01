@@ -63,7 +63,8 @@ import java.util.function.Function;
  * </ul>
  * Gaps in the record are warnings: a deprecated key, a non-personal category, a condition that is not needed, a
  * basis resting on law without naming the law, legitimate interests without the interest pursued, no retention,
- * and special category, criminal offence or profiling activities that refer to no impact assessment.
+ * and an activity whose {@linkplain ImpactScreening screening} makes an impact assessment likely and that refers to
+ * none. A case of GDPR article 35.3 that refers to no impact assessment is an error.
  * <p>
  * A checker created for a {@link Jurisdiction} other than {@link Jurisdiction#EU EU} also applies that country's
  * rules; see {@link Jurisdiction#SPAIN}.
@@ -74,8 +75,6 @@ import java.util.function.Function;
  * @since 0.1.0
  */
 public final class ProcessingChecker {
-
-    private static final Set<String> PROFILING_SEGMENTS = Set.of("profiling", "profiled", "targeted");
 
     // LOPDGDD article 9.1: ideology, trade union membership, religion, sexual orientation, beliefs and racial or
     // ethnic origin, for which consent alone does not lift the prohibition.
@@ -158,7 +157,7 @@ public final class ProcessingChecker {
                 Code.MISSING_DATA_SUBJECTS,
                 taxonomy::dataSubject, taxonomy::requireDataSubject);
         check.personalData();
-        check.lawfulness(purposes);
+        check.lawfulness(purposes, subjects);
         return new CheckedActivity(activity, purposes, subjects, List.copyOf(check.categories.values()),
                 check.protection, check.violations);
     }
@@ -212,10 +211,6 @@ public final class ProcessingChecker {
      */
     public ProcessingRecord verify(ProcessingActivity... activities) {
         return verify(Arrays.asList(activities));
-    }
-
-    private static boolean profiles(DataUse use) {
-        return Arrays.stream(use.key().split("\\.")).anyMatch(PROFILING_SEGMENTS::contains);
     }
 
     /** The state of the check of one activity. */
@@ -325,7 +320,7 @@ public final class ProcessingChecker {
             }
         }
 
-        void lawfulness(List<DataUse> purposes) {
+        void lawfulness(List<DataUse> purposes, List<DataSubject> subjects) {
             if (categories.isEmpty()) {
                 return;
             }
@@ -404,20 +399,16 @@ public final class ProcessingChecker {
                         "Declare the envisaged time limit for erasure (GDPR article"
                         + " 30.1.f)");
             }
-            List<String> reasons = new ArrayList<>();
-            if (special) {
-                reasons.add("special categories of data");
-            }
-            if (criminal) {
-                reasons.add("criminal offence data");
-            }
-            if (purposes.stream().anyMatch(ProcessingChecker::profiles)) {
-                reasons.add("profiling");
-            }
-            if (!reasons.isEmpty() && governance.impactAssessment() == null) {
-                warning(Element.IMPACT_ASSESSMENT, Code.IMPACT_ASSESSMENT_RECOMMENDED, "The activity involves "
-                        + String.join(" and ", reasons)
-                        + "; GDPR article 35 may require an impact assessment");
+            ImpactScreening screening = ImpactScreening.of(purposes, subjects, categories.values(), governance);
+            if (governance.impactAssessment() == null) {
+                if (screening.outcome() == ImpactScreening.Outcome.REQUIRED) {
+                    error(Element.IMPACT_ASSESSMENT, Code.IMPACT_ASSESSMENT_REQUIRED, "GDPR article "
+                            + screening.mandatoryCase() + " requires an impact assessment; refer to it. "
+                            + screening.summary());
+                } else if (screening.outcome() == ImpactScreening.Outcome.LIKELY) {
+                    warning(Element.IMPACT_ASSESSMENT, Code.IMPACT_ASSESSMENT_RECOMMENDED, "GDPR article 35 likely"
+                            + " requires an impact assessment. " + screening.summary());
+                }
             }
         }
 

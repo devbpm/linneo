@@ -11,6 +11,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
   - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingException.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
 -->
 
 # ProcessingChecker
@@ -73,14 +74,16 @@ Para cada actividad, en este orden (las infracciones de una `CheckedActivity` lo
    - bases que [descansan en una ley](bases.md#la-referencia-legal) sin `legalReference`: aviso
      `MISSING_LEGAL_REFERENCE`;
    - sin `retention`: aviso `MISSING_RETENTION`;
-   - datos de categorías especiales, datos penales o una finalidad de elaboración de perfiles, sin
-     `impactAssessment`: aviso `IMPACT_ASSESSMENT_RECOMMENDED`.
+   - sin `impactAssessment`, y el [cribado](impact-screening.md) de la actividad encuentra un caso del artículo 35.3 del
+     RGPD (`REQUIRED`): error `IMPACT_ASSESSMENT_REQUIRED`; o encuentra dos criterios o más (`LIKELY`): aviso
+     `IMPACT_ASSESSMENT_RECOMMENDED`. Un criterio (`POSSIBLE`) o ninguno no genera nada.
 
-Una finalidad cuenta como **elaboración de perfiles** cuando un segmento de su clave (ya resuelta) es `profiling`,
-`profiled` o `targeted`. En la taxonomía estándar son `marketing.advertising.profiling`,
-`marketing.advertising.first_party.targeted`, `marketing.advertising.third_party.targeted`,
-`personalize.content.profiling`, `personalize.content.profiled` y la obsoleta `personalize.profiling` (comprobada como
-`personalize.content.profiling`). Los usos de datos de una extensión solo cuentan si sus claves usan esos segmentos.
+El cribado es el que devuelve `CheckedActivity.screening()`. No toma por sí solos los datos de categorías especiales,
+los datos penales ni la elaboración de perfiles como motivo: cada uno es un único criterio de las directrices del
+Comité Europeo de Protección de Datos, y con dos una evaluación pasa a ser probable. Lo que el código no puede ver, como
+la escala del tratamiento, lo declara el delegado como factores de riesgo en la [gobernanza](activity.md#governance), y
+un `Factor.LARGE_SCALE` declarado convierte los datos de categorías especiales en un caso del artículo 35.3.b. Los
+criterios, cómo se encuentra cada uno y los tres casos están en [ImpactScreening](impact-screening.md).
 
 El comprobador no examina `description`, `recipients` ni `transfers`.
 
@@ -155,6 +158,7 @@ lista es `null`.
 | `Set<LegalNature> natures()` | Las naturalezas jurídicas de `dataCategories` (nunca `NONE`), todas ellas; `protection().natures()` conserva solo las más estrictas. |
 | `boolean processesSpecialCategories()` | `true` si alguna categoría es `SPECIAL_CATEGORY` (artículo 9). |
 | `boolean processesCriminalOffenceData()` | `true` si alguna categoría es `CRIMINAL_OFFENCE` (artículo 10). |
+| `ImpactScreening screening()` | Si la actividad necesita una evaluación de impacto relativa a la protección de datos (artículo 35): su [cribado](impact-screening.md) frente al artículo 35.3 y los criterios de las directrices del CEPD. Se calcula a partir de la actividad cada vez; el registro lo muestra. |
 
 ```java
 CheckedActivity checked = checker.check(admissions);
@@ -162,6 +166,7 @@ checked.isValid();                      // true
 checked.natures();                      // [ORDINARY, SPECIAL_CATEGORY]
 checked.protection().confidentiality(); // HIGH
 checked.warnings();                     // []
+checked.screening().outcome();          // POSSIBLE: los datos de categorías especiales son un criterio
 ```
 
 ## ProcessingViolation
@@ -213,6 +218,7 @@ aplica a varias partes depende de la parte. Los mensajes están en inglés.
 | `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Datos de categorías especiales sin `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
 | `MISSING_CRIMINAL_DATA_BASIS` | error | `CRIMINAL_DATA_BASIS` | Datos penales sin `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
 | `CONSENT_NOT_SUFFICIENT` | error | `SPECIAL_CATEGORY_CONDITION` | Solo con `Jurisdiction.SPAIN`: la actividad trata `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` o `race_ethnicity` (o un descendiente) y su única condición del artículo 9.2 es `EXPLICIT_CONSENT` (LOPDGDD, artículo 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
+| `IMPACT_ASSESSMENT_REQUIRED` | error | `IMPACT_ASSESSMENT` | El [cribado](impact-screening.md) de la actividad encuentra un caso del artículo 35.3 del RGPD y no hay `impactAssessment`. | `GDPR article <a> requires an impact assessment; refer to it. <summary>`, donde `<a>` es `35.3.a`, `35.3.b` o `35.3.c` y `<summary>` es `ImpactScreening.summary()` |
 | `DUPLICATE_ACTIVITY` | error | `KEY` | Solo en `checkAll`/`verify`: una actividad anterior tiene la misma clave. | `Another activity of the record has the key '<k>'` |
 | `DEPRECATED_KEY` | **aviso** | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría está obsoleta, o un campo de un objeto de `objects` declara una clave de categoría de datos obsoleta; la actividad se comprueba con su sustituta. | `The data use '<k>' is deprecated; checked as '<r>'` (igual con `data subject` y `data category`; sin la parte `; checked as` cuando la clave no tiene sustituto) / `The field <o>.<path> has the deprecated data category '<k>'; checked as '<r>'` (misma omisión) |
 | `NOT_PERSONAL_DATA` | **aviso** | `PERSONAL_DATA` | Una categoría declarada no es dato personal; queda fuera del registro. | `The data category '<k>' is not personal data and is left out of the record` |
@@ -220,16 +226,31 @@ aplica a varias partes depende de la parte. Los mensajes están en inglés.
 | `MISSING_LEGAL_REFERENCE` | **aviso** | `LEGAL_REFERENCE` | Se aplica una base que descansa en una ley y no se indica `legalReference`. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; con `Jurisdiction.SPAIN` y una condición `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH`, termina con ` (LOPDGDD article 9.2: a law with the rank of statute)` |
 | `MISSING_LEGITIMATE_INTEREST` | **aviso** | `LEGITIMATE_INTEREST` | La base es `LEGITIMATE_INTERESTS` y no se indica `legitimateInterest`. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
 | `MISSING_RETENTION` | **aviso** | `RETENTION` | Datos personales sin `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
-| `IMPACT_ASSESSMENT_RECOMMENDED` | **aviso** | `IMPACT_ASSESSMENT` | Datos de categorías especiales, datos penales o una finalidad de elaboración de perfiles, sin `impactAssessment`. | `The activity involves <reasons>; GDPR article 35 may require an impact assessment`, donde `<reasons>` une `special categories of data`, `criminal offence data` y `profiling` con `and` |
+| `IMPACT_ASSESSMENT_RECOMMENDED` | **aviso** | `IMPACT_ASSESSMENT` | El [cribado](impact-screening.md) de la actividad cumple dos criterios o más, así que el artículo 35 probablemente exige una evaluación de impacto, y no hay `impactAssessment`. | `GDPR article 35 likely requires an impact assessment. <summary>`, donde `<summary>` es `ImpactScreening.summary()` |
 
-Salida real para una actividad a la que le faltan ambas condiciones:
+Salida real para una actividad de estudiantes que trata `user.health_and_medical.disability` y `user.criminal_history` y
+a la que le faltan ambas condiciones. Ambos son datos sensibles, un solo criterio, así que el cribado es `POSSIBLE` y
+no genera nada:
 
 ```text
 ERROR MISSING_SPECIAL_CATEGORY_CONDITION screening: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
 ERROR MISSING_CRIMINAL_DATA_BASIS screening: Criminal offence data (user.criminal_history) needs a basis of GDPR article 10
 WARNING MISSING_LEGAL_REFERENCE screening: GDPR article(s) 6.1.c rest on Union or Member State law; name it as the legal reference
 WARNING MISSING_RETENTION screening: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
-WARNING IMPACT_ASSESSMENT_RECOMMENDED screening: The activity involves special categories of data and criminal offence data; GDPR article 35 may require an impact assessment
+```
+
+y para la nómina de empleados, cuya cuenta bancaria son datos de naturaleza muy personal (criterio 4) y que son
+interesados vulnerables (criterio 7):
+
+```text
+WARNING IMPACT_ASSESSMENT_RECOMMENDED payroll: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 4. sensitive data: highly personal data user.financial.bank_account; 7. vulnerable subjects: data subjects employee
+```
+
+Con `riskFactors(Factor.LARGE_SCALE)` en la actividad anterior que trata datos de categorías especiales y datos penales,
+el cribado es un caso del artículo 35.3.b y el comprobador añade un error:
+
+```text
+ERROR IMPACT_ASSESSMENT_REQUIRED screening: GDPR article 35.3.b requires an impact assessment; refer to it. Required (GDPR art. 35.3.b): 4. sensitive data: criminal offence data user.criminal_history; special category data user.health_and_medical.disability; 5. large scale: declared LARGE_SCALE
 ```
 
 y para una con tres declaraciones innecesarias (`legitimateInterest(...)` seguido de `legalBasis(CONSENT)`, más

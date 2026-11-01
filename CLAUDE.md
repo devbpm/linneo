@@ -86,7 +86,10 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   activity keys). `RecordDiff` compares two records into `ActivityChange`s; it and `ProcessingRecord.fingerprint()`
   both use `ActivityChange.content`, so equal fingerprints always mean an empty diff. `SubjectRights` derives, for
   one data subject category, the activities, stored fields and the rights of articles 15-21 per lawful basis; its
-  legal rules live in `SubjectRights.entitlements` and cite the articles in their explanations.
+  legal rules live in `SubjectRights.entitlements` and cite the articles in their explanations. `ImpactScreening`
+  (WP248 criteria from the activity plus `Governance.riskFactors`) drives the checker's impact assessment error and
+  warning; `BreachAssessment` follows ENISA's 2013 severity methodology. Legal rules are fixed and cited, not
+  configurable: what the code cannot see is declared, never guessed.
 - **`extension.university`** — `UniversityTaxonomy`, an optional `TaxonomyExtension` for higher education with its
   key constants (`UniversityCategories`, `UniversityDataUses`, `UniversityDataSubjects`). Deliberately **not**
   declared as a `provides` service in `module-info.java`, so `Taxonomy.load()` never applies it; users call

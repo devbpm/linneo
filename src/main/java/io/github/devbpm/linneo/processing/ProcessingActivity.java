@@ -316,6 +316,17 @@ public record ProcessingActivity(String key, String name, String description, Li
         }
 
         /**
+         * Adds initial risk factors of the governance; see {@link Governance.Builder#riskFactors}.
+         *
+         * @param factors the factors
+         * @return this builder
+         */
+        public Builder riskFactors(ImpactScreening.Factor... factors) {
+            governance.riskFactors(factors);
+            return this;
+        }
+
+        /**
          * Creates the activity.
          *
          * @return the activity

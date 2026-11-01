@@ -74,6 +74,9 @@ the build fail when the model and its classification drift apart.
   the classification: special category data without an article 9.2 condition fails the build. The article 30 record
   comes out as Markdown or JSON, and `SubjectRights` tells, for a request of a data subject, which activities and
   stored fields hold their data and which rights each lawful basis gives them.
+- **Impact assessments and breaches.** Each activity is screened against the EDPB criteria for a data protection
+  impact assessment (`ImpactScreening`): a mandatory case without one fails the build. `BreachAssessment` scores a
+  breach of classified fields with ENISA's methodology and says whether to notify the authority and the people.
 - **Stored copies kept in step.** The classification of the whole model as data (`DataInventory`), compared with
   what an application stored (`InventoryDiff`), with fingerprints to skip unchanged starts; the taxonomy as text
   (`Taxonomy.toTsv()`) and its changes between versions (`TaxonomyDiff`), so applications can migrate keys and
@@ -357,10 +360,11 @@ record.toJson();
 
 `verify` throws a `ProcessingException` when an activity would be unlawful as declared: personal data without a
 lawful basis, special category data without an article 9.2 condition, criminal offence data without an article 10
-basis, an unknown key or an entity that is not fully classified. Gaps in the record are warnings listed as open
-points: no retention, a basis resting on law without naming it, legitimate interests without the interest, or an
-activity with special category data, criminal offence data or profiling that refers to no impact assessment. The
-bases use the same values as fideslang's privacy declarations.
+basis, an unknown key, an entity that is not fully classified, or a mandatory case of article 35.3 without an impact
+assessment. Gaps in the record are warnings listed as open points: no retention, a basis resting on law without
+naming it, legitimate interests without the interest, or an activity that meets two criteria or more of the impact
+assessment screening and refers to no assessment. The bases use the same values as fideslang's privacy
+declarations.
 
 `new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)` also applies Spain's LOPDGDD: explicit consent alone is
 an error for the special categories of article 9.1 (ideology, religion, trade union membership, sexual orientation,
