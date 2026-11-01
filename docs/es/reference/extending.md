@@ -16,7 +16,7 @@ doc-sources:
 Las aplicaciones añaden términos, y endurecen la protección de los existentes, directamente sobre un
 `TaxonomyBuilder` o mediante una `TaxonomyExtension` que `Taxonomy.load()` descubre con `ServiceLoader`. Linneo
 incluye además extensiones opcionales para un sector, como la [extensión universitaria](extensions/university.md):
-un ejemplo completo de `TaxonomyExtension` con sus constantes de claves (ver [Extensiones](extensions/README.md)).
+un ejemplo completo de `TaxonomyExtension` con sus constantes de claves (ver [Extensiones](extensions/README.md), que enumera las cinco incluidas).
 
 ## TaxonomyBuilder
 
@@ -131,9 +131,9 @@ existentes.
 Una extensión solo puede añadir hijos a términos existentes y endurecer la protección; las reglas se aplican al
 construir la taxonomía. Elige un nombre y unas claves que no use ninguna otra extensión que apliques: `extend` lanza
 una `TaxonomyException` si ya se aplicó una clase de extensión distinta con el mismo nombre, y una clave añadida dos
-veces falla con `Duplicate key`. El nombre
-`"university"` y las claves de la [extensión universitaria](extensions/university.md) los usa la extensión incluida en
-Linneo.
+veces falla con `Duplicate key`. Los nombres
+`"university"`, `"finance"`, `"supply_chain"`, `"project_operations"` y `"human_resources"` y las claves de las
+[extensiones incluidas](extensions/README.md) los usan las extensiones incluidas en Linneo.
 
 ```java
 package com.example.taxonomy;

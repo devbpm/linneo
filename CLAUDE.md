@@ -67,6 +67,13 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   `builder.extend(new UniversityTaxonomy())` or register it themselves. Its keys are hand-written constants (not
   generated); `UniversityTaxonomyTest` checks they match exactly the terms the extension adds. If a future standard
   term reuses one of its keys the build fails with a duplicate key: move the term to the standard and drop it here.
+- **`extension.finance`**, **`extension.supplychain`**, **`extension.projectoperations`**,
+  **`extension.humanresources`** — four more optional extensions built the same way (`<Domain>Taxonomy` plus
+  `<Domain>Categories`/`DataUses`/`DataSubjects`), informed by the Common Data Model business areas. Organization
+  records extend `org.business_records`, personal data extends `user.*`. They must stay independent: no extension
+  may use another extension's key as a parent, and no two extensions may add the same key (`ExtensionsTest` applies
+  all of them together and checks the shared conventions; a term two extensions need belongs in the standard, as
+  `user.contact.emergency_contact` does).
 - **`catalog.openmetadata`** — `OpenMetadataCatalog` maps a `Taxonomy` to OpenMetadata `CreateClassification`/`CreateTag`
   bodies (`OmClassification`, `OmTag`, parents first) and computes per-column tags, reusing OpenMetadata's built-in
   `PersonalData` and `PII` classifications. Names are configurable via `OpenMetadataMapping`. No HTTP calls.

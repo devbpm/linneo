@@ -29,9 +29,9 @@ competencia lingüística, prácticas y movilidad, ayudas sujetas a nivel de ren
 | Tipo | Descripción |
 |---|---|
 | `UniversityTaxonomy` | `public final class implements TaxonomyExtension`. `name()` devuelve `NAME`, `public static final String NAME = "university"`, que se registra como origen de sus términos. Constructor público sin argumentos; sin estado. `contribute(builder)` añade los términos que se enumeran abajo. |
-| `UniversityCategories` | `public final class` con constructor privado: un `public static final String` por cada categoría de datos que añade la extensión (33). |
+| `UniversityCategories` | `public final class` con constructor privado: un `public static final String` por cada categoría de datos que añade la extensión (32). |
 | `UniversityDataUses` | Lo mismo para sus usos de datos (27). |
-| `UniversityDataSubjects` | Lo mismo para sus interesados (13). |
+| `UniversityDataSubjects` | Lo mismo para sus interesados (12). |
 
 Las constantes siguen la [regla de nombres](../key-constants.md#regla-de-nombres) de `Categories`:
 `user.education.attendance` es `UniversityCategories.USER_EDUCATION_ATTENDANCE` y
@@ -110,8 +110,7 @@ el apoyo y la convivencia, las prácticas y la movilidad, y las finanzas. El may
 estudiante.
 
 La protección que se muestra es la efectiva en la taxonomía construida. Los valores en **negrita** los declara la
-extensión; el resto se heredan de la madre (`user.education` y `user.financial` son `ORDINARY`, `MEDIUM`, `HIGH`;
-`user.contact` es `ORDINARY`, `LOW`, `MEDIUM`). Ninguna categoría es secreta y todas son datos personales.
+extensión; el resto se heredan de la madre (`user.education` y `user.financial` son `ORDINARY`, `MEDIUM`, `HIGH`). Ninguna categoría es secreta y todas son datos personales.
 
 ### El expediente del estudiante
 
@@ -168,7 +167,7 @@ Las prácticas y la movilidad se distinguen bajo `user.education.placement`.
 | `user.education.placement.internship.evaluation` | Internship Evaluation | `ORDINARY` | **`HIGH`** | `HIGH` | La valoración del tutor de la organización de acogida sobre el desempeño del interesado en las prácticas. |
 | `user.education.placement.mobility` | Mobility | `ORDINARY` | `MEDIUM` | `HIGH` | Un intercambio o una estancia de estudios en otra institución: institución de destino, acuerdo de estudios, reconocimiento y ayuda de movilidad. |
 
-### Finanzas y contacto
+### Finanzas
 
 Las ayudas sujetas a nivel de renta y las exenciones de tasas cuelgan de los términos financieros estándar
 `user.financial.scholarship` y `user.financial.fee`.
@@ -179,7 +178,6 @@ Las ayudas sujetas a nivel de renta y las exenciones de tasas cuelgan de los té
 | `user.financial.fee.exemption` | Fee Exemption | `ORDINARY` | **`HIGH`** | `HIGH` | Exenciones y reducciones de tasas y sus motivos, como familia numerosa o mérito académico. |
 | `user.financial.donation` | Donation | `ORDINARY` | `MEDIUM` | `HIGH` | Donativos, promesas de donación y donaciones periódicas del interesado a la institución. |
 | `user.financial.wealth_assessment` | Wealth Assessment | `ORDINARY` | **`HIGH`** | `HIGH` | Estimaciones del patrimonio, los ingresos y la capacidad de donación del interesado obtenidas en la investigación de donantes. |
-| `user.contact.emergency_contact` | Emergency Contact | `ORDINARY` | **`MEDIUM`** | `MEDIUM` | Nombre, teléfono y relación de la persona a la que avisar en caso de emergencia. |
 
 ### Por qué estos niveles
 
@@ -194,8 +192,6 @@ Las ayudas sujetas a nivel de renta y las exenciones de tasas cuelgan de los té
   de una exención de tasas pueden revelar que el interesado es víctima de violencia de género o de terrorismo:
   clasifica el propio reconocimiento como víctima como `user.victim_status` (`ORDINARY`, `HIGH`, `HIGH`) y una sanción
   impuesta fuera del régimen disciplinario de la propia institución como `user.administrative_sanction`.
-- El **contacto de emergencia** sube a confidencialidad media, por encima del resto de `user.contact`: revela quiénes
-  son las personas cercanas al interesado.
 - Las demás categorías heredan la confidencialidad media y la integridad alta de `user.education` (o de
   `user.financial`).
 
@@ -265,7 +261,6 @@ Todos los interesados de la extensión son planos, porque los interesados de fid
 |---|---|---|
 | `doctoral_candidate` | Doctoral Candidate | Un estudiante matriculado en un programa de doctorado. |
 | `donor` | Donor | Una persona que hace o promete donativos a la institución. |
-| `emergency_contact` | Emergency Contact | Una persona designada por un estudiante o un empleado para avisarla en caso de emergencia. |
 | `exchange_student` | Exchange Student | Un estudiante de intercambio, recibido de otra institución o enviado a ella. |
 | `external_examiner` | External Examiner | Un evaluador ajeno a la institución que examina a estudiantes o evalúa tesis. |
 | `guest` | Guest | Una persona vinculada temporalmente a la institución sin ser estudiante ni empleado. |
@@ -278,10 +273,10 @@ Todos los interesados de la extensión son planos, porque los interesados de fid
 | `volunteer` | Volunteer | Una persona que dedica tiempo como voluntaria a la institución. |
 
 Los interesados estándar `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member` y
-`legal_representative` (Linneo) y `employee`, `next_of_kin` y `visitor` (fideslang) cubren el resto. Algunos
+`legal_representative` y `emergency_contact` (Linneo) y `employee`, `next_of_kin` y `visitor` (fideslang) cubren
+el resto. Algunos
 interesados de la extensión están junto a uno de fideslang más restringido: `prospect` es alguien a quien la
-organización vende bienes o servicios, `next_of_kin` es un familiar (un contacto de emergencia puede ser un amigo o un
-vecino) y `visitor` es alguien que visita un lugar (un invitado está vinculado a la institución durante un tiempo). `doctoral_candidate` y
+organización vende bienes o servicios, `next_of_kin` es un familiar y `visitor` es alguien que visita un lugar (un invitado está vinculado a la institución durante un tiempo). `doctoral_candidate` y
 `exchange_student` son tipos de estudiante, pero, como los interesados son planos, no son hijos de `student`: úsalos
 cuando el tratamiento sea específico de ellos.
 

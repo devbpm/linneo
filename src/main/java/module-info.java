@@ -25,11 +25,19 @@
  *   <li>{@link io.github.devbpm.linneo.catalog.openmetadata} &mdash; the taxonomy as OpenMetadata classifications and tags;</li>
  *   <li>{@link io.github.devbpm.linneo.catalog.datahub} &mdash; the taxonomy as a DataHub business glossary;</li>
  *   <li>{@link io.github.devbpm.linneo.catalog.atlas} &mdash; the taxonomy as Apache Atlas classifications;</li>
- *   <li>{@link io.github.devbpm.linneo.extension.university} &mdash; an optional extension for universities, not
- *       applied by default.</li>
+ *   <li>{@link io.github.devbpm.linneo.extension.university} &mdash; an optional extension for universities;</li>
+ *   <li>{@link io.github.devbpm.linneo.extension.finance} &mdash; an optional extension for finance and
+ *       accounting;</li>
+ *   <li>{@link io.github.devbpm.linneo.extension.supplychain} &mdash; an optional extension for supply chain
+ *       management;</li>
+ *   <li>{@link io.github.devbpm.linneo.extension.projectoperations} &mdash; an optional extension for project
+ *       operations;</li>
+ *   <li>{@link io.github.devbpm.linneo.extension.humanresources} &mdash; an optional extension for human resources
+ *       and payroll.</li>
  * </ul>
  * Applications contribute their own terms through {@link io.github.devbpm.linneo.TaxonomyExtension}. The module
- * provides no extension as a service: the university extension is applied explicitly.
+ * provides no extension as a service: the optional extensions are not applied by default, but explicitly, alone or
+ * together.
  */
 module io.github.devbpm.linneo {
     exports io.github.devbpm.linneo;
@@ -40,6 +48,10 @@ module io.github.devbpm.linneo {
     exports io.github.devbpm.linneo.catalog.datahub;
     exports io.github.devbpm.linneo.catalog.atlas;
     exports io.github.devbpm.linneo.extension.university;
+    exports io.github.devbpm.linneo.extension.finance;
+    exports io.github.devbpm.linneo.extension.supplychain;
+    exports io.github.devbpm.linneo.extension.projectoperations;
+    exports io.github.devbpm.linneo.extension.humanresources;
 
     uses io.github.devbpm.linneo.TaxonomyExtension;
 }

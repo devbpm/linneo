@@ -27,9 +27,9 @@ el JAR bajo `io/github/devbpm/linneo/internal/`.
 
 | | fideslang 3.1.4 | Linneo | Total |
 |---|---|---|---|
-| Categorías de datos | 85 | 40 | 125 |
+| Categorías de datos | 85 | 41 | 126 |
 | Usos de datos | 56 | 7 | 63 |
-| Sujetos de datos | 15 | 6 | 21 |
+| Sujetos de datos | 15 | 7 | 22 |
 
 La versión de fideslang es `StandardTaxonomy.FIDESLANG_VERSION` (`"3.1.4"`). Los términos de fideslang se incluyen
 sin cambios (licencia CC BY 4.0, © Ethyca, Inc.; ver `NOTICE`) y tienen origen `fideslang`; los de Linneo tienen
@@ -64,7 +64,7 @@ de su padre (ver [Niveles de protección](protection-levels.md#regla-de-herencia
 | `user.device.session_id` | confidencialidad `HIGH`, **secreta** |
 | `system.authentication` | confidencialidad `HIGH`, integridad `HIGH`; `system.authentication.secret` es **secreta** |
 | `user.financial`, `user.payment`, `user.education` | confidencialidad `MEDIUM`, integridad `HIGH`; `user.financial.credit_card` confidencialidad `HIGH` |
-| `user.behavior`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, varias `user.demographic.*` (fecha de nacimiento, género, estado civil, perfil, familia, nacionalidad) | confidencialidad `MEDIUM` |
+| `user.behavior`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, `user.contact.emergency_contact`, varias `user.demographic.*` (fecha de nacimiento, género, estado civil, perfil, familia, nacionalidad) | confidencialidad `MEDIUM` |
 | `user.childrens`, `user.government_id.immigration` | confidencialidad `HIGH` (datos de interesados vulnerables: menores y personas migrantes o solicitantes de asilo) |
 | `user.behavior.activity_log`, `system.security`, `system.integrity` | integridad `HIGH` |
 | `system.configuration` | integridad `MEDIUM` |
@@ -98,12 +98,13 @@ texto consolidado posterior) y, para España, la Ley Orgánica 3/2018 (LOPDGDD),
 
 ## Añadidos de Linneo
 
-**Categorías de datos** (40, todas con `since` `0.1.0`):
+**Categorías de datos** (41, todas con `since` `0.1.0`):
 
 | Padre | Hijas añadidas |
 |---|---|
 | `user` | `user.education` con `program`, `enrollment`, `course_history`, `grade`, `test_score`, `previous_education`, `status`, `accomplishment`; `administrative_sanction`, `victim_status` |
 | `user.unique_id` | `record_reference` |
+| `user.contact` | `emergency_contact` |
 | `user.government_id` | `social_security_number` |
 | `user.device` | `user_agent`, `session_id` |
 | `user.workplace` | `team`, `unit`, `role`, `assignment_period` |
@@ -120,8 +121,8 @@ texto consolidado posterior) y, para España, la Ley Orgánica 3/2018 (LOPDGDD),
 `education.enrollment`, `education.teaching`, `education.assessment`, `education.academic_records` y
 `education.financial_aid`.
 
-**Sujetos de datos** (6, todos raíces): `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`,
-`legal_representative`.
+**Sujetos de datos** (7, todos raíces): `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`,
+`legal_representative`, `emergency_contact`.
 
 ## Raíces de fideslang
 

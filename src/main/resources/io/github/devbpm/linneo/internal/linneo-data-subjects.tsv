@@ -8,3 +8,4 @@ alumnus		Alumnus	A former student of the organization.	0.1.0
 faculty_member		Faculty Member	An individual who teaches or does research for the organization.	0.1.0
 staff_member		Staff Member	An individual in an administrative, technical or service role of the organization.	0.1.0
 legal_representative		Legal Representative	An individual who acts on behalf of a legal entity or of another person.	0.1.0
+emergency_contact		Emergency Contact	A person named by a student, employee or other subject to be contacted in an emergency.	0.1.0

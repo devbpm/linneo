@@ -9,6 +9,14 @@ doc-sources:
   - src/main/java/module-info.java
   - src/main/java/io/github/devbpm/linneo/extension/university/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/university/UniversityTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/finance/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/finance/FinanceTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/supplychain/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/supplychain/SupplyChainTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/projectoperations/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/projectoperations/ProjectOperationsTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/humanresources/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/humanresources/HumanResourcesTaxonomy.java
   - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
 -->
 
@@ -21,7 +29,13 @@ sector: términos que la mayoría de las aplicaciones no necesitan, empaquetados
 
 | Extensión | Clase | `name()` | Añade | Página |
 |---|---|---|---|---|
-| Educación superior | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 33 categorías de datos, 27 usos de datos, 13 interesados | [Universidad](university.md) |
+| Educación superior | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 32 categorías de datos, 27 usos de datos, 12 interesados | [Universidad](university.md) |
+| Finanzas y contabilidad | `io.github.devbpm.linneo.extension.finance.FinanceTaxonomy` | `"finance"` | 19 categorías de datos, 13 usos de datos, 3 interesados | [Finanzas](finance.md) |
+| Gestión de la cadena de suministro | `io.github.devbpm.linneo.extension.supplychain.SupplyChainTaxonomy` | `"supply_chain"` | 16 categorías de datos, 12 usos de datos, 3 interesados | [Cadena de suministro](supply-chain.md) |
+| Operaciones de proyecto | `io.github.devbpm.linneo.extension.projectoperations.ProjectOperationsTaxonomy` | `"project_operations"` | 11 categorías de datos, 6 usos de datos, 2 interesados | [Operaciones de proyecto](project-operations.md) |
+| Recursos humanos y nómina | `io.github.devbpm.linneo.extension.humanresources.HumanResourcesTaxonomy` | `"human_resources"` | 21 categorías de datos, 15 usos de datos, 6 interesados | [Recursos humanos](human-resources.md) |
+
+Las extensiones de finanzas, cadena de suministro, operaciones de proyecto y recursos humanos se basan en las áreas de negocio del Common Data Model (CDM); consulta la sección *Fuentes* de cada página. La extensión universitaria se basa en la Open Education API. Las cinco no comparten ninguna clave, así que cualquiera puede aplicarse con cualquier otra y con las tuyas.
 
 ## No se aplican por defecto
 
@@ -34,7 +48,8 @@ Una extensión incluida nunca forma parte de la taxonomía salvo que la aplicaci
 
 Una extensión incluida sigue las mismas reglas que las tuyas: añade hijos de términos existentes (una extensión
 incluida puede añadir una raíz nueva de usos de datos cuando fideslang no tiene ninguna para el sector, como hace la
-extensión universitaria) y solo endurece la protección.
+extensión universitaria, o una rama nueva de categorías, como hace la extensión de recursos humanos con
+`user.employment`) y solo endurece la protección.
 
 ## Aplicar una extensión incluida
 
@@ -48,7 +63,8 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxon
 ```
 
 `taxonomy.toString()` imprime `Taxonomy[158 data categories, 90 data uses, 34 data subjects]`, frente a
-`Taxonomy[125 data categories, 63 data uses, 21 data subjects]` de la taxonomía estándar. Guarda el resultado y úsalo
+`Taxonomy[126 data categories, 63 data uses, 22 data subjects]` de la taxonomía estándar. Con las cinco extensiones
+incluidas aplicadas imprime `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Guarda el resultado y úsalo
 en todas partes: en el [`Classifier`](../classify/classifier.md), en el
 [`ProcessingChecker`](../processing/checker.md) y en los exportadores a catálogos. Un `Classifier` construido sobre
 `Taxonomy.standard()` informa de cada clave de la extensión como `UNKNOWN_CATEGORY`.
@@ -106,8 +122,8 @@ La llamada explícita a `extend` de la sección anterior funciona en ambos casos
 Una extensión incluida y tus propias extensiones se aplican al mismo builder y se combinan como dos extensiones
 cualesquiera:
 
-- **Nombres.** Cada término registra como origen el nombre de la extensión que lo añadió (`university`, o el de la
-  tuya). `extend` aplica una misma clase de extensión una sola vez (así una extensión incluida puede aplicarse de
+- **Nombres.** Cada término registra como origen el nombre de la extensión que lo añadió (`university`, `finance`, `supply_chain`, `project_operations`,
+  `human_resources`, o el de la tuya). `extend` aplica una misma clase de extensión una sola vez (así una extensión incluida puede aplicarse de
   forma explícita y estar además registrada como servicio), pero lanza una `TaxonomyException` si ya se aplicó una
   clase distinta con el mismo nombre: `The extensions io.github.devbpm.linneo.extension.university.UniversityTaxonomy
   and com.example.app.MyExtension are both named 'university'`. No le pongas a tu extensión el nombre de una
@@ -130,5 +146,6 @@ cualesquiera:
 - **Constantes.** Usa las clases de constantes de la extensión incluida (por ejemplo `UniversityCategories`) en las
   anotaciones, y guarda tus propias constantes en tus propias clases.
 
-Véase también: [Extensión universitaria](university.md) · [Extender la taxonomía](../extending.md) ·
+Véase también: [Universidad](university.md) · [Finanzas](finance.md) · [Cadena de suministro](supply-chain.md) ·
+[Operaciones de proyecto](project-operations.md) · [Recursos humanos](human-resources.md) · [Extender la taxonomía](../extending.md) ·
 [Taxonomía estándar](../standard-taxonomy.md) · curso: [Extender la taxonomía](../../course/06-extending-the-taxonomy.md)

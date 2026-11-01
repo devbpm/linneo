@@ -35,15 +35,13 @@ import io.github.devbpm.linneo.processing.SpecialCategoryCondition;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static io.github.devbpm.linneo.extension.ExtensionTerms.added;
+import static io.github.devbpm.linneo.extension.ExtensionTerms.constants;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -64,9 +62,9 @@ class UniversityTaxonomyTest {
                         standard.dataUses())),
                 () -> assertEquals(constants(UniversityDataSubjects.class), added(university.dataSubjects(),
                         standard.dataSubjects())),
-                () -> assertEquals(33, constants(UniversityCategories.class).size()),
+                () -> assertEquals(32, constants(UniversityCategories.class).size()),
                 () -> assertEquals(27, constants(UniversityDataUses.class).size()),
-                () -> assertEquals(13, constants(UniversityDataSubjects.class).size()),
+                () -> assertEquals(12, constants(UniversityDataSubjects.class).size()),
                 () -> assertTrue(university.categories().stream()
                         .filter(c -> constants(UniversityCategories.class).contains(c.key()))
                         .allMatch(c -> c.info().origin().equals(UniversityTaxonomy.NAME))));
@@ -101,8 +99,7 @@ class UniversityTaxonomyTest {
                                 .filter(k -> university.requireCategory(k).confidentiality() == Confidentiality.HIGH)
                                 .collect(Collectors.toSet())),
                 () -> assertEquals(Confidentiality.MEDIUM,
-                        university.requireCategory(UniversityCategories.USER_CONTACT_EMERGENCY_CONTACT)
-                                .confidentiality()),
+                        standard.requireCategory(Categories.USER_CONTACT_EMERGENCY_CONTACT).confidentiality()),
                 () -> assertEquals(Confidentiality.LOW, university.requireCategory(Categories.USER_CONTACT)
                         .confidentiality()),
                 () -> assertEquals(Integrity.HIGH, university.requireCategory(
@@ -183,24 +180,4 @@ class UniversityTaxonomyTest {
                         .contains("PersonalData.SpecialCategory")));
     }
 
-    private static Set<String> added(List<? extends Term> all, List<? extends Term> standard) {
-        Set<String> keys = all.stream().map(Term::key).collect(Collectors.toCollection(TreeSet::new));
-        standard.forEach(term -> keys.remove(term.key()));
-        return keys;
-    }
-
-    private static Set<String> constants(Class<?> type) {
-        return Arrays.stream(type.getFields())
-                .filter(f -> Modifier.isStatic(f.getModifiers()) && f.getType() == String.class)
-                .map(UniversityTaxonomyTest::value)
-                .collect(Collectors.toCollection(TreeSet::new));
-    }
-
-    private static String value(Field field) {
-        try {
-            return (String) field.get(null);
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 }

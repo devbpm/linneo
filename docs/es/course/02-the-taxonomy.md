@@ -34,15 +34,15 @@ académicos, que son importantes para una universidad.
 
 | | fideslang 3.1.4 | Añadidos por Linneo | Taxonomía estándar |
 |---|---|---|---|
-| Categorías de datos (*qué* contiene un campo) | 85 | 40 | 125 |
+| Categorías de datos (*qué* contiene un campo) | 85 | 41 | 126 |
 | Usos de datos (*para qué* se tratan) | 56 | 7 (`education.*`) | 63 |
-| Interesados (*de quién* son los datos) | 15 | 6 (`student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`, `legal_representative`) | 21 |
+| Interesados (*de quién* son los datos) | 15 | 7 (`student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`, `legal_representative`, `emergency_contact`) | 22 |
 
 Puedes comprobar esas cifras tú mismo:
 
 ```java
 System.out.println(Taxonomy.standard());
-// Taxonomy[125 data categories, 63 data uses, 21 data subjects]
+// Taxonomy[126 data categories, 63 data uses, 22 data subjects]
 ```
 
 Los términos se cargan desde ficheros separados por tabuladores incluidos en el JAR. Los de fideslang se conservan
@@ -354,7 +354,7 @@ sí lo está, porque mientras la sesión es válida da acceso como una credencia
 **Cuestionario**
 
 1. `user.contact.address`.
-2. 125, de las que 85 proceden de fideslang.
+2. 126, de las que 85 proceden de fideslang.
 3. No: una hija solo puede subir un nivel. La taxonomía se niega a construirse.
 4. `requireCategory` devuelve la categoría de esa clave exacta, obsoleta o no; `resolveCategory` sigue `replacedBy`
    hasta la categoría vigente.

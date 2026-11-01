@@ -73,7 +73,7 @@ With the default mapping, `classifications()` returns:
 
 ### Tags created
 
-`tags()` returns, in this order (12 + one per category; 137 for the standard taxonomy):
+`tags()` returns, in this order (12 + one per category; 138 for the standard taxonomy):
 
 | Tags | Classification | `name` / `displayName` | `description` |
 |---|---|---|---|

@@ -16,7 +16,7 @@ doc-sources:
 Applications add terms, and tighten the protection of existing ones, either directly on a `TaxonomyBuilder` or
 through a `TaxonomyExtension` that `Taxonomy.load()` discovers with `ServiceLoader`. Linneo also ships optional
 extensions for a sector, such as the [university extension](extensions/university.md): a complete example of a
-`TaxonomyExtension` with its key constants (see [Extensions](extensions/README.md)).
+`TaxonomyExtension` with its key constants (see [Extensions](extensions/README.md), which lists the five shipped ones).
 
 ## TaxonomyBuilder
 
@@ -128,8 +128,8 @@ Terms an application or a sector adds to the taxonomy, and the stricter protecti
 An extension may only add children to existing terms and make protection stricter; the rules are enforced when the
 taxonomy is built. Pick a name and keys that no other extension you apply uses: `extend` throws a `TaxonomyException`
 if a different extension class with the same name has already been applied, and a key added twice fails with
-`Duplicate key`. The name `"university"` and the
-keys of the [university extension](extensions/university.md) are taken by the extension shipped with Linneo.
+`Duplicate key`. The names `"university"`, `"finance"`, `"supply_chain"`, `"project_operations"` and `"human_resources"` and the
+keys of the [shipped extensions](extensions/README.md) are taken by the extensions shipped with Linneo.
 
 ```java
 package com.example.taxonomy;

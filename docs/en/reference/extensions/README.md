@@ -9,6 +9,14 @@ doc-sources:
   - src/main/java/module-info.java
   - src/main/java/io/github/devbpm/linneo/extension/university/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/university/UniversityTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/finance/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/finance/FinanceTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/supplychain/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/supplychain/SupplyChainTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/projectoperations/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/projectoperations/ProjectOperationsTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/humanresources/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/humanresources/HumanResourcesTaxonomy.java
   - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
 -->
 
@@ -21,7 +29,13 @@ constants for its keys.
 
 | Extension | Class | `name()` | Adds | Page |
 |---|---|---|---|---|
-| Higher education | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 33 data categories, 27 data uses, 13 data subjects | [University](university.md) |
+| Higher education | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 32 data categories, 27 data uses, 12 data subjects | [University](university.md) |
+| Finance and accounting | `io.github.devbpm.linneo.extension.finance.FinanceTaxonomy` | `"finance"` | 19 data categories, 13 data uses, 3 data subjects | [Finance](finance.md) |
+| Supply chain management | `io.github.devbpm.linneo.extension.supplychain.SupplyChainTaxonomy` | `"supply_chain"` | 16 data categories, 12 data uses, 3 data subjects | [Supply chain](supply-chain.md) |
+| Project operations | `io.github.devbpm.linneo.extension.projectoperations.ProjectOperationsTaxonomy` | `"project_operations"` | 11 data categories, 6 data uses, 2 data subjects | [Project operations](project-operations.md) |
+| Human resources and payroll | `io.github.devbpm.linneo.extension.humanresources.HumanResourcesTaxonomy` | `"human_resources"` | 21 data categories, 15 data uses, 6 data subjects | [Human resources](human-resources.md) |
+
+The finance, supply chain, project operations and human resources extensions are informed by the business areas of the Common Data Model (CDM); see the *Sources* section of each page. The university extension is informed by the Open Education API. The five share no key, so any of them can be applied with any other, and with yours.
 
 ## Not applied by default
 
@@ -33,7 +47,7 @@ A shipped extension is never part of the taxonomy unless the application asks fo
   has no `META-INF/services` file.
 
 A shipped extension follows the same rules as yours: it adds children of existing terms (a shipped extension may add
-a new root of data uses where fideslang has none for the sector, as the university extension does) and it only makes
+a new root of data uses where fideslang has none for the sector, as the university extension does, or a new branch of categories, as the human resources extension does with `user.employment`) and it only makes
 protection stricter.
 
 ## Applying a shipped extension
@@ -48,7 +62,8 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxon
 ```
 
 `taxonomy.toString()` prints `Taxonomy[158 data categories, 90 data uses, 34 data subjects]`, against
-`Taxonomy[125 data categories, 63 data uses, 21 data subjects]` for the standard taxonomy. Keep the result and use it
+`Taxonomy[126 data categories, 63 data uses, 22 data subjects]` for the standard taxonomy. With the five shipped
+extensions applied it prints `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Keep the result and use it
 everywhere: in the [`Classifier`](../classify/classifier.md), the
 [`ProcessingChecker`](../processing/checker.md) and the catalogue exporters. A `Classifier` built on
 `Taxonomy.standard()` reports every key of the extension as `UNKNOWN_CATEGORY`.
@@ -105,7 +120,7 @@ The explicit `extend` call above works in both cases and needs no registration.
 
 A shipped extension and your own extensions are applied to the same builder and combine like any two extensions:
 
-- **Names.** Each term records the name of the extension that added it as its origin (`university`, or yours).
+- **Names.** Each term records the name of the extension that added it as its origin (`university`, `finance`, `supply_chain`, `project_operations`, `human_resources`, or yours).
   `extend` applies the same extension class only once (so a shipped extension can be applied explicitly and also be
   registered as a service), but throws a `TaxonomyException` if a different class with the same name has already
   been applied: `The extensions io.github.devbpm.linneo.extension.university.UniversityTaxonomy and
@@ -130,5 +145,6 @@ A shipped extension and your own extensions are applied to the same builder and 
 - **Constants.** Use the shipped extension's constant classes (for example `UniversityCategories`) in annotations,
   and keep your own constants in your own classes.
 
-See also: [University extension](university.md) · [Extending the taxonomy](../extending.md) ·
+See also: [University](university.md) · [Finance](finance.md) · [Supply chain](supply-chain.md) ·
+[Project operations](project-operations.md) · [Human resources](human-resources.md) · [Extending the taxonomy](../extending.md) ·
 [Standard taxonomy](../standard-taxonomy.md) · course: [Extending the taxonomy](../../course/06-extending-the-taxonomy.md)

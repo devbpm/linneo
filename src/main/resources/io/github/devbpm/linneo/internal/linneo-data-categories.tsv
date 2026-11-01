@@ -5,6 +5,7 @@
 key	parent_key	name	description	version_added	version_deprecated	replaced_by
 user.unique_id.record_reference	user.unique_id	Record Reference	Key, label or link that points to a record about the subject in this or another system.	0.1.0
 user.government_id.social_security_number	user.government_id	Social Security Number	Number assigned to the subject by a social security system.	0.1.0
+user.contact.emergency_contact	user.contact	Emergency Contact	Name, phone number and relationship of the person to contact in an emergency.	0.1.0
 user.device.user_agent	user.device	User Agent	Browser or client identification string sent by the subject's device.	0.1.0
 user.device.session_id	user.device	Session ID	Identifier of an authenticated or anonymous session of the subject; while the session is valid it grants access like a credential.	0.1.0
 user.workplace.team	user.workplace	Team	Team or working group the subject belongs to within the organization.	0.1.0

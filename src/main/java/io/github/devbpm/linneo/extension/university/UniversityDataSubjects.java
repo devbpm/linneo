@@ -29,9 +29,6 @@ public final class UniversityDataSubjects {
     /** Donor: An individual who gives or pledges gifts to the institution. */
     public static final String DONOR = "donor";
 
-    /** Emergency Contact: A person named by a student or employee to be contacted in an emergency. */
-    public static final String EMERGENCY_CONTACT = "emergency_contact";
-
     /** Exchange Student: A student on an exchange, received from or sent to another institution. */
     public static final String EXCHANGE_STUDENT = "exchange_student";
 

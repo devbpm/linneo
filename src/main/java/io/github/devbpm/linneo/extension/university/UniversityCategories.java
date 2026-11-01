@@ -23,9 +23,6 @@ package io.github.devbpm.linneo.extension.university;
  */
 public final class UniversityCategories {
 
-    /** Emergency Contact: Name, phone number and relationship of the person to contact in an emergency. */
-    public static final String USER_CONTACT_EMERGENCY_CONTACT = "user.contact.emergency_contact";
-
     /** Academic Standing: Standing earned by performance: good standing, warning, probation, dismissal, honours. */
     public static final String USER_EDUCATION_ACADEMIC_STANDING = "user.education.academic_standing";
 

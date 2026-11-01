@@ -27,9 +27,9 @@ a non-exported package and not part of the public API, from tab-separated resour
 
 | | fideslang 3.1.4 | Linneo | Total |
 |---|---|---|---|
-| Data categories | 85 | 40 | 125 |
+| Data categories | 85 | 41 | 126 |
 | Data uses | 56 | 7 | 63 |
-| Data subjects | 15 | 6 | 21 |
+| Data subjects | 15 | 7 | 22 |
 
 The fideslang version is `StandardTaxonomy.FIDESLANG_VERSION` (`"3.1.4"`). The fideslang terms are bundled
 unchanged (license CC BY 4.0, © Ethyca, Inc.; see `NOTICE`) and have origin `fideslang`; Linneo's terms have
@@ -64,7 +64,7 @@ Below the roots, the policy raises facets where the data requires it; any key no
 | `user.device.session_id` | confidentiality `HIGH`, **secret** |
 | `system.authentication` | confidentiality `HIGH`, integrity `HIGH`; `system.authentication.secret` is **secret** |
 | `user.financial`, `user.payment`, `user.education` | confidentiality `MEDIUM`, integrity `HIGH`; `user.financial.credit_card` confidentiality `HIGH` |
-| `user.behavior`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, several `user.demographic.*` (date of birth, gender, marital status, profile, family, nationality) | confidentiality `MEDIUM` |
+| `user.behavior`, `user.government_id`, `user.location.precise`, `user.content.private`, `user.content.self_image`, `user.contact.emergency_contact`, several `user.demographic.*` (date of birth, gender, marital status, profile, family, nationality) | confidentiality `MEDIUM` |
 | `user.childrens`, `user.government_id.immigration` | confidentiality `HIGH` (data of vulnerable data subjects: children and migrants or asylum seekers) |
 | `user.behavior.activity_log`, `system.security`, `system.integrity` | integrity `HIGH` |
 | `system.configuration` | integrity `MEDIUM` |
@@ -98,12 +98,13 @@ consolidated text) and, for Spain, Ley Orgánica 3/2018 (LOPDGDD), consolidated 
 
 ## Linneo's additions
 
-**Data categories** (40, all `since` `0.1.0`):
+**Data categories** (41, all `since` `0.1.0`):
 
 | Parent | Added children |
 |---|---|
 | `user` | `user.education` with `program`, `enrollment`, `course_history`, `grade`, `test_score`, `previous_education`, `status`, `accomplishment`; `administrative_sanction`, `victim_status` |
 | `user.unique_id` | `record_reference` |
+| `user.contact` | `emergency_contact` |
 | `user.government_id` | `social_security_number` |
 | `user.device` | `user_agent`, `session_id` |
 | `user.workplace` | `team`, `unit`, `role`, `assignment_period` |
@@ -120,8 +121,8 @@ consolidated text) and, for Spain, Ley Orgánica 3/2018 (LOPDGDD), consolidated 
 `education.enrollment`, `education.teaching`, `education.assessment`, `education.academic_records` and
 `education.financial_aid`.
 
-**Data subjects** (6, all roots): `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`,
-`legal_representative`.
+**Data subjects** (7, all roots): `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`,
+`legal_representative`, `emergency_contact`.
 
 ## fideslang roots
 

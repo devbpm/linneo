@@ -100,11 +100,11 @@ List<DhProposal> proposals = catalog.proposals();
 
 En DataHub se escribe **aspecto** a aspecto. Una `DhProposal` inserta o actualiza un aspecto de una entidad:
 `entityType` (`glossaryNode` o `glossaryTerm`), `entityUrn`, `aspectName` y el `aspect` en JSON. Con la taxonomía
-estándar, `proposals()` devuelve 293, en un orden que puedes enviar tal cual:
+estándar, `proposals()` devuelve 295, en un orden que puedes enviar tal cual:
 
 1. 28 `glossaryNodeInfo`: las seis raíces y después las 22 categorías con hijas, cada nodo detrás de su padre;
-2. 140 `glossaryTermInfo`: los 15 términos de nivel y después las 125 categorías;
-3. 125 `glossaryRelatedTerms`: las relaciones de cada término de categoría.
+2. 141 `glossaryTermInfo`: los 15 términos de nivel y después las 126 categorías;
+3. 126 `glossaryRelatedTerms`: las relaciones de cada término de categoría.
 
 El `glossaryTermInfo` de `Grade`:
 
@@ -248,7 +248,7 @@ AtlasCatalog atlas = AtlasCatalog.of(Taxonomy.load());
 String typeDefs = atlas.typeDefsJson();
 ```
 
-`classificationDefs()` enumera 146 tipos con la taxonomía estándar —seis raíces, 15 niveles, 125 categorías, cada
+`classificationDefs()` enumera 147 tipos con la taxonomía estándar —seis raíces, 15 niveles, 126 categorías, cada
 supertipo primero— y `typeDefsJson()` los reúne en un único cuerpo para `POST /api/atlas/v2/types/typedefs`. La
 definición de `Grade`:
 
@@ -448,11 +448,11 @@ Files.write(Path.of("datahub-proposals.jsonl"),
 Files.writeString(Path.of("atlas-typedefs.json"), AtlasCatalog.of(Taxonomy.load()).typeDefsJson());
 ```
 
-Con la taxonomía estándar, el primer fichero tiene 293 líneas: 28 nodos, 140 términos y 125 aspectos de relaciones.
+Con la taxonomía estándar, el primer fichero tiene 295 líneas: 28 nodos, 141 términos y 126 aspectos de relaciones.
 
 **Ejercicio 8.3**
 
-293 propuestas y 146 tipos. La extensión añade dos categorías, `user.education.lab_notebook` y
+295 propuestas y 147 tipos. La extensión añade dos categorías, `user.education.lab_notebook` y
 `user.education.lab_journal`: cada una aporta un `glossaryTermInfo` y un `glossaryRelatedTerms` (2 × 2 = 4
 propuestas más) y un tipo de clasificación. No aparece ningún nodo: las dos son hojas, y `user.education` ya tenía
 nodo porque ya tenía hijas. El término del cuaderno de laboratorio lleva `linneo.key`

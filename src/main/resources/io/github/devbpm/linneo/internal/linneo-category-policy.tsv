@@ -23,6 +23,7 @@ user.behavior.activity_log			HIGH
 user.biometric	SPECIAL_CATEGORY	HIGH	HIGH
 user.administrative_sanction		HIGH	HIGH
 user.childrens		HIGH
+user.contact.emergency_contact		MEDIUM
 user.content.private		MEDIUM
 user.content.self_image		MEDIUM
 user.criminal_history	CRIMINAL_OFFENCE	HIGH	HIGH

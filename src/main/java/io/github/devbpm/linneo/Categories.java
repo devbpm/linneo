@@ -291,6 +291,9 @@ public final class Categories {
     /** Social Security Number: Number assigned to the subject by a social security system. */
     public static final String USER_GOVERNMENT_ID_SOCIAL_SECURITY_NUMBER = "user.government_id.social_security_number";
 
+    /** Emergency Contact: Name, phone number and relationship of the person to contact in an emergency. */
+    public static final String USER_CONTACT_EMERGENCY_CONTACT = "user.contact.emergency_contact";
+
     /** User Agent: Browser or client identification string sent by the subject's device. */
     public static final String USER_DEVICE_USER_AGENT = "user.device.user_agent";
 

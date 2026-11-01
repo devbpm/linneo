@@ -42,10 +42,18 @@ All notable changes to this project are documented in this file. The format foll
   verifies them.
 - `OpenMetadataCatalog`: classifications, nested tags, and the tags of each column. Tags carry no
   `associatedTags`, which OpenMetadata accepts but does not store: the protection goes on each column.
-- `UniversityTaxonomy`: an optional taxonomy extension for higher education (33 data categories focused on the
-  student record, 27 data uses including the new roots `advancement` and `research`, 13 data subjects), informed by
+- `UniversityTaxonomy`: an optional taxonomy extension for higher education (32 data categories focused on the
+  student record, 27 data uses including the new roots `advancement` and `research`, 12 data subjects), informed by
   the Open Education API (OEAPI) and following fideslang's rules for custom labels. Not applied by default; keys in
   `UniversityCategories`, `UniversityDataUses` and `UniversityDataSubjects`.
+- Optional business extensions informed by the Common Data Model (CDM) schemas, each in its own exported package
+  and not applied by default: `FinanceTaxonomy` (19 data categories, 13 data uses, 3 data subjects),
+  `SupplyChainTaxonomy` (16, 12, 3), `ProjectOperationsTaxonomy` (11, 6, 2) and `HumanResourcesTaxonomy` (21, 15,
+  6, with the new branch `user.employment` and sick leave, occupational health and workplace adjustments as special
+  categories). Records about organizations extend `org.business_records`, records about people extend `user.*`; the
+  extensions share no key and can be applied together.
+- `user.contact.emergency_contact` and the data subject `emergency_contact` are standard terms, available to every
+  extension (they were part of the university extension during development).
 - `ProcessingChecker`, `ProcessingActivity` and `ProcessingRecord`: GDPR processing activities (purposes, data
   subjects, personal data from category keys and annotated entities, lawful basis, article 9.2 and 10 conditions,
   retention, recipients, transfers, impact assessment) checked against the taxonomy and the classification, and the

@@ -56,7 +56,6 @@ import static io.github.devbpm.linneo.extension.university.UniversityDataUses.*;
  *       confidentiality. A disciplinary record is data about administrative infringements and sanctions, whose
  *       processing LOPDGDD article 27 restricts; the grounds of a fee exemption can reveal that the subject is a
  *       victim of gender-based violence or terrorism;</li>
- *   <li>the emergency contact has medium confidentiality, above the rest of {@code user.contact};</li>
  *   <li>the other categories inherit the medium confidentiality and high integrity of {@code user.education}.</li>
  * </ul>
  * Data that reveals more than its category belongs in a stricter key: the medical reason for an absence in
@@ -115,10 +114,7 @@ public final class UniversityTaxonomy implements TaxonomyExtension {
     }
 
     private static void categories(TaxonomyBuilder builder) {
-        builder.category(USER_CONTACT_EMERGENCY_CONTACT, "Emergency Contact",
-                        "Name, phone number and relationship of the person to contact in an emergency.",
-                        c -> c.confidentiality(Confidentiality.MEDIUM))
-                .category(USER_EDUCATION_ACADEMIC_STANDING, "Academic Standing",
+        builder.category(USER_EDUCATION_ACADEMIC_STANDING, "Academic Standing",
                         "Standing earned by performance: good standing, warning, probation, dismissal, honours.")
                 .category(USER_EDUCATION_ACCOMMODATION, "Academic Accommodation",
                         "Adjustments granted for study or assessment, such as extra time or assistive tools, and the"
@@ -267,8 +263,6 @@ public final class UniversityTaxonomy implements TaxonomyExtension {
     private static void dataSubjects(TaxonomyBuilder builder) {
         builder.dataSubject(DOCTORAL_CANDIDATE, "Doctoral Candidate", "A student enrolled in a doctoral programme.")
                 .dataSubject(DONOR, "Donor", "An individual who gives or pledges gifts to the institution.")
-                .dataSubject(EMERGENCY_CONTACT, "Emergency Contact",
-                        "A person named by a student or employee to be contacted in an emergency.")
                 .dataSubject(EXCHANGE_STUDENT, "Exchange Student",
                         "A student on an exchange, received from or sent to another institution.")
                 .dataSubject(EXTERNAL_EXAMINER, "External Examiner",

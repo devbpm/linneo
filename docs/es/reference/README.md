@@ -14,6 +14,10 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/catalog/datahub/package-info.java
   - src/main/java/io/github/devbpm/linneo/catalog/atlas/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/university/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/finance/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/supplychain/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/projectoperations/package-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/humanresources/package-info.java
 -->
 
 # Referencia de Linneo
@@ -28,8 +32,8 @@ Los modelos declaran lo que contienen con anotaciones, un `Classifier` comprueba
 actividades de tratamiento vinculan finalidades, interesados y datos personales con sus bases jurídicas y generan el
 registro de actividades de tratamiento del RGPD, y tres exportadores traducen la taxonomía para un catálogo de
 datos: `OpenMetadataCatalog` (clasificaciones y etiquetas de OpenMetadata), `DataHubCatalog` (un glosario de negocio
-de DataHub) y `AtlasCatalog` (clasificaciones de Apache Atlas). Las aplicaciones añaden sus propios términos mediante una `TaxonomyExtension`, y Linneo incluye una opcional para
-universidades que solo se aplica si se pide.
+de DataHub) y `AtlasCatalog` (clasificaciones de Apache Atlas). Las aplicaciones añaden sus propios términos mediante una `TaxonomyExtension`, y Linneo incluye cinco opcionales
+(universidades, finanzas, cadena de suministro, operaciones de proyecto y recursos humanos) que solo se aplican si se piden.
 
 Esta referencia describe todos los tipos públicos. Para una introducción guiada, consulta el
 [curso](../course/README.md).
@@ -48,6 +52,10 @@ module io.github.devbpm.linneo {
     exports io.github.devbpm.linneo.catalog.datahub;
     exports io.github.devbpm.linneo.catalog.atlas;
     exports io.github.devbpm.linneo.extension.university;
+    exports io.github.devbpm.linneo.extension.finance;
+    exports io.github.devbpm.linneo.extension.supplychain;
+    exports io.github.devbpm.linneo.extension.projectoperations;
+    exports io.github.devbpm.linneo.extension.humanresources;
 
     uses io.github.devbpm.linneo.TaxonomyExtension;
 }
@@ -63,6 +71,10 @@ module io.github.devbpm.linneo {
 | `io.github.devbpm.linneo.catalog.datahub` | sí | La taxonomía como glosario de negocio de DataHub: `DataHubCatalog`, `DataHubMapping`, `DhProposal`. Sin llamadas de red |
 | `io.github.devbpm.linneo.catalog.atlas` | sí | La taxonomía como clasificaciones de Apache Atlas: `AtlasCatalog`, `AtlasMapping`, `AtlasClassificationDef`. Sin llamadas de red |
 | `io.github.devbpm.linneo.extension.university` | sí | Una extensión opcional para universidades, que no se aplica por defecto: `UniversityTaxonomy` y sus constantes de claves `UniversityCategories`, `UniversityDataUses`, `UniversityDataSubjects` |
+| `io.github.devbpm.linneo.extension.finance` | sí | Una extensión opcional para finanzas y contabilidad, que no se aplica por defecto: `FinanceTaxonomy` y sus constantes de claves `FinanceCategories`, `FinanceDataUses`, `FinanceDataSubjects` |
+| `io.github.devbpm.linneo.extension.supplychain` | sí | Una extensión opcional para la gestión de la cadena de suministro, que no se aplica por defecto: `SupplyChainTaxonomy` y sus constantes de claves `SupplyChainCategories`, `SupplyChainDataUses`, `SupplyChainDataSubjects` |
+| `io.github.devbpm.linneo.extension.projectoperations` | sí | Una extensión opcional para las operaciones de proyecto, que no se aplica por defecto: `ProjectOperationsTaxonomy` y sus constantes de claves `ProjectOperationsCategories`, `ProjectOperationsDataUses`, `ProjectOperationsDataSubjects` |
+| `io.github.devbpm.linneo.extension.humanresources` | sí | Una extensión opcional para recursos humanos y nómina, que no se aplica por defecto: `HumanResourcesTaxonomy` y sus constantes de claves `HumanResourcesCategories`, `HumanResourcesDataUses`, `HumanResourcesDataSubjects` |
 | `io.github.devbpm.linneo.internal` | no | `StandardTaxonomy`, que carga los recursos TSV incluidos, y `Json`, el escritor JSON mínimo que comparten los tres exportadores. No forma parte de la API pública |
 
 La cláusula `uses` permite que `Taxonomy.load()` y `TaxonomyBuilder.withExtensions()` encuentren extensiones con
@@ -91,13 +103,21 @@ module com.example.app {
 - [Constantes de claves](key-constants.md) — `Categories`, `DataUses`, `DataSubjects`.
 - [Extender la taxonomía](extending.md) — `TaxonomyBuilder`, `TaxonomyExtension`, `CategoryDraft`, `TermDraft`.
 
-**Extensiones** (`io.github.devbpm.linneo.extension.university`)
+**Extensiones** (`io.github.devbpm.linneo.extension.university`, `.finance`, `.supplychain`, `.projectoperations`,
+`.humanresources`)
 
 - [Visión general de las extensiones](extensions/README.md) — las extensiones opcionales que incluye Linneo, cómo
   aplicarlas o registrarlas y cómo se combinan con las tuyas.
 - [Universidad](extensions/university.md) — `UniversityTaxonomy`, `UniversityCategories`, `UniversityDataUses`,
   `UniversityDataSubjects`: todos los términos con su protección, las claves estándar que conviene usar, las reglas
   de derivación y las fuentes.
+- [Finanzas](extensions/finance.md) — `FinanceTaxonomy`, `FinanceCategories`, `FinanceDataUses`, `FinanceDataSubjects`.
+- [Cadena de suministro](extensions/supply-chain.md) — `SupplyChainTaxonomy`, `SupplyChainCategories`,
+  `SupplyChainDataUses`, `SupplyChainDataSubjects`.
+- [Operaciones de proyecto](extensions/project-operations.md) — `ProjectOperationsTaxonomy`,
+  `ProjectOperationsCategories`, `ProjectOperationsDataUses`, `ProjectOperationsDataSubjects`.
+- [Recursos humanos](extensions/human-resources.md) — `HumanResourcesTaxonomy`, `HumanResourcesCategories`,
+  `HumanResourcesDataUses`, `HumanResourcesDataSubjects`.
 
 **Anotaciones** (`io.github.devbpm.linneo.annotation`)
 
@@ -157,7 +177,7 @@ las etiquetas a tus tablas: construyen cuerpos de petición y nombres.
 | Naturaleza jurídica | `PersonalData.Personal` / `SpecialCategory` predefinidas (los datos penales son `SpecialCategory`) | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` | `PersonalData.Personal` / `SpecialCategory` / `CriminalOffence` |
 | Sensibilidad | `PII.None` / `NonSensitive` / `Sensitive` predefinidas, umbral `sensitiveFrom` | — | — |
 | Niveles y secreto | `Confidentiality.*`, `Integrity.*`, `Identifiability.*`, `DataHandling.Secret` | los mismos, como términos del glosario | los mismos, como clasificaciones (no son supertipos de las categorías) |
-| Se crea con la taxonomía estándar | 5 clasificaciones y 137 etiquetas | 293 propuestas: 28 nodos, 140 términos y 125 aspectos de relaciones | 146 tipos de clasificación |
+| Se crea con la taxonomía estándar | 5 clasificaciones y 138 etiquetas | 295 propuestas: 28 nodos, 141 términos y 126 aspectos de relaciones | 147 tipos de clasificación |
 | Peticiones | `PUT /api/v1/classifications`, `PUT /api/v1/tags`, una por cuerpo | `POST /aspects?action=ingestProposal`, una por propuesta | un único `POST /api/atlas/v2/types/typedefs` |
 | Volver a enviar | crea o actualiza | `UPSERT` (sustituye cada aspecto) | `POST` responde 409 si los tipos existen; se actualizan con `PUT` |
 | Etiquetas de un campo | `tagsOf(field)`: nombres de etiqueta | `termsOf(field)`: URN de términos | `classificationsOf(field)`: nombres; `classificationsJson(field)`: cuerpo de la petición |

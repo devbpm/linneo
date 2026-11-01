@@ -260,12 +260,12 @@ See [Extending the taxonomy](docs/en/reference/extending.md).
 ### The university extension
 
 Linneo ships an optional extension for universities and other higher education institutions, informed by the
-[Open Education API (OEAPI)](https://github.com/open-education-api/specification). It adds 33 data categories, with the finest detail on the student record: enrolment changes and record
+[Open Education API (OEAPI)](https://github.com/open-education-api/specification). It adds 32 data categories, with the finest detail on the student record: enrolment changes and record
 transfers, assessment attempts, final grades and averages, credit recognition, programme progress, degrees,
 certificates and language proficiency. It also covers attendance, academic accommodations, discipline, advising,
 admissions, internships and their evaluation, international mobility, means-tested aid, fee exemptions and
 advancement. It adds 27 data uses (certification, credit recognition, examination, internships, mobility, career
-services, means assessment, statutory reporting, and the new roots `advancement` and `research`) and 13 data
+services, means assessment, statutory reporting, and the new roots `advancement` and `research`) and 12 data
 subjects (prospective student, exchange student, doctoral candidate, placement supervisor, external examiner,
 donor…). An academic accommodation reveals a disability, so it is a special category of data. The extension follows
 fideslang's rules for custom labels: it extends existing classes, keeps data subjects flat and carries no version
@@ -287,6 +287,37 @@ or register it as a service of your application so that `Taxonomy.load()` applie
 class in `META-INF/services/io.github.devbpm.linneo.TaxonomyExtension`; on the module path, provide it through a
 class of your own module with a static `provider()` method. See the
 [university extension reference](docs/en/reference/extensions/university.md).
+
+### Business extensions: finance, supply chain, project operations and human resources
+
+Four more optional extensions cover the business areas of an ERP, informed by the
+[Common Data Model (CDM)](https://github.com/microsoft/CDM) schemas for finance and operations. Records about
+organizations extend `org.business_records`; records about people extend `user.*`, so the `Classifier` and the
+`ProcessingChecker` treat them as personal data. The four never share a key, so any of them can be applied with any
+other and with the university extension.
+
+| Extension | Adds | Highlights |
+|---|---|---|
+| `FinanceTaxonomy` (`"finance"`) | 19 categories, 13 data uses below `finance`, 3 data subjects | ledger, invoices, treasury and taxes with `HIGH` integrity; creditworthiness, debt collection, tax status and AML due diligence with `HIGH` confidentiality; expense claims; signing authority |
+| `SupplyChainTaxonomy` (`"supply_chain"`) | 16 categories, 12 data uses below `operations` and `sales`, 3 data subjects | products, formulas and costs (trade secrets, `HIGH` confidentiality), procurement and supplier bids, inventory and quality (`HIGH` integrity), shipments; delivery details, drivers' driving records, labour tracking |
+| `ProjectOperationsTaxonomy` (`"project_operations"`) | 11 categories, 6 data uses below `operations.project_management`, 2 data subjects | projects, contracts, estimates, actuals, funding and rates; project assignments, time entries (`HIGH` integrity), skills, utilization and resource rates |
+| `HumanResourcesTaxonomy` (`"human_resources"`) | 21 categories, 15 data uses below `employment`, 6 data subjects | the new branch `user.employment` (contract, compensation, payroll, working time record, leave, performance, recruitment, discipline, termination, monitoring, whistleblowing); sick leave, occupational health and workplace adjustments as special categories with the maximum protection |
+
+```java
+Taxonomy taxonomy = Taxonomy.builder().withStandard()
+        .extend(new HumanResourcesTaxonomy())
+        .extend(new FinanceTaxonomy())
+        .build();
+
+@Category(HumanResourcesCategories.USER_HEALTH_AND_MEDICAL_SICK_LEAVE)   // special category, HIGH / HIGH
+private Integer sickLeaveDays;
+@Category(FinanceCategories.USER_FINANCIAL_EXPENSE)                      // expense claim, MEDIUM / HIGH
+private BigDecimal mileage;
+```
+
+The emergency contact (`user.contact.emergency_contact`, data subject `emergency_contact`) is part of the standard
+taxonomy, since both universities and employers record it. See the
+[extensions reference](docs/en/reference/extensions/README.md).
 
 ## Processing activities (GDPR)
 
@@ -430,3 +461,9 @@ The university extension is informed by the concepts of the
 Copyright (c) 2017-2026 SURF U.A. Cooperative ([surf.nl](https://surf.nl)), licensed under the
 [EUPL-1.2](https://github.com/open-education-api/specification/blob/master/LICENSE.md). No OEAPI material is
 reproduced. Linneo is not affiliated with or endorsed by SURF or the OEAPI project.
+
+The finance, supply chain, project operations and human resources extensions are informed by the business areas of
+the [Common Data Model](https://github.com/microsoft/CDM) schemas, Copyright (c) Microsoft Corporation, whose
+documentation and other content are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). No CDM
+material is reproduced; the names and descriptions of the terms are Linneo's. Linneo is not affiliated with or
+endorsed by Microsoft.

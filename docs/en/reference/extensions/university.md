@@ -28,9 +28,9 @@ internships and mobility, means-tested aid and fee exemptions.
 | Type | Description |
 |---|---|
 | `UniversityTaxonomy` | `public final class implements TaxonomyExtension`. `name()` returns `NAME`, `public static final String NAME = "university"`, recorded as the origin of its terms. Public no-argument constructor; no state. `contribute(builder)` adds the terms listed below. |
-| `UniversityCategories` | `public final class`, private constructor: one `public static final String` per data category the extension adds (33). |
+| `UniversityCategories` | `public final class`, private constructor: one `public static final String` per data category the extension adds (32). |
 | `UniversityDataUses` | The same for its data uses (27). |
-| `UniversityDataSubjects` | The same for its data subjects (13). |
+| `UniversityDataSubjects` | The same for its data subjects (12). |
 
 The constants follow the [naming rule](../key-constants.md#naming-rule) of `Categories`: `user.education.attendance`
 is `UniversityCategories.USER_EDUCATION_ATTENDANCE`, `essential.legal_obligation.statutory_reporting` is
@@ -106,8 +106,7 @@ The extension arranges the categories by the record they belong to: the student 
 conduct, placements and mobility, and finance. The finest detail is in the student record.
 
 The protection shown is the effective one in the built taxonomy. Values in **bold** are declared by the extension;
-the rest are inherited from the parent (`user.education` and `user.financial` are `ORDINARY`, `MEDIUM`, `HIGH`;
-`user.contact` is `ORDINARY`, `LOW`, `MEDIUM`). No category is secret, and all are personal data.
+the rest are inherited from the parent (`user.education` and `user.financial` are `ORDINARY`, `MEDIUM`, `HIGH`). No category is secret, and all are personal data.
 
 ### The student record
 
@@ -163,7 +162,7 @@ Internships and mobility are told apart below `user.education.placement`.
 | `user.education.placement.internship.evaluation` | Internship Evaluation | `ORDINARY` | **`HIGH`** | `HIGH` | The host supervisor's assessment of the subject's performance in a placement. |
 | `user.education.placement.mobility` | Mobility | `ORDINARY` | `MEDIUM` | `HIGH` | An exchange or study stay at another institution: host institution, learning agreement, recognition and mobility grant. |
 
-### Finance and contact
+### Finance
 
 Means-tested aid and fee exemptions sit below the standard financial terms `user.financial.scholarship` and
 `user.financial.fee`.
@@ -174,7 +173,6 @@ Means-tested aid and fee exemptions sit below the standard financial terms `user
 | `user.financial.fee.exemption` | Fee Exemption | `ORDINARY` | **`HIGH`** | `HIGH` | Exemptions and reductions of fees and the grounds for them, such as a large family or academic merit. |
 | `user.financial.donation` | Donation | `ORDINARY` | `MEDIUM` | `HIGH` | Gifts, pledges and recurring donations made by the subject to the institution. |
 | `user.financial.wealth_assessment` | Wealth Assessment | `ORDINARY` | **`HIGH`** | `HIGH` | Estimates of the subject's wealth, income and giving capacity from prospect research. |
-| `user.contact.emergency_contact` | Emergency Contact | `ORDINARY` | **`MEDIUM`** | `MEDIUM` | Name, phone number and relationship of the person to contact in an emergency. |
 
 ### Why these levels
 
@@ -189,8 +187,6 @@ Means-tested aid and fee exemptions sit below the standard financial terms `user
   of gender-based violence or terrorism: classify the recognition as a victim itself as `user.victim_status`
   (`ORDINARY`, `HIGH`, `HIGH`), and a sanction imposed outside the institution's own disciplinary regime as
   `user.administrative_sanction`.
-- The **emergency contact** is raised to medium confidentiality, above the rest of `user.contact`: it reveals who
-  the subject's close relations are.
 - The other categories inherit the medium confidentiality and high integrity of `user.education` (or
   `user.financial`).
 
@@ -260,7 +256,6 @@ All the data subjects of the extension are flat, as fideslang data subjects have
 |---|---|---|
 | `doctoral_candidate` | Doctoral Candidate | A student enrolled in a doctoral programme. |
 | `donor` | Donor | An individual who gives or pledges gifts to the institution. |
-| `emergency_contact` | Emergency Contact | A person named by a student or employee to be contacted in an emergency. |
 | `exchange_student` | Exchange Student | A student on an exchange, received from or sent to another institution. |
 | `external_examiner` | External Examiner | An assessor from outside the institution who examines students or theses. |
 | `guest` | Guest | An individual temporarily affiliated with the institution without student or employee status. |
@@ -273,9 +268,10 @@ All the data subjects of the extension are flat, as fideslang data subjects have
 | `volunteer` | Volunteer | An individual who volunteers time for the institution. |
 
 The standard subjects `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member` and
-`legal_representative` (Linneo) and `employee`, `next_of_kin` and `visitor` (fideslang) cover the rest. Some
+`legal_representative` and `emergency_contact` (Linneo) and `employee`, `next_of_kin` and `visitor` (fideslang)
+cover the rest. Some
 extension subjects sit next to a fideslang one that is narrower: `prospect` is someone the organisation sells goods or
-services to, `next_of_kin` is a relative (an emergency contact may be a friend or a neighbour) and `visitor` is
+services to, `next_of_kin` is a relative and `visitor` is
 someone visiting a location (a guest is affiliated with the institution for a while). `doctoral_candidate` and
 `exchange_student` are kinds of student, but as data subjects are flat they are not children of `student`: use them
 when the processing is specific to them.

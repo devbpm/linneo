@@ -20,9 +20,9 @@ Each holds one `public static final String` per key of the [standard taxonomy](s
 
 | Class | Keys of | Count |
 |---|---|---|
-| `Categories` | data categories | 125 |
+| `Categories` | data categories | 126 |
 | `DataUses` | data uses (purposes of processing) | 63 |
-| `DataSubjects` | data subjects | 21 |
+| `DataSubjects` | data subjects | 22 |
 
 ## Why constants
 
@@ -34,8 +34,10 @@ Each holds one `public static final String` per key of the [standard taxonomy](s
 
 Plain strings are equally valid wherever a key is expected; use them for keys your own
 [extensions](extending.md) add, which have no constant. The extensions shipped with Linneo bring their own constants:
-the [university extension](extensions/university.md) has `UniversityCategories`, `UniversityDataUses` and
-`UniversityDataSubjects`.
+each [extension](extensions/README.md) has three classes named after it: the [university extension](extensions/university.md)
+has `UniversityCategories`, `UniversityDataUses` and `UniversityDataSubjects`, and the finance, supply chain, project
+operations and human resources extensions have `FinanceCategories`, `SupplyChainCategories`,
+`ProjectOperationsCategories` and `HumanResourcesCategories` with their `...DataUses` and `...DataSubjects`.
 
 ```java
 import io.github.devbpm.linneo.annotation.Category;

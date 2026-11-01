@@ -68,3 +68,30 @@ No OEAPI material (schemas, texts or enumerations) is reproduced in this
 product; the specification is cited as the source of the concepts only.
 Linneo is not affiliated with, sponsored or endorsed by SURF U.A. Cooperative
 or the OEAPI project.
+
+=============================================================================
+Common Data Model (CDM)
+=============================================================================
+
+The terms of the optional finance, supply chain, project operations and
+human resources extensions (io.github.devbpm.linneo.extension.finance,
+.supplychain, .projectoperations and .humanresources) are informed by the
+business areas of the Common Data Model schemas: Finance, SupplyChain,
+ProfessionalServices (project management and accounting), the project
+service automation entities of projectCommon, and HumanResources (HRM and
+Payroll).
+
+  Work:      Common Data Model (CDM) schema documents
+  Copyright: Copyright (c) Microsoft Corporation
+  Source:    https://github.com/microsoft/CDM (schemaDocuments)
+             https://learn.microsoft.com/common-data-model/
+  Licence:   Creative Commons Attribution 4.0 International (CC BY 4.0) for
+             the documentation and other content, MIT for the code
+             https://github.com/microsoft/CDM/blob/master/LICENSE
+
+No CDM material (schemas, entity or attribute definitions, texts or
+enumerations) is reproduced in this product; the schemas are cited as the
+source of the concepts only. The names and descriptions of Linneo's terms are
+its own. Microsoft and Dynamics 365 are trademarks of the Microsoft group of
+companies; their mention identifies the source and implies no affiliation,
+sponsorship or endorsement.

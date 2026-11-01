@@ -213,13 +213,16 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new CampusTaxonomy(
 
 ## La extensión universitaria incluida en Linneo
 
-Linneo incluye una extensión opcional para la educación superior, `UniversityTaxonomy`, en el paquete
-`io.github.devbpm.linneo.extension.university`. Añade 33 categorías de datos (asistencia, situación académica,
+Linneo incluye extensiones opcionales para varios sectores. Este módulo usa la de educación superior,
+`UniversityTaxonomy`, en el paquete
+`io.github.devbpm.linneo.extension.university`. Añade 32 categorías de datos (asistencia, situación académica,
 adaptaciones, solicitudes de admisión y su evaluación, notas finales, reconocimiento de créditos, títulos, prácticas,
 valoraciones de renta, exenciones de tasas, donaciones…), 27 usos de datos (entre ellos dos raíces nuevas,
-`advancement` y `research`) y 13 interesados (futuro estudiante, doctorando, estudiante de intercambio, donante, autor
+`advancement` y `research`) y 12 interesados (futuro estudiante, doctorando, estudiante de intercambio, donante, autor
 de cartas de referencia…). La [referencia](../reference/extensions/university.md) enumera todos los
-términos con su protección.
+términos con su protección. Las otras cuatro extensiones incluidas (finanzas, cadena de suministro, operaciones de
+proyecto y recursos humanos) funcionan igual y no comparten ninguna clave con ella ni entre sí; consulta la
+[visión general de las extensiones](../reference/extensions/README.md).
 
 **No está registrada** en `ServiceLoader`, así que `Taxonomy.load()` nunca la aplica. Aplícala junto a tu propia
 extensión:
@@ -232,8 +235,8 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-`taxonomy.toString()` imprime `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: las 125 categorías
-estándar, 33 de `university` y 2 de `campus`. Sus claves tienen constantes en `UniversityCategories`,
+`taxonomy.toString()` imprime `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: las 126 categorías
+estándar, 32 de `university` y 2 de `campus`. Sus claves tienen constantes en `UniversityCategories`,
 `UniversityDataUses` y `UniversityDataSubjects`, así que funcionan en las anotaciones igual que las estándar:
 
 ```java
@@ -426,8 +429,8 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 125 + 33 + 2 categorías, 63 + 27 usos y
-   21 + 13 + 1 interesados. Aplicar las dos extensiones en el orden contrario da la misma taxonomía.
+1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 126 + 32 + 2 categorías, 63 + 27 usos y
+   22 + 12 + 1 interesados. Aplicar las dos extensiones en el orden contrario da la misma taxonomía.
 2. `university` y `campus`.
 3. `extend(new CampusTaxonomy())` lanza `TaxonomyException` con `Duplicate key 'user.education.thesis'`.
 4. `extend(new CampusTaxonomy())` lanza `TaxonomyException` con `The extensions

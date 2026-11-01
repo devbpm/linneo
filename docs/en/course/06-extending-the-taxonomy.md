@@ -205,12 +205,15 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new CampusTaxonomy(
 
 ## The university extension shipped with Linneo
 
-Linneo ships one optional extension for higher education, `UniversityTaxonomy`, in the package
-`io.github.devbpm.linneo.extension.university`. It adds 33 data categories (attendance, academic standing,
+Linneo ships optional extensions for several sectors. This module uses the one for higher education,
+`UniversityTaxonomy`, in the package
+`io.github.devbpm.linneo.extension.university`. It adds 32 data categories (attendance, academic standing,
 accommodations, admission applications and evaluations, final grades, credit recognition, degrees, internships,
 means assessments, fee exemptions, donations…), 27 data uses (including two new roots, `advancement` and `research`)
-and 13 data subjects (prospective student, doctoral candidate, exchange student, donor, referee…). The [reference](../reference/extensions/university.md) lists every term with its
-protection.
+and 12 data subjects (prospective student, doctoral candidate, exchange student, donor, referee…). The [reference](../reference/extensions/university.md) lists every term with its
+protection. The four other shipped extensions (finance, supply chain, project operations and human resources) work
+in the same way and share no key with it or with each other; see the
+[extensions overview](../reference/extensions/README.md).
 
 It is **not registered** with `ServiceLoader`, so `Taxonomy.load()` never applies it. Apply it next to your own
 extension:
@@ -223,8 +226,8 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-`taxonomy.toString()` prints `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: the 125 standard
-categories, 33 from `university` and 2 from `campus`. Its keys have constants in `UniversityCategories`,
+`taxonomy.toString()` prints `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: the 126 standard
+categories, 32 from `university` and 2 from `campus`. Its keys have constants in `UniversityCategories`,
 `UniversityDataUses` and `UniversityDataSubjects`, so they work in annotations like the standard ones:
 
 ```java
@@ -413,8 +416,8 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 125 + 33 + 2 categories, 63 + 27 uses and
-   21 + 13 + 1 subjects. Applying the two extensions in the other order gives the same taxonomy.
+1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 126 + 32 + 2 categories, 63 + 27 uses and
+   22 + 12 + 1 subjects. Applying the two extensions in the other order gives the same taxonomy.
 2. `university` and `campus`.
 3. `extend(new CampusTaxonomy())` throws `TaxonomyException` with `Duplicate key 'user.education.thesis'`.
 4. `extend(new CampusTaxonomy())` throws `TaxonomyException` with `The extensions

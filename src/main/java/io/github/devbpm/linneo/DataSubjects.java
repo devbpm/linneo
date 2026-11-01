@@ -93,6 +93,9 @@ public final class DataSubjects {
     /** Legal Representative: An individual who acts on behalf of a legal entity or of another person. */
     public static final String LEGAL_REPRESENTATIVE = "legal_representative";
 
+    /** Emergency Contact: A person named by a student, employee or other subject to be contacted in an emergency. */
+    public static final String EMERGENCY_CONTACT = "emergency_contact";
+
     private DataSubjects() {
     }
 }
