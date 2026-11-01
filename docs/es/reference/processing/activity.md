@@ -18,7 +18,7 @@ doc-sources:
 ```java
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 Governance governance)
+                                 List<String> objects, Governance governance)
 ```
 
 Una actividad de tratamiento del responsable, tal como se declara en su registro de actividades de tratamiento (RGPD,
@@ -29,7 +29,7 @@ con [`builder(key, name)`](#builder).
 Una actividad tiene dos partes con responsables distintos:
 
 - su **alcance** es lo que el código de la aplicación sabe con certeza: las finalidades a las que sirve, los
-  interesados y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`);
+  interesados y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`);
 - su [**gobernanza**](#governance) es lo que decide y mantiene al día la función de protección de datos del
   responsable: las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las
   transferencias y la evaluación de impacto.
@@ -49,6 +49,7 @@ mediante [`withGovernance`](#withgovernance).
 | `dataSubjects` | 30.1.c | vacía | Claves de las categorías de interesados, preferiblemente constantes de `DataSubjects`. |
 | `dataCategories` | 30.1.c | vacía | Claves de categorías de datos personales tratadas además de las de `entities`, preferiblemente constantes de `Categories`. |
 | `entities` | 30.1.c | vacía | Clases del modelo clasificadas; la actividad trata las categorías de sus campos personales. |
+| `objects` | 30.1.c | vacía | Claves de objetos de un [inventario de datos](../classify/inventory.md); la actividad trata las categorías de sus campos personales. El [`ProcessingChecker`](checker.md#métodos) debe crearse con ese inventario. |
 | `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | Las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las transferencias y la evaluación de impacto; consulta [Governance](#governance). `null` significa `Governance.NONE`. |
 
 Los componentes de la gobernanza se leen a través de ella: `activity.governance().legalBasis()`,
@@ -64,7 +65,7 @@ Los componentes de la gobernanza se leen a través de ella: `activity.governance
   blanco. A un nombre válido se le **quitan** los espacios iniciales y finales.
 - Las listas se copian con `List.copyOf`: el resultado es inmutable, y una lista `null` o un elemento `null` lanzan
   `NullPointerException`. Los elementos se guardan tal cual; el comprobador notifica una clave en blanco dentro de una
-  lista como clave desconocida.
+  lista como clave desconocida. La excepción es `objects`: una lista `null` es una lista vacía.
 - Una `description` en blanco pasa a ser `null` y a cualquier otro texto se le quitan los espacios iniciales y
   finales.
 - Una `governance` `null` pasa a ser [`Governance.NONE`](#governance).
@@ -96,6 +97,7 @@ actividad original no cambia. `NullPointerException` si `governance` es `null`; 
 | `Builder dataSubjects(String... keys)` | **Añade** claves de sujetos de datos. |
 | `Builder dataCategories(String... keys)` | **Añade** claves de categorías de datos, para datos personales que no declara ninguna entidad de la lista. |
 | `Builder entities(Class<?>... types)` | **Añade** clases del modelo clasificadas. |
+| `Builder objects(String... keys)` | **Añade** claves de objetos de un [inventario de datos](../classify/inventory.md): la actividad trata las categorías de sus campos personales. El comprobador debe crearse con ese inventario. |
 | `Builder governance(Governance governance)` | **Sustituye** la gobernanza declarada hasta ahora por `governance`; los métodos de gobernanza que la siguen parten de ella. `NullPointerException` si `governance` es `null`. |
 | `Builder legalBasis(LegalBasis basis)` | Fija la base jurídica; `null` la borra. |
 | `Builder legitimateInterest(String interest)` | Fija la base en `LEGITIMATE_INTERESTS` **y** el interés perseguido. |

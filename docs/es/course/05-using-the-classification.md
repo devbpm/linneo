@@ -240,6 +240,12 @@ Los nombres de campo no son nombres de columna: tradúcelos con las reglas de no
 inventario debe hablar de tablas y columnas. Los campos de un `@Composite` embebido aparecen con su ruta
 (`home.city`).
 
+Este bucle imprime un inventario; no lo conserva. Una aplicación que guarda su inventario, en una tabla de campos o en
+un catálogo de datos, y debe mantenerlo al día con el código, puede obtener la misma información como datos con
+`Classifier.inventory(types, objectKey)`: por cada clase, bajo una clave que tú eliges, cada campo con lo que el código
+declara para él, que se puede escribir como texto, calcular su huella y comparar con una copia guardada. Consulta
+[Referencia — Inventario de datos](../reference/classify/inventory.md).
+
 ## Un informe tipo RAT
 
 El art. 30 RGPD obliga a los responsables a llevar un registro de las actividades de tratamiento: para cada
@@ -394,6 +400,7 @@ código de logging con un campo que **no** está en el mapa?
 
 - [Referencia — Resultados](../reference/classify/results.md): `ClassClassification` y `FieldClassification`
 - [Referencia — Clasificador](../reference/classify/classifier.md)
+- [Referencia — Inventario de datos](../reference/classify/inventory.md): la clasificación como datos, para guardar y comparar
 - [Referencia — Términos](../reference/terms.md): usos de datos e interesados
 
 ---

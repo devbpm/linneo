@@ -52,7 +52,7 @@ dimensiones de la taxonomía que presentó el módulo 2:
 |---|---|---|
 | usos de datos | `purposes` | b — fines del tratamiento |
 | sujetos de datos | `dataSubjects` | c — categorías de interesados |
-| categorías de datos | `dataCategories` y `entities` | c — categorías de datos personales |
+| categorías de datos | `dataCategories`, `entities` y `objects` | c — categorías de datos personales |
 
 y añade lo que la taxonomía no puede saber: la base jurídica (art. 6.1), la condición para las categorías especiales
 (art. 9.2), la base para los datos penales (art. 10), la ley en la que descansan esas bases, la conservación, los
@@ -210,6 +210,11 @@ módulo 4 y toma las categorías de sus **campos personales**, con los niveles d
 - una entidad con errores de clasificación hace fallar la actividad (`ENTITY_NOT_CLASSIFIED`);
 - los campos agregados y anonimizados, como los de `CourseStatistics`, no son datos personales y se descartan;
 - un campo con la confidencialidad elevada (`Student.counsellingNotes`) eleva la protección de la actividad.
+
+Una aplicación que guarda la clasificación en su base de datos, y comprueba sus actividades sin las clases del modelo,
+puede indicar con `objects(...)` las claves de objetos de un
+[inventario de datos](../reference/classify/inventory.md) y crear el comprobador con ese inventario; el comprobador lee
+entonces de él los mismos campos personales.
 
 La otra cara es que una entidad aporta **todos** sus campos personales. Si la matrícula incluyera `Student.class`:
 
@@ -383,7 +388,7 @@ La [tabla de códigos](../reference/processing/checker.md#códigos) enumera cada
 
 Hasta ahora las actividades lo declaraban todo en el código. En muchas organizaciones no es así como se reparte el
 conocimiento. Los desarrolladores conocen con certeza el **alcance** de una actividad: sus finalidades, sus interesados
-y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`). La **gobernanza** la decide
+y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). La **gobernanza** la decide
 y la mantiene al día el delegado de protección de datos: las bases jurídicas, la referencia legal, el plazo de
 conservación, los destinatarios, las transferencias y la evaluación de impacto. Es un record propio, `Governance`, y
 una actividad lo guarda en su `governance()`.

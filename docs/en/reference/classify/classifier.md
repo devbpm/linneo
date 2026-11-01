@@ -28,6 +28,7 @@ cycles, and keeps nothing between calls.
 | `ClassClassification classify(Class<?> type)` | [`ClassClassification`](results.md#classclassification) | Classifies one class: its field classifications and every violation found. Never throws for classification problems. `NullPointerException` if `type` is `null`. |
 | `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | immutable list | One classification per class, in the given order. A class used by several of them, as a composite or as the source of derived fields, is read once. |
 | `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | immutable list | Classifies the classes and throws `ClassificationException` carrying **every error of every class** if there is any (its message lists the first 50). Warnings do not fail. Returns the classifications when there is no error. |
+| `DataInventory inventory(Collection<? extends Class<?>> types, Function<? super Class<?>, String> objectKey)` | [`DataInventory`](inventory.md) | The classification of the classes as data, under the object keys `objectKey` gives; see [Inventory](#inventory). Verifies the classes first. |
 
 ```java
 @Test
@@ -110,12 +111,35 @@ A deprecated key is the only **warning** (`DEPRECATED_CATEGORY`): the field is c
 replacement. A field with an error is usually missing from `fields()`; see [Violations](violations.md) for the exact
 effect of each code.
 
+## Inventory
+
+`inventory(types, objectKey)` returns the classes as a [`DataInventory`](inventory.md): for each class, an object under
+the key `objectKey` gives for it, with every field as the code declares it (the key as written, the levels the field
+raises itself, the identifiability, the reason) and the exempted fields with their reasons. It is the form of the
+classification an application stores and compares, instead of the classes.
+
+```java
+Map<Class<?>, String> objectKeys = Map.of(Student.class, "student", Invoice.class, "invoice");
+DataInventory inventory = new Classifier(Taxonomy.load()).inventory(List.of(Student.class, Invoice.class), objectKeys::get);
+```
+
+- It **verifies** the classes as `verify` does: if any has an error it throws `ClassificationException` with every
+  error, and warnings do not fail.
+- A class listed twice counts once.
+- `NullPointerException` if `objectKey` or a class is `null`. `IllegalArgumentException` if `objectKey` gives a `null`
+  or blank key for a class, or the same key for two classes.
+- The object key must be **stable**, since stored records and catalogs are matched by it: a key that changes when a
+  class is renamed or moved turns every field of the class into a removed field and a new one. Take it from what
+  already identifies the class in the application, such as its business object or table name, not from the class name.
+
+See [Data inventory](inventory.md) for the inventory, its text form, its fingerprints and how to compare two of them.
+
 ## ClassificationException
 
 `io.github.devbpm.linneo.classify.ClassificationException` — `public class ClassificationException extends
 RuntimeException`, `@since 0.1.0`
 
-Thrown by `Classifier.verify` when a model is not fully and correctly classified.
+Thrown by `Classifier.verify` and `Classifier.inventory` when a model is not fully and correctly classified.
 
 | Member | Description |
 |---|---|
@@ -142,5 +166,6 @@ order:
 
 The `errors` list is held in a `transient` field: it is not preserved if the exception is serialized.
 
-See also: [Results](results.md) · [Violations](violations.md) · [Annotations](../annotations/README.md) ·
+See also: [Results](results.md) · [Violations](violations.md) · [Data inventory](inventory.md) ·
+[Annotations](../annotations/README.md) ·
 course: [Verifying in tests](../../course/04-verifying-in-tests.md)

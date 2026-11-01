@@ -96,6 +96,14 @@ All notable changes to this project are documented in this file. The format foll
   removed, protection with its direction, deprecation, replacement, name, description, attributes, origin, versions),
   grades them with `requiredBump()` and refuses incompatible ones with `requireCompatible()`. `ReleasedTaxonomyTest`
   checks Linneo's own taxonomy against the copy kept for the last release.
+- `DataInventory`: the classification of a model as data, one object per class under a key the application chooses
+  (`Classifier.inventory(types, objectKey)`), with what each field declares (`InventoryField`: key, basis, raised
+  levels, identifiability, reason; exempted fields included), per-object and global fingerprints and a deterministic
+  text form. `InventoryDiff.between(stored, declared, taxonomy)` lists the `FieldChange`s to apply to a stored copy and
+  how each moves protection; `weakening()` lists the ones to review. `DataInventory.affectedBy(TaxonomyDiff)` gives
+  the fields each changed category reaches. Processing activities can name inventory objects
+  (`ProcessingActivity.objects`) and be checked with `ProcessingChecker(taxonomy, jurisdiction, inventory)` without
+  the model classes. `tools/bench/InventoryBench.java` measures all of it on a model of 800 entities.
 - `ClassificationException` and `ProcessingException` list the first 50 errors and count all of them by code, so
   the message of a large model stays readable.
 - `AtlasCatalog`: the taxonomy as Apache Atlas classification types (category tree as super types, protection

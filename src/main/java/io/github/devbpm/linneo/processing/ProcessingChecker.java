@@ -25,6 +25,8 @@ import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.Term;
 import io.github.devbpm.linneo.classify.ClassClassification;
 import io.github.devbpm.linneo.classify.Classifier;
+import io.github.devbpm.linneo.classify.DataInventory;
+import io.github.devbpm.linneo.classify.InventoryField;
 import io.github.devbpm.linneo.classify.FieldClassification;
 import io.github.devbpm.linneo.processing.ProcessingViolation.Code;
 import io.github.devbpm.linneo.processing.ProcessingViolation.Element;
@@ -90,6 +92,7 @@ public final class ProcessingChecker {
     private final Taxonomy taxonomy;
     private final Classifier classifier;
     private final Jurisdiction jurisdiction;
+    private final DataInventory inventory;
 
     /**
      * Creates a checker that applies the GDPR alone ({@link Jurisdiction#EU}).
@@ -107,9 +110,23 @@ public final class ProcessingChecker {
      * @param jurisdiction the national law to apply on top of the GDPR
      */
     public ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction) {
+        this(taxonomy, jurisdiction, null);
+    }
+
+    /**
+     * Creates a checker that also resolves the {@linkplain ProcessingActivity#objects() objects} of the activities
+     * in a data inventory, so that activities can be checked without the model classes, for example from records an
+     * application keeps in its database.
+     *
+     * @param taxonomy the taxonomy the keys and entities must belong to
+     * @param jurisdiction the national law to apply on top of the GDPR
+     * @param inventory the data inventory the object keys refer to, or {@code null} for none
+     */
+    public ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction, DataInventory inventory) {
         this.taxonomy = Objects.requireNonNull(taxonomy, "taxonomy");
         this.jurisdiction = Objects.requireNonNull(jurisdiction, "jurisdiction");
         this.classifier = new Classifier(taxonomy);
+        this.inventory = inventory;
     }
 
     /**
@@ -272,6 +289,35 @@ public final class ProcessingChecker {
                 }
                 for (FieldClassification field : classification.personalFields()) {
                     add(field.category(), field.protection());
+                }
+            }
+            for (String object : activity.objects()) {
+                if (inventory == null || !inventory.objects().contains(object)) {
+                    error(Element.PERSONAL_DATA, Code.UNKNOWN_KEY, "Unknown object '" + object + "'"
+                            + (inventory == null ? ": the checker was given no data inventory" : ""));
+                    dataUnresolved = true;
+                    continue;
+                }
+                for (InventoryField field : inventory.fields(object)) {
+                    if (field.isExempt()) {
+                        continue;
+                    }
+                    Optional<DataCategory> declared = taxonomy.category(field.key());
+                    if (declared.isEmpty()) {
+                        error(Element.PERSONAL_DATA, Code.UNKNOWN_KEY, "The field " + object + "." + field.path()
+                                + " has the unknown data category '" + field.key() + "'");
+                        dataUnresolved = true;
+                        continue;
+                    }
+                    if (declared.get().info().isDeprecated()) {
+                        DataCategory current = field.category(taxonomy);
+                        warning(Element.PERSONAL_DATA, Code.DEPRECATED_KEY, "The field " + object + "."
+                                + field.path() + " has the deprecated data category '" + field.key() + "'"
+                                + (current.key().equals(field.key()) ? "" : "; checked as '" + current.key() + "'"));
+                    }
+                    if (field.isPersonal(taxonomy)) {
+                        add(field.category(taxonomy), field.protection(taxonomy));
+                    }
                 }
             }
             if (categories.isEmpty() && !dataUnresolved) {

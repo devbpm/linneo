@@ -43,11 +43,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Reads the classification annotations of classes and checks them against a {@link Taxonomy}.
@@ -144,6 +146,54 @@ public final class Classifier {
             throw new ClassificationException(errors);
         }
         return classifications;
+    }
+
+    /**
+     * The inventory of a model: every field of the classes, with what the code declares for it, under object keys the
+     * application chooses. The keys must be stable, since stored records and catalogs are matched by them: a key
+     * that changes when a class is renamed or moved turns every field of the class into a removed field and a new
+     * one. Take them from what already identifies the class in the application, such as its business object or
+     * table name, not from the class name.
+     *
+     * @param types the classes, typically every entity; a class listed twice counts once
+     * @param objectKey the key of the object each class holds
+     * @return the inventory
+     * @throws ClassificationException if a class has an error
+     * @throws IllegalArgumentException if a key is null or blank, or two classes have the same key
+     */
+    public DataInventory inventory(Collection<? extends Class<?>> types, Function<? super Class<?>, String> objectKey) {
+        Objects.requireNonNull(objectKey, "objectKey");
+        Run run = new Run();
+        List<Unit> units = new LinkedHashSet<>(types).stream()
+                .map(type -> run.unit(unproxied(Objects.requireNonNull(type, "type")))).distinct().toList();
+        List<Violation> errors = units.stream().flatMap(unit -> unit.classification().errors().stream()).toList();
+        if (!errors.isEmpty()) {
+            throw new ClassificationException(errors);
+        }
+        DataInventory.Builder inventory = DataInventory.builder();
+        Map<String, Class<?>> keys = new HashMap<>();
+        for (Unit unit : units) {
+            Class<?> type = unit.classification().type();
+            String key = objectKey.apply(type);
+            if (key == null || key.isBlank()) {
+                throw new IllegalArgumentException("No object key for " + type.getName());
+            }
+            Class<?> other = keys.putIfAbsent(key, type);
+            if (other != null) {
+                throw new IllegalArgumentException(other.getName() + " and " + type.getName()
+                        + " have the same object key '" + key + "'");
+            }
+            inventory.object(key);
+            for (FieldClassification field : unit.classification().fields()) {
+                Declared declared = unit.declared().get(field.path());
+                inventory.field(new InventoryField(key, field.path(), declared.key(), field.basis(),
+                        declared.confidentiality(), declared.integrity(), field.identifiability(), field.reason()));
+            }
+            for (Exemption exemption : unit.classification().exempted()) {
+                inventory.exempt(key, exemption.path(), exemption.reason());
+            }
+        }
+        return inventory.build();
     }
 
     /**

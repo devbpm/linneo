@@ -47,13 +47,17 @@ tres:
 |---|---|---|
 | **Usos de datos** (`DataUses`) | `purposes`: para qué se tratan los datos | fines del tratamiento (art. 30.1.b) |
 | **Sujetos de datos** (`DataSubjects`) | `dataSubjects`: de quién son los datos | categorías de interesados (art. 30.1.c) |
-| **Categorías de datos** (`Categories`) | `dataCategories` (claves) y `entities` (clases del modelo clasificadas) | categorías de datos personales (art. 30.1.c) |
+| **Categorías de datos** (`Categories`) | `dataCategories` (claves), `entities` (clases del modelo clasificadas) y `objects` (objetos de un [inventario de datos](../classify/inventory.md)) | categorías de datos personales (art. 30.1.c) |
 
-Los datos personales de una actividad pueden indicarse como claves de categoría, como clases del modelo o de ambas
-formas. Para una clase, el comprobador ejecuta el [`Classifier`](../classify/classifier.md) y toma las categorías de
+Los datos personales de una actividad pueden indicarse como claves de categoría, como clases del modelo, como objetos
+de un inventario de datos o de cualquier combinación. Para una clase, el comprobador ejecuta el
+[`Classifier`](../classify/classifier.md) y toma las categorías de
 sus campos personales, con los niveles declarados en cada campo, de modo que el registro sigue al modelo: si se añade
 un campo personal a una entidad, todas las actividades que la incluyen pasan a tratarlo. Una entidad que no esté
-clasificada por completo y correctamente es un error de la actividad. La naturaleza jurídica de las categorías
+clasificada por completo y correctamente es un error de la actividad. Para un objeto, el comprobador lee los campos del
+inventario con el que se creó, que una aplicación puede construir a partir de sus registros guardados sin las clases
+del modelo, y toma las mismas categorías y niveles; un objeto que el inventario no contiene es un error de la
+actividad. La naturaleza jurídica de las categorías
 (ordinaria, categoría especial, datos penales; consulta [Niveles de protección](../protection-levels.md)) decide qué
 bases necesita la actividad.
 
@@ -80,7 +84,7 @@ la gravedad:
 - **Error**: la actividad, tal como está declarada, sería ilícita o no se puede comprobar. Datos personales sin base
   jurídica, categorías especiales sin una condición del artículo 9.2, datos penales sin una base del artículo 10, una
   clave desconocida, una actividad sin finalidad, sin interesados o sin datos personales, una entidad con errores de
-  clasificación, dos actividades con la misma clave. Con `Jurisdiction.SPAIN`, también el consentimiento explícito como única
+  clasificación, un objeto que el inventario de datos no contiene, dos actividades con la misma clave. Con `Jurisdiction.SPAIN`, también el consentimiento explícito como única
   condición para las categorías especiales del artículo 9.1 de la LOPDGDD. `verify` lanza una `ProcessingException` y no se genera ningún
   registro.
 - **Aviso**: el registro está incompleto o algo debe revisarse. Una clave obsoleta, una categoría no personal, una

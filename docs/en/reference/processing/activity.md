@@ -18,7 +18,7 @@ doc-sources:
 ```java
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 Governance governance)
+                                 List<String> objects, Governance governance)
 ```
 
 A processing activity of the controller, as declared in its record of processing activities (GDPR article 30.1).
@@ -29,7 +29,7 @@ entities or check the bases. That is the job of the [`ProcessingChecker`](checke
 An activity has two parts with different owners:
 
 - its **scope** is what the code of the application knows for certain: the purposes it serves, the data subjects and
-  the personal data it processes (`purposes`, `dataSubjects`, `dataCategories`, `entities`);
+  the personal data it processes (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`);
 - its [**governance**](#governance) is what the controller's data protection function decides and keeps up to date:
   the lawful bases, the legal reference, the retention, the recipients, the transfers and the impact assessment.
 
@@ -48,6 +48,7 @@ them keeps the governance in its own storage and combines it with the scope decl
 | `dataSubjects` | 30.1.c | empty | Keys of the categories of data subjects, preferably `DataSubjects` constants. |
 | `dataCategories` | 30.1.c | empty | Keys of personal data categories processed beyond those of `entities`, preferably `Categories` constants. |
 | `entities` | 30.1.c | empty | Classified model classes; the categories of their personal fields are processed by the activity. |
+| `objects` | 30.1.c | empty | Keys of objects of a [data inventory](../classify/inventory.md); the categories of their personal fields are processed by the activity. The [`ProcessingChecker`](checker.md#methods) must be created with that inventory. |
 | `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | The lawful bases, legal reference, retention, recipients, transfers and impact assessment; see [Governance](#governance). `null` means `Governance.NONE`. |
 
 The governance components are read through it: `activity.governance().legalBasis()`,
@@ -63,7 +64,7 @@ The governance components are read through it: `activity.governance().legalBasis
   A valid name is **stripped** of leading and trailing white space.
 - The lists are copied with `List.copyOf`: the result is immutable, and a `null` list or a `null` element throws
   `NullPointerException`. The elements are kept as given; a blank key in a list is reported by the checker as an
-  unknown key.
+  unknown key. The exception is `objects`: a `null` list is an empty one.
 - A blank `description` becomes `null` and any other text is stripped of leading and trailing white space.
 - A `null` `governance` becomes [`Governance.NONE`](#governance).
 
@@ -94,6 +95,7 @@ activity is not changed. `NullPointerException` if `governance` is `null`; to cl
 | `Builder dataSubjects(String... keys)` | **Adds** data subject keys. |
 | `Builder dataCategories(String... keys)` | **Adds** data category keys, for personal data that no listed entity declares. |
 | `Builder entities(Class<?>... types)` | **Adds** classified model classes. |
+| `Builder objects(String... keys)` | **Adds** keys of objects of a [data inventory](../classify/inventory.md): the categories of their personal fields are processed by the activity. The checker must be created with that inventory. |
 | `Builder governance(Governance governance)` | **Replaces** the governance declared so far with `governance`; the governance methods below that follow it start from it. `NullPointerException` if `governance` is `null`. |
 | `Builder legalBasis(LegalBasis basis)` | Sets the lawful basis; `null` clears it. |
 | `Builder legitimateInterest(String interest)` | Sets the basis to `LEGITIMATE_INTERESTS` **and** the interest pursued. |

@@ -28,6 +28,7 @@ activity unlawful as declared (errors) and reports gaps in the record as warning
 |---|---|---|
 | `ProcessingChecker(Taxonomy taxonomy)` | — | Creates a checker; keys and entities must belong to `taxonomy`. It creates its own [`Classifier`](../classify/classifier.md) for that taxonomy. `NullPointerException` if `taxonomy` is `null`. It applies the GDPR alone, as `Jurisdiction.EU`. |
 | `ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction)` | — | The same, applying also the national rules of `jurisdiction` (see [Jurisdiction](#jurisdiction)). `NullPointerException` if either argument is `null`. |
+| `ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction, DataInventory inventory)` | — | The same, and it also resolves the [`objects`](activity.md#components) of the activities in `inventory`, a [data inventory](../classify/inventory.md), so that activities can be checked without the model classes, for example from records an application keeps in its database. `inventory` may be `null` for none; an activity that lists objects then gets an error. `NullPointerException` if `taxonomy` or `jurisdiction` is `null`. |
 | `Jurisdiction jurisdiction()` | [`Jurisdiction`](#jurisdiction) | The national law this checker applies on top of the GDPR. |
 | `CheckedActivity check(ProcessingActivity activity)` | [`CheckedActivity`](#checkedactivity) | Checks one activity: its terms resolved, its personal data, the protection that data requires and every violation found. Never throws for a problem in the activity. `NullPointerException` if `activity` is `null`. |
 | `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | list | One result per activity, in the given order. An activity whose key was already used by an earlier one also gets the error `DUPLICATE_ACTIVITY`; the first one does not. Each entity is classified once for all the activities, however many list it. |
@@ -54,8 +55,8 @@ For each activity, in this order (the violations of a `CheckedActivity` follow i
    warning. Duplicates after replacement are kept once, in declaration order. An empty list is the error
    `MISSING_PURPOSE` or `MISSING_DATA_SUBJECTS`.
 2. **Personal data** (see [below](#how-the-personal-data-is-gathered)). If there is none, and nothing was left
-   unresolved by an unknown category key or an entity with classification errors, the error is
-   `MISSING_PERSONAL_DATA`.
+   unresolved by an unknown category key, an entity with classification errors, or an unknown object or object field,
+   the error is `MISSING_PERSONAL_DATA`.
 3. **Lawfulness**, only when the activity processes personal data. It checks the activity's
    [governance](activity.md#governance), and every problem it finds is reported on the
    [element](#element) of the governance it is about:
@@ -85,7 +86,7 @@ The checker does not inspect `description`, `recipients` or `transfers`.
 
 ## How the personal data is gathered
 
-The personal data of an activity is the union of two sources:
+The personal data of an activity is the union of three sources:
 
 - **Category keys** (`dataCategories`). An unknown key is the error `UNKNOWN_KEY`. A deprecated key is always the
   warning `DEPRECATED_KEY`; with a replacement it is resolved to it, without one it is used as is. A category that is not personal data (legal nature `NONE`) is the warning
@@ -99,6 +100,16 @@ The personal data of an activity is the union of two sources:
   Each field contributes its **effective** levels, so a confidentiality or integrity raised on the field counts.
   `checkAll` and `verify` classify each entity once for all the activities that list it; `check` classifies the
   entities of the one activity it is given.
+- **Objects** (`objects`), resolved in the [data inventory](../classify/inventory.md) the checker was created with. An
+  object the inventory does not hold, or any object when the checker has no inventory, is the error `UNKNOWN_KEY`. A
+  field of the object whose key is not in the taxonomy is also `UNKNOWN_KEY`, whether or not it would be personal;
+  exempted fields are skipped. A field whose key is deprecated is the warning `DEPRECATED_KEY`, because the inventory
+  holds the keys as written (and so, unlike the classifier's own warnings for an entity, it is reported here), whether or
+  not the field is personal; the field is checked with the replacement. Each other field contributes as a field of an
+  entity does: its category, resolved to the replacement of a deprecated key, and its **effective** protection, with
+  the levels raised on the field, but only if it is personal: a personal category not declared `ANONYMIZED` or
+  `AGGREGATED`. With the inventory that `Classifier.inventory` builds for a class, an activity
+  that lists its object gets the same categories and protection as one that lists the class.
 
 The categories are kept once each, ordered by key, in `CheckedActivity.dataCategories()`. The protection the
 activity requires, `CheckedActivity.protection()`, is the [join](../protection-levels.md#protection) of all those
@@ -127,7 +138,7 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
 | `activity` | The activity as declared. |
 | `purposes` | The data uses, unknown keys left out and deprecated keys replaced. |
 | `dataSubjects` | The data subjects, likewise. |
-| `dataCategories` | The personal data categories processed, from the declared keys and the personal fields of the entities, in key order. |
+| `dataCategories` | The personal data categories processed, from the declared keys and the personal fields of the entities and objects, in key order. |
 | `protection` | The least [`Protection`](../protection-levels.md#protection) that covers all that data, field-level raises included; `Protection.LOWEST` when there is none. Its `confidentiality()`, `integrity()` and `secret()` are what the record shows as the required protection. |
 | `violations` | Every problem found, errors and warnings. |
 
@@ -191,17 +202,17 @@ parts depends on the part.
 
 | Code | Severity | Element | Raised when | Message |
 |---|---|---|---|---|
-| `UNKNOWN_KEY` | error | `PURPOSES`, `DATA_SUBJECTS` or `PERSONAL_DATA`, by the kind of key | A purpose, data subject or data category key is not in the taxonomy. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` |
+| `UNKNOWN_KEY` | error | `PURPOSES`, `DATA_SUBJECTS` or `PERSONAL_DATA`, by the kind of key | A purpose, data subject or data category key is not in the taxonomy; an object of `objects` is not in the data inventory (or the checker has none); a field of such an object declares a data category key that is not in the taxonomy. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` / `Unknown object '<o>'` (followed by `: the checker was given no data inventory` when it has none) / `The field <o>.<path> has the unknown data category '<k>'` |
 | `MISSING_PURPOSE` | error | `PURPOSES` | `purposes` is empty. | `No data use declared` |
 | `MISSING_DATA_SUBJECTS` | error | `DATA_SUBJECTS` | `dataSubjects` is empty. | `No data subject declared` |
-| `MISSING_PERSONAL_DATA` | error | `PERSONAL_DATA` | No personal category and no entity with personal fields, and no unknown category key or entity error that could explain it. | `The activity processes no personal data` |
+| `MISSING_PERSONAL_DATA` | error | `PERSONAL_DATA` | No personal category and no entity or object with personal fields, and no unknown category key, entity error or unknown object that could explain it. | `The activity processes no personal data` |
 | `ENTITY_NOT_CLASSIFIED` | error | `PERSONAL_DATA` | A listed entity has classification errors. | `<binary class name> has <n> classification error(s)` |
 | `MISSING_LEGAL_BASIS` | error | `LEGAL_BASIS` | Personal data and no `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
 | `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Special category data and no `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
 | `MISSING_CRIMINAL_DATA_BASIS` | error | `CRIMINAL_DATA_BASIS` | Criminal offence data and no `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
 | `CONSENT_NOT_SUFFICIENT` | error | `SPECIAL_CATEGORY_CONDITION` | `Jurisdiction.SPAIN` only: the activity processes `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` or `race_ethnicity` (or a descendant) and its only article 9.2 condition is `EXPLICIT_CONSENT` (LOPDGDD article 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
 | `DUPLICATE_ACTIVITY` | error | `KEY` | `checkAll`/`verify` only: an earlier activity has the same key. | `Another activity of the record has the key '<k>'` |
-| `DEPRECATED_KEY` | **warning** | `PURPOSES`, `DATA_SUBJECTS` or `PERSONAL_DATA`, by the kind of key | A purpose, data subject or data category key is deprecated; the activity is checked with its replacement. | `The data use '<k>' is deprecated; checked as '<r>'` (likewise `data subject`, `data category`; without the `; checked as` part when the key has no replacement) |
+| `DEPRECATED_KEY` | **warning** | `PURPOSES`, `DATA_SUBJECTS` or `PERSONAL_DATA`, by the kind of key | A purpose, data subject or data category key is deprecated, or a field of an object of `objects` declares a deprecated data category key; the activity is checked with its replacement. | `The data use '<k>' is deprecated; checked as '<r>'` (likewise `data subject`, `data category`; without the `; checked as` part when the key has no replacement) / `The field <o>.<path> has the deprecated data category '<k>'; checked as '<r>'` (same omission) |
 | `NOT_PERSONAL_DATA` | **warning** | `PERSONAL_DATA` | A declared category is not personal data; it is left out of the record. | `The data category '<k>' is not personal data and is left out of the record` |
 | `UNNEEDED_CONDITION` | **warning** | `SPECIAL_CATEGORY_CONDITION` for an article 9.2 condition, `CRIMINAL_DATA_BASIS` for an article 10 basis, `LEGITIMATE_INTEREST` for a legitimate interest | An article 9.2 condition or article 10 basis is declared for data the activity does not process, or a legitimate interest is stated with another lawful basis. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
 | `MISSING_LEGAL_REFERENCE` | **warning** | `LEGAL_REFERENCE` | A basis that rests on law applies and `legalReference` is not set. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; with `Jurisdiction.SPAIN` and a condition of `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` or `PUBLIC_HEALTH`, it ends with ` (LOPDGDD article 9.2: a law with the rank of statute)` |
@@ -242,7 +253,7 @@ where it is edited.
 | `KEY` | `false` | The key that identifies the activity in the record. |
 | `PURPOSES` | `false` | The purposes (`ProcessingActivity.purposes()`). |
 | `DATA_SUBJECTS` | `false` | The data subjects (`ProcessingActivity.dataSubjects()`). |
-| `PERSONAL_DATA` | `false` | The personal data: data categories and entities. |
+| `PERSONAL_DATA` | `false` | The personal data: data categories, entities and objects. |
 | `LEGAL_BASIS` | `true` | The lawful basis (`Governance.legalBasis()`). |
 | `LEGITIMATE_INTEREST` | `true` | The legitimate interest pursued (`Governance.legitimateInterest()`). |
 | `SPECIAL_CATEGORY_CONDITION` | `true` | The article 9.2 condition (`Governance.specialCategoryCondition()`). |

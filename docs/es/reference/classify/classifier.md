@@ -29,6 +29,7 @@ llamadas.
 | `ClassClassification classify(Class<?> type)` | [`ClassClassification`](results.md#classclassification) | Clasifica una clase: las clasificaciones de sus campos y todas las violaciones encontradas. No lanza excepciones por problemas de clasificación. `NullPointerException` si `type` es `null`. |
 | `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | lista inmutable | Una clasificación por clase, en el orden recibido. Una clase que usan varias de ellas, como compuesto o como fuente de campos derivados, se lee una sola vez. |
 | `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | lista inmutable | Clasifica las clases y, si hay algún error, lanza `ClassificationException` con **todos los errores de todas las clases** (su mensaje lista los 50 primeros). Los avisos no hacen fallar. Si no hay errores, devuelve las clasificaciones. |
+| `DataInventory inventory(Collection<? extends Class<?>> types, Function<? super Class<?>, String> objectKey)` | [`DataInventory`](inventory.md) | La clasificación de las clases como datos, bajo las claves de objeto que da `objectKey`; véase [Inventario](#inventario). Verifica antes las clases. |
 
 ```java
 @Test
@@ -113,12 +114,36 @@ Una clave obsoleta es el único **aviso** (`DEPRECATED_CATEGORY`): el campo se c
 campo con error normalmente no aparece en `fields()`; consulta [Violaciones](violations.md) para ver el efecto exacto
 de cada código.
 
+## Inventario
+
+`inventory(types, objectKey)` devuelve las clases como un [`DataInventory`](inventory.md): por cada clase, un objeto
+bajo la clave que `objectKey` da para ella, con cada campo tal como el código lo declara (la clave tal como está
+escrita, los niveles que el propio campo eleva, la identificabilidad, el motivo) y los campos exentos con sus motivos. Es
+la forma de la clasificación que una aplicación guarda y compara, en lugar de las clases.
+
+```java
+Map<Class<?>, String> objectKeys = Map.of(Student.class, "student", Invoice.class, "invoice");
+DataInventory inventory = new Classifier(Taxonomy.load()).inventory(List.of(Student.class, Invoice.class), objectKeys::get);
+```
+
+- **Verifica** las clases como hace `verify`: si alguna tiene un error lanza `ClassificationException` con todos los
+  errores, y los avisos no hacen fallar.
+- Una clase repetida cuenta una sola vez.
+- `NullPointerException` si `objectKey` o una clase son `null`. `IllegalArgumentException` si `objectKey` da una clave
+  `null` o en blanco para una clase, o la misma clave para dos clases.
+- La clave de objeto debe ser **estable**, ya que los registros y los catálogos guardados se emparejan con ella: una
+  clave que cambia al renombrar o mover una clase convierte cada campo de la clase en un campo eliminado y uno nuevo.
+  Tómala de lo que ya identifica la clase en la aplicación, como su objeto de negocio o el nombre de su tabla, no del
+  nombre de la clase.
+
+Consulta [Inventario de datos](inventory.md) para el inventario, su forma de texto, sus huellas y cómo comparar dos.
+
 ## ClassificationException
 
 `io.github.devbpm.linneo.classify.ClassificationException` — `public class ClassificationException extends
 RuntimeException`, `@since 0.1.0`
 
-La lanza `Classifier.verify` cuando un modelo no está clasificado completa y correctamente.
+La lanzan `Classifier.verify` y `Classifier.inventory` cuando un modelo no está clasificado completa y correctamente.
 
 | Miembro | Descripción |
 |---|---|
@@ -145,5 +170,6 @@ alfabético:
 
 La lista `errors` se guarda en un campo `transient`: no se conserva si la excepción se serializa.
 
-Véase también: [Resultados](results.md) · [Violaciones](violations.md) · [Anotaciones](../annotations/README.md) ·
+Véase también: [Resultados](results.md) · [Violaciones](violations.md) · [Inventario de datos](inventory.md) ·
+[Anotaciones](../annotations/README.md) ·
 curso: [Verificar en los tests](../../course/04-verifying-in-tests.md)

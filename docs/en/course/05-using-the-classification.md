@@ -237,6 +237,12 @@ Reinforced protection (art. 9/10): Attachment
 Field names are not column names: map them with your persistence layer's naming rules if the inventory must speak
 in tables and columns. The fields of an embedded `@Composite` appear with their path (`home.city`).
 
+This loop prints an inventory; it does not keep one. An application that stores its inventory, in a field table or a
+data catalog, and has to keep it in step with the code can get the same information as data from
+`Classifier.inventory(types, objectKey)`: for each class, under a key you choose, every field with what the code
+declares for it, which can be written as text, fingerprinted and compared with a stored copy. See
+[Reference — Data inventory](../reference/classify/inventory.md).
+
 ## A RoPA-style report
 
 GDPR art. 30 asks controllers to keep a record of processing activities: for each activity, its purposes, the
@@ -384,6 +390,7 @@ fields are masked, the rest is clear. What should your logging code do with a fi
 
 - [Reference — Results](../reference/classify/results.md): `ClassClassification` and `FieldClassification`
 - [Reference — Classifier](../reference/classify/classifier.md)
+- [Reference — Data inventory](../reference/classify/inventory.md): the classification as data, to store and compare
 - [Reference — Terms](../reference/terms.md): data uses and data subjects
 
 ---

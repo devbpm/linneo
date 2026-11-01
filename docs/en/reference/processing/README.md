@@ -46,12 +46,16 @@ A `Taxonomy` has three dimensions. The annotations use only the first one; a pro
 |---|---|---|
 | **Data uses** (`DataUses`) | `purposes`: why the data is processed | purposes (art. 30.1.b) |
 | **Data subjects** (`DataSubjects`) | `dataSubjects`: whose data it is | categories of data subjects (art. 30.1.c) |
-| **Data categories** (`Categories`) | `dataCategories` (keys) and `entities` (classified model classes) | categories of personal data (art. 30.1.c) |
+| **Data categories** (`Categories`) | `dataCategories` (keys), `entities` (classified model classes) and `objects` (objects of a [data inventory](../classify/inventory.md)) | categories of personal data (art. 30.1.c) |
 
-The personal data of an activity can be given as category keys, as model classes, or both. For a class, the
+The personal data of an activity can be given as category keys, as model classes, as objects of a data inventory, or
+any combination. For a class, the
 checker runs the [`Classifier`](../classify/classifier.md) and takes the categories of its personal fields, with the
 levels declared on each field, so the record follows the model: add a personal field to an entity and every activity
 that lists the entity processes it. An entity that is not fully and correctly classified is an error of the activity.
+For an object, the checker reads the fields from the inventory it was created with, which an application can build
+from its stored records without the model classes, and takes the same categories and levels; an object the inventory
+does not hold is an error of the activity.
 The legal nature of the categories (ordinary, special category, criminal offence data; see
 [Protection levels](../protection-levels.md)) decides which bases the activity needs.
 
@@ -78,7 +82,7 @@ severity:
 - **Error**: the activity, as declared, would be unlawful or cannot be checked. Personal data without a lawful basis,
   special categories without an article 9.2 condition, criminal offence data without an article 10 basis, an
   unknown key, an activity with no purpose, no data subjects or no personal data, an entity with classification
-  errors, two activities with the same key. With `Jurisdiction.SPAIN`, also explicit consent as the only condition for
+  errors, an object that the data inventory does not hold, two activities with the same key. With `Jurisdiction.SPAIN`, also explicit consent as the only condition for
   the special categories of LOPDGDD article 9.1. `verify` throws a `ProcessingException` and no record is produced.
 - **Warning**: the record is incomplete or should be reviewed. A deprecated key, a non-personal category, a basis
   resting on law without naming the law, legitimate interests without the interest pursued, no retention, a

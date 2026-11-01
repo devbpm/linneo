@@ -64,7 +64,7 @@ module io.github.devbpm.linneo {
 |---|---|---|
 | `io.github.devbpm.linneo` | yes | The taxonomy (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), the differences between two versions of it (`TaxonomyDiff`, `TermChange`), its terms (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), the protection enums and `Protection`, and the key constants (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | yes | The annotations that declare what each field of a model holds: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite`, `@Exempt` |
-| `io.github.devbpm.linneo.classify` | yes | Reading and verifying the annotations of a model: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException` |
+| `io.github.devbpm.linneo.classify` | yes | Reading and verifying the annotations of a model: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException`; and the classification kept as data that an application can store and compare: `DataInventory`, `InventoryField`, `InventoryDiff`, `FieldChange` |
 | `io.github.devbpm.linneo.processing` | yes | Processing activities and the GDPR record of processing activities: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord` |
 | `io.github.devbpm.linneo.catalog.openmetadata` | yes | The taxonomy as OpenMetadata classifications and tags: `OpenMetadataCatalog`, `OpenMetadataMapping`, `OmClassification`, `OmTag`. No network calls |
 | `io.github.devbpm.linneo.catalog.datahub` | yes | The taxonomy as a DataHub business glossary: `DataHubCatalog`, `DataHubMapping`, `DhProposal`. No network calls |
@@ -131,9 +131,11 @@ module com.example.app {
 
 **Classification** (`io.github.devbpm.linneo.classify`)
 
-- [Classifier](classify/classifier.md) — `Classifier`, `ClassificationException`.
+- [Classifier](classify/classifier.md) — `Classifier` (including `inventory`), `ClassificationException`.
 - [Results](classify/results.md) — `ClassClassification` (with `Exemption`), `FieldClassification`.
 - [Violations](classify/violations.md) — `Violation` and every `Code`.
+- [Data inventory](classify/inventory.md) — `DataInventory`, `InventoryField`, `InventoryDiff`, `FieldChange`: the
+  classification as data, its text form and fingerprints, and the comparison of two inventories.
 
 **Processing activities** (`io.github.devbpm.linneo.processing`)
 

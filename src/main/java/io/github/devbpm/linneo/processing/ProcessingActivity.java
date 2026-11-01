@@ -27,7 +27,8 @@ import java.util.regex.Pattern;
  * An activity has two parts with different owners. Its scope is what the code of the application knows for
  * certain: the purposes it serves, the data subjects and the personal data it processes. Purposes, data subjects and
  * data categories are keys of the taxonomy; the personal data can be listed as category keys, as classified model
- * classes ({@link #entities()}), whose personal fields contribute their categories, or both. Its
+ * classes ({@link #entities()}), whose personal fields contribute their categories, as the keys of objects of a
+ * {@linkplain io.github.devbpm.linneo.classify.DataInventory data inventory} ({@link #objects()}), or all of them. Its
  * {@linkplain Governance governance} is what the data protection function decides: the lawful bases, retention,
  * recipients, transfers and impact assessment. Code may give initial values for the governance with the builder;
  * an application that lets its data protection officer edit them combines the stored values with
@@ -44,12 +45,13 @@ import java.util.regex.Pattern;
  * @param dataSubjects keys of the categories of data subjects (article 30.1.c)
  * @param dataCategories keys of the categories of personal data it processes beyond those of {@code entities}
  * @param entities classified model classes whose personal fields it processes
+ * @param objects keys of objects of the data inventory the checker is given, whose personal fields it processes
  * @param governance the lawful bases, retention, recipients, transfers and impact assessment
  * @since 0.1.0
  */
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 Governance governance) {
+                                 List<String> objects, Governance governance) {
 
     private static final Pattern KEY_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*+");
 
@@ -63,6 +65,7 @@ public record ProcessingActivity(String key, String name, String description, Li
      * @param dataSubjects the data subject keys
      * @param dataCategories the data category keys
      * @param entities the model classes
+     * @param objects the object keys
      * @param governance the governance; {@code null} means {@link Governance#NONE}
      */
     public ProcessingActivity {
@@ -81,6 +84,7 @@ public record ProcessingActivity(String key, String name, String description, Li
         dataSubjects = List.copyOf(dataSubjects);
         dataCategories = List.copyOf(dataCategories);
         entities = List.copyOf(entities);
+        objects = objects == null ? List.of() : List.copyOf(objects);
         governance = governance == null ? Governance.NONE : governance;
     }
 
@@ -104,7 +108,7 @@ public record ProcessingActivity(String key, String name, String description, Li
      */
     public ProcessingActivity withGovernance(Governance governance) {
         return new ProcessingActivity(key, name, description, purposes, dataSubjects, dataCategories, entities,
-                Objects.requireNonNull(governance, "governance"));
+                objects, Objects.requireNonNull(governance, "governance"));
     }
 
     /**
@@ -123,6 +127,7 @@ public record ProcessingActivity(String key, String name, String description, Li
         private final List<String> dataSubjects = new ArrayList<>();
         private final List<String> dataCategories = new ArrayList<>();
         private final List<Class<?>> entities = new ArrayList<>();
+        private final List<String> objects = new ArrayList<>();
         private Governance.Builder governance = Governance.builder();
 
         private Builder(String key, String name) {
@@ -183,6 +188,18 @@ public record ProcessingActivity(String key, String name, String description, Li
          */
         public Builder entities(Class<?>... types) {
             entities.addAll(Arrays.asList(types));
+            return this;
+        }
+
+        /**
+         * Adds objects of a data inventory, by key; the categories of their personal fields are processed by the
+         * activity. The {@link ProcessingChecker} must be created with that inventory.
+         *
+         * @param keys object keys
+         * @return this builder
+         */
+        public Builder objects(String... keys) {
+            objects.addAll(Arrays.asList(keys));
             return this;
         }
 
@@ -305,7 +322,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          */
         public ProcessingActivity build() {
             return new ProcessingActivity(key, name, description, purposes, dataSubjects, dataCategories, entities,
-                    governance.build());
+                    objects, governance.build());
         }
     }
 }

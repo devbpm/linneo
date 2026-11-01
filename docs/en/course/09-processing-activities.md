@@ -50,7 +50,7 @@ three dimensions of the taxonomy that module 2 introduced:
 |---|---|---|
 | data uses | `purposes` | b — purposes |
 | data subjects | `dataSubjects` | c — categories of data subjects |
-| data categories | `dataCategories` and `entities` | c — categories of personal data |
+| data categories | `dataCategories`, `entities` and `objects` | c — categories of personal data |
 
 and adds what the taxonomy cannot know: the lawful basis (art. 6.1), the condition for special categories (art.
 9.2), the basis for criminal offence data (art. 10), the law those bases rest on, the retention, the recipients, the
@@ -201,6 +201,10 @@ The personal data of an activity can be listed as category keys (`dataCategories
 - an entity with classification errors makes the activity fail (`ENTITY_NOT_CLASSIFIED`);
 - aggregated and anonymized fields, such as those of `CourseStatistics`, are not personal data and are left out;
 - a field whose confidentiality was raised (`Student.counsellingNotes`) raises the protection of the activity.
+
+An application that keeps the classification in its database, and checks its activities without the model classes, can
+list the keys of objects of a [data inventory](../reference/classify/inventory.md) with `objects(...)` and create the
+checker with that inventory; the checker then reads the same personal fields from it.
 
 The flip side is that an entity brings **all** its personal fields. If enrollment listed `Student.class`:
 
@@ -374,7 +378,7 @@ The [codes table](../reference/processing/checker.md#codes) lists every code wit
 
 So far the activities declared everything in code. In many organisations that is not who knows what. The developers
 know the **scope** of an activity for certain: its purposes, its data subjects and the personal data it processes
-(`purposes`, `dataSubjects`, `dataCategories`, `entities`). The **governance** is decided and kept up to date by the
+(`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). The **governance** is decided and kept up to date by the
 data protection officer: the lawful bases, the legal reference, the retention, the recipients, the transfers and the
 impact assessment. It is a record of its own, `Governance`, and an activity holds it in its `governance()`.
 

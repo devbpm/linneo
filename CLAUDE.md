@@ -58,7 +58,12 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   through its annotations, a `@Composite` type (one entry per part, path `field.part`), a `@DerivedFrom` source or a
   class-level `@DefaultCategory`, and collects `Violation`s. Each call runs a private `Run` that reads every class
   once and detects cycles, so the `Classifier` itself stays immutable; it also records what each field declares
-  (`Classifier.Declared`) for the data inventory. `classify` returns a
+  (`Classifier.Declared`) for the data inventory. `Classifier.inventory` builds a `DataInventory` (objects under keys
+  the application chooses, `InventoryField`s with the declared key and raised levels, never the taxonomy's levels,
+  so a taxonomy change never changes an inventory); `InventoryDiff` compares two inventories under one taxonomy and
+  `DataInventory.affectedBy(TaxonomyDiff)` gives the fields a taxonomy change reaches. Linneo compares and never
+  persists: reading, writing, locking and auditing a stored copy belong to the application.
+  `tools/bench/InventoryBench.java` measures it on 800 entities. `classify` returns a
   `ClassClassification`; `verify` throws `ClassificationException` listing all errors. Design is fail-closed:
   unclassified fields, unknown keys, weakened levels, personal categories used as class defaults and conflicting
   annotations are errors; deprecated keys are warnings resolved to their replacement.

@@ -34,6 +34,18 @@ run one test class, for example:
 
 They were written against OpenMetadata 2.0.6, DataHub v1.7.0.1 and Apache Atlas 2.3.0.
 
+### Performance
+
+`tools/bench/InventoryBench.java` generates a large model (800 entities and 39 000 fields by default), compiles it and
+times the classification, the data inventory, its fingerprint and text, and an inventory comparison. It is not part
+of the build, since timings depend on the machine. Run it after a change to `Classifier`, `DataInventory` or
+`InventoryDiff`:
+
+```bash
+./mvnw -q compile
+java -cp target/classes tools/bench/InventoryBench.java
+```
+
 ## Rules for the taxonomy
 
 - Never change the meaning of an existing key and never reuse a removed one.

@@ -28,6 +28,7 @@ consulta [Errores y avisos](README.md#errores-y-avisos). Las instancias son inmu
 |---|---|---|
 | `ProcessingChecker(Taxonomy taxonomy)` | — | Crea un comprobador; las claves y las entidades deben pertenecer a `taxonomy`. Crea su propio [`Classifier`](../classify/classifier.md) para esa taxonomía. `NullPointerException` si `taxonomy` es `null`. Aplica solo el RGPD, como `Jurisdiction.EU`. |
 | `ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction)` | — | Lo mismo, aplicando además las normas nacionales de `jurisdiction` (véase [Jurisdiction](#jurisdiction)). `NullPointerException` si algún argumento es `null`. |
+| `ProcessingChecker(Taxonomy taxonomy, Jurisdiction jurisdiction, DataInventory inventory)` | — | Lo mismo, y además resuelve los [`objects`](activity.md#componentes) de las actividades en `inventory`, un [inventario de datos](../classify/inventory.md), de modo que se puedan comprobar actividades sin las clases del modelo, por ejemplo a partir de registros que una aplicación guarda en su base de datos. `inventory` puede ser `null` si no hay ninguno; entonces una actividad que incluye objetos recibe un error. `NullPointerException` si `taxonomy` o `jurisdiction` son `null`. |
 | `Jurisdiction jurisdiction()` | [`Jurisdiction`](#jurisdiction) | El derecho nacional que este comprobador aplica además del RGPD. |
 | `CheckedActivity check(ProcessingActivity activity)` | [`CheckedActivity`](#checkedactivity) | Comprueba una actividad: sus términos resueltos, sus datos personales, la protección que requieren y cada infracción encontrada. Nunca lanza excepciones por un problema de la actividad. `NullPointerException` si `activity` es `null`. |
 | `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | lista | Un resultado por actividad, en el orden dado. Una actividad cuya clave ya usó otra anterior recibe además el error `DUPLICATE_ACTIVITY`; la primera no. Cada entidad se clasifica una sola vez para todas las actividades, por muchas que la incluyan. |
@@ -54,8 +55,8 @@ Para cada actividad, en este orden (las infracciones de una `CheckedActivity` lo
    duplicados tras la sustitución se conservan una vez, en el orden de declaración. Una lista vacía es el error
    `MISSING_PURPOSE` o `MISSING_DATA_SUBJECTS`.
 2. **Datos personales** (consulta [más abajo](#cómo-se-reúnen-los-datos-personales)). Si no hay ninguno y nada quedó
-   sin resolver por una clave de categoría desconocida o una entidad con errores de clasificación, el error es
-   `MISSING_PERSONAL_DATA`.
+   sin resolver por una clave de categoría desconocida, una entidad con errores de clasificación, o un objeto o un
+   campo de un objeto desconocidos, el error es `MISSING_PERSONAL_DATA`.
 3. **Licitud**, solo cuando la actividad trata datos personales. Comprueba la
    [gobernanza](activity.md#governance) de la actividad, y cada problema que encuentra se notifica en el
    [elemento](#element) de la gobernanza al que se refiere:
@@ -85,7 +86,7 @@ El comprobador no examina `description`, `recipients` ni `transfers`.
 
 ## Cómo se reúnen los datos personales
 
-Los datos personales de una actividad son la unión de dos fuentes:
+Los datos personales de una actividad son la unión de tres fuentes:
 
 - **Claves de categoría** (`dataCategories`). Una clave desconocida es el error `UNKNOWN_KEY`. Una clave obsoleta es siempre el
   aviso `DEPRECATED_KEY`; con sustituto se resuelve a él, sin sustituto se usa tal cual. Una categoría que no es dato personal (naturaleza jurídica `NONE`) es el aviso `NOT_PERSONAL_DATA` y queda
@@ -99,6 +100,17 @@ Los datos personales de una actividad son la unión de dos fuentes:
   sus niveles **efectivos**, de modo que cuenta una confidencialidad o integridad elevada en el campo.
   `checkAll` y `verify` clasifican cada entidad una sola vez para todas las actividades que la incluyen; `check`
   clasifica las entidades de la única actividad que recibe.
+- **Objetos** (`objects`), que se resuelven en el [inventario de datos](../classify/inventory.md) con el que se creó el
+  comprobador. Un objeto que el inventario no contiene, o cualquier objeto cuando el comprobador no tiene inventario, es
+  el error `UNKNOWN_KEY`. Un campo del objeto cuya clave no está en la taxonomía también es `UNKNOWN_KEY`, sea o no
+  personal; los campos exentos se omiten. Un campo cuya clave está obsoleta es el aviso `DEPRECATED_KEY`, porque el
+  inventario guarda las claves tal como están escritas (y por eso, a diferencia de los avisos del propio clasificador
+  en una entidad, se notifica aquí), sea o no personal el campo; el campo se comprueba con la sustituta. Cada uno de los
+  demás campos aporta como el campo de una entidad: su categoría, resuelta a la sustituta de una clave obsoleta, y su
+  protección **efectiva**, con los niveles elevados en el campo, pero solo si es personal: una categoría personal no
+  declarada `ANONYMIZED` ni `AGGREGATED`. Con el inventario que `Classifier.inventory` construye
+  para una clase, una actividad que incluye su objeto obtiene las mismas categorías y la misma protección que una que
+  incluye la clase.
 
 Las categorías se guardan una sola vez cada una, ordenadas por clave, en `CheckedActivity.dataCategories()`. La
 protección que requiere la actividad, `CheckedActivity.protection()`, es la
@@ -127,7 +139,7 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
 | `activity` | La actividad tal como se declaró. |
 | `purposes` | Los usos de datos, sin las claves desconocidas y con las obsoletas sustituidas. |
 | `dataSubjects` | Los sujetos de datos, del mismo modo. |
-| `dataCategories` | Las categorías de datos personales tratadas, de las claves declaradas y de los campos personales de las entidades, en orden de clave. |
+| `dataCategories` | Las categorías de datos personales tratadas, de las claves declaradas y de los campos personales de las entidades y los objetos, en orden de clave. |
 | `protection` | La menor [`Protection`](../protection-levels.md#protection) que cubre todos esos datos, incluidas las elevaciones en los campos; `Protection.LOWEST` si no hay ninguno. Su `confidentiality()`, `integrity()` y `secret()` son lo que el registro muestra como protección requerida. |
 | `violations` | Todos los problemas encontrados, errores y avisos. |
 
@@ -191,17 +203,17 @@ aplica a varias partes depende de la parte. Los mensajes están en inglés.
 
 | Código | Gravedad | Elemento | Cuándo se produce | Mensaje |
 |---|---|---|---|---|
-| `UNKNOWN_KEY` | error | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría de datos no está en la taxonomía. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` |
+| `UNKNOWN_KEY` | error | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría de datos no está en la taxonomía; un objeto de `objects` no está en el inventario de datos (o el comprobador no tiene ninguno); un campo de ese objeto declara una clave de categoría de datos que no está en la taxonomía. | `Unknown data use '<k>'` / `Unknown data subject '<k>'` / `Unknown data category '<k>'` / `Unknown object '<o>'` (seguido de `: the checker was given no data inventory` cuando no tiene ninguno) / `The field <o>.<path> has the unknown data category '<k>'` |
 | `MISSING_PURPOSE` | error | `PURPOSES` | `purposes` está vacía. | `No data use declared` |
 | `MISSING_DATA_SUBJECTS` | error | `DATA_SUBJECTS` | `dataSubjects` está vacía. | `No data subject declared` |
-| `MISSING_PERSONAL_DATA` | error | `PERSONAL_DATA` | Ninguna categoría personal ni entidad con campos personales, y ninguna clave de categoría desconocida ni error de entidad que lo explique. | `The activity processes no personal data` |
+| `MISSING_PERSONAL_DATA` | error | `PERSONAL_DATA` | Ninguna categoría personal ni entidad u objeto con campos personales, y ninguna clave de categoría desconocida, error de entidad ni objeto desconocido que lo explique. | `The activity processes no personal data` |
 | `ENTITY_NOT_CLASSIFIED` | error | `PERSONAL_DATA` | Una entidad de la lista tiene errores de clasificación. | `<nombre binario de la clase> has <n> classification error(s)` |
 | `MISSING_LEGAL_BASIS` | error | `LEGAL_BASIS` | Datos personales sin `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
 | `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Datos de categorías especiales sin `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
 | `MISSING_CRIMINAL_DATA_BASIS` | error | `CRIMINAL_DATA_BASIS` | Datos penales sin `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
 | `CONSENT_NOT_SUFFICIENT` | error | `SPECIAL_CATEGORY_CONDITION` | Solo con `Jurisdiction.SPAIN`: la actividad trata `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` o `race_ethnicity` (o un descendiente) y su única condición del artículo 9.2 es `EXPLICIT_CONSENT` (LOPDGDD, artículo 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
 | `DUPLICATE_ACTIVITY` | error | `KEY` | Solo en `checkAll`/`verify`: una actividad anterior tiene la misma clave. | `Another activity of the record has the key '<k>'` |
-| `DEPRECATED_KEY` | **aviso** | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría está obsoleta; la actividad se comprueba con su sustituta. | `The data use '<k>' is deprecated; checked as '<r>'` (igual con `data subject` y `data category`; sin la parte `; checked as` cuando la clave no tiene sustituto) |
+| `DEPRECATED_KEY` | **aviso** | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría está obsoleta, o un campo de un objeto de `objects` declara una clave de categoría de datos obsoleta; la actividad se comprueba con su sustituta. | `The data use '<k>' is deprecated; checked as '<r>'` (igual con `data subject` y `data category`; sin la parte `; checked as` cuando la clave no tiene sustituto) / `The field <o>.<path> has the deprecated data category '<k>'; checked as '<r>'` (misma omisión) |
 | `NOT_PERSONAL_DATA` | **aviso** | `PERSONAL_DATA` | Una categoría declarada no es dato personal; queda fuera del registro. | `The data category '<k>' is not personal data and is left out of the record` |
 | `UNNEEDED_CONDITION` | **aviso** | `SPECIAL_CATEGORY_CONDITION` para una condición del artículo 9.2, `CRIMINAL_DATA_BASIS` para una base del artículo 10, `LEGITIMATE_INTEREST` para un interés legítimo | Se declara una condición del artículo 9.2 o una base del artículo 10 para datos que la actividad no trata, o se indica un interés legítimo con otra base jurídica. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
 | `MISSING_LEGAL_REFERENCE` | **aviso** | `LEGAL_REFERENCE` | Se aplica una base que descansa en una ley y no se indica `legalReference`. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; con `Jurisdiction.SPAIN` y una condición `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH`, termina con ` (LOPDGDD article 9.2: a law with the rank of statute)` |
@@ -242,7 +254,7 @@ de datos, así que un problema ahí corresponde a la pantalla donde se edita.
 | `KEY` | `false` | La clave que identifica la actividad en el registro. |
 | `PURPOSES` | `false` | Las finalidades (`ProcessingActivity.purposes()`). |
 | `DATA_SUBJECTS` | `false` | Los interesados (`ProcessingActivity.dataSubjects()`). |
-| `PERSONAL_DATA` | `false` | Los datos personales: categorías de datos y entidades. |
+| `PERSONAL_DATA` | `false` | Los datos personales: categorías de datos, entidades y objetos. |
 | `LEGAL_BASIS` | `true` | La base jurídica (`Governance.legalBasis()`). |
 | `LEGITIMATE_INTEREST` | `true` | El interés legítimo perseguido (`Governance.legitimateInterest()`). |
 | `SPECIAL_CATEGORY_CONDITION` | `true` | La condición del artículo 9.2 (`Governance.specialCategoryCondition()`). |
