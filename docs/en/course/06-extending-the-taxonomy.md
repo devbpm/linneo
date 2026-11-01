@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/TaxonomyExtension.java
   - src/main/java/io/github/devbpm/linneo/CategoryDraft.java
   - src/main/java/io/github/devbpm/linneo/TermDraft.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyDiff.java
   - src/main/java/io/github/devbpm/linneo/extension/university/UniversityTaxonomy.java
 -->
 
@@ -146,6 +147,12 @@ produce the warning you saw in module 4:
 ```
 WARNING DEPRECATED_CATEGORY edu.example.university.LabNotebook.file: data category 'user.education.lab_journal' is deprecated; use 'user.education.lab_notebook'
 ```
+
+To be sure that a new version of your extension never deletes a key or weakens protection, compare it in a test with
+the taxonomy of your last release, kept as the text that `Taxonomy.toTsv()` writes:
+`TaxonomyDiff.between(Taxonomy.fromTsv(released), current).requireCompatible()` throws a `TaxonomyException` listing
+every incompatible change. The rename above passes (a deprecation with a replacement is a compatible change);
+deleting `user.education.lab_journal` would not. See [Taxonomy diff](../reference/taxonomy-diff.md).
 
 ### Constants for your keys
 
@@ -345,6 +352,7 @@ asserts that `Taxonomy.load()` contains `user.education.lab_notebook` with origi
 - [Reference — Extensions](../reference/extensions/README.md) and the
   [university extension](../reference/extensions/university.md)
 - [Reference — Taxonomy](../reference/taxonomy.md)
+- [Reference — Taxonomy diff](../reference/taxonomy-diff.md)
 - [Reference — Standard taxonomy](../reference/standard-taxonomy.md)
 
 ---

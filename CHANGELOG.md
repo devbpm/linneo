@@ -90,6 +90,12 @@ All notable changes to this project are documented in this file. The format foll
 - `ProcessingChecker.checkAll` and `verify` classify each entity once for all the activities.
 - `FieldClassification.covers(DataCategory)`: whether a row of a `@CategoryByRow` field may hold a category, and
   whether a classification raised at run time still covers the code's.
+- The taxonomy as data: `Taxonomy.toTsv()` writes every term with its effective protection as deterministic
+  tab-separated text, `Taxonomy.fromTsv(String)` reads it back through the builder, `fingerprint()` identifies it, and
+  two taxonomies with the same terms are equal. `TaxonomyDiff.between(before, after)` lists the `TermChange`s (added,
+  removed, protection with its direction, deprecation, replacement, name, description, attributes, origin, versions),
+  grades them with `requiredBump()` and refuses incompatible ones with `requireCompatible()`. `ReleasedTaxonomyTest`
+  checks Linneo's own taxonomy against the copy kept for the last release.
 - `ClassificationException` and `ProcessingException` list the first 50 errors and count all of them by code, so
   the message of a large model stays readable.
 - `AtlasCatalog`: the taxonomy as Apache Atlas classification types (category tree as super types, protection

@@ -1,0 +1,66 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.github.devbpm.linneo;
+
+import io.github.devbpm.linneo.TaxonomyDiff.Bump;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+class ReleasedTaxonomyTest {
+
+    @Test
+    @DisplayName("the taxonomy changed since the last release no more than the version did")
+    void versioning() throws IOException {
+        Optional<Path> latest = ReleasedTaxonomy.latest();
+        String current = System.getProperty("linneo.version");
+        assumeTrue(latest.isPresent(), "no release recorded yet");
+        assumeTrue(current != null, "run through Maven, which passes linneo.version");
+        String released = latest.get().getFileName().toString().replace(".tsv", "");
+        TaxonomyDiff diff = TaxonomyDiff.between(Taxonomy.fromTsv(Files.readString(latest.get())),
+                ReleasedTaxonomy.shipped());
+        Bump allowed = ReleasedTaxonomy.allowed(released, current);
+        assertTrue(diff.requiredBump().compareTo(allowed) <= 0, () -> "From " + released + " to " + current
+                + " the version allows a " + allowed + " change, but the taxonomy needs a " + diff.requiredBump()
+                + ": " + (diff.requiredBump() == Bump.MAJOR ? diff.breakingChanges() : diff.changes()));
+    }
+
+    @Test
+    @DisplayName("semantic versioning allows a change as large as the first number that differs")
+    void allowed() {
+        assertAll(
+                () -> assertEquals(Bump.NONE, ReleasedTaxonomy.allowed("0.1.0", "0.1.0")),
+                () -> assertEquals(Bump.PATCH, ReleasedTaxonomy.allowed("0.1.0", "0.1.1-SNAPSHOT")),
+                () -> assertEquals(Bump.MINOR, ReleasedTaxonomy.allowed("0.1.3", "0.2.0-SNAPSHOT")),
+                () -> assertEquals(Bump.MAJOR, ReleasedTaxonomy.allowed("1.4.0", "2.0.0")));
+    }
+
+    @Test
+    @DisplayName("the shipped taxonomy, every extension included, survives its text form")
+    void shipped() {
+        Taxonomy shipped = ReleasedTaxonomy.shipped();
+        assertEquals(shipped, Taxonomy.fromTsv(shipped.toTsv()));
+    }
+}

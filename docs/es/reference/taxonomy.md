@@ -110,6 +110,68 @@ email.isA("user.con");                // false (solo segmentos completos)
 `info().parent()` y las búsquedas anteriores. Los usos y los sujetos describen actividades de tratamiento, no campos,
 por lo que ninguna anotación se refiere a ellos.
 
+## La taxonomía como datos
+
+Una taxonomía se puede escribir como texto y volver a leer. Una aplicación que guarda claves conserva la taxonomía que
+aplicó, de modo que en el siguiente arranque puede saber qué cambió con [`TaxonomyDiff`](taxonomy-diff.md), y un
+auditor puede reproducir la clasificación del pasado con la taxonomía del pasado.
+
+| Método | Devuelve | Descripción |
+|---|---|---|
+| `String toTsv()` | `String` | La taxonomía como texto separado por tabuladores: cada término con su ciclo de vida y, en las categorías de datos, su protección y sus atributos **efectivos**, por orden de clave. Determinista: la misma taxonomía da siempre el mismo texto. |
+| `static Taxonomy fromTsv(String text)` | `Taxonomy` | Lee un texto escrito por `toTsv()`. Los términos pasan por un `TaxonomyBuilder`, así que el texto debe cumplir las mismas reglas que cualquier otra taxonomía. Lanza `TaxonomyException` si el texto no es una taxonomía de una versión de formato conocida, una fila está mal formada o los términos incumplen una regla del constructor. |
+| `String fingerprint()` | `String` | El SHA-256 de `toTsv()` (UTF-8), como 64 dígitos hexadecimales en minúscula. Las taxonomías iguales tienen la misma huella; se calcula una vez y se conserva. |
+| `boolean equals(Object)`, `int hashCode()` | | Dos taxonomías son iguales cuando tienen las mismas categorías, usos y sujetos de datos: mismas claves, nombres, descripciones, orígenes, ciclos de vida, protección y atributos. |
+
+La huella dice que algo cambió, no qué: cualquier cambio de texto, incluso una descripción, la modifica. Para saber
+qué cambió usa [`TaxonomyDiff`](taxonomy-diff.md).
+
+### Formato del texto
+
+La primera línea es `#linneo-taxonomy`, un tabulador y la versión del formato, `1`; `fromTsv` rechaza cualquier otra
+primera línea. Las líneas en blanco y las que empiezan por `#` a continuación son comentarios; `toTsv` escribe tres que
+nombran las columnas. Cualquier otra línea es una fila de celdas separadas por tabuladores, y la primera celda dice de
+qué fila se trata:
+
+| Fila | Celdas |
+|---|---|
+| `category` | `category`, clave, nombre, descripción, origen, versión que la introdujo, versión que la declaró obsoleta, sustituta, naturaleza, confidencialidad, integridad, secreto (`true` o `false`): 12 celdas |
+| `use`, `subject` | el tipo, clave, nombre, descripción, origen, versión que lo introdujo, versión que lo declaró obsoleto, sustituto: 8 celdas |
+| `attribute` | `attribute`, clave de la categoría, nombre, valor: 4 celdas. Una fila por cada atributo de una categoría, incluidos los heredados de sus ancestros |
+
+Las filas se escriben en este orden: categorías, usos y sujetos de datos, cada grupo por clave, y después los atributos
+por clave de categoría y nombre. Una celda vacía es un valor ausente. Una barra invertida, un tabulador, un salto de
+línea y un retorno de carro dentro de una celda se escriben `\\`, `\t`, `\n` y `\r`, de modo que una fila es siempre
+una línea. La naturaleza, la confidencialidad y la integridad son los nombres de las constantes de
+[`LegalNature`, `Confidentiality` e `Integrity`](protection-levels.md). `fromTsv` lee las filas en cualquier orden: los
+padres se comprueban al construir la taxonomía y las filas de atributos se aplican después de todos los términos.
+
+```java
+Taxonomy taxonomy = Taxonomy.builder()
+        .origin("my-app")
+        .category("data", "Data", "Any data.",
+                c -> c.nature(LegalNature.ORDINARY).confidentiality(Confidentiality.LOW).integrity(Integrity.LOW))
+        .category("data.note", "Note", "A free text note.", c -> c.attribute("retention", "1y"))
+        .build();
+
+String text = taxonomy.toTsv();
+Taxonomy read = Taxonomy.fromTsv(text);
+read.equals(taxonomy);                       // true
+read.fingerprint().equals(taxonomy.fingerprint());   // true
+```
+
+`text` es, con `→` en lugar de un tabulador:
+
+```text
+#linneo-taxonomy→1
+# category key name description origin since deprecated_since replaced_by nature confidentiality integrity secret
+# use|subject key name description origin since deprecated_since replaced_by
+# attribute category_key name value
+category→data→Data→Any data.→my-app→→→→ORDINARY→LOW→LOW→false
+category→data.note→Note→A free text note.→my-app→→→→ORDINARY→LOW→LOW→false
+attribute→data.note→retention→1y
+```
+
 ## TaxonomyException
 
 `io.github.devbpm.linneo.TaxonomyException` — `public class TaxonomyException extends RuntimeException`,
@@ -129,8 +191,10 @@ La lanzan:
   desconocida;
 - `Taxonomy.load()` y los métodos de `TaxonomyBuilder` cuando se incumple una regla (mensajes en
   [Extender la taxonomía](extending.md#errores));
+- `Taxonomy.fromTsv` cuando el texto está mal formado o sus términos incumplen una regla del constructor;
+- [`TaxonomyDiff.requireCompatible()`](taxonomy-diff.md#taxonomydiff) cuando un cambio es incompatible;
 - el cargador de la taxonomía estándar cuando falta un recurso incluido o no se puede leer.
 
 Véase también: [Términos](terms.md) · [Niveles de protección](protection-levels.md) ·
 [Taxonomía estándar](standard-taxonomy.md) · [Extender la taxonomía](extending.md) ·
-curso: [La taxonomía](../course/02-the-taxonomy.md)
+[Diferencias entre taxonomías](taxonomy-diff.md) · curso: [La taxonomía](../course/02-the-taxonomy.md)

@@ -34,7 +34,10 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
 
 - **`io.github.devbpm.linneo`** — the taxonomy model, protection enums, key constants, `TaxonomyBuilder`, the
   drafts and `TaxonomyExtension`. `Protection` is the single partial order for comparing protection (`covers`,
-  `join`, `comparedTo`); use it instead of comparing natures and levels by hand. Terms are `DataCategory`, `DataUse`, `DataSubject` (all `Term`s), keyed by
+  `join`, `comparedTo`); use it instead of comparing natures and levels by hand. A `Taxonomy` is also data:
+  `toTsv`/`fromTsv` (versioned format, read back through the builder), `fingerprint`, value equality, and
+  `TaxonomyDiff`/`TermChange` grade the changes between two versions (`requiredBump`). `ReleasedTaxonomyTest`
+  compares the shipped taxonomy with the copy of the last release in `src/test/resources/.../released/`. Terms are `DataCategory`, `DataUse`, `DataSubject` (all `Term`s), keyed by
   dotted strings whose parent is the key prefix (`user.contact.email` → `user.contact`). The builder and drafts
   must stay in this package: they rely on package-private access (the `Taxonomy` constructor, `TermDraft.info()`,
   `CategoryDraft.declared*()`) so that only `build()` can create a validated `Taxonomy`.

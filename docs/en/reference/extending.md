@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/TaxonomyExtension.java
   - src/main/java/io/github/devbpm/linneo/CategoryDraft.java
   - src/main/java/io/github/devbpm/linneo/TermDraft.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyDiff.java
 -->
 
 # Extending the taxonomy
@@ -190,6 +191,24 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new CampusTaxonomy(
 The extensions shipped with Linneo are not registered; see
 [Extensions](extensions/README.md#registering-a-shipped-extension) to apply or register them.
 
+### Keeping your extension compatible
+
+Applications persist the keys of your extension, so it should follow the rules of the standard taxonomy: add terms,
+tighten protection and deprecate, but never remove a key or weaken protection. [`TaxonomyDiff`](taxonomy-diff.md)
+checks it. Keep the taxonomy of your last release as text, written with `Taxonomy.toTsv()`, and compare it with the
+current one in a test:
+
+```java
+Taxonomy released = Taxonomy.fromTsv(Files.readString(Path.of("src/test/resources/taxonomy-1.0.0.tsv")));
+Taxonomy current = Taxonomy.builder().withStandard().extend(new CampusTaxonomy()).build();
+TaxonomyDiff diff = TaxonomyDiff.between(released, current);
+diff.requireCompatible();   // TaxonomyException on a removed term, weaker protection or a changed replacement
+diff.requiredBump();        // the version step the changes need: NONE, PATCH, MINOR or MAJOR
+```
+
+The diff covers the whole taxonomy, so the changes of the standard taxonomy in a newer version of Linneo appear in it
+too.
+
 ## CategoryDraft
 
 `io.github.devbpm.linneo.CategoryDraft` — `public final class CategoryDraft extends TermDraft`, `@since 0.1.0`
@@ -235,4 +254,5 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard()
 ```
 
 See also: [Taxonomy](taxonomy.md) · [Protection levels](protection-levels.md) · [Standard taxonomy](standard-taxonomy.md) ·
-[Terms](terms.md) · [Extensions](extensions/README.md) · course: [Extending the taxonomy](../course/06-extending-the-taxonomy.md)
+[Terms](terms.md) · [Taxonomy diff](taxonomy-diff.md) · [Extensions](extensions/README.md) · course:
+[Extending the taxonomy](../course/06-extending-the-taxonomy.md)

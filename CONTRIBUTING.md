@@ -40,6 +40,17 @@ They were written against OpenMetadata 2.0.6, DataHub v1.7.0.1 and Apache Atlas 
 - Add terms as children of existing terms. New roots need a discussion first.
 - Protection may only become stricter down the tree; the build enforces it.
 - Deprecate instead of deleting: give `version_deprecated` and, where there is one, `replaced_by`.
+- Each release keeps a copy of the taxonomy it ships, the standard taxonomy with every extension, in
+  `src/test/resources/io/github/devbpm/linneo/released/`. `ReleasedTaxonomyTest` compares the current taxonomy with
+  the last copy and fails when the changes need a larger version step than the project version takes (for example a
+  removed term in a minor release). After publishing a release, record its taxonomy and commit the file:
+
+  ```bash
+  ./mvnw -q test-compile
+  java -cp "target/classes:target/test-classes" io.github.devbpm.linneo.ReleasedTaxonomy 0.1.0
+  ```
+
+  On Windows, separate the class path with `;`.
 - Do not edit the `fideslang-*.tsv` files by hand. They are regenerated from a fideslang release with
   `tools/fideslang/update.py`; Linneo's terms go in the `linneo-*.tsv` files.
 

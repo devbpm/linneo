@@ -9,6 +9,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/TaxonomyExtension.java
   - src/main/java/io/github/devbpm/linneo/CategoryDraft.java
   - src/main/java/io/github/devbpm/linneo/TermDraft.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyDiff.java
   - src/main/java/io/github/devbpm/linneo/extension/university/UniversityTaxonomy.java
 -->
 
@@ -152,6 +153,13 @@ Los campos que siguen anotados con la clave antigua continúan funcionando, se c
 ```
 WARNING DEPRECATED_CATEGORY edu.example.university.LabNotebook.file: data category 'user.education.lab_journal' is deprecated; use 'user.education.lab_notebook'
 ```
+
+Para asegurarte de que una nueva versión de tu extensión nunca borra una clave ni debilita la protección, compárala
+en un test con la taxonomía de tu última versión publicada, guardada como el texto que escribe `Taxonomy.toTsv()`:
+`TaxonomyDiff.between(Taxonomy.fromTsv(released), current).requireCompatible()` lanza una `TaxonomyException` con todos
+los cambios incompatibles. El renombrado anterior pasa la comprobación (declarar obsoleta una clave con una sustituta es
+un cambio compatible); borrar `user.education.lab_journal` no. Consulta
+[Diferencias entre taxonomías](../reference/taxonomy-diff.md).
 
 ### Constantes para tus claves
 
@@ -356,6 +364,7 @@ después `CampusTaxonomy`.
 - [Referencia — Extensiones](../reference/extensions/README.md) y la
   [extensión universitaria](../reference/extensions/university.md)
 - [Referencia — Taxonomía](../reference/taxonomy.md)
+- [Referencia — Diferencias entre taxonomías](../reference/taxonomy-diff.md)
 - [Referencia — Taxonomía estándar](../reference/standard-taxonomy.md)
 
 ---

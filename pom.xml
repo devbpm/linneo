@@ -146,6 +146,12 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
+                    <configuration>
+                        <!-- ReleasedTaxonomyTest compares the taxonomy with the last release under this version. -->
+                        <systemPropertyVariables>
+                            <linneo.version>${project.version}</linneo.version>
+                        </systemPropertyVariables>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

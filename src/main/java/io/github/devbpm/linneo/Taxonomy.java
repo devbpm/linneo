@@ -15,11 +15,14 @@
  */
 package io.github.devbpm.linneo;
 
+import io.github.devbpm.linneo.internal.Tsv;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
@@ -28,14 +31,28 @@ import java.util.TreeMap;
  * <p>
  * Obtain one with {@link #standard()}, {@link #load()} or {@link #builder()}. Instances are thread-safe; build one
  * per application and share it. Lists are ordered by key, so a parent always comes before its descendants.
+ * <p>
+ * A taxonomy is also data: {@link #toTsv()} writes every term with its effective protection, {@link #fromTsv(String)}
+ * reads it back, and {@link #fingerprint()} identifies it. An application that stores keys keeps the taxonomy it
+ * applied, so that on the next start it can tell what changed with {@link TaxonomyDiff}, and an auditor can
+ * reproduce the classification of the past with the taxonomy of the past. Two taxonomies with the same terms are
+ * equal.
  *
  * @since 0.1.0
  */
 public final class Taxonomy {
 
+    private static final String FORMAT = "linneo-taxonomy";
+    private static final int VERSION = 1;
+    private static final String CATEGORY = "category";
+    private static final String USE = "use";
+    private static final String SUBJECT = "subject";
+    private static final String ATTRIBUTE = "attribute";
+
     private final Map<String, DataCategory> categories;
     private final Map<String, DataUse> uses;
     private final Map<String, DataSubject> subjects;
+    private volatile String fingerprint;
 
     Taxonomy(Collection<DataCategory> categories, Collection<DataUse> uses, Collection<DataSubject> subjects) {
         this.categories = index(categories);
@@ -225,10 +242,188 @@ public final class Taxonomy {
         return require(subjects, key, "data subject");
     }
 
+    /**
+     * The taxonomy as tab-separated text: every term with its lifecycle and, for data categories, their effective
+     * protection and attributes, in key order. The text is deterministic, so the same taxonomy always gives the same
+     * text and {@link #fingerprint()}.
+     * <p>
+     * The first line is {@code #linneo-taxonomy}, a tab and the format version, {@code 1}. Each term is a row whose
+     * first cell is {@code category}, {@code use} or {@code subject}, followed by the key, name, description, origin,
+     * introducing version, deprecating version and replacement and, for a category, its nature, confidentiality,
+     * integrity and secret flag ({@code true} or {@code false}). Each attribute of a category is a row
+     * {@code attribute}, key, name, value. Cells escape a backslash, tab, line feed and carriage return as
+     * {@code \\}, {@code \t}, {@code \n} and {@code \r}; an empty cell is an absent value.
+     *
+     * @return the text, read back by {@link #fromTsv(String)}
+     */
+    public String toTsv() {
+        Tsv tsv = new Tsv(FORMAT, VERSION)
+                .comment("category key name description origin since deprecated_since replaced_by nature"
+                        + " confidentiality integrity secret")
+                .comment("use|subject key name description origin since deprecated_since replaced_by")
+                .comment("attribute category_key name value");
+        for (DataCategory category : categories.values()) {
+            TermInfo info = category.info();
+            tsv.row(CATEGORY, info.key(), info.name(), info.description(), info.origin(), info.since(),
+                    info.deprecatedSince(), info.replacedBy(), category.nature(), category.confidentiality(),
+                    category.integrity(), category.secret());
+        }
+        for (DataUse use : uses.values()) {
+            term(tsv, USE, use.info());
+        }
+        for (DataSubject subject : subjects.values()) {
+            term(tsv, SUBJECT, subject.info());
+        }
+        for (DataCategory category : categories.values()) {
+            new TreeMap<>(category.attributes()).forEach((name, value) ->
+                    tsv.row(ATTRIBUTE, category.key(), name, value));
+        }
+        return tsv.text();
+    }
+
+    /**
+     * Reads a taxonomy written by {@link #toTsv()}. The terms go through a {@link TaxonomyBuilder}, so the text must
+     * follow the same rules as any other taxonomy.
+     *
+     * @param text the text
+     * @return the taxonomy, equal to the one that wrote the text
+     * @throws TaxonomyException if the text is not a taxonomy of a known format version, a row is malformed, or the
+     *         terms break the rules of the builder
+     */
+    public static Taxonomy fromTsv(String text) {
+        List<List<String>> rows;
+        try {
+            rows = Tsv.read(text, FORMAT, VERSION);
+        } catch (IllegalArgumentException e) {
+            throw new TaxonomyException(e.getMessage(), e);
+        }
+        TaxonomyBuilder builder = builder();
+        List<List<String>> attributes = new ArrayList<>();
+        for (List<String> row : rows) {
+            String kind = row.getFirst();
+            switch (kind == null ? "" : kind) {
+                case CATEGORY -> {
+                    cells(row, 12);
+                    builder.origin(required(row, 4)).category(required(row, 1), text(row, 2), text(row, 3), draft -> {
+                        lifecycle(draft, row);
+                        draft.nature(constant(LegalNature.class, row, 8))
+                                .confidentiality(constant(Confidentiality.class, row, 9))
+                                .integrity(constant(Integrity.class, row, 10));
+                        if (bool(row, 11)) {
+                            draft.secret();
+                        }
+                    });
+                }
+                case USE -> {
+                    cells(row, 8);
+                    builder.origin(required(row, 4)).dataUse(required(row, 1), text(row, 2), text(row, 3),
+                            draft -> lifecycle(draft, row));
+                }
+                case SUBJECT -> {
+                    cells(row, 8);
+                    builder.origin(required(row, 4)).dataSubject(required(row, 1), text(row, 2), text(row, 3),
+                            draft -> lifecycle(draft, row));
+                }
+                case ATTRIBUTE -> {
+                    cells(row, 4);
+                    attributes.add(row);
+                }
+                default -> throw new TaxonomyException("Unknown row '" + kind + "' in a taxonomy text");
+            }
+        }
+        for (List<String> row : attributes) {
+            builder.refineCategory(required(row, 1), draft -> draft.attribute(required(row, 2), text(row, 3)));
+        }
+        return builder.build();
+    }
+
+    /**
+     * The fingerprint of the taxonomy: the SHA-256 of {@link #toTsv()}, in hexadecimal. Equal taxonomies have the
+     * same fingerprint, so an application can store it and tell, on the next start, whether the taxonomy changed.
+     *
+     * @return 64 lower-case hexadecimal digits
+     */
+    public String fingerprint() {
+        String result = fingerprint;
+        if (result == null) {
+            result = Tsv.fingerprint(toTsv());
+            fingerprint = result;
+        }
+        return result;
+    }
+
+    /**
+     * Whether another object is a taxonomy with the same terms.
+     *
+     * @param other the other object
+     * @return {@code true} if it has the same data categories, data uses and data subjects
+     */
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Taxonomy taxonomy && categories.equals(taxonomy.categories)
+                && uses.equals(taxonomy.uses) && subjects.equals(taxonomy.subjects);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(categories, uses, subjects);
+    }
+
     @Override
     public String toString() {
         return "Taxonomy[" + categories.size() + " data categories, " + uses.size() + " data uses, "
                 + subjects.size() + " data subjects]";
+    }
+
+    private static void term(Tsv tsv, String kind, TermInfo info) {
+        tsv.row(kind, info.key(), info.name(), info.description(), info.origin(), info.since(), info.deprecatedSince(),
+                info.replacedBy());
+    }
+
+    private static void lifecycle(TermDraft draft, List<String> row) {
+        if (row.get(5) != null) {
+            draft.since(row.get(5));
+        }
+        if (row.get(6) != null) {
+            draft.deprecated(row.get(6), row.get(7));
+        } else if (row.get(7) != null) {
+            throw new TaxonomyException("'" + row.get(1) + "' has a replacement but no deprecating version");
+        }
+    }
+
+    private static void cells(List<String> row, int count) {
+        if (row.size() != count) {
+            throw new TaxonomyException("A '" + row.getFirst() + "' row needs " + count + " cells, not " + row.size()
+                    + ": " + row);
+        }
+    }
+
+    private static String required(List<String> row, int index) {
+        String value = row.get(index);
+        if (value == null) {
+            throw new TaxonomyException("Cell " + (index + 1) + " of " + row + " must not be empty");
+        }
+        return value;
+    }
+
+    private static String text(List<String> row, int index) {
+        return row.get(index) == null ? "" : row.get(index);
+    }
+
+    private static <E extends Enum<E>> E constant(Class<E> type, List<String> row, int index) {
+        try {
+            return Enum.valueOf(type, required(row, index));
+        } catch (IllegalArgumentException e) {
+            throw new TaxonomyException("'" + row.get(index) + "' is not a " + type.getSimpleName(), e);
+        }
+    }
+
+    private static boolean bool(List<String> row, int index) {
+        String value = required(row, index);
+        if (!value.equals("true") && !value.equals("false")) {
+            throw new TaxonomyException("'" + value + "' is not true or false");
+        }
+        return value.equals("true");
     }
 
     private static <T extends Term> Map<String, T> index(Collection<T> terms) {

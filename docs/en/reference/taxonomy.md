@@ -110,6 +110,67 @@ email.isA("user.con");                // false (whole segments only)
 `info().parent()` and the lookups above. Data uses and data subjects describe processing activities, not fields, so
 no annotation refers to them.
 
+## The taxonomy as data
+
+A taxonomy can be written as text and read back. An application that stores keys keeps the taxonomy it applied, so that
+on the next start it can tell what changed with [`TaxonomyDiff`](taxonomy-diff.md), and an auditor can reproduce the
+classification of the past with the taxonomy of the past.
+
+| Method | Returns | Description |
+|---|---|---|
+| `String toTsv()` | `String` | The taxonomy as tab-separated text: every term with its lifecycle and, for data categories, their **effective** protection and attributes, in key order. Deterministic: the same taxonomy always gives the same text. |
+| `static Taxonomy fromTsv(String text)` | `Taxonomy` | Reads a text written by `toTsv()`. The terms go through a `TaxonomyBuilder`, so the text must follow the same rules as any other taxonomy. Throws `TaxonomyException` if the text is not a taxonomy of a known format version, a row is malformed, or the terms break a rule of the builder. |
+| `String fingerprint()` | `String` | The SHA-256 of `toTsv()` (UTF-8), as 64 lower-case hexadecimal digits. Equal taxonomies have the same fingerprint; computed once and kept. |
+| `boolean equals(Object)`, `int hashCode()` | | Two taxonomies are equal when they have the same data categories, data uses and data subjects: same keys, names, descriptions, origins, lifecycles, protection and attributes. |
+
+The fingerprint says that something changed, not what: any change of text, even a description, changes it. Use
+[`TaxonomyDiff`](taxonomy-diff.md) to find out what.
+
+### Text format
+
+The first line is `#linneo-taxonomy`, a tab and the format version, `1`; `fromTsv` refuses any other first line. Blank
+lines and lines starting with `#` after it are comments; `toTsv` writes three that name the columns. Every other line
+is a row of cells separated by tabs, and the first cell says which row it is:
+
+| Row | Cells |
+|---|---|
+| `category` | `category`, key, name, description, origin, version that introduced it, version that deprecated it, replacement, nature, confidentiality, integrity, secret (`true` or `false`): 12 cells |
+| `use`, `subject` | the kind, key, name, description, origin, version that introduced it, version that deprecated it, replacement: 8 cells |
+| `attribute` | `attribute`, category key, name, value: 4 cells. One row for each attribute of a category, those inherited from its ancestors included |
+
+Rows are written in this order: data categories, data uses and data subjects, each by key, then the attributes by
+category key and name. An empty cell is an absent value. A backslash, tab, line feed and carriage return inside a
+cell are written `\\`, `\t`, `\n` and `\r`, so a row is always one line. The nature, confidentiality and integrity are
+the names of the constants of [`LegalNature`, `Confidentiality` and `Integrity`](protection-levels.md). `fromTsv` reads
+the rows in any order: parents are checked when the taxonomy is built, and the attribute rows are applied after all
+the terms.
+
+```java
+Taxonomy taxonomy = Taxonomy.builder()
+        .origin("my-app")
+        .category("data", "Data", "Any data.",
+                c -> c.nature(LegalNature.ORDINARY).confidentiality(Confidentiality.LOW).integrity(Integrity.LOW))
+        .category("data.note", "Note", "A free text note.", c -> c.attribute("retention", "1y"))
+        .build();
+
+String text = taxonomy.toTsv();
+Taxonomy read = Taxonomy.fromTsv(text);
+read.equals(taxonomy);                       // true
+read.fingerprint().equals(taxonomy.fingerprint());   // true
+```
+
+`text` is, with `→` standing for a tab:
+
+```text
+#linneo-taxonomy→1
+# category key name description origin since deprecated_since replaced_by nature confidentiality integrity secret
+# use|subject key name description origin since deprecated_since replaced_by
+# attribute category_key name value
+category→data→Data→Any data.→my-app→→→→ORDINARY→LOW→LOW→false
+category→data.note→Note→A free text note.→my-app→→→→ORDINARY→LOW→LOW→false
+attribute→data.note→retention→1y
+```
+
 ## TaxonomyException
 
 `io.github.devbpm.linneo.TaxonomyException` — `public class TaxonomyException extends RuntimeException`,
@@ -127,7 +188,10 @@ Thrown by:
 - `Taxonomy.requireCategory`, `requireDataUse`, `requireDataSubject` and `resolveCategory` for an unknown key;
 - `Taxonomy.load()` and the `TaxonomyBuilder` methods when a rule is broken (messages listed in
   [Extending the taxonomy](extending.md#errors));
+- `Taxonomy.fromTsv` when the text is malformed or its terms break a rule of the builder;
+- [`TaxonomyDiff.requireCompatible()`](taxonomy-diff.md#taxonomydiff) when a change is incompatible;
 - the standard taxonomy loader when a bundled resource is missing or unreadable.
 
 See also: [Terms](terms.md) · [Protection levels](protection-levels.md) · [Standard taxonomy](standard-taxonomy.md) ·
-[Extending the taxonomy](extending.md) · course: [The taxonomy](../course/02-the-taxonomy.md)
+[Extending the taxonomy](extending.md) · [Taxonomy diff](taxonomy-diff.md) · course:
+[The taxonomy](../course/02-the-taxonomy.md)
