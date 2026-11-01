@@ -376,11 +376,11 @@ The [codes table](../reference/processing/checker.md#codes) lists every code wit
 
 ## Scope and governance
 
-So far the activities declared everything in code. In many organisations that is not who knows what. The developers
-know the **scope** of an activity for certain: its purposes, its data subjects and the personal data it processes
-(`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). The **governance** is decided and kept up to date by the
-data protection officer: the lawful bases, the legal reference, the retention, the recipients, the transfers and the
-impact assessment. It is a record of its own, `Governance`, and an activity holds it in its `governance()`.
+So far the activities declared everything in code. In many organisations that is not who knows what. The developers know
+the **scope** of an activity for certain: its purposes, its data subjects and the personal data it processes
+(`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). The **governance** is decided and kept up to date
+by the data protection officer: the lawful bases, the legal reference, the retention, the recipients, the transfers and
+the impact assessment. It is a record of its own, `Governance`, and an activity holds it in its `governance()`.
 
 An application can declare the scope in code, keep the governance the officer edits in its own storage, and combine
 both with `withGovernance` before checking, for example each time she saves a change:

@@ -105,8 +105,9 @@ The extension follows the rules fideslang sets for custom labels, so its terms s
 The extension arranges the categories by the record they belong to: the student record, admission, support and
 conduct, placements and mobility, and finance. The finest detail is in the student record.
 
-The protection shown is the effective one in the built taxonomy. Values in **bold** are declared by the extension;
-the rest are inherited from the parent (`user.education` and `user.financial` are `ORDINARY`, `MEDIUM`, `HIGH`). No category is secret, and all are personal data.
+The protection shown is the effective one in the built taxonomy. Values in **bold** are declared by the extension; the
+rest are inherited from the parent (`user.education` and `user.financial` are `ORDINARY`, `MEDIUM`, `HIGH`). No category
+is secret, and all are personal data.
 
 ### The student record
 

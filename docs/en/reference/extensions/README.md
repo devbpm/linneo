@@ -35,7 +35,9 @@ constants for its keys.
 | Project operations | `io.github.devbpm.linneo.extension.projectoperations.ProjectOperationsTaxonomy` | `"project_operations"` | 11 data categories, 6 data uses, 2 data subjects | [Project operations](project-operations.md) |
 | Human resources and payroll | `io.github.devbpm.linneo.extension.humanresources.HumanResourcesTaxonomy` | `"human_resources"` | 21 data categories, 15 data uses, 6 data subjects | [Human resources](human-resources.md) |
 
-The finance, supply chain, project operations and human resources extensions are informed by the business areas of the Common Data Model (CDM); see the *Sources* section of each page. The university extension is informed by the Open Education API. The five share no key, so any of them can be applied with any other, and with yours.
+The finance, supply chain, project operations and human resources extensions are informed by the business areas of the
+Common Data Model (CDM); see the *Sources* section of each page. The university extension is informed by the Open
+Education API. The five share no key, so any of them can be applied with any other, and with yours.
 
 ## Not applied by default
 
@@ -46,9 +48,9 @@ A shipped extension is never part of the taxonomy unless the application asks fo
   the Linneo module registers none: its `module-info.java` has a `uses` clause but no `provides` clause, and the JAR
   has no `META-INF/services` file.
 
-A shipped extension follows the same rules as yours: it adds children of existing terms (a shipped extension may add
-a new root of data uses where fideslang has none for the sector, as the university extension does, or a new branch of categories, as the human resources extension does with `user.employment`) and it only makes
-protection stricter.
+A shipped extension follows the same rules as yours: it adds children of existing terms (a shipped extension may add a
+new root of data uses where fideslang has none for the sector, as the university extension does, or a new branch of
+categories, as the human resources extension does with `user.employment`) and it only makes protection stricter.
 
 ## Applying a shipped extension
 
@@ -63,10 +65,10 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxon
 
 `taxonomy.toString()` prints `Taxonomy[158 data categories, 90 data uses, 34 data subjects]`, against
 `Taxonomy[126 data categories, 63 data uses, 22 data subjects]` for the standard taxonomy. With the five shipped
-extensions applied it prints `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Keep the result and use it
-everywhere: in the [`Classifier`](../classify/classifier.md), the
-[`ProcessingChecker`](../processing/checker.md) and the catalogue exporters. A `Classifier` built on
-`Taxonomy.standard()` reports every key of the extension as `UNKNOWN_CATEGORY`.
+extensions applied it prints `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Keep the result and use
+it everywhere: in the [`Classifier`](../classify/classifier.md), the [`ProcessingChecker`](../processing/checker.md) and
+the catalogue exporters. A `Classifier` built on `Taxonomy.standard()` reports every key of the extension as
+`UNKNOWN_CATEGORY`.
 
 ## Registering a shipped extension
 
@@ -86,8 +88,9 @@ depends on where Linneo is:
 
 - **Module path**: a `provides` clause can only name a class of the module that declares it, so
   `provides io.github.devbpm.linneo.TaxonomyExtension with io.github.devbpm.linneo.extension.university.UniversityTaxonomy`
-  in your `module-info.java` does not compile (`service implementation must be defined in the same module as the
-  provides directive`). Provide it through a class of your module with a public static `provider()` method:
+  in your `module-info.java` does not compile
+  (`service implementation must be defined in the same module as the provides directive`). Provide it through a class of
+  your module with a public static `provider()` method:
 
   ```java
   package com.example.app;
@@ -120,12 +123,12 @@ The explicit `extend` call above works in both cases and needs no registration.
 
 A shipped extension and your own extensions are applied to the same builder and combine like any two extensions:
 
-- **Names.** Each term records the name of the extension that added it as its origin (`university`, `finance`, `supply_chain`, `project_operations`, `human_resources`, or yours).
-  `extend` applies the same extension class only once (so a shipped extension can be applied explicitly and also be
-  registered as a service), but throws a `TaxonomyException` if a different class with the same name has already
-  been applied: `The extensions io.github.devbpm.linneo.extension.university.UniversityTaxonomy and
-  com.example.app.MyExtension are both named 'university'`. Do not give your own extension the name of a shipped
-  one.
+- **Names.** Each term records the name of the extension that added it as its origin (`university`, `finance`,
+  `supply_chain`, `project_operations`, `human_resources`, or yours). `extend` applies the same extension class only
+  once (so a shipped extension can be applied explicitly and also be registered as a service), but throws a
+  `TaxonomyException` if a different class with the same name has already been applied:
+  `The extensions io.github.devbpm.linneo.extension.university.UniversityTaxonomy and com.example.app.MyExtension are both named 'university'`.
+  Do not give your own extension the name of a shipped one.
 - **Keys.** Check the shipped extension before adding a term: if it already has the key, use it. Adding a key twice
   fails with `Duplicate key '<key>'`.
 - **Order.** Your extension can make a term of a shipped extension stricter with `refineCategory` only if the
@@ -146,5 +149,6 @@ A shipped extension and your own extensions are applied to the same builder and 
   and keep your own constants in your own classes.
 
 See also: [University](university.md) · [Finance](finance.md) · [Supply chain](supply-chain.md) ·
-[Project operations](project-operations.md) · [Human resources](human-resources.md) · [Extending the taxonomy](../extending.md) ·
-[Standard taxonomy](../standard-taxonomy.md) · course: [Extending the taxonomy](../../course/06-extending-the-taxonomy.md)
+[Project operations](project-operations.md) · [Human resources](human-resources.md) ·
+[Extending the taxonomy](../extending.md) · [Standard taxonomy](../standard-taxonomy.md) · course:
+[Extending the taxonomy](../../course/06-extending-the-taxonomy.md)

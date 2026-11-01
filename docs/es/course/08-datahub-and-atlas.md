@@ -167,11 +167,11 @@ public final class PublishToDataHub {
 ```
 
 La URL es la del servicio de metadatos de DataHub (GMS); detrás del frontend de DataHub suele ser
-`/api/gms/aspects?action=ingestProposal`. No omitas la cabecera `X-RestLi-Protocol-Version: 2.0.0`: GMS la necesita
-para leer la propuesta (con `curl`, añade `-H 'X-RestLi-Protocol-Version: 2.0.0'`). Los cuerpos se comprobaron con
-DataHub v1.7.0.1 y los aspectos solo usan campos presentes desde la v0.9.2. Cada propuesta es un `UPSERT`, así que puedes volver a ejecutar el emisor
-después de cambiar la taxonomía… pero cada vez sustituye el aspecto completo, así que no retoques a mano los términos
-de Linneo en la interfaz de DataHub.
+`/api/gms/aspects?action=ingestProposal`. No omitas la cabecera `X-RestLi-Protocol-Version: 2.0.0`: GMS la necesita para
+leer la propuesta (con `curl`, añade `-H 'X-RestLi-Protocol-Version: 2.0.0'`). Los cuerpos se comprobaron con DataHub
+v1.7.0.1 y los aspectos solo usan campos presentes desde la v0.9.2. Cada propuesta es un `UPSERT`, así que puedes volver
+a ejecutar el emisor después de cambiar la taxonomía… pero cada vez sustituye el aspecto completo, así que no retoques a
+mano los términos de Linneo en la interfaz de DataHub.
 
 ### Los términos de una columna
 
@@ -378,7 +378,8 @@ las raíces, así que puedes renombrarlas todas libremente.
 - **Asignar en Atlas solo la clasificación de la categoría.** `DataCategory.user.health_and_medical.disability` no
   lleva `Confidentiality.High` a través de sus supertipos; envía `classificationsJson(field)`, que enumera todas las
   etiquetas.
-- **Enviar dos veces sin cambios los typedefs de Atlas.** `POST` responde 409 si los tipos existen; envía el mismo cuerpo con `PUT`.
+- **Enviar dos veces sin cambios los typedefs de Atlas.** `POST` responde 409 si los tipos existen; envía el mismo
+  cuerpo con `PUT`.
 - **Olvidar la propagación de Atlas.** Las columnas derivadas pueden recibir las clasificaciones de datos personales
   de sus orígenes.
 - **Calcular las etiquetas a partir de la categoría en lugar del campo** (`termsOf(field.category())`): pierdes los
@@ -453,11 +454,11 @@ Con la taxonomía estándar, el primer fichero tiene 295 líneas: 28 nodos, 141 
 **Ejercicio 8.3**
 
 295 propuestas y 147 tipos. La extensión añade dos categorías, `user.education.lab_notebook` y
-`user.education.lab_journal`: cada una aporta un `glossaryTermInfo` y un `glossaryRelatedTerms` (2 × 2 = 4
-propuestas más) y un tipo de clasificación. No aparece ningún nodo: las dos son hojas, y `user.education` ya tenía
-nodo porque ya tenía hijas. El término del cuaderno de laboratorio lleva `linneo.key`
-`user.education.lab_notebook`, `linneo.origin` `campus`, `linneo.nature` `ORDINARY`, `linneo.confidentiality` `MEDIUM`, `linneo.integrity` `HIGH`,
-`linneo.secret` `false` y el atributo de la extensión `retention` `permanent`. Su `termSource` es `INTERNAL`.
+`user.education.lab_journal`: cada una aporta un `glossaryTermInfo` y un `glossaryRelatedTerms` (2 × 2 = 4 propuestas
+más) y un tipo de clasificación. No aparece ningún nodo: las dos son hojas, y `user.education` ya tenía nodo porque ya
+tenía hijas. El término del cuaderno de laboratorio lleva `linneo.key` `user.education.lab_notebook`, `linneo.origin`
+`campus`, `linneo.nature` `ORDINARY`, `linneo.confidentiality` `MEDIUM`, `linneo.integrity` `HIGH`, `linneo.secret`
+`false` y el atributo de la extensión `retention` `permanent`. Su `termSource` es `INTERNAL`.
 
 **Ejercicio 8.4**
 

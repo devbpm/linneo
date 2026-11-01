@@ -79,11 +79,12 @@ public final class CampusTaxonomy implements TaxonomyExtension {
 ### `name()`
 
 Un nombre corto y estable. Se registra como **origen** de todos los términos que añade la extensión, de modo que los
-informes distinguen los términos de «campus» de los de «fideslang» y «linneo». Esos dos nombres están
-reservados: una extensión llamada `"fideslang"` o `"linneo"` (o con el nombre vacío) se rechaza con
-`Invalid extension name 'linneo' in edu.example.university.CampusTaxonomy`. Aplicar dos veces la misma clase de extensión
-no tiene efecto la segunda vez, pero dos clases distintas con el mismo nombre se rechazan (véase más abajo). El nombre `"university"` lo usa la
-[extensión incluida en Linneo](#la-extensión-universitaria-incluida-en-linneo); no lo reutilices.
+informes distinguen los términos de «campus» de los de «fideslang» y «linneo». Esos dos nombres están reservados: una
+extensión llamada `"fideslang"` o `"linneo"` (o con el nombre vacío) se rechaza con
+`Invalid extension name 'linneo' in edu.example.university.CampusTaxonomy`. Aplicar dos veces la misma clase de
+extensión no tiene efecto la segunda vez, pero dos clases distintas con el mismo nombre se rechazan (véase más abajo).
+El nombre `"university"` lo usa la [extensión incluida en Linneo](#la-extensión-universitaria-incluida-en-linneo); no lo
+reutilices.
 
 ### Añadir categorías
 
@@ -138,8 +139,8 @@ protección.
 ### Declarar obsoletos tus propios términos
 
 Supón que la universidad usó `user.education.lab_journal` en una primera versión y después lo renombró a
-`user.education.lab_notebook`. Nunca borres ni reutilices una clave que las aplicaciones puedan haber guardado; declárala
-obsoleta:
+`user.education.lab_notebook`. Nunca borres ni reutilices una clave que las aplicaciones puedan haber guardado;
+declárala obsoleta:
 
 ```java
 .category("user.education.lab_journal", "Diario de laboratorio",
@@ -332,7 +333,8 @@ personal tienen confidencialidad `MEDIUM`. Añade el refinamiento. ¿Funcionará
 **Ejercicio 6.3 — Predice.** Para cada cuerpo de extensión, predice si
 `Taxonomy.builder().withStandard().extend(...).build()` funciona y, si no, el mensaje:
 
-1. `builder.category("user.education.lab_notebook.entry", "Entrada", "Una entrada de un cuaderno de laboratorio.");` (solo)
+1. `builder.category("user.education.lab_notebook.entry", "Entrada", "Una entrada de un cuaderno de laboratorio.");`
+   (solo)
 2. `builder.category("user.education.special_needs", "Necesidades especiales", "Adaptaciones para estudiantes con discapacidad.", c -> c.nature(LegalNature.SPECIAL_CATEGORY));`
 3. `builder.refineCategory(Categories.USER_HEALTH_AND_MEDICAL, c -> c.nature(LegalNature.ORDINARY));`
 4. `builder.refineCategory(Categories.USER_EDUCATION_TEST_SCORE, CategoryDraft::secret);`

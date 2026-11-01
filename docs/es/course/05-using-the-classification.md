@@ -400,7 +400,8 @@ código de logging con un campo que **no** está en el mapa?
 
 - [Referencia — Resultados](../reference/classify/results.md): `ClassClassification` y `FieldClassification`
 - [Referencia — Clasificador](../reference/classify/classifier.md)
-- [Referencia — Inventario de datos](../reference/classify/inventory.md): la clasificación como datos, para guardar y comparar
+- [Referencia — Inventario de datos](../reference/classify/inventory.md): la clasificación como datos, para guardar y
+  comparar
 - [Referencia — Términos](../reference/terms.md): usos de datos e interesados
 
 ---

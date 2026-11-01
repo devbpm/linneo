@@ -76,11 +76,11 @@ public final class CampusTaxonomy implements TaxonomyExtension {
 
 ### `name()`
 
-A short, stable name. It is recorded as the **origin** of every term the extension adds, so reports can tell
-"campus" terms from "fideslang" and "linneo" ones. Those two names are reserved: an extension called
-`"fideslang"` or `"linneo"` (or with a blank name) is refused with
-`Invalid extension name 'linneo' in edu.example.university.CampusTaxonomy`. Applying the same extension class twice
-has no effect the second time, but two different classes with the same name are refused (see below). The name `"university"` is taken by the
+A short, stable name. It is recorded as the **origin** of every term the extension adds, so reports can tell "campus"
+terms from "fideslang" and "linneo" ones. Those two names are reserved: an extension called `"fideslang"` or `"linneo"`
+(or with a blank name) is refused with `Invalid extension name 'linneo' in edu.example.university.CampusTaxonomy`.
+Applying the same extension class twice has no effect the second time, but two different classes with the same name are
+refused (see below). The name `"university"` is taken by the
 [extension shipped with Linneo](#the-university-extension-shipped-with-linneo); do not reuse it.
 
 ### Adding categories
@@ -106,8 +106,8 @@ attributes={retention=permanent}, origin=campus
 ```
 
 The levels come from `user.education`; the attribute is the extension's. Any child you later add under
-`user.education.lab_notebook` inherits `retention=permanent` unless it sets its own value. In module 5's inventory you can
-print it with `field.category().attribute("retention")`.
+`user.education.lab_notebook` inherits `retention=permanent` unless it sets its own value. In module 5's inventory you
+can print it with `field.category().attribute("retention")`.
 
 The key must be lower-case segments separated by dots (`[a-z][a-z0-9_]*`), and its parent must exist. Add terms as
 **children of existing terms**: that keeps them understandable to anyone who knows the standard tree.
@@ -213,14 +213,13 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new CampusTaxonomy(
 ## The university extension shipped with Linneo
 
 Linneo ships optional extensions for several sectors. This module uses the one for higher education,
-`UniversityTaxonomy`, in the package
-`io.github.devbpm.linneo.extension.university`. It adds 32 data categories (attendance, academic standing,
-accommodations, admission applications and evaluations, final grades, credit recognition, degrees, internships,
-means assessments, fee exemptions, donations…), 27 data uses (including two new roots, `advancement` and `research`)
-and 12 data subjects (prospective student, doctoral candidate, exchange student, donor, referee…). The [reference](../reference/extensions/university.md) lists every term with its
-protection. The four other shipped extensions (finance, supply chain, project operations and human resources) work
-in the same way and share no key with it or with each other; see the
-[extensions overview](../reference/extensions/README.md).
+`UniversityTaxonomy`, in the package `io.github.devbpm.linneo.extension.university`. It adds 32 data categories
+(attendance, academic standing, accommodations, admission applications and evaluations, final grades, credit
+recognition, degrees, internships, means assessments, fee exemptions, donations…), 27 data uses (including two new
+roots, `advancement` and `research`) and 12 data subjects (prospective student, doctoral candidate, exchange student,
+donor, referee…). The [reference](../reference/extensions/university.md) lists every term with its protection. The four
+other shipped extensions (finance, supply chain, project operations and human resources) work in the same way and share
+no key with it or with each other; see the [extensions overview](../reference/extensions/README.md).
 
 It is **not registered** with `ServiceLoader`, so `Taxonomy.load()` never applies it. Apply it next to your own
 extension:
@@ -311,8 +310,8 @@ terms of another extension are only there if that extension's name sorts before 
 ## Exercises
 
 **Exercise 6.1 — Library loans.** Add `user.education.library_loan` ("Library Loan", "Books and other materials the
-subject has borrowed from the library.") to `CampusTaxonomy` without declaring any facet. What are its effective nature, confidentiality,
-integrity and origin? Check with `requireCategory`.
+subject has borrowed from the library.") to `CampusTaxonomy` without declaring any facet. What are its effective nature,
+confidentiality, integrity and origin? Check with `requireCategory`.
 
 **Exercise 6.2 — Postal addresses.** The university decides that postal addresses of students and staff are
 `MEDIUM` confidentiality. Add the refinement. Will `build()` succeed? Which keys change?

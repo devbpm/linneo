@@ -371,9 +371,10 @@ prints a placeholder for the rest. Linneo itself never reads values.
 **Exercise 5.2 — Inventory by category.** Produce, for each category key used by a personal field anywhere in the
 model, the list of `Class.field` that use it, sorted by key.
 
-**Exercise 5.3 — Three treatments.** Replace `loggableFields` with a method `Map<String, Treatment> treatments(Class<?>)`
-where `Treatment` is `CLEAR`, `MASK` or `OMIT`: secrets are omitted (not even the field name appears), personal
-fields are masked, the rest is clear. What should your logging code do with a field that is **not** in the map?
+**Exercise 5.3 — Three treatments.** Replace `loggableFields` with a method
+`Map<String, Treatment> treatments(Class<?>)` where `Treatment` is `CLEAR`, `MASK` or `OMIT`: secrets are omitted (not
+even the field name appears), personal fields are masked, the rest is clear. What should your logging code do with a
+field that is **not** in the map?
 
 **Exercise 5.4 — Explain.** For `CourseStatistics`, what do `holdsPersonalData()`, `personalFields()` and
 `field("averageMark").orElseThrow().identifiability()` return? Why?
@@ -459,7 +460,8 @@ category is personal, but the stored values summarise many students, so `FieldCl
 
 **Quiz**
 
-1. Superclass fields first (`AuditedEntity`'s), then `Student`'s, each in the order the JVM reports (usually declaration order, not guaranteed).
+1. Superclass fields first (`AuditedEntity`'s), then `Student`'s, each in the order the JVM reports (usually declaration
+   order, not guaranteed).
 2. `CLASS_DEFAULT`, with the reason of `AuditedEntity`'s `@DefaultCategory`:
    `"technical audit timestamps and optimistic-lock version"`.
 3. When the category is not personal.

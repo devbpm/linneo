@@ -19,11 +19,12 @@ doc-sources:
 public record ProcessingRecord(List<CheckedActivity> activities)
 ```
 
-El registro de actividades de tratamiento de un responsable (RGPD, artículo 30.1). [`ProcessingChecker.verify`](checker.md)
-lo construye a partir de actividades sin errores, de modo que cada actividad del registro tiene una base jurídica y
-las condiciones que necesitan sus datos. Los avisos de cada actividad viajan con ella como **puntos abiertos**. El
-registro se genera en Markdown para las personas y en JSON para las herramientas. Su [huella](#huella) dice si sigue
-siendo el registro que alguien aprobó, y [`RecordDiff`](#recorddiff) qué ha cambiado desde entonces.
+El registro de actividades de tratamiento de un responsable (RGPD, artículo 30.1).
+[`ProcessingChecker.verify`](checker.md) lo construye a partir de actividades sin errores, de modo que cada actividad
+del registro tiene una base jurídica y las condiciones que necesitan sus datos. Los avisos de cada actividad viajan con
+ella como **puntos abiertos**. El registro se genera en Markdown para las personas y en JSON para las herramientas. Su
+[huella](#huella) dice si sigue siendo el registro que alguien aprobó, y [`RecordDiff`](#recorddiff) qué ha cambiado
+desde entonces.
 
 **Los textos que añade el registro están en inglés** (las etiquetas de las filas, `None declared`, `Open points:`, los
 mensajes de los puntos abiertos), sea cual sea el idioma de la aplicación. Los nombres de las finalidades, los
@@ -69,8 +70,8 @@ El registro indica la protección que los datos **requieren** (los niveles más 
 punto de partida para la descripción de las medidas de seguridad del artículo 30.1.g; no describe las medidas.
 
 En todo texto que se escribe en el documento —título, nombres, descripción y celdas— `|` se escapa como `\|` y los
-saltos de línea (`\n` o `\r`, con los espacios que los rodean) se reducen a un espacio, para que ningún valor rompa la tabla. La
-clave de la actividad se escribe como código, sin escapar.
+saltos de línea (`\n` o `\r`, con los espacios que los rodean) se reducen a un espacio, para que ningún valor rompa la
+tabla. La clave de la actividad se escribe como código, sin escapar.
 
 ### Ejemplo
 

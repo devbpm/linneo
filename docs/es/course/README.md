@@ -13,13 +13,13 @@ doc-sources:
 
 **Clasifica el modelo de datos de tu organización, verifícalo en los tests y saca partido del resultado.**
 
-Este curso enseña a usar [Linneo](https://github.com/devbpm/linneo#readme), una pequeña biblioteca Java que lleva una taxonomía de
-clasificación de datos a tu código. Empezarás por los conceptos jurídicos y de seguridad que hay detrás de la
-clasificación de datos, conocerás la taxonomía que incluye Linneo, anotarás un modelo de datos realista, harás que
-la compilación falle cuando algo quede sin clasificar, usarás la clasificación para construir un inventario de
-datos, decidir qué puede aparecer en los logs y publicarlo todo en un catálogo de datos —OpenMetadata, DataHub o
-Apache Atlas— y, por último, declararás las actividades de tratamiento que usan los datos y generarás el registro de
-actividades de tratamiento del RGPD.
+Este curso enseña a usar [Linneo](https://github.com/devbpm/linneo#readme), una pequeña biblioteca Java que lleva una
+taxonomía de clasificación de datos a tu código. Empezarás por los conceptos jurídicos y de seguridad que hay detrás de
+la clasificación de datos, conocerás la taxonomía que incluye Linneo, anotarás un modelo de datos realista, harás que la
+compilación falle cuando algo quede sin clasificar, usarás la clasificación para construir un inventario de datos,
+decidir qué puede aparecer en los logs y publicarlo todo en un catálogo de datos —OpenMetadata, DataHub o Apache Atlas—
+y, por último, declararás las actividades de tratamiento que usan los datos y generarás el registro de actividades de
+tratamiento del RGPD.
 
 Todos los módulos usan el mismo ejemplo: el modelo de datos de una **pequeña universidad**. Empieza con un
 `Student` y un `MenuGroup` y crece, módulo a módulo, con `Enrollment`, `Grade`, `Staff`, `Document` con sus

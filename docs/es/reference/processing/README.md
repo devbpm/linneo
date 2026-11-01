@@ -86,9 +86,9 @@ la gravedad:
 - **Error**: la actividad, tal como está declarada, sería ilícita o no se puede comprobar. Datos personales sin base
   jurídica, categorías especiales sin una condición del artículo 9.2, datos penales sin una base del artículo 10, una
   clave desconocida, una actividad sin finalidad, sin interesados o sin datos personales, una entidad con errores de
-  clasificación, un objeto que el inventario de datos no contiene, dos actividades con la misma clave. Con `Jurisdiction.SPAIN`, también el consentimiento explícito como única
-  condición para las categorías especiales del artículo 9.1 de la LOPDGDD. `verify` lanza una `ProcessingException` y no se genera ningún
-  registro.
+  clasificación, un objeto que el inventario de datos no contiene, dos actividades con la misma clave. Con
+  `Jurisdiction.SPAIN`, también el consentimiento explícito como única condición para las categorías especiales del
+  artículo 9.1 de la LOPDGDD. `verify` lanza una `ProcessingException` y no se genera ningún registro.
 - **Aviso**: el registro está incompleto o algo debe revisarse. Una clave obsoleta, una categoría no personal, una
   base que descansa en una ley sin nombrarla, el interés legítimo sin el interés perseguido, la falta de plazo de
   conservación, una condición declarada para datos que la actividad no trata, y actividades con categorías especiales,

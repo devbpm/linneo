@@ -36,9 +36,10 @@ clasificador.
 
 ## Qué campos se clasifican
 
-El clasificador recorre la clase y sus superclases (se detiene antes de `Object`, `Record` y `Enum`) y considera
-todos los campos que declaran salvo los **estáticos**, **transient** y **sintéticos** (y los llamados `$$_...`, que añade Hibernate), que se omiten siempre sin
-necesidad de anotación. Consulta [Classifier](../classify/classifier.md#qué-campos-se-examinan).
+El clasificador recorre la clase y sus superclases (se detiene antes de `Object`, `Record` y `Enum`) y considera todos
+los campos que declaran salvo los **estáticos**, **transient** y **sintéticos** (y los llamados `$$_...`, que añade
+Hibernate), que se omiten siempre sin necesidad de anotación. Consulta
+[Classifier](../classify/classifier.md#qué-campos-se-examinan).
 
 Un campo sin anotación propia cuyo tipo es una clase [`@Composite`](composite.md) (o un array, una colección o un
 `Optional` de ella) no se clasifica como un solo campo: se clasifica cada campo del compuesto, con la ruta

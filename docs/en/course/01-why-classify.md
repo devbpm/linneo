@@ -83,10 +83,10 @@ This is why, under `user` (ordinary personal data), you find `user.health_and_me
 `user.criminal_history` (criminal offence), and why nothing under them can be "downgraded".
 
 To ask whether data of one nature needs at least the protection of another, outside the tree, use
-`LegalNature.covers(other)`: `SPECIAL_CATEGORY.covers(ORDINARY)` is `true`, but `SPECIAL_CATEGORY.covers(CRIMINAL_OFFENCE)`
-and `CRIMINAL_OFFENCE.covers(SPECIAL_CATEGORY)` are both `false`. Both are stricter than ordinary data, but each brings
-obligations the other does not, so the order is only partial. The [`Protection`](../reference/protection-levels.md#protection)
-record builds on it to compare whole protections.
+`LegalNature.covers(other)`: `SPECIAL_CATEGORY.covers(ORDINARY)` is `true`, but
+`SPECIAL_CATEGORY.covers(CRIMINAL_OFFENCE)` and `CRIMINAL_OFFENCE.covers(SPECIAL_CATEGORY)` are both `false`. Both are
+stricter than ordinary data, but each brings obligations the other does not, so the order is only partial. The
+[`Protection`](../reference/protection-levels.md#protection) record builds on it to compare whole protections.
 
 ## Confidentiality: the harm of disclosure
 

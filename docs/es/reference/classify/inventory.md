@@ -147,8 +147,8 @@ identificabilidad o ningún motivo.
 
 `toString()` es `<object>.<path> = <key> (<BASIS>)`, o `<object>.<path> exempt: <reason>`.
 
-Resuelto contra la taxonomía, un campo del inventario da lo mismo que el clasificador da al mismo campo: en cada campo de
-una clase, `protection(taxonomy)`, `isPersonal(taxonomy)`, `identifiability(taxonomy)` y `category(taxonomy)` son
+Resuelto contra la taxonomía, un campo del inventario da lo mismo que el clasificador da al mismo campo: en cada campo
+de una clase, `protection(taxonomy)`, `isPersonal(taxonomy)`, `identifiability(taxonomy)` y `category(taxonomy)` son
 iguales a los de su `FieldClassification`.
 
 ## Construirlo desde el código
@@ -302,10 +302,10 @@ La protección es la de [`InventoryField.protection(taxonomy)`](#inventoryfield)
 un valor personal declarado `ANONYMIZED` o `AGGREGATED` pierde su naturaleza legal y es `LOOSENED`.
 
 Cuando la protección es personal en ambos lados, también se compara la **identificabilidad**, con `PSEUDONYMIZED` por
-debajo de `IDENTIFIED`, y las dos direcciones se combinan con
-[`Direction.and`](../protection-levels.md#direction): `SAME` da la otra, dos direcciones iguales se mantienen y cualquier
-otro par es `MIXED`. Por tanto, seudonimizar un campo es `LOOSENED`, volver a identificarlo es `TIGHTENED`, y
-seudonimizar un campo mientras se eleva su confidencialidad es `MIXED`.
+debajo de `IDENTIFIED`, y las dos direcciones se combinan con [`Direction.and`](../protection-levels.md#direction):
+`SAME` da la otra, dos direcciones iguales se mantienen y cualquier otro par es `MIXED`. Por tanto, seudonimizar un
+campo es `LOOSENED`, volver a identificarlo es `TIGHTENED`, y seudonimizar un campo mientras se eleva su
+confidencialidad es `MIXED`.
 
 ## Cambios de la taxonomía
 

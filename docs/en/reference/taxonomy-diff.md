@@ -16,8 +16,8 @@ doc-sources:
 
 `io.github.devbpm.linneo.TermChange` — `public record`, `@since 0.1.0`
 
-The differences between two versions of a taxonomy, term by term. Applications use them when the taxonomy they run
-with is not the one they applied last: they keep the applied one with [`Taxonomy.toTsv()`](taxonomy.md#the-taxonomy-as-data),
+The differences between two versions of a taxonomy, term by term. Applications use them when the taxonomy they run with
+is not the one they applied last: they keep the applied one with [`Taxonomy.toTsv()`](taxonomy.md#the-taxonomy-as-data),
 read it back with `Taxonomy.fromTsv(String)` and compare. Each `TermChange` says what changed in a term and, for a data
 category, how its protection moved. With it an application can:
 

@@ -88,9 +88,10 @@ El comprobador no examina `description`, `recipients` ni `transfers`.
 
 Los datos personales de una actividad son la unión de tres fuentes:
 
-- **Claves de categoría** (`dataCategories`). Una clave desconocida es el error `UNKNOWN_KEY`. Una clave obsoleta es siempre el
-  aviso `DEPRECATED_KEY`; con sustituto se resuelve a él, sin sustituto se usa tal cual. Una categoría que no es dato personal (naturaleza jurídica `NONE`) es el aviso `NOT_PERSONAL_DATA` y queda
-  fuera del registro. Cada categoría restante aporta sus propios niveles.
+- **Claves de categoría** (`dataCategories`). Una clave desconocida es el error `UNKNOWN_KEY`. Una clave obsoleta es
+  siempre el aviso `DEPRECATED_KEY`; con sustituto se resuelve a él, sin sustituto se usa tal cual. Una categoría que no
+  es dato personal (naturaleza jurídica `NONE`) es el aviso `NOT_PERSONAL_DATA` y queda fuera del registro. Cada
+  categoría restante aporta sus propios niveles.
 - **Entidades** (`entities`). Cada clase se clasifica con el [`Classifier`](../classify/classifier.md). Si la
   clasificación tiene errores, la actividad recibe un error `ENTITY_NOT_CLASSIFIED` con su número (ejecuta el test
   del clasificador para verlos); los campos que sí pudieron clasificarse siguen contando. La entidad aporta sus

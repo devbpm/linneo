@@ -183,5 +183,6 @@ versión: el primero de mayor, menor y parche que difiere entre la versión publ
 término eliminado hace fallar la compilación en una versión menor o de parche. Mientras no exista ninguna copia, la
 prueba se omite.
 
-Véase también: [Taxonomía](taxonomy.md#la-taxonomía-como-datos) · [Niveles de protección](protection-levels.md#direction) ·
-[Extender la taxonomía](extending.md) · [Taxonomía estándar](standard-taxonomy.md)
+Véase también: [Taxonomía](taxonomy.md#la-taxonomía-como-datos) ·
+[Niveles de protección](protection-levels.md#direction) · [Extender la taxonomía](extending.md) ·
+[Taxonomía estándar](standard-taxonomy.md)

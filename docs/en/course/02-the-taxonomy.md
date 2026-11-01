@@ -156,8 +156,9 @@ grade.secret();            // false
 grade.attribute("retention");  // null: no attribute set in the standard taxonomy
 ```
 
-The four facets also come as one value, `grade.protection()`, a [`Protection`](../reference/protection-levels.md#protection)
-that can be compared with `covers` and joined with `join`. Module 5 uses it for fields and whole classes.
+The four facets also come as one value, `grade.protection()`, a
+[`Protection`](../reference/protection-levels.md#protection) that can be compared with `covers` and joined with `join`.
+Module 5 uses it for fields and whole classes.
 
 ## Exploring with the `Taxonomy` API
 

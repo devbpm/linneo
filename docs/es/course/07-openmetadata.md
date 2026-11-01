@@ -145,9 +145,9 @@ public final class PublishToOpenMetadata {
 }
 ```
 
-Los cuerpos siguen los esquemas `CreateClassification` y `CreateTag` de OpenMetadata, incluido el campo `parent`.
-Se comprobaron con OpenMetadata 2.0.6 y solo usan campos presentes desde la 0.13.2. Las clasificaciones deben existir antes que
-sus etiquetas, y las etiquetas madre antes que sus hijas: el orden de `classifications()` y `tags()` garantiza ambas
+Los cuerpos siguen los esquemas `CreateClassification` y `CreateTag` de OpenMetadata, incluido el campo `parent`. Se
+comprobaron con OpenMetadata 2.0.6 y solo usan campos presentes desde la 0.13.2. Las clasificaciones deben existir antes
+que sus etiquetas, y las etiquetas madre antes que sus hijas: el orden de `classifications()` y `tags()` garantiza ambas
 cosas.
 
 ## Las etiquetas de una columna

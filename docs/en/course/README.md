@@ -13,12 +13,12 @@ doc-sources:
 
 **Classify the data model of your organisation, verify it in your tests and put the result to work.**
 
-This course teaches you to use [Linneo](https://github.com/devbpm/linneo#readme), a small Java library that brings a data classification
-taxonomy into your code. You will start from the legal and security concepts behind data classification, learn the
-taxonomy Linneo ships with, annotate a realistic data model, make the build fail when something is left
-unclassified, use the classification to build a data inventory, decide what can be logged and publish everything
-to a data catalogue — OpenMetadata, DataHub or Apache Atlas — and finally declare the processing activities that use
-the data and produce the GDPR record of processing activities.
+This course teaches you to use [Linneo](https://github.com/devbpm/linneo#readme), a small Java library that brings a
+data classification taxonomy into your code. You will start from the legal and security concepts behind data
+classification, learn the taxonomy Linneo ships with, annotate a realistic data model, make the build fail when
+something is left unclassified, use the classification to build a data inventory, decide what can be logged and publish
+everything to a data catalogue — OpenMetadata, DataHub or Apache Atlas — and finally declare the processing activities
+that use the data and produce the GDPR record of processing activities.
 
 Every module uses the same running example: the data model of a **small university**. It starts with a `Student`
 and a `MenuGroup` and grows, module by module, into `Enrollment`, `Grade`, `Staff`, `Document` with its

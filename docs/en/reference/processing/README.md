@@ -82,10 +82,11 @@ The [`ProcessingChecker`](checker.md) follows the same fail-closed approach as t
 severity:
 
 - **Error**: the activity, as declared, would be unlawful or cannot be checked. Personal data without a lawful basis,
-  special categories without an article 9.2 condition, criminal offence data without an article 10 basis, an
-  unknown key, an activity with no purpose, no data subjects or no personal data, an entity with classification
-  errors, an object that the data inventory does not hold, two activities with the same key. With `Jurisdiction.SPAIN`, also explicit consent as the only condition for
-  the special categories of LOPDGDD article 9.1. `verify` throws a `ProcessingException` and no record is produced.
+  special categories without an article 9.2 condition, criminal offence data without an article 10 basis, an unknown
+  key, an activity with no purpose, no data subjects or no personal data, an entity with classification errors, an
+  object that the data inventory does not hold, two activities with the same key. With `Jurisdiction.SPAIN`, also
+  explicit consent as the only condition for the special categories of LOPDGDD article 9.1. `verify` throws a
+  `ProcessingException` and no record is produced.
 - **Warning**: the record is incomplete or should be reviewed. A deprecated key, a non-personal category, a basis
   resting on law without naming the law, legitimate interests without the interest pursued, no retention, a
   condition declared for data the activity does not process, and special category, criminal offence or profiling

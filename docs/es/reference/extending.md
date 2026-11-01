@@ -14,10 +14,11 @@ doc-sources:
 
 # Extender la taxonomía
 
-Las aplicaciones añaden términos, y endurecen la protección de los existentes, directamente sobre un
-`TaxonomyBuilder` o mediante una `TaxonomyExtension` que `Taxonomy.load()` descubre con `ServiceLoader`. Linneo
-incluye además extensiones opcionales para un sector, como la [extensión universitaria](extensions/university.md):
-un ejemplo completo de `TaxonomyExtension` con sus constantes de claves (ver [Extensiones](extensions/README.md), que enumera las cinco incluidas).
+Las aplicaciones añaden términos, y endurecen la protección de los existentes, directamente sobre un `TaxonomyBuilder` o
+mediante una `TaxonomyExtension` que `Taxonomy.load()` descubre con `ServiceLoader`. Linneo incluye además extensiones
+opcionales para un sector, como la [extensión universitaria](extensions/university.md): un ejemplo completo de
+`TaxonomyExtension` con sus constantes de claves (ver [Extensiones](extensions/README.md), que enumera las cinco
+incluidas).
 
 ## TaxonomyBuilder
 

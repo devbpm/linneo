@@ -127,10 +127,10 @@ Terms an application or a sector adds to the taxonomy, and the stricter protecti
 | `void contribute(TaxonomyBuilder builder)` | Adds or refines terms. The builder already holds the standard terms (when started with `withStandard()`) and the extensions applied before this one. |
 
 An extension may only add children to existing terms and make protection stricter; the rules are enforced when the
-taxonomy is built. Pick a name and keys that no other extension you apply uses: `extend` throws a `TaxonomyException`
-if a different extension class with the same name has already been applied, and a key added twice fails with
-`Duplicate key`. The names `"university"`, `"finance"`, `"supply_chain"`, `"project_operations"` and `"human_resources"` and the
-keys of the [shipped extensions](extensions/README.md) are taken by the extensions shipped with Linneo.
+taxonomy is built. Pick a name and keys that no other extension you apply uses: `extend` throws a `TaxonomyException` if
+a different extension class with the same name has already been applied, and a key added twice fails with
+`Duplicate key`. The names `"university"`, `"finance"`, `"supply_chain"`, `"project_operations"` and `"human_resources"`
+and the keys of the [shipped extensions](extensions/README.md) are taken by the extensions shipped with Linneo.
 
 ```java
 package com.example.taxonomy;
@@ -253,6 +253,6 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard()
         .build();
 ```
 
-See also: [Taxonomy](taxonomy.md) · [Protection levels](protection-levels.md) · [Standard taxonomy](standard-taxonomy.md) ·
-[Terms](terms.md) · [Taxonomy diff](taxonomy-diff.md) · [Extensions](extensions/README.md) · course:
-[Extending the taxonomy](../course/06-extending-the-taxonomy.md)
+See also: [Taxonomy](taxonomy.md) · [Protection levels](protection-levels.md) ·
+[Standard taxonomy](standard-taxonomy.md) · [Terms](terms.md) · [Taxonomy diff](taxonomy-diff.md) ·
+[Extensions](extensions/README.md) · course: [Extending the taxonomy](../course/06-extending-the-taxonomy.md)

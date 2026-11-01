@@ -13,12 +13,12 @@ doc-sources:
 
 # Catálogo de Apache Atlas
 
-El paquete `io.github.devbpm.linneo.catalog.atlas` traduce una [`Taxonomy`](../taxonomy.md) a **tipos de
-clasificación** de [Apache Atlas](https://atlas.apache.org/) y calcula las clasificaciones de cada columna clasificada. **No hace
-llamadas de red**: envía las definiciones de tipos con el cliente HTTP que ya uses a
-`POST /api/atlas/v2/types/typedefs` y después añade las clasificaciones a las entidades de columna con
-`POST /api/atlas/v2/entity/guid/{guid}/classifications`. Los cuerpos se comprobaron con Apache Atlas 2.3.0; los
-nombres de clasificación con puntos son válidos desde Atlas 1.0 y la API no cambia hasta la 2.5.0.
+El paquete `io.github.devbpm.linneo.catalog.atlas` traduce una [`Taxonomy`](../taxonomy.md) a **tipos de clasificación**
+de [Apache Atlas](https://atlas.apache.org/) y calcula las clasificaciones de cada columna clasificada. **No hace
+llamadas de red**: envía las definiciones de tipos con el cliente HTTP que ya uses a `POST /api/atlas/v2/types/typedefs`
+y después añade las clasificaciones a las entidades de columna con
+`POST /api/atlas/v2/entity/guid/{guid}/classifications`. Los cuerpos se comprobaron con Apache Atlas 2.3.0; los nombres
+de clasificación con puntos son válidos desde Atlas 1.0 y la API no cambia hasta la 2.5.0.
 
 El repositorio incluye una prueba de integración, `AtlasIT`, que envía estos cuerpos a un servidor real; véase
 «Integration tests against catalog servers» en `CONTRIBUTING.md`.

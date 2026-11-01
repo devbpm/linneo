@@ -65,8 +65,8 @@ and description, a two-column table and, if the activity has warnings, an `Open 
 The record states the protection the data **requires** (the highest levels of its categories and fields), as input
 for the description of security measures of article 30.1.g; it does not describe the measures themselves.
 
-Every text written into the document — title, names, description and cells — has `|` escaped as `\|` and line
-breaks (`\n` or `\r`, with the white space around them) collapsed to one space, so that a value cannot break the table. The
+Every text written into the document — title, names, description and cells — has `|` escaped as `\|` and line breaks
+(`\n` or `\r`, with the white space around them) collapsed to one space, so that a value cannot break the table. The
 activity key is written as code, unescaped.
 
 ### Example

@@ -22,8 +22,8 @@ one-to-many association.
 A value computed from other fields is **not** such a field: the age computed from a date of birth is personal data.
 Classify it with [`@DerivedFrom`](derived-from.md) or [`@Category`](category.md), never with `@Exempt`.
 
-Static, synthetic, `transient` and `$$_...` fields (added by Hibernate) are **always** excluded and need no annotation. An `@Exempt` on such a field
-is ignored entirely (not even its reason is checked).
+Static, synthetic, `transient` and `$$_...` fields (added by Hibernate) are **always** excluded and need no annotation.
+An `@Exempt` on such a field is ignored entirely (not even its reason is checked).
 
 ## Elements
 
@@ -79,5 +79,6 @@ Exempting a collection of other records is right when each of them is classified
 private List<Attachment> attachments;   // the children of a one-to-many association
 ```
 
-See also: [Annotations overview](README.md) · [`@DerivedFrom`](derived-from.md) · [Classifier](../classify/classifier.md) ·
-[Violations](../classify/violations.md) · course: [Annotating models](../../course/03-annotating-models.md)
+See also: [Annotations overview](README.md) · [`@DerivedFrom`](derived-from.md) ·
+[Classifier](../classify/classifier.md) · [Violations](../classify/violations.md) · course:
+[Annotating models](../../course/03-annotating-models.md)

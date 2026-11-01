@@ -35,9 +35,10 @@ On a record component, the annotations also apply to the component's field, whic
 
 ## Which fields are classified
 
-The classifier walks the class and its superclasses (stopping before `Object`, `Record` and `Enum`) and considers
-every field declared by them except **static**, **transient** and **synthetic** fields (and those named `$$_...`, added by Hibernate), which are always skipped
-without any annotation. See [Classifier](../classify/classifier.md#which-fields-are-scanned).
+The classifier walks the class and its superclasses (stopping before `Object`, `Record` and `Enum`) and considers every
+field declared by them except **static**, **transient** and **synthetic** fields (and those named `$$_...`, added by
+Hibernate), which are always skipped without any annotation. See
+[Classifier](../classify/classifier.md#which-fields-are-scanned).
 
 A field without an annotation of its own whose type is a [`@Composite`](composite.md) class (or an array,
 collection or `Optional` of one) is not classified as one field: each field of the composite is, with the path

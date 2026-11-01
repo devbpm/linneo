@@ -33,11 +33,12 @@ Cada una contiene un `public static final String` por clave de la [taxonomía es
 - El IDE las autocompleta, y el Javadoc de cada constante muestra el nombre y la descripción del término.
 
 Las cadenas literales son igual de válidas donde se espera una clave; úsalas para las claves que añaden tus propias
-[extensiones](extending.md), que no tienen constante. Las extensiones incluidas en Linneo traen sus propias
-constantes: cada [extensión](extensions/README.md) tiene tres clases con su nombre: la [extensión universitaria](extensions/university.md)
-tiene `UniversityCategories`, `UniversityDataUses` y `UniversityDataSubjects`, y las extensiones de finanzas, cadena de
-suministro, operaciones de proyecto y recursos humanos tienen `FinanceCategories`, `SupplyChainCategories`,
-`ProjectOperationsCategories` y `HumanResourcesCategories` con sus `...DataUses` y `...DataSubjects`.
+[extensiones](extending.md), que no tienen constante. Las extensiones incluidas en Linneo traen sus propias constantes:
+cada [extensión](extensions/README.md) tiene tres clases con su nombre: la
+[extensión universitaria](extensions/university.md) tiene `UniversityCategories`, `UniversityDataUses` y
+`UniversityDataSubjects`, y las extensiones de finanzas, cadena de suministro, operaciones de proyecto y recursos
+humanos tienen `FinanceCategories`, `SupplyChainCategories`, `ProjectOperationsCategories` y `HumanResourcesCategories`
+con sus `...DataUses` y `...DataSubjects`.
 
 ```java
 import io.github.devbpm.linneo.annotation.Category;

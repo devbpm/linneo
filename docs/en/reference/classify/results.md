@@ -160,4 +160,5 @@ The legal natures are compared with a partial order: `NONE` is below every natur
 `SPECIAL_CATEGORY` and `CRIMINAL_OFFENCE`, and those two are not comparable.
 
 See also: [Classifier](classifier.md) · [Violations](violations.md) · [Protection levels](../protection-levels.md) ·
-[OpenMetadata catalog](../openmetadata/catalog.md) · course: [Using the classification](../../course/05-using-the-classification.md)
+[OpenMetadata catalog](../openmetadata/catalog.md) · course:
+[Using the classification](../../course/05-using-the-classification.md)

@@ -388,10 +388,10 @@ La [tabla de códigos](../reference/processing/checker.md#códigos) enumera cada
 
 Hasta ahora las actividades lo declaraban todo en el código. En muchas organizaciones no es así como se reparte el
 conocimiento. Los desarrolladores conocen con certeza el **alcance** de una actividad: sus finalidades, sus interesados
-y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). La **gobernanza** la decide
-y la mantiene al día el delegado de protección de datos: las bases jurídicas, la referencia legal, el plazo de
-conservación, los destinatarios, las transferencias y la evaluación de impacto. Es un record propio, `Governance`, y
-una actividad lo guarda en su `governance()`.
+y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). La
+**gobernanza** la decide y la mantiene al día el delegado de protección de datos: las bases jurídicas, la referencia
+legal, el plazo de conservación, los destinatarios, las transferencias y la evaluación de impacto. Es un record propio,
+`Governance`, y una actividad lo guarda en su `governance()`.
 
 Una aplicación puede declarar el alcance en el código, guardar en su propio almacenamiento la gobernanza que edita el
 delegado y combinar ambos con `withGovernance` antes de comprobar, por ejemplo cada vez que se guarda un cambio:
@@ -510,7 +510,8 @@ La fila «Lawful basis» muestra el nombre fideslang de la base (`Legal obligati
 los niveles más altos de los datos, como punto de partida para la descripción de las medidas de seguridad del
 artículo 30.1.g. Cada fila se explica en la página de referencia [ProcessingRecord](../reference/processing/record.md).
 
-`toJson()` da el mismo contenido para las herramientas. Solo el boletín, con `checker.verify(ALUMNI_NEWSLETTER).toJson()`:
+`toJson()` da el mismo contenido para las herramientas. Solo el boletín, con
+`checker.verify(ALUMNI_NEWSLETTER).toJson()`:
 
 ```json
 {"activities":[{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events and alumni services","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}

@@ -32,9 +32,9 @@ Los cuatro enumerados, y el registro `Protection`, son `@since 0.1.0`.
 
 ## LegalNature
 
-`io.github.devbpm.linneo.LegalNature` — qué es una categoría de datos según la normativa de protección de datos: Reglamento (UE) 2016/679 (RGPD, con las
-correcciones de DOUE L 127, 23.5.2018) y, para España, Ley Orgánica 3/2018 (LOPDGDD, texto consolidado de 27 de
-diciembre de 2025).
+`io.github.devbpm.linneo.LegalNature` — qué es una categoría de datos según la normativa de protección de datos:
+Reglamento (UE) 2016/679 (RGPD, con las correcciones de DOUE L 127, 23.5.2018) y, para España, Ley Orgánica 3/2018
+(LOPDGDD, texto consolidado de 27 de diciembre de 2025).
 
 | Constante | Significado |
 |---|---|

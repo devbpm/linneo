@@ -22,18 +22,19 @@ doc-sources:
 
 # Referencia de Linneo
 
-Linneo es una biblioteca para Java 21 o superior, sin dependencias en tiempo de ejecución, que incluye una taxonomía
-de clasificación de datos y la aplica a un modelo de datos. Una `Taxonomy` contiene tres jerarquías de términos con
-claves en notación de puntos: **categorías de datos** (qué contiene un campo), **usos de datos** (para qué se tratan)
-y **sujetos de datos** (de quién son). La taxonomía estándar es la taxonomía por defecto de fideslang más las
-extensiones de Linneo para datos no personales y datos educativos. Cada categoría de datos lleva la protección que
-requiere (naturaleza jurídica, confidencialidad, integridad, secreto), que sus hijas heredan y solo pueden endurecer.
-Los modelos declaran lo que contienen con anotaciones, un `Classifier` comprueba esas anotaciones en los tests, las
-actividades de tratamiento vinculan finalidades, interesados y datos personales con sus bases jurídicas y generan el
-registro de actividades de tratamiento del RGPD, y tres exportadores traducen la taxonomía para un catálogo de
-datos: `OpenMetadataCatalog` (clasificaciones y etiquetas de OpenMetadata), `DataHubCatalog` (un glosario de negocio
-de DataHub) y `AtlasCatalog` (clasificaciones de Apache Atlas). Las aplicaciones añaden sus propios términos mediante una `TaxonomyExtension`, y Linneo incluye cinco opcionales
-(universidades, finanzas, cadena de suministro, operaciones de proyecto y recursos humanos) que solo se aplican si se piden.
+Linneo es una biblioteca para Java 21 o superior, sin dependencias en tiempo de ejecución, que incluye una taxonomía de
+clasificación de datos y la aplica a un modelo de datos. Una `Taxonomy` contiene tres jerarquías de términos con claves
+en notación de puntos: **categorías de datos** (qué contiene un campo), **usos de datos** (para qué se tratan) y
+**sujetos de datos** (de quién son). La taxonomía estándar es la taxonomía por defecto de fideslang más las extensiones
+de Linneo para datos no personales y datos educativos. Cada categoría de datos lleva la protección que requiere
+(naturaleza jurídica, confidencialidad, integridad, secreto), que sus hijas heredan y solo pueden endurecer. Los modelos
+declaran lo que contienen con anotaciones, un `Classifier` comprueba esas anotaciones en los tests, las actividades de
+tratamiento vinculan finalidades, interesados y datos personales con sus bases jurídicas y generan el registro de
+actividades de tratamiento del RGPD, y tres exportadores traducen la taxonomía para un catálogo de datos:
+`OpenMetadataCatalog` (clasificaciones y etiquetas de OpenMetadata), `DataHubCatalog` (un glosario de negocio de
+DataHub) y `AtlasCatalog` (clasificaciones de Apache Atlas). Las aplicaciones añaden sus propios términos mediante una
+`TaxonomyExtension`, y Linneo incluye cinco opcionales (universidades, finanzas, cadena de suministro, operaciones de
+proyecto y recursos humanos) que solo se aplican si se piden.
 
 Esta referencia describe todos los tipos públicos. Para una introducción guiada, consulta el
 [curso](../course/README.md).
@@ -96,8 +97,8 @@ module com.example.app {
 - [Taxonomía](taxonomy.md) — `Taxonomy` (`standard`, `load`, `builder`, búsquedas, obsolescencia, navegación, forma de
   texto y huella) y `TaxonomyException`.
 - [Términos](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`.
-- [Niveles de protección](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`, `Protection`
-  y la regla de herencia.
+- [Niveles de protección](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`,
+  `Protection` y la regla de herencia.
 - [Taxonomía estándar](standard-taxonomy.md) — la taxonomía de fideslang incluida, los añadidos y la política de
   protección de Linneo, los formatos TSV.
 - [Constantes de claves](key-constants.md) — `Categories`, `DataUses`, `DataSubjects`.

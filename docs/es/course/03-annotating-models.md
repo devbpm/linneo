@@ -25,7 +25,8 @@ Al terminar este módulo serás capaz de:
 - declarar la identificabilidad de un valor almacenado;
 - indicar una sola vez, con un motivo, que una clase no contiene datos personales, mediante `@DefaultCategory`;
 - clasificar un campo cuya categoría cambia de una fila a otra con `@CategoryByRow`;
-- clasificar un valor calculado a partir de otros campos con `@DerivedFrom`, y un objeto de valor embebido con `@Composite`;
+- clasificar un valor calculado a partir de otros campos con `@DerivedFrom`, y un objeto de valor embebido con
+  `@Composite`;
 - excluir con `@Exempt` los campos técnicos, y saber qué campos se excluyen automáticamente;
 - anotar correctamente records y jerarquías de clases;
 - elegir la clave adecuada para un campo y justificarla.

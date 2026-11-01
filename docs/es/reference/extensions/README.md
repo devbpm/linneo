@@ -35,7 +35,10 @@ sector: términos que la mayoría de las aplicaciones no necesitan, empaquetados
 | Operaciones de proyecto | `io.github.devbpm.linneo.extension.projectoperations.ProjectOperationsTaxonomy` | `"project_operations"` | 11 categorías de datos, 6 usos de datos, 2 interesados | [Operaciones de proyecto](project-operations.md) |
 | Recursos humanos y nómina | `io.github.devbpm.linneo.extension.humanresources.HumanResourcesTaxonomy` | `"human_resources"` | 21 categorías de datos, 15 usos de datos, 6 interesados | [Recursos humanos](human-resources.md) |
 
-Las extensiones de finanzas, cadena de suministro, operaciones de proyecto y recursos humanos se basan en las áreas de negocio del Common Data Model (CDM); consulta la sección *Fuentes* de cada página. La extensión universitaria se basa en la Open Education API. Las cinco no comparten ninguna clave, así que cualquiera puede aplicarse con cualquier otra y con las tuyas.
+Las extensiones de finanzas, cadena de suministro, operaciones de proyecto y recursos humanos se basan en las áreas de
+negocio del Common Data Model (CDM); consulta la sección *Fuentes* de cada página. La extensión universitaria se basa en
+la Open Education API. Las cinco no comparten ninguna clave, así que cualquiera puede aplicarse con cualquier otra y con
+las tuyas.
 
 ## No se aplican por defecto
 
@@ -64,8 +67,8 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxon
 
 `taxonomy.toString()` imprime `Taxonomy[158 data categories, 90 data uses, 34 data subjects]`, frente a
 `Taxonomy[126 data categories, 63 data uses, 22 data subjects]` de la taxonomía estándar. Con las cinco extensiones
-incluidas aplicadas imprime `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Guarda el resultado y úsalo
-en todas partes: en el [`Classifier`](../classify/classifier.md), en el
+incluidas aplicadas imprime `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Guarda el resultado y
+úsalo en todas partes: en el [`Classifier`](../classify/classifier.md), en el
 [`ProcessingChecker`](../processing/checker.md) y en los exportadores a catálogos. Un `Classifier` construido sobre
 `Taxonomy.standard()` informa de cada clave de la extensión como `UNKNOWN_CATEGORY`.
 
@@ -87,8 +90,9 @@ hacerlo depende de dónde esté Linneo:
 
 - **Module path**: una cláusula `provides` solo puede nombrar una clase del módulo que la declara, así que
   `provides io.github.devbpm.linneo.TaxonomyExtension with io.github.devbpm.linneo.extension.university.UniversityTaxonomy`
-  en tu `module-info.java` no compila (`service implementation must be defined in the same module as the provides
-  directive`). Ofrécela mediante una clase de tu módulo con un método público estático `provider()`:
+  en tu `module-info.java` no compila
+  (`service implementation must be defined in the same module as the provides directive`). Ofrécela mediante una clase
+  de tu módulo con un método público estático `provider()`:
 
   ```java
   package com.example.app;
@@ -122,12 +126,12 @@ La llamada explícita a `extend` de la sección anterior funciona en ambos casos
 Una extensión incluida y tus propias extensiones se aplican al mismo builder y se combinan como dos extensiones
 cualesquiera:
 
-- **Nombres.** Cada término registra como origen el nombre de la extensión que lo añadió (`university`, `finance`, `supply_chain`, `project_operations`,
-  `human_resources`, o el de la tuya). `extend` aplica una misma clase de extensión una sola vez (así una extensión incluida puede aplicarse de
-  forma explícita y estar además registrada como servicio), pero lanza una `TaxonomyException` si ya se aplicó una
-  clase distinta con el mismo nombre: `The extensions io.github.devbpm.linneo.extension.university.UniversityTaxonomy
-  and com.example.app.MyExtension are both named 'university'`. No le pongas a tu extensión el nombre de una
-  incluida.
+- **Nombres.** Cada término registra como origen el nombre de la extensión que lo añadió (`university`, `finance`,
+  `supply_chain`, `project_operations`, `human_resources`, o el de la tuya). `extend` aplica una misma clase de
+  extensión una sola vez (así una extensión incluida puede aplicarse de forma explícita y estar además registrada como
+  servicio), pero lanza una `TaxonomyException` si ya se aplicó una clase distinta con el mismo nombre:
+  `The extensions io.github.devbpm.linneo.extension.university.UniversityTaxonomy and com.example.app.MyExtension are both named 'university'`.
+  No le pongas a tu extensión el nombre de una incluida.
 - **Claves.** Revisa la extensión incluida antes de añadir un término: si ya tiene la clave, úsala. Añadir dos veces
   una clave falla con `Duplicate key '<key>'`.
 - **Orden.** Tu extensión solo puede hacer más estricto un término de una extensión incluida con `refineCategory` si
@@ -147,5 +151,6 @@ cualesquiera:
   anotaciones, y guarda tus propias constantes en tus propias clases.
 
 Véase también: [Universidad](university.md) · [Finanzas](finance.md) · [Cadena de suministro](supply-chain.md) ·
-[Operaciones de proyecto](project-operations.md) · [Recursos humanos](human-resources.md) · [Extender la taxonomía](../extending.md) ·
-[Taxonomía estándar](../standard-taxonomy.md) · curso: [Extender la taxonomía](../../course/06-extending-the-taxonomy.md)
+[Operaciones de proyecto](project-operations.md) · [Recursos humanos](human-resources.md) ·
+[Extender la taxonomía](../extending.md) · [Taxonomía estándar](../standard-taxonomy.md) · curso:
+[Extender la taxonomía](../../course/06-extending-the-taxonomy.md)

@@ -123,8 +123,8 @@ de cada código.
 
 `inventory(types, objectKey)` devuelve las clases como un [`DataInventory`](inventory.md): por cada clase, un objeto
 bajo la clave que `objectKey` da para ella, con cada campo tal como el código lo declara (la clave tal como está
-escrita, los niveles que el propio campo eleva, la identificabilidad, el motivo) y los campos exentos con sus motivos. Es
-la forma de la clasificación que una aplicación guarda y compara, en lugar de las clases.
+escrita, los niveles que el propio campo eleva, la identificabilidad, el motivo) y los campos exentos con sus motivos.
+Es la forma de la clasificación que una aplicación guarda y compara, en lugar de las clases.
 
 ```java
 Map<Class<?>, String> objectKeys = Map.of(Student.class, "student", Invoice.class, "invoice");

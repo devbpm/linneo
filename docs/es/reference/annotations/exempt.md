@@ -23,8 +23,8 @@ Un valor calculado a partir de otros campos **no** es un campo así: la edad cal
 nacimiento es un dato personal. Se clasifica con [`@DerivedFrom`](derived-from.md) o [`@Category`](category.md),
 nunca con `@Exempt`.
 
-Los campos estáticos, sintéticos, `transient` y `$$_...` (los añade Hibernate) se excluyen **siempre** y no necesitan anotación. Un `@Exempt` en uno
-de esos campos se ignora por completo (ni siquiera se comprueba su motivo).
+Los campos estáticos, sintéticos, `transient` y `$$_...` (los añade Hibernate) se excluyen **siempre** y no necesitan
+anotación. Un `@Exempt` en uno de esos campos se ignora por completo (ni siquiera se comprueba su motivo).
 
 ## Elementos
 
@@ -80,5 +80,6 @@ clase (aquí `Attachment`):
 private List<Attachment> attachments;   // los hijos de una asociación uno a muchos
 ```
 
-Véase también: [Visión general de las anotaciones](README.md) · [`@DerivedFrom`](derived-from.md) · [Classifier](../classify/classifier.md) ·
-[Violaciones](../classify/violations.md) · curso: [Anotar modelos](../../course/03-annotating-models.md)
+Véase también: [Visión general de las anotaciones](README.md) · [`@DerivedFrom`](derived-from.md) ·
+[Classifier](../classify/classifier.md) · [Violaciones](../classify/violations.md) · curso:
+[Anotar modelos](../../course/03-annotating-models.md)

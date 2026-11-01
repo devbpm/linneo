@@ -32,9 +32,9 @@ Each holds one `public static final String` per key of the [standard taxonomy](s
   [`Classifier`](classify/classifier.md) (`UNKNOWN_CATEGORY`).
 - The IDE completes them, and each constant's Javadoc shows the term's name and description.
 
-Plain strings are equally valid wherever a key is expected; use them for keys your own
-[extensions](extending.md) add, which have no constant. The extensions shipped with Linneo bring their own constants:
-each [extension](extensions/README.md) has three classes named after it: the [university extension](extensions/university.md)
+Plain strings are equally valid wherever a key is expected; use them for keys your own [extensions](extending.md) add,
+which have no constant. The extensions shipped with Linneo bring their own constants: each
+[extension](extensions/README.md) has three classes named after it: the [university extension](extensions/university.md)
 has `UniversityCategories`, `UniversityDataUses` and `UniversityDataSubjects`, and the finance, supply chain, project
 operations and human resources extensions have `FinanceCategories`, `SupplyChainCategories`,
 `ProjectOperationsCategories` and `HumanResourcesCategories` with their `...DataUses` and `...DataSubjects`.

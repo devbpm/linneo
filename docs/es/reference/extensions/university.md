@@ -110,7 +110,8 @@ el apoyo y la convivencia, las prácticas y la movilidad, y las finanzas. El may
 estudiante.
 
 La protección que se muestra es la efectiva en la taxonomía construida. Los valores en **negrita** los declara la
-extensión; el resto se heredan de la madre (`user.education` y `user.financial` son `ORDINARY`, `MEDIUM`, `HIGH`). Ninguna categoría es secreta y todas son datos personales.
+extensión; el resto se heredan de la madre (`user.education` y `user.financial` son `ORDINARY`, `MEDIUM`, `HIGH`).
+Ninguna categoría es secreta y todas son datos personales.
 
 ### El expediente del estudiante
 
@@ -272,13 +273,12 @@ Todos los interesados de la extensión son planos, porque los interesados de fid
 | `trustee` | Trustee | Un miembro del órgano de gobierno de la institución o de su fundación. |
 | `volunteer` | Volunteer | Una persona que dedica tiempo como voluntaria a la institución. |
 
-Los interesados estándar `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member` y
-`legal_representative` y `emergency_contact` (Linneo) y `employee`, `next_of_kin` y `visitor` (fideslang) cubren
-el resto. Algunos
-interesados de la extensión están junto a uno de fideslang más restringido: `prospect` es alguien a quien la
-organización vende bienes o servicios, `next_of_kin` es un familiar y `visitor` es alguien que visita un lugar (un invitado está vinculado a la institución durante un tiempo). `doctoral_candidate` y
-`exchange_student` son tipos de estudiante, pero, como los interesados son planos, no son hijos de `student`: úsalos
-cuando el tratamiento sea específico de ellos.
+Los interesados estándar `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member` y `legal_representative` y
+`emergency_contact` (Linneo) y `employee`, `next_of_kin` y `visitor` (fideslang) cubren el resto. Algunos interesados de
+la extensión están junto a uno de fideslang más restringido: `prospect` es alguien a quien la organización vende bienes
+o servicios, `next_of_kin` es un familiar y `visitor` es alguien que visita un lugar (un invitado está vinculado a la
+institución durante un tiempo). `doctoral_candidate` y `exchange_student` son tipos de estudiante, pero, como los
+interesados son planos, no son hijos de `student`: úsalos cuando el tratamiento sea específico de ellos.
 
 ### Por qué los roles docentes no son interesados
 

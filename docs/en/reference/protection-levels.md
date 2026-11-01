@@ -32,8 +32,9 @@ All four enums, and the `Protection` record, are `@since 0.1.0`.
 
 ## LegalNature
 
-`io.github.devbpm.linneo.LegalNature` — what a data category is under data protection law: Regulation (EU) 2016/679 (GDPR, as corrected in OJ L 127,
-23.5.2018) and, for Spain, Ley Orgánica 3/2018 (LOPDGDD, consolidated text of 27 December 2025).
+`io.github.devbpm.linneo.LegalNature` — what a data category is under data protection law: Regulation (EU) 2016/679
+(GDPR, as corrected in OJ L 127, 23.5.2018) and, for Spain, Ley Orgánica 3/2018 (LOPDGDD, consolidated text of 27
+December 2025).
 
 | Constant | Meaning |
 |---|---|

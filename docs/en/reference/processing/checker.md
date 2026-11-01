@@ -89,8 +89,9 @@ The checker does not inspect `description`, `recipients` or `transfers`.
 The personal data of an activity is the union of three sources:
 
 - **Category keys** (`dataCategories`). An unknown key is the error `UNKNOWN_KEY`. A deprecated key is always the
-  warning `DEPRECATED_KEY`; with a replacement it is resolved to it, without one it is used as is. A category that is not personal data (legal nature `NONE`) is the warning
-  `NOT_PERSONAL_DATA` and is left out of the record. Each remaining category contributes its own levels.
+  warning `DEPRECATED_KEY`; with a replacement it is resolved to it, without one it is used as is. A category that is
+  not personal data (legal nature `NONE`) is the warning `NOT_PERSONAL_DATA` and is left out of the record. Each
+  remaining category contributes its own levels.
 - **Entities** (`entities`). Each class is classified with the [`Classifier`](../classify/classifier.md). If the
   classification has errors, the activity gets one `ENTITY_NOT_CLASSIFIED` error with their number (run the classifier
   test to see them); the fields that could be classified still count. The entity contributes its
@@ -104,12 +105,12 @@ The personal data of an activity is the union of three sources:
   object the inventory does not hold, or any object when the checker has no inventory, is the error `UNKNOWN_KEY`. A
   field of the object whose key is not in the taxonomy is also `UNKNOWN_KEY`, whether or not it would be personal;
   exempted fields are skipped. A field whose key is deprecated is the warning `DEPRECATED_KEY`, because the inventory
-  holds the keys as written (and so, unlike the classifier's own warnings for an entity, it is reported here), whether or
-  not the field is personal; the field is checked with the replacement. Each other field contributes as a field of an
-  entity does: its category, resolved to the replacement of a deprecated key, and its **effective** protection, with
-  the levels raised on the field, but only if it is personal: a personal category not declared `ANONYMIZED` or
-  `AGGREGATED`. With the inventory that `Classifier.inventory` builds for a class, an activity
-  that lists its object gets the same categories and protection as one that lists the class.
+  holds the keys as written (and so, unlike the classifier's own warnings for an entity, it is reported here), whether
+  or not the field is personal; the field is checked with the replacement. Each other field contributes as a field of an
+  entity does: its category, resolved to the replacement of a deprecated key, and its **effective** protection, with the
+  levels raised on the field, but only if it is personal: a personal category not declared `ANONYMIZED` or `AGGREGATED`.
+  With the inventory that `Classifier.inventory` builds for a class, an activity that lists its object gets the same
+  categories and protection as one that lists the class.
 
 The categories are kept once each, ordered by key, in `CheckedActivity.dataCategories()`. The protection the
 activity requires, `CheckedActivity.protection()`, is the [join](../protection-levels.md#protection) of all those

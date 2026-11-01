@@ -124,6 +124,6 @@ private Medical record;
 ```
 
 Véase también: [Visión general de las anotaciones](README.md) · [`@Category`](category.md) ·
-[`@DefaultCategory`](default-category.md) · [`@DerivedFrom`](derived-from.md) · [Classifier](../classify/classifier.md) ·
-[Resultados](../classify/results.md) · [Violaciones](../classify/violations.md) ·
-curso: [Anotar modelos](../../course/03-annotating-models.md)
+[`@DefaultCategory`](default-category.md) · [`@DerivedFrom`](derived-from.md) · [Classifier](../classify/classifier.md)
+· [Resultados](../classify/results.md) · [Violaciones](../classify/violations.md) · curso:
+[Anotar modelos](../../course/03-annotating-models.md)

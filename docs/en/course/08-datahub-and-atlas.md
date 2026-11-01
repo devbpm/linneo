@@ -164,10 +164,10 @@ public final class PublishToDataHub {
 
 The URL is the DataHub metadata service (GMS); behind the DataHub frontend it is usually
 `/api/gms/aspects?action=ingestProposal`. Do not leave out the `X-RestLi-Protocol-Version: 2.0.0` header: GMS needs it
-to read the proposal (with `curl`, add `-H 'X-RestLi-Protocol-Version: 2.0.0'`). The bodies were checked against
-DataHub v1.7.0.1 and the aspects use only fields present since v0.9.2. Every proposal is an `UPSERT`, so you can run the publisher again after
-changing the taxonomy — but it replaces the whole aspect each time, so do not curate Linneo's terms by hand in the
-DataHub UI.
+to read the proposal (with `curl`, add `-H 'X-RestLi-Protocol-Version: 2.0.0'`). The bodies were checked against DataHub
+v1.7.0.1 and the aspects use only fields present since v0.9.2. Every proposal is an `UPSERT`, so you can run the
+publisher again after changing the taxonomy — but it replaces the whole aspect each time, so do not curate Linneo's
+terms by hand in the DataHub UI.
 
 ### The terms of a column
 
@@ -368,7 +368,8 @@ Linneo, so you can rename all of them freely.
 - **Editing Linneo's terms in the DataHub UI.** The next run of the publisher replaces those aspects.
 - **Attaching only the category classification in Atlas.** `DataCategory.user.health_and_medical.disability` does not
   carry `Confidentiality.High` through its super types; send `classificationsJson(field)`, which lists every label.
-- **Posting the Atlas typedefs a second time unchanged.** `POST` answers 409 for existing types; send the same body with `PUT`.
+- **Posting the Atlas typedefs a second time unchanged.** `POST` answers 409 for existing types; send the same body with
+  `PUT`.
 - **Ignoring Atlas propagation.** Derived columns may receive the personal-data classifications of their sources.
 - **Computing labels from the category instead of the field** (`termsOf(field.category())`): you lose the raised
   levels, the identifiability and the aggregated/anonymised distinction, as in module 7.

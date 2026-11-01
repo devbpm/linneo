@@ -95,8 +95,8 @@ module com.example.app {
 - [Taxonomy](taxonomy.md) — `Taxonomy` (`standard`, `load`, `builder`, lookups, deprecation, navigation, text form and
   fingerprint) and `TaxonomyException`.
 - [Terms](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`.
-- [Protection levels](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`, `Protection`
-  and the inheritance rule.
+- [Protection levels](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`,
+  `Protection` and the inheritance rule.
 - [Standard taxonomy](standard-taxonomy.md) — the bundled fideslang taxonomy, Linneo's additions and protection
   policy, the TSV formats.
 - [Key constants](key-constants.md) — `Categories`, `DataUses`, `DataSubjects`.

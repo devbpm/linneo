@@ -14,9 +14,9 @@ doc-sources:
 `io.github.devbpm.linneo.classify.Classifier` — `public final class`, `@since 0.1.0`
 
 Reads the classification annotations of classes and checks them against a [`Taxonomy`](../taxonomy.md). It works on
-plain classes, records and JPA entities alike and needs no persistence library. It only reads annotations, never
-field values, so it needs no access to the classes beyond what `Class.getDeclaredFields()` requires. Instances are
-immutable and thread-safe: each call reads every class it needs once (the class, the [`@Composite`](../annotations/composite.md)
+plain classes, records and JPA entities alike and needs no persistence library. It only reads annotations, never field
+values, so it needs no access to the classes beyond what `Class.getDeclaredFields()` requires. Instances are immutable
+and thread-safe: each call reads every class it needs once (the class, the [`@Composite`](../annotations/composite.md)
 classes it holds and the classes whose fields its [`@DerivedFrom`](../annotations/derived-from.md) fields name), detects
 cycles, and keeps nothing between calls.
 
@@ -61,11 +61,11 @@ new Classifier(Taxonomy.load()).verify(entities);
 - **Hibernate proxies.** A class whose name contains `$HibernateProxy$` is classified as the entity it extends: the
   `type()` of its [`ClassClassification`](results.md#classclassification) is the entity, not the proxy.
 - **Composites are entered.** A field with no annotation of its own whose type is a
-  [`@Composite`](../annotations/composite.md) class, or an array, a collection or an `Optional` of one, is classified
-  by the composite's fields: one entry per field, with the path `field.part` (`home.street`), under the composite's
-  own annotations and `@DefaultCategory`, not the holder's. A `Map` is never descended into. A class that is not
-  marked `@Composite`, such as a JPA `@Embedded` class, is one ordinary field that needs a category of its own (or a class default): mark the
-  class `@Composite` rather than passing it to `verify` separately.
+  [`@Composite`](../annotations/composite.md) class, or an array, a collection or an `Optional` of one, is classified by
+  the composite's fields: one entry per field, with the path `field.part` (`home.street`), under the composite's own
+  annotations and `@DefaultCategory`, not the holder's. A `Map` is never descended into. A class that is not marked
+  `@Composite`, such as a JPA `@Embedded` class, is one ordinary field that needs a category of its own (or a class
+  default): mark the class `@Composite` rather than passing it to `verify` separately.
 - **Derived fields.** A field marked [`@DerivedFrom`](../annotations/derived-from.md) takes the classification of its
   source, or declares one that protects at least as much. Its sources may be declared after it, be derived fields
   themselves, be parts of a composite, or belong to another class (`type`), which the classifier reads as well.
