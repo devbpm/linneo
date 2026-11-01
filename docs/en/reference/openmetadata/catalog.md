@@ -41,6 +41,7 @@ Immutable and thread-safe. There is no public constructor.
 | `String tagOf(DataCategory category)` | `String` | The fully qualified name of the category's tag, such as `DataCategory.user.contact.email`. |
 | `List<String> tagsOf(DataCategory category)` | list | The category's own tag followed by the tags it implies (the tags the category implies). |
 | `List<String> tagsOf(FieldClassification field)` | list | The tags of a classified column: its category, whether and how it is personal data, and the field's effective protection. |
+| `List<String> tagsOf(InventoryField field)` | list | The tags of a column from a stored [`InventoryField`](../classify/inventory.md#inventoryfield), resolved with the catalog's taxonomy; see [Tags of a stored field](#tags-of-a-stored-field). |
 
 ```java
 Taxonomy taxonomy = Taxonomy.load();
@@ -139,6 +140,30 @@ private String reference;
 // tagsOf → [DataCategory.user.unique_id.pseudonymous, PersonalData.Personal, PII.Sensitive,
 //           Confidentiality.Medium, Integrity.Medium, Identifiability.Pseudonymized]
 ```
+
+### Tags of a stored field
+
+`tagsOf(InventoryField)` gives exactly what `tagsOf(FieldClassification)` gives for the same field, resolving the
+stored key, levels and identifiability with the catalog's own taxonomy (a deprecated key publishes as its replacement).
+It publishes from the [data inventory](../classify/inventory.md) an application keeps, without the classes. For an
+exempted field the list is empty. `TaxonomyException` if the catalog's taxonomy does not contain the field's key.
+
+It also gives the change of a column: the tags of the earlier field, with a catalog of the earlier taxonomy, against
+the tags of the current field. Remove the tags that are only in the first list and add those only in the second; tags
+that did not come from Linneo are in neither list, so they stay on the column.
+
+```java
+OpenMetadataCatalog earlier = OpenMetadataCatalog.of(appliedTaxonomy);
+OpenMetadataCatalog current = OpenMetadataCatalog.of(taxonomy);
+
+List<String> remove = new ArrayList<>(earlier.tagsOf(storedField));
+remove.removeAll(current.tagsOf(currentField));
+List<String> add = new ArrayList<>(current.tagsOf(currentField));
+add.removeAll(earlier.tagsOf(storedField));
+```
+
+The [DataHub](../datahub/catalog.md#terms-of-a-stored-field) and
+[Atlas](../atlas/catalog.md#classifications-of-a-stored-field) catalogs have the same overloads.
 
 ## OmClassification
 

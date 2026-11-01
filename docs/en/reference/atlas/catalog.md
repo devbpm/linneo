@@ -42,6 +42,8 @@ Immutable and thread-safe. There is no public constructor.
 | `List<String> classificationsOf(DataCategory category)` | list | The category's own classification followed by those of the protection it implies. |
 | `List<String> classificationsOf(FieldClassification field)` | list | The classifications of a classified column: its category, its legal nature when it is personal data, and the field's effective protection. |
 | `String classificationsJson(FieldClassification field)` | `String` | The body of `POST /api/atlas/v2/entity/guid/{guid}/classifications` for that column: a JSON array of `{"typeName": …}` objects. |
+| `List<String> classificationsOf(InventoryField field)` | list | The classifications of a column from a stored [`InventoryField`](../classify/inventory.md#inventoryfield), resolved with the catalog's taxonomy; see [Classifications of a stored field](#classifications-of-a-stored-field). |
+| `String classificationsJson(InventoryField field)` | `String` | The same body as `classificationsJson(FieldClassification)`, for a stored field. `[]` for an exempted field. |
 
 ```java
 Taxonomy taxonomy = Taxonomy.load();
@@ -174,6 +176,20 @@ classifications propagate along lineage to the entities derived from the column.
 lineage: a column computed from personal columns (an average, a count) inherits their `PersonalData.*` and
 `Identifiability.Identified` classifications next to its own. If you need another behaviour, add
 `"propagate": false` (or the propagation options your Atlas version supports) to the objects before sending them.
+
+### Classifications of a stored field
+
+`classificationsOf(InventoryField)` and `classificationsJson(InventoryField)` give exactly what the
+`FieldClassification` overloads give for the same field, resolving the stored key, levels and identifiability with
+the catalog's own taxonomy (a deprecated key publishes as its replacement). They publish from the
+[data inventory](../classify/inventory.md) an application keeps, without the classes. For an exempted field the list is
+empty and the JSON is `[]`. `TaxonomyException` if the catalog's taxonomy does not contain the field's key.
+
+To change a column, compare the classifications of the earlier field, with a catalog of the earlier taxonomy, with
+those of the current field: remove from the entity the ones that are only in the first list and add those only in the
+second. Classifications that did not come from Linneo are in neither list, so they stay on the entity. The
+[example](../openmetadata/catalog.md#tags-of-a-stored-field) on the OpenMetadata page works the same with
+`AtlasCatalog` and `classificationsOf`.
 
 ## AtlasClassificationDef
 

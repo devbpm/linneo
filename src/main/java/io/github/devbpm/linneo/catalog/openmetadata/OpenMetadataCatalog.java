@@ -20,8 +20,10 @@ import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.classify.FieldClassification;
+import io.github.devbpm.linneo.classify.InventoryField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -156,21 +158,44 @@ public final class OpenMetadataCatalog {
      * @return fully qualified tag names
      */
     public List<String> tagsOf(FieldClassification field) {
-        DataCategory category = field.category();
+        return columnTags(field.category(), field.isPersonal(), field.confidentiality(), field.integrity(),
+                field.identifiability());
+    }
+
+    /**
+     * The tags of a column from a stored record of its field, resolved with this catalog's taxonomy: what
+     * {@link #tagsOf(FieldClassification)} gives for the classification of the same field. It lets an application
+     * publish from the data inventory it keeps, without the classes. Compared with the tags of the same column
+     * before a change (the earlier field, with a catalog of the earlier taxonomy), it says what to remove from the
+     * column and what to add, leaving the tags that do not come from Linneo alone.
+     *
+     * @param field a field of a {@link io.github.devbpm.linneo.classify.DataInventory}
+     * @return fully qualified tag names; empty for an exempted field
+     * @throws io.github.devbpm.linneo.TaxonomyException if this catalog's taxonomy does not contain the field's key
+     */
+    public List<String> tagsOf(InventoryField field) {
+        if (field.isExempt()) {
+            return List.of();
+        }
+        Protection protection = field.protection(taxonomy);
+        return columnTags(field.category(taxonomy), field.isPersonal(taxonomy), protection.confidentiality(),
+                protection.integrity(), field.identifiability(taxonomy));
+    }
+
+    private List<String> columnTags(DataCategory category, boolean personal, Confidentiality confidentiality,
+                                    Integrity integrity, Identifiability identifiability) {
         List<String> tags = new ArrayList<>();
         tags.add(tagOf(category));
-        if (field.isPersonal()) {
+        if (personal) {
             tags.add(personalDataTag(category.nature()));
-            tags.add(piiTag(true, field.confidentiality()));
-        } else {
-            tags.add(piiTag(false, field.confidentiality()));
         }
-        tags.add(mapping.confidentiality() + "." + label(field.confidentiality()));
-        tags.add(mapping.integrity() + "." + label(field.integrity()));
-        if (field.identifiability() != null) {
-            tags.add(mapping.identifiability() + "." + label(field.identifiability()));
+        tags.add(piiTag(personal, confidentiality));
+        tags.add(mapping.confidentiality() + "." + label(confidentiality));
+        tags.add(mapping.integrity() + "." + label(integrity));
+        if (identifiability != null) {
+            tags.add(mapping.identifiability() + "." + label(identifiability));
         }
-        if (field.isSecret()) {
+        if (category.secret()) {
             tags.add(mapping.handling() + "." + SECRET);
         }
         return tags;

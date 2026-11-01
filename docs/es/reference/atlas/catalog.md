@@ -42,6 +42,8 @@ Inmutable y seguro entre hilos. No tiene constructor público.
 | `List<String> classificationsOf(DataCategory category)` | lista | La clasificación propia de la categoría seguida de las de la protección que implica. |
 | `List<String> classificationsOf(FieldClassification field)` | lista | Las clasificaciones de una columna clasificada: su categoría, su naturaleza jurídica si es dato personal y la protección efectiva del campo. |
 | `String classificationsJson(FieldClassification field)` | `String` | El cuerpo de `POST /api/atlas/v2/entity/guid/{guid}/classifications` para esa columna: un array JSON de objetos `{"typeName": …}`. |
+| `List<String> classificationsOf(InventoryField field)` | lista | Las clasificaciones de una columna a partir de un [`InventoryField`](../classify/inventory.md#inventoryfield) guardado, resueltas con la taxonomía del catálogo; véase [Clasificaciones de un campo guardado](#clasificaciones-de-un-campo-guardado). |
+| `String classificationsJson(InventoryField field)` | `String` | El mismo cuerpo que `classificationsJson(FieldClassification)`, para un campo guardado. `[]` en un campo exento. |
 
 ```java
 Taxonomy taxonomy = Taxonomy.load();
@@ -178,6 +180,20 @@ supone para tu linaje: una columna calculada a partir de columnas personales (un
 clasificaciones `PersonalData.*` e `Identifiability.Identified` junto a las suyas propias. Si necesitas otro
 comportamiento, añade `"propagate": false` (o las opciones de propagación que admita tu versión de Atlas) a los
 objetos antes de enviarlos.
+
+### Clasificaciones de un campo guardado
+
+`classificationsOf(InventoryField)` y `classificationsJson(InventoryField)` dan exactamente lo que dan las sobrecargas
+de `FieldClassification` para el mismo campo, resolviendo la clave, los niveles y la identificabilidad guardados con la
+taxonomía del propio catálogo (una clave obsoleta se publica como su sustituta). Sirven para publicar desde el
+[inventario de datos](../classify/inventory.md) que guarda una aplicación, sin las clases. En un campo exento la lista
+está vacía y el JSON es `[]`. `TaxonomyException` si la taxonomía del catálogo no contiene la clave del campo.
+
+Para cambiar una columna, compara las clasificaciones del campo anterior, con un catálogo de la taxonomía anterior, con
+las del campo actual: quita de la entidad las que solo están en la primera lista y añade las que solo están en la
+segunda. Las clasificaciones que no vienen de Linneo no están en ninguna de las dos, así que se quedan en la entidad. El
+[ejemplo](../openmetadata/catalog.md#etiquetas-de-un-campo-guardado) de la página de OpenMetadata funciona igual con
+`AtlasCatalog` y `classificationsOf`.
 
 ## AtlasClassificationDef
 

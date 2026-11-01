@@ -41,6 +41,7 @@ Immutable and thread-safe. There is no public constructor.
 | `String termOf(DataCategory category)` | `String` | The URN of the category's term, such as `urn:li:glossaryTerm:DataCategory.user.contact.email`. |
 | `List<String> termsOf(DataCategory category)` | list | The category's own term followed by the terms of the protection it implies (its `relatedTerms`). |
 | `List<String> termsOf(FieldClassification field)` | list | The terms of a classified field: its category, its legal nature when it is personal data, and the field's effective protection. |
+| `List<String> termsOf(InventoryField field)` | list | The terms of a field from a stored [`InventoryField`](../classify/inventory.md#inventoryfield), resolved with the catalog's taxonomy; see [Terms of a stored field](#terms-of-a-stored-field). |
 
 ```java
 Taxonomy taxonomy = Taxonomy.load();
@@ -194,6 +195,20 @@ private String reference;
 //            urn:li:glossaryTerm:Confidentiality.Medium, urn:li:glossaryTerm:Integrity.Medium,
 //            urn:li:glossaryTerm:Identifiability.Pseudonymized]
 ```
+
+### Terms of a stored field
+
+`termsOf(InventoryField)` gives exactly what `termsOf(FieldClassification)` gives for the same field, resolving the
+stored key, levels and identifiability with the catalog's own taxonomy (a deprecated key publishes as its
+replacement). It publishes from the [data inventory](../classify/inventory.md) an application keeps, without the
+classes. For an exempted field the list is empty. `TaxonomyException` if the catalog's taxonomy does not contain the
+field's key.
+
+To change a field, compare the terms of the earlier field, with a catalog of the earlier taxonomy, with those of the
+current field: remove the terms that are only in the first list and add those only in the second. Terms that did not
+come from Linneo are in neither list, so they stay on the field. The
+[example](../openmetadata/catalog.md#tags-of-a-stored-field) on the OpenMetadata page works the same with
+`DataHubCatalog` and `termsOf`.
 
 ### Applying the terms to dataset fields
 

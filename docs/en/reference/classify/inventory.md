@@ -140,13 +140,14 @@ identifiability or no reason.
 | `boolean isExempt()` | `true` if the field has no key. |
 | `DataCategory category(Taxonomy taxonomy)` | The current data category of the field: its key, or the replacement of a deprecated key. `TaxonomyException` if the field is exempted or the taxonomy does not contain its key. |
 | `boolean isPersonal(Taxonomy taxonomy)` | Whether the stored values are personal data, as [`FieldClassification.isPersonal()`](results.md#methods) tells: a personal category that is not declared `ANONYMIZED` or `AGGREGATED`. `false` for an exempted field. `TaxonomyException` if the taxonomy does not contain the key. |
+| `Identifiability identifiability(Taxonomy taxonomy)` | How the stored values point to the person, as `FieldClassification.identifiability()` gives it: the declared identifiability, or `IDENTIFIED` when the field declares none. `null` for an exempted field or a category that is not personal. `TaxonomyException` if the taxonomy does not contain the key. |
 | `Protection protection(Taxonomy taxonomy)` | The [protection](../protection-levels.md#protection) the field requires in the taxonomy, as `FieldClassification.protection()` computes it; `Protection.LOWEST` for an exempted field. `TaxonomyException` if the taxonomy does not contain the key. |
 
 `toString()` is `<object>.<path> = <key> (<BASIS>)`, or `<object>.<path> exempt: <reason>`.
 
 Resolved against the taxonomy, an inventory field gives what the classifier gives the same field: for every field of a
-class, `protection(taxonomy)`, `isPersonal(taxonomy)` and `category(taxonomy)` equal those of its
-`FieldClassification`.
+class, `protection(taxonomy)`, `isPersonal(taxonomy)`, `identifiability(taxonomy)` and `category(taxonomy)` equal those
+of its `FieldClassification`.
 
 ## Building it from the code
 

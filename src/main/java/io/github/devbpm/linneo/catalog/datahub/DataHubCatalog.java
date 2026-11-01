@@ -20,9 +20,11 @@ import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.TermInfo;
 import io.github.devbpm.linneo.classify.FieldClassification;
+import io.github.devbpm.linneo.classify.InventoryField;
 import io.github.devbpm.linneo.internal.Json;
 
 import java.util.ArrayList;
@@ -185,18 +187,43 @@ public final class DataHubCatalog {
      * @return glossary term URNs
      */
     public List<String> termsOf(FieldClassification field) {
-        DataCategory category = field.category();
+        return fieldTerms(field.category(), field.isPersonal(), field.confidentiality(), field.integrity(),
+                field.identifiability());
+    }
+
+    /**
+     * The terms of a field from a stored record of it, resolved with this catalog's taxonomy: what
+     * {@link #termsOf(FieldClassification)} gives for the classification of the same field. It lets an application
+     * publish from the data inventory it keeps, without the classes. Compared with the terms of the same field
+     * before a change (the earlier field, with a catalog of the earlier taxonomy), it says what to remove from the
+     * field and what to add, leaving the terms that do not come from Linneo alone.
+     *
+     * @param field a field of a {@link io.github.devbpm.linneo.classify.DataInventory}
+     * @return glossary term URNs; empty for an exempted field
+     * @throws io.github.devbpm.linneo.TaxonomyException if this catalog's taxonomy does not contain the field's key
+     */
+    public List<String> termsOf(InventoryField field) {
+        if (field.isExempt()) {
+            return List.of();
+        }
+        Protection protection = field.protection(taxonomy);
+        return fieldTerms(field.category(taxonomy), field.isPersonal(taxonomy), protection.confidentiality(),
+                protection.integrity(), field.identifiability(taxonomy));
+    }
+
+    private List<String> fieldTerms(DataCategory category, boolean personal, Confidentiality confidentiality,
+                                    Integrity integrity, Identifiability identifiability) {
         List<String> terms = new ArrayList<>();
         terms.add(termOf(category));
-        if (field.isPersonal()) {
+        if (personal) {
             terms.add(levelUrn(mapping.personalData(), natureLabel(category.nature())));
         }
-        terms.add(levelUrn(mapping.confidentiality(), label(field.confidentiality())));
-        terms.add(levelUrn(mapping.integrity(), label(field.integrity())));
-        if (field.identifiability() != null) {
-            terms.add(levelUrn(mapping.identifiability(), label(field.identifiability())));
+        terms.add(levelUrn(mapping.confidentiality(), label(confidentiality)));
+        terms.add(levelUrn(mapping.integrity(), label(integrity)));
+        if (identifiability != null) {
+            terms.add(levelUrn(mapping.identifiability(), label(identifiability)));
         }
-        if (field.isSecret()) {
+        if (category.secret()) {
             terms.add(levelUrn(mapping.handling(), SECRET));
         }
         return terms;

@@ -41,6 +41,7 @@ Inmutable y seguro entre hilos. No tiene constructor público.
 | `String tagOf(DataCategory category)` | `String` | El nombre completo de la etiqueta de la categoría, como `DataCategory.user.contact.email`. |
 | `List<String> tagsOf(DataCategory category)` | lista | La etiqueta propia de la categoría seguida de las que implica (las etiquetas que implica la categoría). |
 | `List<String> tagsOf(FieldClassification field)` | lista | Las etiquetas de una columna clasificada: su categoría, si es dato personal y de qué tipo, y la protección efectiva del campo. |
+| `List<String> tagsOf(InventoryField field)` | lista | Las etiquetas de una columna a partir de un [`InventoryField`](../classify/inventory.md#inventoryfield) guardado, resueltas con la taxonomía del catálogo; véase [Etiquetas de un campo guardado](#etiquetas-de-un-campo-guardado). |
 
 ```java
 Taxonomy taxonomy = Taxonomy.load();
@@ -143,6 +144,31 @@ private String reference;
 // tagsOf → [DataCategory.user.unique_id.pseudonymous, PersonalData.Personal, PII.Sensitive,
 //           Confidentiality.Medium, Integrity.Medium, Identifiability.Pseudonymized]
 ```
+
+### Etiquetas de un campo guardado
+
+`tagsOf(InventoryField)` da exactamente lo que `tagsOf(FieldClassification)` da para el mismo campo, resolviendo la
+clave, los niveles y la identificabilidad guardados con la taxonomía del propio catálogo (una clave obsoleta se publica
+como su sustituta). Sirve para publicar desde el [inventario de datos](../classify/inventory.md) que guarda una
+aplicación, sin las clases. En un campo exento la lista está vacía. `TaxonomyException` si la taxonomía del catálogo no
+contiene la clave del campo.
+
+También da el cambio de una columna: las etiquetas del campo anterior, con un catálogo de la taxonomía anterior, frente
+a las del campo actual. Se quitan las etiquetas que solo están en la primera lista y se añaden las que solo están en la
+segunda; las etiquetas que no vienen de Linneo no están en ninguna de las dos, así que se quedan en la columna.
+
+```java
+OpenMetadataCatalog earlier = OpenMetadataCatalog.of(appliedTaxonomy);
+OpenMetadataCatalog current = OpenMetadataCatalog.of(taxonomy);
+
+List<String> remove = new ArrayList<>(earlier.tagsOf(storedField));
+remove.removeAll(current.tagsOf(currentField));
+List<String> add = new ArrayList<>(current.tagsOf(currentField));
+add.removeAll(earlier.tagsOf(storedField));
+```
+
+Los catálogos de [DataHub](../datahub/catalog.md#términos-de-un-campo-guardado) y
+[Atlas](../atlas/catalog.md#clasificaciones-de-un-campo-guardado) tienen las mismas sobrecargas.
 
 ## OmClassification
 

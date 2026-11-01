@@ -404,6 +404,7 @@ table column a Java field maps to.
 | Protection | Built-in `PersonalData` and `PII`, plus `Confidentiality`, `Integrity`, `Identifiability`, `DataHandling` | Terms of the `PersonalData`, `Confidentiality`, `Integrity`, `Identifiability` and `DataHandling` nodes | Classifications of the same names |
 | Create | `PUT /api/v1/classifications`, `PUT /api/v1/tags` | `POST /aspects?action=ingestProposal` | `POST /api/atlas/v2/types/typedefs` (`PUT` to update) |
 | Per column | `tagsOf(field)` | `termsOf(field)` | `classificationsOf(field)`, `classificationsJson(field)` |
+| `field` is | a `FieldClassification`, or a stored `InventoryField` | the same | the same |
 
 ```java
 FieldClassification field = person.field("email").orElseThrow();   // from the quick start

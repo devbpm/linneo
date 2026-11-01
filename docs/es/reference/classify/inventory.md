@@ -142,13 +142,14 @@ identificabilidad o ningún motivo.
 | `boolean isExempt()` | `true` si el campo no tiene clave. |
 | `DataCategory category(Taxonomy taxonomy)` | La categoría de datos vigente del campo: su clave, o la sustituta de una clave obsoleta. `TaxonomyException` si el campo está exento o la taxonomía no contiene su clave. |
 | `boolean isPersonal(Taxonomy taxonomy)` | Si los valores almacenados son datos personales, como dice [`FieldClassification.isPersonal()`](results.md#métodos): una categoría personal que no se declara `ANONYMIZED` ni `AGGREGATED`. `false` en un campo exento. `TaxonomyException` si la taxonomía no contiene la clave. |
+| `Identifiability identifiability(Taxonomy taxonomy)` | Cómo los valores almacenados señalan a la persona, tal como lo da `FieldClassification.identifiability()`: la identificabilidad declarada, o `IDENTIFIED` cuando el campo no declara ninguna. `null` en un campo exento o en una categoría que no es personal. `TaxonomyException` si la taxonomía no contiene la clave. |
 | `Protection protection(Taxonomy taxonomy)` | La [protección](../protection-levels.md#protection) que el campo requiere en la taxonomía, tal como la calcula `FieldClassification.protection()`; `Protection.LOWEST` en un campo exento. `TaxonomyException` si la taxonomía no contiene la clave. |
 
 `toString()` es `<object>.<path> = <key> (<BASIS>)`, o `<object>.<path> exempt: <reason>`.
 
 Resuelto contra la taxonomía, un campo del inventario da lo mismo que el clasificador da al mismo campo: en cada campo de
-una clase, `protection(taxonomy)`, `isPersonal(taxonomy)` y `category(taxonomy)` son iguales a los de su
-`FieldClassification`.
+una clase, `protection(taxonomy)`, `isPersonal(taxonomy)`, `identifiability(taxonomy)` y `category(taxonomy)` son
+iguales a los de su `FieldClassification`.
 
 ## Construirlo desde el código
 

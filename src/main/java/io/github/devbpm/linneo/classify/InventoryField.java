@@ -129,6 +129,21 @@ public record InventoryField(String object, String path, String key, Basis basis
     }
 
     /**
+     * How the stored values point to the person in a taxonomy, as {@link FieldClassification#identifiability()}
+     * gives it: the declared identifiability, or {@link Identifiability#IDENTIFIED} when the field declares none.
+     *
+     * @param taxonomy the taxonomy to resolve the key with
+     * @return the identifiability; {@code null} for an exempted field or a category that is not personal
+     * @throws TaxonomyException if the taxonomy does not contain the key
+     */
+    public Identifiability identifiability(Taxonomy taxonomy) {
+        if (isExempt() || !category(taxonomy).isPersonal()) {
+            return null;
+        }
+        return identifiability == null ? Identifiability.IDENTIFIED : identifiability;
+    }
+
+    /**
      * The protection the field requires in a taxonomy, as {@link FieldClassification#protection()} computes it.
      *
      * @param taxonomy the taxonomy to resolve the key with

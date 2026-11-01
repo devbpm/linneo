@@ -20,9 +20,11 @@ import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.TermInfo;
 import io.github.devbpm.linneo.classify.FieldClassification;
+import io.github.devbpm.linneo.classify.InventoryField;
 import io.github.devbpm.linneo.internal.Json;
 
 import java.util.ArrayList;
@@ -169,21 +171,29 @@ public final class AtlasCatalog {
      * @return classification names
      */
     public List<String> classificationsOf(FieldClassification field) {
-        DataCategory category = field.category();
-        List<String> names = new ArrayList<>();
-        names.add(classificationOf(category));
-        if (field.isPersonal()) {
-            names.add(mapping.personalData() + "." + natureLabel(category.nature()));
+        return columnClassifications(field.category(), field.isPersonal(), field.confidentiality(), field.integrity(),
+                field.identifiability());
+    }
+
+    /**
+     * The classifications of a column from a stored record of its field, resolved with this catalog's taxonomy:
+     * what {@link #classificationsOf(FieldClassification)} gives for the classification of the same field. It lets
+     * an application publish from the data inventory it keeps, without the classes. Compared with the
+     * classifications of the same column before a change (the earlier field, with a catalog of the earlier
+     * taxonomy), it says what to remove from the column's entity and what to add, leaving the classifications that
+     * do not come from Linneo alone.
+     *
+     * @param field a field of a {@link io.github.devbpm.linneo.classify.DataInventory}
+     * @return classification names; empty for an exempted field
+     * @throws io.github.devbpm.linneo.TaxonomyException if this catalog's taxonomy does not contain the field's key
+     */
+    public List<String> classificationsOf(InventoryField field) {
+        if (field.isExempt()) {
+            return List.of();
         }
-        names.add(mapping.confidentiality() + "." + label(field.confidentiality()));
-        names.add(mapping.integrity() + "." + label(field.integrity()));
-        if (field.identifiability() != null) {
-            names.add(mapping.identifiability() + "." + label(field.identifiability()));
-        }
-        if (field.isSecret()) {
-            names.add(mapping.handling() + "." + SECRET);
-        }
-        return names;
+        Protection protection = field.protection(taxonomy);
+        return columnClassifications(field.category(taxonomy), field.isPersonal(taxonomy),
+                protection.confidentiality(), protection.integrity(), field.identifiability(taxonomy));
     }
 
     /**
@@ -194,8 +204,42 @@ public final class AtlasCatalog {
      * @return a JSON array of classifications
      */
     public String classificationsJson(FieldClassification field) {
-        return Json.array(classificationsOf(field).stream()
-                .map(name -> new Json().field("typeName", name).end()).toList());
+        return json(classificationsOf(field));
+    }
+
+    /**
+     * The body of {@code POST /api/atlas/v2/entity/guid/{guid}/classifications} for a column, from a stored record
+     * of its field: see {@link #classificationsOf(InventoryField)}.
+     *
+     * @param field a field of a {@link io.github.devbpm.linneo.classify.DataInventory}
+     * @return a JSON array of classifications, empty for an exempted field
+     * @throws io.github.devbpm.linneo.TaxonomyException if this catalog's taxonomy does not contain the field's key
+     */
+    public String classificationsJson(InventoryField field) {
+        return json(classificationsOf(field));
+    }
+
+    private static String json(List<String> names) {
+        return Json.array(names.stream().map(name -> new Json().field("typeName", name).end()).toList());
+    }
+
+    private List<String> columnClassifications(DataCategory category, boolean personal,
+                                               Confidentiality confidentiality, Integrity integrity,
+                                               Identifiability identifiability) {
+        List<String> names = new ArrayList<>();
+        names.add(classificationOf(category));
+        if (personal) {
+            names.add(mapping.personalData() + "." + natureLabel(category.nature()));
+        }
+        names.add(mapping.confidentiality() + "." + label(confidentiality));
+        names.add(mapping.integrity() + "." + label(integrity));
+        if (identifiability != null) {
+            names.add(mapping.identifiability() + "." + label(identifiability));
+        }
+        if (category.secret()) {
+            names.add(mapping.handling() + "." + SECRET);
+        }
+        return names;
     }
 
     private AtlasClassificationDef categoryDef(DataCategory category) {

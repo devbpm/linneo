@@ -64,8 +64,9 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   (`Classifier.Declared`) for the data inventory. `Classifier.inventory` builds a `DataInventory` (objects under keys
   the application chooses, `InventoryField`s with the declared key and raised levels, never the taxonomy's levels,
   so a taxonomy change never changes an inventory); `InventoryDiff` compares two inventories under one taxonomy and
-  `DataInventory.affectedBy(TaxonomyDiff)` gives the fields a taxonomy change reaches. Linneo compares and never
-  persists: reading, writing, locking and auditing a stored copy belong to the application.
+  `DataInventory.affectedBy(TaxonomyDiff)` gives the fields a taxonomy change reaches; the catalogs' `InventoryField`
+  overloads publish a stored field exactly as its `FieldClassification` (`InventoryPublishingTest`). Linneo
+  compares and never persists: reading, writing, locking and auditing a stored copy belong to the application.
   `tools/bench/InventoryBench.java` measures it on 800 entities. `classify` returns a
   `ClassClassification`; `verify` throws `ClassificationException` listing all errors. Design is fail-closed:
   unclassified fields, unknown keys, weakened levels, personal categories used as class defaults and conflicting

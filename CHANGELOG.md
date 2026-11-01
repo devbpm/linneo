@@ -107,6 +107,10 @@ All notable changes to this project are documented in this file. The format foll
   the fields each changed category reaches. Processing activities can name inventory objects
   (`ProcessingActivity.objects`) and be checked with `ProcessingChecker(taxonomy, jurisdiction, inventory)` without
   the model classes. `tools/bench/InventoryBench.java` measures all of it on a model of 800 entities.
+- Catalogs from stored records: `OpenMetadataCatalog.tagsOf(InventoryField)`, `DataHubCatalog.termsOf(InventoryField)`
+  and `AtlasCatalog.classificationsOf(InventoryField)` give what the `FieldClassification` overloads give for the same
+  field, resolved with the catalog's taxonomy, so an application can publish from its inventory and update a column
+  with the difference between its earlier and current tags. `InventoryField.identifiability(Taxonomy)`.
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
   `module-info.java`.

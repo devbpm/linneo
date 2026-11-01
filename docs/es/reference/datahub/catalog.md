@@ -41,6 +41,7 @@ Inmutable y seguro entre hilos. No tiene constructor público.
 | `String termOf(DataCategory category)` | `String` | El URN del término de la categoría, como `urn:li:glossaryTerm:DataCategory.user.contact.email`. |
 | `List<String> termsOf(DataCategory category)` | lista | El término propio de la categoría seguido de los términos de la protección que implica (sus `relatedTerms`). |
 | `List<String> termsOf(FieldClassification field)` | lista | Los términos de un campo clasificado: su categoría, su naturaleza jurídica si es dato personal y la protección efectiva del campo. |
+| `List<String> termsOf(InventoryField field)` | lista | Los términos de un campo a partir de un [`InventoryField`](../classify/inventory.md#inventoryfield) guardado, resueltos con la taxonomía del catálogo; véase [Términos de un campo guardado](#términos-de-un-campo-guardado). |
 
 ```java
 Taxonomy taxonomy = Taxonomy.load();
@@ -198,6 +199,20 @@ private String reference;
 //            urn:li:glossaryTerm:Confidentiality.Medium, urn:li:glossaryTerm:Integrity.Medium,
 //            urn:li:glossaryTerm:Identifiability.Pseudonymized]
 ```
+
+### Términos de un campo guardado
+
+`termsOf(InventoryField)` da exactamente lo que `termsOf(FieldClassification)` da para el mismo campo, resolviendo la
+clave, los niveles y la identificabilidad guardados con la taxonomía del propio catálogo (una clave obsoleta se publica
+como su sustituta). Sirve para publicar desde el [inventario de datos](../classify/inventory.md) que guarda una
+aplicación, sin las clases. En un campo exento la lista está vacía. `TaxonomyException` si la taxonomía del catálogo no
+contiene la clave del campo.
+
+Para cambiar un campo, compara los términos del campo anterior, con un catálogo de la taxonomía anterior, con los del
+campo actual: quita los términos que solo están en la primera lista y añade los que solo están en la segunda. Los
+términos que no vienen de Linneo no están en ninguna de las dos, así que se quedan en el campo. El
+[ejemplo](../openmetadata/catalog.md#etiquetas-de-un-campo-guardado) de la página de OpenMetadata funciona igual con
+`DataHubCatalog` y `termsOf`.
 
 ### Aplicar los términos a los campos de un dataset
 
