@@ -119,7 +119,13 @@ rules in the "Documentation" section of `CONTRIBUTING.md`). `docs/en/` and `docs
 `<!-- doc-sources: ... -->` header listing the source files it documents. Before committing changes to `src/main`,
 `tools/fideslang` or `pom.xml`, run the `docs-updater` subagent: it updates only the pages whose sources changed, in
 both languages, and stamps the review. The `PreToolUse` hook `.claude/hooks/docs-gate.sh` blocks `git commit` until
-that stamp matches the current library diff; afterwards `git add docs/` and retry.
+that stamp matches the current library diff; afterwards `git add docs/` and retry. The hook's fingerprint uses
+`git diff`, so a new file under `src/main` counts only once it is staged: `git add` it before running the subagent.
+
+`DocumentationSamplesTest` compiles every ```` ```java ```` block of `README.md` and `docs/` against the library
+(errors about names a page takes from elsewhere are ignored; errors naming the library, syntax errors and unknown
+key constants fail), compares body-less type signatures with the real types and module declarations with
+`module-info.java`. Mark a deliberately broken sample with `<!-- unchecked: reason -->` on the line before it.
 
 Taxonomy rules (from `CONTRIBUTING.md`; applications persist and publish these keys):
 

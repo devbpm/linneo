@@ -128,7 +128,7 @@ Constants are declared in increasing order, so `compareTo` orders them by strict
 
 ```java
 Confidentiality.LOW.max(Confidentiality.HIGH);   // HIGH
-Integrity.HIGH.compareTo(Integrity.MEDIUM) > 0;  // true
+boolean stricter = Integrity.HIGH.compareTo(Integrity.MEDIUM) > 0;  // true
 ```
 
 ## Identifiability

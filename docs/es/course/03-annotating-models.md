@@ -535,6 +535,7 @@ public class Staff extends AuditedEntity {
 
 **Ejercicio 3.3 — Encuentra los fallos.** Cada campo tiene un problema. Identifícalo y corrígelo.
 
+<!-- unchecked: un ejercicio con errores a propósito -->
 ```java
 @DefaultCategory(value = USER_CONTACT, reason = "")
 public class ContactPreferences {

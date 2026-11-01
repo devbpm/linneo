@@ -130,7 +130,7 @@ Las constantes se declaran en orden creciente, así que `compareTo` las ordena p
 
 ```java
 Confidentiality.LOW.max(Confidentiality.HIGH);   // HIGH
-Integrity.HIGH.compareTo(Integrity.MEDIUM) > 0;  // true
+boolean stricter = Integrity.HIGH.compareTo(Integrity.MEDIUM) > 0;  // true
 ```
 
 ## Identifiability

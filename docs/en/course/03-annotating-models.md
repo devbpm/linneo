@@ -527,6 +527,7 @@ Which fields are special category or criminal offence data? Which one is a secre
 
 **Exercise 3.3 — Spot the bugs.** Each field below has a problem. Name it and fix it.
 
+<!-- unchecked: an exercise with deliberate mistakes -->
 ```java
 @DefaultCategory(value = USER_CONTACT, reason = "")
 public class ContactPreferences {

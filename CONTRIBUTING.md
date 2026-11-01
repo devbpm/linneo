@@ -102,6 +102,12 @@ touches `docs/` and deploys it from `main`.
 - **Collapsible blocks.** Write `<details markdown="block">` so that the Markdown inside is rendered on the site.
 - **Liquid.** Jekyll treats `{{` and `{%` as template syntax. Wrap code samples that contain them in
   `{% raw %}` and `{% endraw %}`.
-- **Code samples** must compile against the current API.
+- **Code samples** must compile against the current API, and the build checks it: `DocumentationSamplesTest`
+  compiles every ```` ```java ```` block of `README.md` and `docs/` against the library. A sample may use names
+  its page introduces elsewhere (`student`, `Enrollment`), but an error that names a type, method, constant or
+  annotation element of the library, a syntax error or a key constant the taxonomy does not have fails the test.
+  Type signatures without a body (`public record Protection(...)`) are compared with the real types, and module
+  declarations with `module-info.java`. An exercise with deliberate mistakes is preceded by
+  `<!-- unchecked: the reason -->`. Run it on its own with `./mvnw test -Dtest=DocumentationSamplesTest`.
 
 By contributing, you agree that your contributions are licensed under the Apache License, Version 2.0.

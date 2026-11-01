@@ -83,10 +83,10 @@ Rara vez escribirás las claves como cadenas. `Categories` contiene una constant
 estándar (`DataUses` y `DataSubjects` hacen lo mismo con las otras dos jerarquías):
 
 ```java
-Categories.USER_CONTACT_EMAIL                  // "user.contact.email"
-Categories.USER_EDUCATION_GRADE                // "user.education.grade"      (Linneo)
-Categories.USER_HEALTH_AND_MEDICAL_DISABILITY  // "user.health_and_medical.disability" (Linneo)
-Categories.SYSTEM_CONFIGURATION                // "system.configuration"      (Linneo)
+String email = Categories.USER_CONTACT_EMAIL;                       // "user.contact.email"
+String grade = Categories.USER_EDUCATION_GRADE;                     // "user.education.grade"  (Linneo)
+String disability = Categories.USER_HEALTH_AND_MEDICAL_DISABILITY;  // "user.health_and_medical.disability" (Linneo)
+String configuration = Categories.SYSTEM_CONFIGURATION;             // "system.configuration"  (Linneo)
 ```
 
 Son **constantes de compilación** `public static final String`, así que pueden usarse dentro de anotaciones, y una

@@ -104,6 +104,9 @@ All notable changes to this project are documented in this file. The format foll
   the fields each changed category reaches. Processing activities can name inventory objects
   (`ProcessingActivity.objects`) and be checked with `ProcessingChecker(taxonomy, jurisdiction, inventory)` without
   the model classes. `tools/bench/InventoryBench.java` measures all of it on a model of 800 entities.
+- The Java samples of the README and the documentation site are compiled against the library in the build
+  (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
+  `module-info.java`.
 - `ClassificationException` and `ProcessingException` list the first 50 errors and count all of them by code, so
   the message of a large model stays readable.
 - `AtlasCatalog`: the taxonomy as Apache Atlas classification types (category tree as super types, protection

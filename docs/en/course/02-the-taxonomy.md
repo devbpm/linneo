@@ -81,10 +81,10 @@ You will rarely type keys as strings. `Categories` holds one constant per data c
 (`DataUses` and `DataSubjects` do the same for the other two hierarchies):
 
 ```java
-Categories.USER_CONTACT_EMAIL                  // "user.contact.email"
-Categories.USER_EDUCATION_GRADE                // "user.education.grade"      (Linneo)
-Categories.USER_HEALTH_AND_MEDICAL_DISABILITY  // "user.health_and_medical.disability" (Linneo)
-Categories.SYSTEM_CONFIGURATION                // "system.configuration"      (Linneo)
+String email = Categories.USER_CONTACT_EMAIL;                       // "user.contact.email"
+String grade = Categories.USER_EDUCATION_GRADE;                     // "user.education.grade"  (Linneo)
+String disability = Categories.USER_HEALTH_AND_MEDICAL_DISABILITY;  // "user.health_and_medical.disability" (Linneo)
+String configuration = Categories.SYSTEM_CONFIGURATION;             // "system.configuration"  (Linneo)
 ```
 
 They are `public static final String` **compile-time constants**, so they can be used inside annotations, and a
