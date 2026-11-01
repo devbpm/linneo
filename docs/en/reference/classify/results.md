@@ -17,18 +17,21 @@ What [`Classifier`](classifier.md) returns. Both types are records in `io.github
 ## ClassClassification
 
 ```java
-public record ClassClassification(Class<?> type, List<FieldClassification> fields, List<Violation> violations)
+public record ClassClassification(Class<?> type, List<FieldClassification> fields, List<Exemption> exempted,
+                                  List<Violation> violations)
 ```
 
-The classification of a class: one entry per classified field, including inherited fields, plus the problems found.
+The classification of a class: one entry per classified field, including inherited fields, the fields excluded with
+`@Exempt`, and the problems found.
 
 | Component | Description |
 |---|---|
 | `type` | The classified class. |
-| `fields` | The classified fields, superclass fields first, in declaration order. Exempt and excluded fields are absent; a field with an error may be absent. |
+| `fields` | The classified fields, superclass fields first and, within a class, in the order the JVM reports, which is usually the declaration order but is not guaranteed. Identify a field by its `path`, never by its position. Exempt and excluded fields are absent; a field with an error may be absent. |
+| `exempted` | The fields excluded with [`@Exempt`](../annotations/exempt.md), with their reasons (see [`Exemption`](#exemption)). |
 | `violations` | Every [`Violation`](violations.md) found, errors and warnings. |
 
-The canonical constructor throws `NullPointerException` if `type` is `null` and copies both lists into immutable
+The canonical constructor throws `NullPointerException` if `type` is `null` and copies the three lists into immutable
 lists.
 
 | Method | Returns | Description |
@@ -37,7 +40,9 @@ lists.
 | `List<Violation> errors()` | list | The violations of severity `ERROR`. |
 | `List<FieldClassification> personalFields()` | list | The fields whose `isPersonal()` is `true`. |
 | `boolean holdsPersonalData()` | `boolean` | `true` if any field is personal. |
-| `Optional<FieldClassification> field(String name)` | `Optional` | The classification of a field by name; empty if the field is unknown, excluded, exempt or was dropped because of an error. If a subclass field hides a superclass field with the same name, the superclass one is returned (it comes first). |
+| `Optional<FieldClassification> field(String path)` | `Optional` | The classification of a field by path; empty if the field is unknown, excluded, exempt or was dropped because of an error. A field that hides a superclass field of the same name is not classified (`DUPLICATE_FIELD`), so a path is never ambiguous. |
+| `Protection ceiling()` | [`Protection`](../protection-levels.md#protection) | The protection a record of the class requires as a whole: the join of the protection of its fields, or `Protection.LOWEST` if there are none. It is what an export of whole records, or a column that stores the record serialized, needs. |
+| `Protection ceilingOf(String path)` | [`Protection`](../protection-levels.md#protection) | The protection a field requires together with everything below it: the join of the field and of every field whose path starts with its path followed by a dot, or `Protection.LOWEST` if there is none. `NullPointerException` if `path` is `null`. |
 
 ```java
 Classifier classifier = new Classifier(Taxonomy.standard());
@@ -45,12 +50,31 @@ ClassClassification person = classifier.classify(Person.class);
 person.isValid();
 person.personalFields();
 DataCategory category = person.field("email").orElseThrow().category();
+Protection whole = person.ceiling();                 // what a whole Person record requires
+Protection email = person.ceilingOf("email");        // the field and any field below it
 ```
+
+### Exemption
+
+`ClassClassification.Exemption` — `public record Exemption(Class<?> declaringClass, String path, String reason)`,
+`@since 0.1.0`
+
+A field excluded from classification with `@Exempt`. It is listed so that excluding a field that used to be
+classified is visible.
+
+| Component | Description |
+|---|---|
+| `declaringClass` | The class that declares the field. |
+| `path` | The field path. |
+| `reason` | Why the field holds no data of the model: the value of `@Exempt`. |
+
+The canonical constructor throws `NullPointerException` if a component is `null`. An `@Exempt` combined with
+`@Category` or `@CategoryByRow` is a `CONFLICTING_ANNOTATIONS` error and is not listed.
 
 ## FieldClassification
 
 ```java
-public record FieldClassification(Class<?> declaringClass, String field, DataCategory category, Basis basis,
+public record FieldClassification(Class<?> declaringClass, String path, DataCategory category, Basis basis,
                                   String reason, Confidentiality confidentiality, Integrity integrity,
                                   Identifiability identifiability)
 ```
@@ -60,7 +84,7 @@ The classification of one field: its category and the effective protection of th
 | Component | Nullable | Description |
 |---|---|---|
 | `declaringClass` | no | The class that declares the field (a superclass for inherited fields). |
-| `field` | no | The field name. |
+| `path` | no | The field's name, which identifies it within the classified class. |
 | `category` | no | The **current** data category: a deprecated key is already resolved to its replacement. |
 | `basis` | no | Where the category comes from (see `Basis`). |
 | `reason` | yes | The `reason` of a class default or the `declaredBy` of a per-row category; `null` for `DECLARED`. |
@@ -68,7 +92,7 @@ The classification of one field: its category and the effective protection of th
 | `integrity` | no | The category's level, or the stricter one the field declares. |
 | `identifiability` | yes | How the value points to the person; `null` when the category is not personal (and for class defaults, which are never personal). |
 
-The canonical constructor throws `NullPointerException` if `declaringClass`, `field`, `category`, `basis`,
+The canonical constructor throws `NullPointerException` if `declaringClass`, `path`, `category`, `basis`,
 `confidentiality` or `integrity` is `null`.
 
 ### Basis
@@ -87,7 +111,9 @@ The canonical constructor throws `NullPointerException` if `declaringClass`, `fi
 |---|---|
 | `boolean isPersonal()` | Whether the stored values are personal data: the category is personal **and** the identifiability is `IDENTIFIED` or `PSEUDONYMIZED`. Anonymized or aggregated values of a personal category are not. |
 | `boolean isSecret()` | The category's `secret` flag: the field holds a secret that must never be read back, exported or published. |
-| `String toString()` | `<DeclaringSimpleName>.<field> = <category key> (<BASIS>)`, for example `Person.email = user.contact.email (DECLARED)`. |
+| `String fieldName()` | The name of the field: the last segment of its `path`, as declared in `declaringClass()`. |
+| `Protection protection()` | The [protection](../protection-levels.md#protection) the stored values require: the category's nature when the values are personal data (`isPersonal()`) and `LegalNature.NONE` when they are anonymized or aggregated, with the field's effective `confidentiality` and `integrity` and the category's secret flag. |
+| `String toString()` | `<path> = <category key> (<BASIS>)`, for example `email = user.contact.email (DECLARED)`. |
 
 ```java
 for (FieldClassification field : person.fields()) {

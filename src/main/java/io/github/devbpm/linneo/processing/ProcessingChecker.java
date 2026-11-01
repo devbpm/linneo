@@ -16,12 +16,11 @@
 package io.github.devbpm.linneo.processing;
 
 import io.github.devbpm.linneo.Categories;
-import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.DataSubject;
 import io.github.devbpm.linneo.DataUse;
-import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.Term;
 import io.github.devbpm.linneo.classify.ClassClassification;
@@ -136,7 +135,7 @@ public final class ProcessingChecker {
         check.personalData();
         check.lawfulness(purposes);
         return new CheckedActivity(activity, purposes, subjects, List.copyOf(check.categories.values()),
-                check.confidentiality, check.integrity, check.secret, check.violations);
+                check.protection, check.violations);
     }
 
     /**
@@ -155,8 +154,7 @@ public final class ProcessingChecker {
                 violations.add(new ProcessingViolation(activity.key(), Severity.ERROR, Code.DUPLICATE_ACTIVITY,
                         "Another activity of the record has the key '" + activity.key() + "'"));
                 result = new CheckedActivity(result.activity(), result.purposes(), result.dataSubjects(),
-                        result.dataCategories(), result.confidentiality(), result.integrity(), result.secret(),
-                        violations);
+                        result.dataCategories(), result.protection(), violations);
             }
             checked.add(result);
         }
@@ -200,9 +198,7 @@ public final class ProcessingChecker {
         private final ProcessingActivity activity;
         private final List<ProcessingViolation> violations = new ArrayList<>();
         private final Map<String, DataCategory> categories = new TreeMap<>();
-        private Confidentiality confidentiality = Confidentiality.PUBLIC;
-        private Integrity integrity = Integrity.LOW;
-        private boolean secret;
+        private Protection protection = Protection.LOWEST;
         private boolean dataUnresolved;
 
         Check(ProcessingActivity activity) {
@@ -252,7 +248,7 @@ public final class ProcessingChecker {
                             + "' is not personal data and is left out of the record");
                     continue;
                 }
-                add(category, category.confidentiality(), category.integrity(), category.secret());
+                add(category, category.protection());
             }
             for (Class<?> entity : activity.entities()) {
                 ClassClassification classification = classifier.classify(entity);
@@ -262,7 +258,7 @@ public final class ProcessingChecker {
                     dataUnresolved = true;
                 }
                 for (FieldClassification field : classification.personalFields()) {
-                    add(field.category(), field.confidentiality(), field.integrity(), field.isSecret());
+                    add(field.category(), field.protection());
                 }
             }
             if (categories.isEmpty() && !dataUnresolved) {
@@ -353,16 +349,9 @@ public final class ProcessingChecker {
             }
         }
 
-        private void add(DataCategory category, Confidentiality fieldConfidentiality, Integrity fieldIntegrity,
-                         boolean fieldSecret) {
+        private void add(DataCategory category, Protection dataProtection) {
             categories.putIfAbsent(category.key(), category);
-            if (fieldConfidentiality.compareTo(confidentiality) > 0) {
-                confidentiality = fieldConfidentiality;
-            }
-            if (fieldIntegrity.compareTo(integrity) > 0) {
-                integrity = fieldIntegrity;
-            }
-            secret |= fieldSecret;
+            protection = protection.join(dataProtection);
         }
 
         private String keysOf(LegalNature nature) {

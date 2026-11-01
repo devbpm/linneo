@@ -15,6 +15,8 @@
  */
 package io.github.devbpm.linneo;
 
+import java.util.Objects;
+
 /**
  * What a data category is under data protection law: Regulation (EU) 2016/679 (GDPR, text corrected by the
  * corrigendum of OJ L 127, 23.5.2018) and, for Spain, Ley Orgánica 3/2018 (LOPDGDD, consolidated text of
@@ -80,7 +82,23 @@ public enum LegalNature {
     }
 
     /**
-     * Whether a child category may have the given nature when its parent has this one.
+     * Whether data of this nature needs at least the protection that data of another nature needs. The order is
+     * partial: {@link #NONE} is below every nature, {@link #ORDINARY} below {@link #SPECIAL_CATEGORY} and
+     * {@link #CRIMINAL_OFFENCE}, and those two are not comparable, since each brings obligations the other does not.
+     * {@link Protection#covers(Protection)} compares protections with it.
+     *
+     * @param other another nature
+     * @return {@code true} if this nature is {@code other} or stricter than it
+     */
+    public boolean covers(LegalNature other) {
+        Objects.requireNonNull(other, "other");
+        return this == other || other == NONE || other == ORDINARY && requiresMaximumProtection();
+    }
+
+    /**
+     * Whether a child category may have the given nature when its parent has this one. This is stricter than
+     * {@link #covers(LegalNature)}: a hierarchy also keeps whether it holds personal data, so a {@link #NONE}
+     * category never has a personal child.
      *
      * @param child the nature declared by the child
      * @return {@code true} if {@code child} keeps or strengthens this nature

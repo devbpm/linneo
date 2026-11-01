@@ -35,7 +35,10 @@ is ignored entirely (not even its reason is checked).
 | Not combined with `@Category` or `@CategoryByRow` | `CONFLICTING_ANNOTATIONS` (`@Exempt cannot be combined with @Category or @CategoryByRow`) | error |
 
 An exempt field never appears in `ClassClassification.fields()`, whether or not it has violations; both checks may
-report on the same field.
+report on the same field. An exempt field is listed, with its reason, in
+[`ClassClassification.exempted()`](../classify/results.md#exemption), so that excluding a field that used to be
+classified is visible; the exception is a field that combines `@Exempt` with `@Category` or `@CategoryByRow`, which is
+an error and is not listed.
 
 ## Example
 

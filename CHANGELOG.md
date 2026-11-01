@@ -61,5 +61,17 @@ All notable changes to this project are documented in this file. The format foll
   declarations.
 - `DataHubCatalog`: the taxonomy as a DataHub business glossary (`ingestProposal` bodies for glossary nodes and
   terms, with related terms for the parent and the implied protection), and the glossary terms of each field.
+- `Protection`: the protection some data requires (its strictest legal natures, confidentiality, integrity and
+  secret flag), partially ordered by `covers`, with `join` and `comparedTo` (`Protection.Direction`: `SAME`,
+  `TIGHTENED`, `LOOSENED`, `MIXED`). It is the one comparison the library uses for protection. `LegalNature.covers`
+  orders the natures; special category and criminal offence data are both stricter than ordinary personal data and
+  not comparable with each other. Available as `DataCategory.protection()`, `FieldClassification.protection()`
+  (anonymized and aggregated values have the nature `NONE`), `ClassClassification.ceiling()` and `ceilingOf(path)`,
+  and `CheckedActivity.protection()`.
+- Fields are identified by their path (`FieldClassification.path()`, `Violation.path()`): a field that hides a
+  superclass field of the same name is a `DUPLICATE_FIELD` error, and `ClassClassification.exempted()` lists the
+  fields excluded with `@Exempt`, so excluding a field is visible.
+- `ClassificationException` and `ProcessingException` list the first 50 errors and count all of them by code, so
+  the message of a large model stays readable.
 - `AtlasCatalog`: the taxonomy as Apache Atlas classification types (category tree as super types, protection
   levels as separate classifications), and the classifications of each column.

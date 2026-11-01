@@ -162,7 +162,7 @@ OpenMetadataCatalog catalog = OpenMetadataCatalog.of(taxonomy);
 ClassClassification student = new Classifier(taxonomy).classify(Student.class);
 
 Map<String, List<String>> tagsByField = student.fields().stream()
-        .collect(Collectors.toMap(FieldClassification::field, catalog::tagsOf));
+        .collect(Collectors.toMap(FieldClassification::path, catalog::tagsOf));
 ```
 
 | Campo | Etiquetas |

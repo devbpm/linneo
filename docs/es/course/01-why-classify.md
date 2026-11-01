@@ -84,6 +84,12 @@ LegalNature.NONE.admits(LegalNature.ORDINARY);                // false: un subá
 Por eso bajo `user` (datos personales ordinarios) están `user.health_and_medical` (categoría especial) y
 `user.criminal_history` (datos penales), y por eso nada por debajo de ellas puede «rebajarse».
 
+Para preguntar, fuera del árbol, si unos datos de una naturaleza necesitan al menos la protección de otra, usa
+`LegalNature.covers(other)`: `SPECIAL_CATEGORY.covers(ORDINARY)` es `true`, pero `SPECIAL_CATEGORY.covers(CRIMINAL_OFFENCE)`
+y `CRIMINAL_OFFENCE.covers(SPECIAL_CATEGORY)` son ambas `false`. Las dos son más estrictas que los datos ordinarios,
+pero cada una trae obligaciones que la otra no tiene, así que el orden es solo parcial. El registro
+[`Protection`](../reference/protection-levels.md#protection) se apoya en él para comparar protecciones completas.
+
 ## Confidencialidad: el daño de la revelación
 
 `Confidentiality` mide cuánto daño causaría revelar el dato. Tiene cuatro niveles, declarados de menos a más

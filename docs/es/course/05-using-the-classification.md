@@ -20,6 +20,7 @@ Al terminar este módulo serás capaz de:
 - obtener la clasificación de una clase con `classify` y leer una `ClassClassification`;
 - leer una `FieldClassification`: categoría, origen, niveles efectivos, identificabilidad y marcas de dato personal y
   de secreto;
+- obtener la `Protection` de un campo y el `ceiling()` de una clase entera;
 - listar los campos personales de un modelo y construir un inventario de datos;
 - montar un informe al estilo de un registro de actividades de tratamiento (RAT) a partir de tu propia descripción de
   los procesos y de la clasificación;
@@ -47,18 +48,21 @@ avisar.
 | Miembro | Devuelve |
 |---|---|
 | `type()` | la clase |
-| `fields()` | una `FieldClassification` por campo clasificado, **primero los de la superclase**, en orden de declaración |
+| `fields()` | una `FieldClassification` por campo clasificado, **primero los de la superclase**, y después el orden que informa la JVM (normalmente el de declaración, no garantizado): identifica un campo por su ruta, nunca por su posición |
+| `exempted()` | los campos excluidos con `@Exempt`, cada uno con su clase declarante, su ruta y su motivo |
 | `violations()` | todos los problemas encontrados, errores y avisos |
 | `isValid()` | `true` si no hay errores (los avisos se permiten) |
 | `errors()` | solo los errores |
 | `personalFields()` | los campos cuyo `isPersonal()` es `true` |
 | `holdsPersonalData()` | si algún campo es personal |
-| `field(name)` | la clasificación de un campo, o vacío si no existe, está excluido (`@Exempt`, `static`, `transient`) o tiene un error |
+| `field(path)` | la clasificación de un campo, o vacío si no existe, está excluido (`@Exempt`, `static`, `transient`) o tiene un error |
+| `ceiling()`, `ceilingOf(path)` | la protección que requiere la clase entera, o un campo y lo que cuelga de él (ver más abajo) |
 
 ```java
 student.holdsPersonalData();                              // true
 student.field("displayName");                             // Optional.empty: @Exempt
 student.field("email").orElseThrow().category().key();    // "user.contact.email"
+student.exempted().get(0).path();                         // "displayName"
 ```
 
 ## `FieldClassification`
@@ -66,7 +70,7 @@ student.field("email").orElseThrow().category().key();    // "user.contact.email
 | Componente | Significado |
 |---|---|
 | `declaringClass()` | la clase que declara el campo (`AuditedEntity` en el caso de `createdBy`) |
-| `field()` | el nombre del campo |
+| `path()` | el nombre del campo, que lo identifica dentro de la clase clasificada (`fieldName()` devuelve su último segmento) |
 | `category()` | la `DataCategory`, ya resuelta en su sustituta si la clave era obsoleta |
 | `basis()` | de dónde viene la categoría: `DECLARED` (`@Category`), `CLASS_DEFAULT` (`@DefaultCategory`), `BY_ROW` (techo de `@CategoryByRow`) |
 | `reason()` | el motivo de un valor por defecto de clase, o el `declaredBy` de un campo por fila; `null` en `DECLARED` |
@@ -74,29 +78,34 @@ student.field("email").orElseThrow().category().key();    // "user.contact.email
 | `identifiability()` | `IDENTIFIED`, `PSEUDONYMIZED`, `ANONYMIZED` o `AGGREGATED`; `null` si la categoría no es personal |
 | `isPersonal()` | categoría personal **y** almacenada `IDENTIFIED` o `PSEUDONYMIZED` |
 | `isSecret()` | la marca de secreto de la categoría |
+| `protection()` | la `Protection` de los valores almacenados (ver más abajo) |
 
-`toString()` produce una línea compacta, útil en logs y aserciones:
+`toString()` produce una línea compacta con la ruta, la categoría y el origen, útil en logs y aserciones. No nombra la
+clase declarante: usa `declaringClass()` cuando la necesites.
 
 ```java
 student.fields().forEach(System.out::println);
 ```
 
 ```
-AuditedEntity.createdBy = user.account.username (DECLARED)
-AuditedEntity.createdAt = system.operations (CLASS_DEFAULT)
-AuditedEntity.updatedAt = system.operations (CLASS_DEFAULT)
-AuditedEntity.version = system.operations (CLASS_DEFAULT)
-Student.id = user.unique_id (DECLARED)
-Student.nationalId = user.government_id.national_identification_number (DECLARED)
-Student.firstName = user.name.first (DECLARED)
-Student.lastName = user.name.last (DECLARED)
-Student.email = user.contact.email (DECLARED)
-Student.dateOfBirth = user.demographic.date_of_birth (DECLARED)
-Student.disabilityDegree = user.health_and_medical.disability (DECLARED)
-Student.analyticsId = user.unique_id.pseudonymous (DECLARED)
-Student.academicStatus = user.education.status (DECLARED)
-Student.counsellingNotes = user.content.private (DECLARED)
+createdBy = user.account.username (DECLARED)
+createdAt = system.operations (CLASS_DEFAULT)
+updatedAt = system.operations (CLASS_DEFAULT)
+version = system.operations (CLASS_DEFAULT)
+id = user.unique_id (DECLARED)
+nationalId = user.government_id.national_identification_number (DECLARED)
+firstName = user.name.first (DECLARED)
+lastName = user.name.last (DECLARED)
+email = user.contact.email (DECLARED)
+dateOfBirth = user.demographic.date_of_birth (DECLARED)
+disabilityDegree = user.health_and_medical.disability (DECLARED)
+analyticsId = user.unique_id.pseudonymous (DECLARED)
+academicStatus = user.education.status (DECLARED)
+counsellingNotes = user.content.private (DECLARED)
 ```
+
+Las líneas salen en ese orden porque la JVM informa los campos en orden de declaración, lo habitual pero no
+garantizado; nunca te apoyes en una posición, busca los campos con `field(path)`.
 
 Algunos valores que conviene observar:
 
@@ -107,6 +116,27 @@ Algunos valores que conviene observar:
 - `Attachment.content`: `basis()` es `BY_ROW`, `reason()` es `"el documentType del Document al que pertenece"` y la
   categoría es `user.health_and_medical` (el techo).
 - `Staff.passwordHash`: `isSecret()` es `true`.
+
+## Protección de un campo y de una clase
+
+`protection()` da la protección que requieren los valores almacenados de un campo como una única `Protection`
+(naturaleza, confidencialidad, integridad y marca de secreto; ver la
+[referencia](../reference/protection-levels.md#protection)). Usa los niveles efectivos del campo, y su naturaleza es
+`NONE` cuando los valores están anonimizados o agregados, porque ya no son datos personales.
+`ClassClassification.ceiling()` combina la protección de todos los campos: lo que necesita una exportación de
+registros completos o una columna que guarda el registro serializado.
+
+```java
+ClassClassification statistics = classifier.classify(CourseStatistics.class);
+statistics.field("averageMark").orElseThrow().protection().natures();   // [NONE]: agregado, no son datos personales
+
+Protection staffCeiling = classifier.classify(Staff.class).ceiling();
+staffCeiling.natures();          // [CRIMINAL_OFFENCE]
+staffCeiling.confidentiality();  // HIGH
+staffCeiling.secret();           // true: passwordHash
+```
+
+`ceilingOf(path)` hace lo mismo para un campo y para todo campo cuya ruta empiece por la suya seguida de un punto.
 
 ## Un inventario de datos
 
@@ -125,7 +155,7 @@ for (ClassClassification entity : model) {
         DataCategory category = field.category();
         System.out.println(String.join(";",
                 entity.type().getSimpleName(),
-                field.field(),
+                field.path(),
                 category.key(),
                 category.nature().name(),
                 field.confidentiality().name(),
@@ -252,7 +282,7 @@ public final class LogMasking {
     public Set<String> loggableFields(Class<?> type) {
         return loggable.computeIfAbsent(type, t -> classifier.classify(t).fields().stream()
                 .filter(LogMasking::mayBeLogged)
-                .map(FieldClassification::field)
+                .map(FieldClassification::path)
                 .collect(Collectors.toUnmodifiableSet()));
     }
 
@@ -337,7 +367,7 @@ for (ClassClassification c : model) {
     c.personalFields().stream()
             .filter(f -> f.category().nature() != LegalNature.ORDINARY)
             .forEach(f -> System.out.println(
-                    c.type().getSimpleName() + "." + f.field() + " (" + f.category().key() + ")"));
+                    c.type().getSimpleName() + "." + f.path() + " (" + f.category().key() + ")"));
 }
 ```
 
@@ -357,7 +387,7 @@ Map<String, List<String>> byCategory = new TreeMap<>();
 for (ClassClassification c : model) {
     for (FieldClassification f : c.personalFields()) {
         byCategory.computeIfAbsent(f.category().key(), k -> new ArrayList<>())
-                .add(c.type().getSimpleName() + "." + f.field());
+                .add(c.type().getSimpleName() + "." + f.path());
     }
 }
 byCategory.forEach((key, fields) -> System.out.println(key + " -> " + fields));
@@ -373,7 +403,7 @@ enum Treatment { CLEAR, MASK, OMIT }
 
 Map<String, Treatment> treatments(Class<?> type) {
     return classifier.classify(type).fields().stream().collect(Collectors.toUnmodifiableMap(
-            FieldClassification::field,
+            FieldClassification::path,
             f -> f.isSecret() ? Treatment.OMIT : f.isPersonal() ? Treatment.MASK : Treatment.CLEAR));
 }
 ```
@@ -389,8 +419,8 @@ de calificaciones es personal, pero los valores almacenados resumen a muchos est
 
 **Cuestionario**
 
-1. Primero los campos de la superclase (los de `AuditedEntity`) y después los de `Student`, cada uno en orden de
-   declaración.
+1. Primero los campos de la superclase (los de `AuditedEntity`) y después los de `Student`, cada uno en el orden que
+   informa la JVM (normalmente el de declaración, no garantizado).
 2. `CLASS_DEFAULT`, con el motivo de la `@DefaultCategory` de `AuditedEntity`:
    `"marcas de tiempo técnicas de auditoría y versión de bloqueo optimista"`.
 3. Cuando la categoría no es personal.

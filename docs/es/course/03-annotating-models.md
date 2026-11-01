@@ -211,6 +211,9 @@ propia `@Category`, y los campos propios de `Student` **no** quedan cubiertos po
 `AuditedEntity`: cada uno necesita su anotación (o un valor por defecto en `Student`, que solo sería posible si
 `Student` no contuviera datos personales).
 
+Una subclase no debe reutilizar el nombre de un campo de la superclase: el clasificador identifica un campo por su
+nombre, así que el campo que oculta al otro se informa como un error `DUPLICATE_FIELD`. Renombra uno de los dos.
+
 La precedencia completa que aplica el clasificador a cada campo:
 
 1. `@Exempt` → el campo se omite.
@@ -288,7 +291,8 @@ compilador) y los que llevan el modificador Java **`transient`**.
 > con `@Transient` de JPA sigue siendo visible para el clasificador y necesita `@Exempt` (o una categoría).
 
 `@Exempt` no puede combinarse con `@Category` ni con `@CategoryByRow` (`CONFLICTING_ANNOTATIONS`), y su motivo no
-puede estar vacío (`MISSING_REASON`).
+puede estar vacío (`MISSING_REASON`). La clasificación conserva los campos exentos y sus motivos
+(`ClassClassification.exempted()`, módulo 5), de modo que un revisor puede ver qué se dejó fuera.
 
 ## Records
 

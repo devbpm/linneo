@@ -39,7 +39,7 @@ Consulta el [orden de resolución](README.md#orden-de-resolución).
 ## Reglas que aplica el Classifier
 
 El clasificador comprueba el `@DefaultCategory` de la clase clasificada y el de cada una de sus superclases. Estas
-violaciones no tienen campo (`Violation.field()` es `null`) y su mensaje empieza por
+violaciones no tienen campo (`Violation.path()` es `null`) y su mensaje empieza por
 `@DefaultCategory of <SimpleName>`.
 
 | Regla | Violación | Gravedad |

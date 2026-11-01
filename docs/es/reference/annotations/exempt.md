@@ -35,7 +35,10 @@ de esos campos se ignora por completo (ni siquiera se comprueba su motivo).
 | No combinarla con `@Category` ni con `@CategoryByRow` | `CONFLICTING_ANNOTATIONS` (`@Exempt cannot be combined with @Category or @CategoryByRow`) | error |
 
 Un campo exento nunca aparece en `ClassClassification.fields()`, tenga o no violaciones; ambas comprobaciones pueden
-informar sobre el mismo campo.
+informar sobre el mismo campo. Un campo exento se lista, con su motivo, en
+[`ClassClassification.exempted()`](../classify/results.md#exemption), para que se note cuando se excluye un campo que
+antes estaba clasificado; la excepción es un campo que combina `@Exempt` con `@Category` o `@CategoryByRow`, que es un
+error y no se lista.
 
 ## Ejemplo
 

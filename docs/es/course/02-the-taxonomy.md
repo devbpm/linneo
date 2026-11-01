@@ -161,6 +161,10 @@ grade.secret();            // false
 grade.attribute("retention");  // null: la taxonomía estándar no fija atributos
 ```
 
+Las cuatro facetas también vienen como un único valor, `grade.protection()`, una
+[`Protection`](../reference/protection-levels.md#protection) que se puede comparar con `covers` y combinar con `join`.
+El módulo 5 la usa para campos y clases enteras.
+
 ## Explorar con la API `Taxonomy`
 
 Una `Taxonomy` es inmutable y segura entre hilos; construye una por aplicación y compártela.

@@ -92,7 +92,7 @@ public class Delivery {
 
 ```java
 new Classifier(taxonomy).verify(List.of(Delivery.class)).get(0).fields().forEach(f ->
-        System.out.println(f.field() + ": " + f.category().key() + " " + f.category().nature() + " "
+        System.out.println(f.path() + ": " + f.category().key() + " " + f.category().nature() + " "
                 + f.confidentiality() + " " + f.integrity()));
 ```
 

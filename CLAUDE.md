@@ -33,7 +33,8 @@ Packages are organised by role and audience, not by taxonomy dimension (categori
 same `Term` model). Eight exported packages plus one internal one (not exported in `module-info.java`):
 
 - **`io.github.devbpm.linneo`** — the taxonomy model, protection enums, key constants, `TaxonomyBuilder`, the
-  drafts and `TaxonomyExtension`. Terms are `DataCategory`, `DataUse`, `DataSubject` (all `Term`s), keyed by
+  drafts and `TaxonomyExtension`. `Protection` is the single partial order for comparing protection (`covers`,
+  `join`, `comparedTo`); use it instead of comparing natures and levels by hand. Terms are `DataCategory`, `DataUse`, `DataSubject` (all `Term`s), keyed by
   dotted strings whose parent is the key prefix (`user.contact.email` → `user.contact`). The builder and drafts
   must stay in this package: they rely on package-private access (the `Taxonomy` constructor, `TermDraft.info()`,
   `CategoryDraft.declared*()`) so that only `build()` can create a validated `Taxonomy`.

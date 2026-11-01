@@ -65,6 +65,15 @@ public record DataCategory(TermInfo info, LegalNature nature, Confidentiality co
     }
 
     /**
+     * The protection the category requires.
+     *
+     * @return its nature, confidentiality, integrity and secret flag
+     */
+    public Protection protection() {
+        return Protection.of(nature, confidentiality, integrity, secret);
+    }
+
+    /**
      * An application-defined attribute.
      *
      * @param name the attribute name

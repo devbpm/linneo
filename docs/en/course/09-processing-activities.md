@@ -88,7 +88,8 @@ WARNING MISSING_RETENTION alumni-newsletter: Declare the envisaged time limit fo
 ```
 
 `check` never throws for a problem in the activity: it returns a `CheckedActivity` with the resolved terms, the
-personal data, the protection it requires and every violation. Here `checked.isValid()` is `false`.
+personal data, the protection it requires (`checked.protection()`, a `Protection` with the confidentiality, integrity
+and secret flag) and every violation. Here `checked.isValid()` is `false`.
 
 The two lines show the rule of the whole package:
 
@@ -313,8 +314,8 @@ The enrollment activity has been left without a retention period on purpose: a w
 ## Verifying in a test
 
 As with the classifier, the point is to run the check on every build. `verify` checks all the activities and throws
-a `ProcessingException` listing **every error of every activity**; when there is none it returns the
-`ProcessingRecord`:
+a `ProcessingException` carrying **every error of every activity** (its message lists the first 50 and counts all of
+them by code); when there is none it returns the `ProcessingRecord`:
 
 ```java
 package edu.example.university;

@@ -25,7 +25,7 @@ anotaciones, nunca los valores de los campos, así que no necesita más acceso a
 | `Classifier(Taxonomy taxonomy)` | — | Crea un clasificador para una taxonomía; las claves deben pertenecer a ella. `NullPointerException` si `taxonomy` es `null`. |
 | `ClassClassification classify(Class<?> type)` | [`ClassClassification`](results.md#classclassification) | Clasifica una clase: las clasificaciones de sus campos y todas las violaciones encontradas. No lanza excepciones por problemas de clasificación. `NullPointerException` si `type` es `null`. |
 | `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | lista inmutable | Una clasificación por clase, en el orden recibido. |
-| `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | lista inmutable | Clasifica las clases y, si hay algún error, lanza `ClassificationException` con **todos los errores de todas las clases**. Los avisos no hacen fallar. Si no hay errores, devuelve las clasificaciones. |
+| `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | lista inmutable | Clasifica las clases y, si hay algún error, lanza `ClassificationException` con **todos los errores de todas las clases** (su mensaje lista los 50 primeros). Los avisos no hacen fallar. Si no hay errores, devuelve las clasificaciones. |
 
 ```java
 @Test
@@ -48,7 +48,10 @@ new Classifier(Taxonomy.load()).verify(entities);
 - La clase y sus superclases, desde la superclase más alta hasta la propia clase. El recorrido se detiene antes de
   `Object`, `Record` y `Enum`; las interfaces no se visitan.
 - De cada clase, los campos que devuelve `getDeclaredFields()`. La lista `fields()` resultante contiene primero los
-  campos de las superclases, en orden de declaración.
+  campos de las superclases y, dentro de una clase, el orden que informa la JVM, que normalmente es el de declaración
+  pero no está garantizado. Un campo se identifica por su `path`, que es su nombre, nunca por su posición.
+- Como un campo se identifica por su nombre, un campo que **oculta** otro del mismo nombre de una superclase es un
+  error `DUPLICATE_FIELD`: solo se clasifica el campo de la superclase.
 - Se **excluyen** sin necesidad de anotación los campos `static`, `transient` y sintéticos (como la referencia a la
   instancia contenedora en una clase interna) y los campos cuyo nombre empieza por `$$_` (los añaden herramientas de
   bytecode, por ejemplo la mejora de Hibernate: `$$_hibernate_interceptor`).
@@ -57,7 +60,8 @@ new Classifier(Taxonomy.load()).verify(entities);
 - **No se entra en los objetos incrustados.** El clasificador no desciende al tipo de un campo: una dirección
   `@Embedded` de JPA es un campo, clasificado por sus propias anotaciones, y la clase incrustable debe verificarse
   también, por ejemplo pasándola a `verify` junto con las entidades.
-- Los campos marcados con [`@Exempt`](../annotations/exempt.md) se omiten tras comprobar su anotación.
+- Los campos marcados con [`@Exempt`](../annotations/exempt.md) no se clasifican tras comprobar su anotación, y
+  `ClassClassification.exempted()` los lista con sus motivos.
 - Las anotaciones se leen del propio campo (`getDeclaredAnnotation`), así que en un record deben aplicarse al campo
   del componente, cosa que hacen `@Category`, `@CategoryByRow` y `@Exempt`.
 
@@ -79,7 +83,8 @@ Nada se clasifica por defecto. Son **errores** (hacen fallar `verify` y ponen `i
 - anotaciones que se excluyen entre sí (`CONFLICTING_ANNOTATIONS`);
 - un nivel inferior al de la categoría (`LOWERED_LEVEL`);
 - más de un valor en un elemento opcional de `@Category` (`AMBIGUOUS_VALUE`);
-- una identificabilidad en una categoría no personal (`IDENTIFIABILITY_NOT_APPLICABLE`).
+- una identificabilidad en una categoría no personal (`IDENTIFIABILITY_NOT_APPLICABLE`);
+- un campo que oculta otro del mismo nombre de una superclase (`DUPLICATE_FIELD`).
 
 Una clave obsoleta es el único **aviso** (`DEPRECATED_CATEGORY`): el campo se clasifica con la sustituta vigente. Un
 campo con error normalmente no aparece en `fields()`; consulta [Violaciones](violations.md) para ver el efecto exacto
@@ -98,13 +103,21 @@ La lanza `Classifier.verify` cuando un modelo no está clasificado completa y co
 | `List<Violation> errors()` | Los errores, todos de gravedad `ERROR`, de todas las clases verificadas. |
 
 El mensaje es el número de errores seguido de una línea por error, cada una con el formato de
-[`Violation.toString()`](violations.md#violation):
+[`Violation.toString()`](violations.md#violation). Lista los 50 primeros errores; si hay más, una última línea indica
+cuántos quedaron fuera y cuenta todos los errores por código. `errors()` siempre contiene todos.
 
 ```text
 3 classification error(s):
  - ERROR UNCLASSIFIED_FIELD com.example.Person.undecided: no @Category on the field and no @DefaultCategory on Person
  - ERROR MISSING_REASON com.example.WrongDefault: @DefaultCategory of WrongDefault needs a reason
  - ERROR PERSONAL_DEFAULT com.example.WrongDefault: @DefaultCategory of WrongDefault names 'user.contact', which is personal data: declare personal fields one by one with @Category
+```
+
+Con 120 errores, el mensaje lista los 50 primeros y termina con una línea como esta, con los códigos en orden
+alfabético:
+
+```text
+ ... and 70 more; all of them by code: LOWERED_LEVEL 12, UNCLASSIFIED_FIELD 108
 ```
 
 La lista `errors` se guarda en un campo `transient`: no se conserva si la excepción se serializa.

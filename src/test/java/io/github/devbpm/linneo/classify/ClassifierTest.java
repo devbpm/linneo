@@ -23,13 +23,17 @@ import io.github.devbpm.linneo.annotation.DefaultCategory;
 import io.github.devbpm.linneo.annotation.Exempt;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Integrity;
+import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.classify.FieldClassification.Basis;
 import io.github.devbpm.linneo.classify.Violation.Code;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -117,7 +121,7 @@ class ClassifierTest {
         ClassClassification proxy = classifier.classify(Enhanced$HibernateProxy$x9Kq.class);
         assertAll(
                 () -> assertTrue(enhanced.isValid(), () -> enhanced.violations().toString()),
-                () -> assertEquals(List.of("name"), enhanced.fields().stream().map(FieldClassification::field).toList()),
+                () -> assertEquals(List.of("name"), enhanced.fields().stream().map(FieldClassification::path).toList()),
                 () -> assertEquals(Enhanced.class, proxy.type()),
                 () -> assertTrue(proxy.isValid(), () -> proxy.violations().toString()));
     }
@@ -127,7 +131,7 @@ class ClassifierTest {
     void classDefault() {
         ClassClassification menu = classifier.classify(MenuGroup.class);
         assertTrue(menu.isValid(), () -> menu.violations().toString());
-        assertEquals(List.of("createdBy", "createdAt", "code"), menu.fields().stream().map(FieldClassification::field)
+        assertEquals(List.of("createdBy", "createdAt", "code"), menu.fields().stream().map(FieldClassification::path)
                 .toList());
         FieldClassification code = menu.field("code").orElseThrow();
         assertAll(
@@ -147,7 +151,7 @@ class ClassifierTest {
         }
         ClassClassification plain = classifier.classify(Plain.class);
         assertEquals(List.of(Code.UNCLASSIFIED_FIELD), plain.errors().stream().map(Violation::code).toList());
-        assertEquals("createdAt", plain.errors().getFirst().field());
+        assertEquals("createdAt", plain.errors().getFirst().path());
     }
 
     @Test
@@ -164,7 +168,7 @@ class ClassifierTest {
                 () -> assertEquals(Basis.BY_ROW, attachment.basis()),
                 () -> assertEquals("the document category", attachment.reason()),
                 () -> assertEquals(Confidentiality.HIGH, attachment.confidentiality()),
-                () -> assertEquals(List.of("undecided"), person.errors().stream().map(Violation::field).toList()));
+                () -> assertEquals(List.of("undecided"), person.errors().stream().map(Violation::path).toList()));
     }
 
     @Test
@@ -218,5 +222,64 @@ class ClassifierTest {
         assertEquals(3, failure.errors().size(), failure::getMessage);
         assertTrue(failure.getMessage().contains("Person.undecided"));
         assertEquals(2, classifier.verify(List.of(MenuGroup.class, Contact.class)).size());
+    }
+    @Test
+    @DisplayName("exempted fields are listed with their reason")
+    void exempted() {
+        ClassClassification menu = classifier.classify(MenuGroup.class);
+        assertEquals(List.of(new ClassClassification.Exemption(MenuGroup.class, "label", "computed from code")),
+                menu.exempted());
+        assertTrue(menu.field("label").isEmpty());
+    }
+
+    @Test
+    @DisplayName("a field that hides a superclass field of the same name is an error, since paths identify fields")
+    void duplicateField() {
+        @SuppressWarnings("unused")
+        @DefaultCategory(value = Categories.SYSTEM_OPERATIONS, reason = "technical")
+        class Hiding extends Audited {
+            @Category(Categories.USER_UNIQUE_ID)
+            private Long createdBy;
+        }
+        ClassClassification hiding = classifier.classify(Hiding.class);
+        assertEquals(List.of(Code.DUPLICATE_FIELD), hiding.errors().stream().map(Violation::code).toList());
+        assertEquals("createdBy", hiding.errors().getFirst().path());
+        assertEquals(Audited.class, hiding.field("createdBy").orElseThrow().declaringClass());
+    }
+
+    @Test
+    @DisplayName("a field's protection folds its identifiability into the nature; the ceiling joins the fields")
+    void protection() {
+        ClassClassification contact = classifier.classify(Contact.class);
+        ClassClassification person = classifier.classify(Person.class);
+        FieldClassification stats = contact.field("stats").orElseThrow();
+        FieldClassification notes = person.field("notes").orElseThrow();
+        assertAll(
+                () -> assertEquals(Set.of(LegalNature.NONE), stats.protection().natures()),
+                () -> assertEquals(Set.of(LegalNature.ORDINARY), contact.field("email").orElseThrow()
+                        .protection().natures()),
+                () -> assertEquals(Confidentiality.HIGH, notes.protection().confidentiality()),
+                () -> assertEquals("notes", notes.fieldName()),
+                () -> assertEquals(Set.of(LegalNature.SPECIAL_CATEGORY), person.ceiling().natures()),
+                () -> assertEquals(notes.protection(), person.ceilingOf("notes")),
+                () -> assertEquals(Protection.LOWEST, person.ceilingOf("missing")),
+                () -> assertTrue(person.ceiling().covers(contact.ceiling())));
+    }
+
+    @Test
+    @DisplayName("the message of a long list of errors lists the first ones and counts them all by code")
+    void longErrorList() {
+        List<Violation> errors = new ArrayList<>();
+        for (int i = 0; i < 60; i++) {
+            errors.add(new Violation(Person.class, "f" + i, Violation.Severity.ERROR,
+                    i < 45 ? Code.UNCLASSIFIED_FIELD : Code.UNKNOWN_CATEGORY, "problem " + i));
+        }
+        String message = new ClassificationException(errors).getMessage();
+        assertAll(
+                () -> assertTrue(message.startsWith("60 classification error(s):")),
+                () -> assertTrue(message.contains("problem 49")),
+                () -> assertFalse(message.contains("problem 50")),
+                () -> assertTrue(message.endsWith("... and 10 more; all of them by code: UNCLASSIFIED_FIELD 45,"
+                        + " UNKNOWN_CATEGORY 15"), message));
     }
 }

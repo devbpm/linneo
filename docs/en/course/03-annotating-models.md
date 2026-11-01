@@ -206,6 +206,9 @@ So `createdAt`, `updatedAt` and `version` are `system.operations` in every subcl
 `@Category`, and `Student`'s own fields are **not** covered by `AuditedEntity`'s default: each needs an annotation
 (or a default on `Student`, which would only be possible if `Student` held no personal data).
 
+A subclass must not reuse the name of a superclass field: the classifier identifies a field by its name, so the
+field that hides the other is reported as a `DUPLICATE_FIELD` error. Rename one of the two.
+
 The complete precedence the classifier applies to each field:
 
 1. `@Exempt` → the field is skipped.
@@ -283,7 +286,8 @@ compiler) and fields with the Java **`transient`** modifier.
 > JPA's `@Transient` is still seen by the classifier and needs `@Exempt` (or a category).
 
 `@Exempt` cannot be combined with `@Category` or `@CategoryByRow` (`CONFLICTING_ANNOTATIONS`), and its reason must
-not be blank (`MISSING_REASON`).
+not be blank (`MISSING_REASON`). The classification keeps the exempt fields and their reasons
+(`ClassClassification.exempted()`, module 5), so a reviewer can see what was left out.
 
 ## Records
 

@@ -31,7 +31,7 @@ activity unlawful as declared (errors) and reports gaps in the record as warning
 | `Jurisdiction jurisdiction()` | [`Jurisdiction`](#jurisdiction) | The national law this checker applies on top of the GDPR. |
 | `CheckedActivity check(ProcessingActivity activity)` | [`CheckedActivity`](#checkedactivity) | Checks one activity: its terms resolved, its personal data, the protection that data requires and every violation found. Never throws for a problem in the activity. `NullPointerException` if `activity` is `null`. |
 | `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | list | One result per activity, in the given order. An activity whose key was already used by an earlier one also gets the error `DUPLICATE_ACTIVITY`; the first one does not. |
-| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Runs `checkAll` and throws a [`ProcessingException`](#processingexception) listing **every error of every activity** if there is any. Warnings do not fail. |
+| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Runs `checkAll` and throws a [`ProcessingException`](#processingexception) carrying **every error of every activity** if there is any (its message lists the first 50). Warnings do not fail. |
 | `ProcessingRecord verify(ProcessingActivity... activities)` | [`ProcessingRecord`](record.md) | The same, for activities given one by one. |
 
 ```java
@@ -97,9 +97,11 @@ The personal data of an activity is the union of two sources:
   Each field contributes its **effective** levels, so a confidentiality or integrity raised on the field counts.
 
 The categories are kept once each, ordered by key, in `CheckedActivity.dataCategories()`. The protection the
-activity requires is the highest confidentiality and integrity of all those contributions (`PUBLIC` and `LOW` when
-there is none), and it includes secrets if any of them is a secret. Their legal natures decide whether the activity
-processes special category data (article 9) or criminal offence data (article 10).
+activity requires, `CheckedActivity.protection()`, is the [join](../protection-levels.md#protection) of all those
+contributions: the highest confidentiality and integrity (`PUBLIC` and `LOW` when there is none), secret if any of
+them is a secret, and the strictest of their legal natures (`NONE` alone when there is none). The legal natures of the
+categories decide whether the activity processes special category data (article 9) or criminal offence data
+(article 10).
 
 An entity's personal fields are not always about the activity's data subjects. In the course's university model,
 every entity extends an audit superclass whose `createdBy` field holds a staff member's username, so listing
@@ -112,8 +114,8 @@ entity holds more than the activity processes.
 
 ```java
 public record CheckedActivity(ProcessingActivity activity, List<DataUse> purposes, List<DataSubject> dataSubjects,
-                              List<DataCategory> dataCategories, Confidentiality confidentiality, Integrity integrity,
-                              boolean secret, List<ProcessingViolation> violations)
+                              List<DataCategory> dataCategories, Protection protection,
+                              List<ProcessingViolation> violations)
 ```
 
 | Component | Description |
@@ -122,20 +124,18 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
 | `purposes` | The data uses, unknown keys left out and deprecated keys replaced. |
 | `dataSubjects` | The data subjects, likewise. |
 | `dataCategories` | The personal data categories processed, from the declared keys and the personal fields of the entities, in key order. |
-| `confidentiality` | The highest confidentiality of that data, field-level raises included; `PUBLIC` when there is none. |
-| `integrity` | The highest integrity of that data, field-level raises included; `LOW` when there is none. |
-| `secret` | Whether any of that data is a secret. |
+| `protection` | The least [`Protection`](../protection-levels.md#protection) that covers all that data, field-level raises included; `Protection.LOWEST` when there is none. Its `confidentiality()`, `integrity()` and `secret()` are what the record shows as the required protection. |
 | `violations` | Every problem found, errors and warnings. |
 
 The canonical constructor copies the lists (immutable) and throws `NullPointerException` if `activity`,
-`confidentiality`, `integrity` or a list is `null`.
+`protection` or a list is `null`.
 
 | Method | Description |
 |---|---|
 | `boolean isValid()` | `true` if there is no error; warnings are allowed. |
 | `List<ProcessingViolation> errors()` | The violations of severity `ERROR`. |
 | `List<ProcessingViolation> warnings()` | The violations of severity `WARNING`: the open points of the record. |
-| `Set<LegalNature> natures()` | The legal natures of `dataCategories` (never `NONE`). |
+| `Set<LegalNature> natures()` | The legal natures of `dataCategories` (never `NONE`), all of them; `protection().natures()` keeps only the strictest. |
 | `boolean processesSpecialCategories()` | `true` if a category is `SPECIAL_CATEGORY` (article 9). |
 | `boolean processesCriminalOffenceData()` | `true` if a category is `CRIMINAL_OFFENCE` (article 10). |
 
@@ -143,7 +143,7 @@ The canonical constructor copies the lists (immutable) and throws `NullPointerEx
 CheckedActivity checked = checker.check(admissions);
 checked.isValid();                      // true
 checked.natures();                      // [ORDINARY, SPECIAL_CATEGORY]
-checked.confidentiality();              // HIGH
+checked.protection().confidentiality(); // HIGH
 checked.warnings();                     // []
 ```
 
@@ -261,7 +261,10 @@ Thrown by `ProcessingChecker.verify` when an activity is incomplete or would be 
 | `List<ProcessingViolation> errors()` | The errors, all of severity `ERROR`, from every verified activity, in activity order. |
 
 The message is the number of errors followed by one line per error, in the format of
-[`ProcessingViolation.toString()`](#processingviolation). Verifying an activity twice plus an empty one gives:
+[`ProcessingViolation.toString()`](#processingviolation). It lists the first 50 errors; if there are more, a last line
+says how many were left out and counts all the errors by code, in alphabetical order, as in
+`... and 70 more; all of them by code: MISSING_PURPOSE 60, UNKNOWN_KEY 60`. `errors()` always has every error.
+Verifying an activity twice plus an empty one gives:
 
 ```text
 4 processing error(s):

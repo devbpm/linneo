@@ -62,7 +62,7 @@ module io.github.devbpm.linneo {
 
 | Package | Exported | Contents |
 |---|---|---|
-| `io.github.devbpm.linneo` | yes | The taxonomy (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), its terms (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), the protection enums and the key constants (`Categories`, `DataUses`, `DataSubjects`) |
+| `io.github.devbpm.linneo` | yes | The taxonomy (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), its terms (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), the protection enums and `Protection`, and the key constants (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | yes | The annotations that declare what each field of a model holds: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@Exempt` |
 | `io.github.devbpm.linneo.classify` | yes | Reading and verifying the annotations of a model: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException` |
 | `io.github.devbpm.linneo.processing` | yes | Processing activities and the GDPR record of processing activities: `ProcessingActivity`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord` |
@@ -95,7 +95,7 @@ module com.example.app {
 - [Taxonomy](taxonomy.md) — `Taxonomy` (`standard`, `load`, `builder`, lookups, deprecation, navigation) and
   `TaxonomyException`.
 - [Terms](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`.
-- [Protection levels](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`
+- [Protection levels](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`, `Protection`
   and the inheritance rule.
 - [Standard taxonomy](standard-taxonomy.md) — the bundled fideslang taxonomy, Linneo's additions and protection
   policy, the TSV formats.
@@ -128,7 +128,7 @@ module com.example.app {
 **Classification** (`io.github.devbpm.linneo.classify`)
 
 - [Classifier](classify/classifier.md) — `Classifier`, `ClassificationException`.
-- [Results](classify/results.md) — `ClassClassification`, `FieldClassification`.
+- [Results](classify/results.md) — `ClassClassification` (with `Exemption`), `FieldClassification`.
 - [Violations](classify/violations.md) — `Violation` and every `Code`.
 
 **Processing activities** (`io.github.devbpm.linneo.processing`)

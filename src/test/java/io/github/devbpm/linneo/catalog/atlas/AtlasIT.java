@@ -135,8 +135,8 @@ class AtlasIT {
         List<FieldClassification> fields = new Classifier(TAXONOMY).classify(Student.class).fields();
         assertEquals(7, fields.size());
         for (FieldClassification field : fields) {
-            String attributes = new Json().field("qualifiedName", "linneo_it.student." + field.field() + "@it")
-                    .field("name", field.field()).end();
+            String attributes = new Json().field("qualifiedName", "linneo_it.student." + field.path() + "@it")
+                    .field("name", field.path()).end();
             String entity = new Json().field("typeName", COLUMN_TYPE).raw("attributes", attributes).end();
             String response = http.send("POST", "/entity", new Json().raw("entity", entity).end());
             String guid = string(response, "guid");
@@ -144,7 +144,7 @@ class AtlasIT {
             http.send("POST", "/entity/guid/" + guid + "/classifications", CATALOG.classificationsJson(field));
             String stored = http.send("GET", "/entity/guid/" + guid + "/classifications", null);
             assertEquals(Map.of(), difference(CATALOG.classificationsOf(field), strings(stored, "typeName")),
-                    field.field());
+                    field.path());
         }
     }
 

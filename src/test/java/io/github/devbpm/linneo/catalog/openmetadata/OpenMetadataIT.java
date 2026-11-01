@@ -153,11 +153,11 @@ class OpenMetadataIT {
         assertEquals(7, fields.size());
         for (FieldClassification field : fields) {
             List<String> expected = CATALOG.tagsOf(field);
-            String table = "t_" + field.field().toLowerCase(Locale.ROOT);
-            http.send("PUT", "/tables", tableBody(table, field.field(), expected));
+            String table = "t_" + field.path().toLowerCase(Locale.ROOT);
+            http.send("PUT", "/tables", tableBody(table, field.path(), expected));
             String stored = http.send("GET", "/tables/name/" + encode(SCHEMA + "." + table) + "?fields=columns,tags",
                     null);
-            assertEquals(Map.of(), difference(expected, strings(stored, "tagFQN")), field.field());
+            assertEquals(Map.of(), difference(expected, strings(stored, "tagFQN")), field.path());
         }
     }
 

@@ -102,14 +102,18 @@ io.github.devbpm.linneo.classify.ClassificationException: 2 classification error
 Cada línea es una `Violation`, impresa como:
 
 ```
-<GRAVEDAD> <CÓDIGO> <clase con nombre completo>[.<campo>]: <mensaje>
+<GRAVEDAD> <CÓDIGO> <clase con nombre completo>[.<path>]: <mensaje>
 ```
 
 - La clase es la que **se está clasificando**, aunque el campo esté declarado en una superclase.
-- La parte del campo falta cuando el problema está en una anotación de clase (`@DefaultCategory`).
+- La ruta (el nombre del campo) falta cuando el problema está en una anotación de clase (`@DefaultCategory`).
 - El mensaje nombra la clave o la anotación implicada.
 
-Desde código, `ClassificationException.errors()` devuelve esas mismas `Violation`, cada una con `type()`, `field()`,
+El mensaje lista los 50 primeros errores. Si hay más, una última línea los cuenta todos por código
+(`... and 70 more; all of them by code: LOWERED_LEVEL 12, UNCLASSIFIED_FIELD 108`), de modo que un modelo grande no
+entierre el log de la compilación. `ClassificationException.errors()` siempre contiene todos los errores.
+
+Desde código, `ClassificationException.errors()` devuelve esas mismas `Violation`, cada una con `type()`, `path()`,
 `severity()`, `code()` y `message()`. Es útil para agruparlas o contarlas:
 
 ```java
@@ -137,6 +141,7 @@ Los mensajes de abajo son exactamente los que produce Linneo (con `X` para la cl
 | `LOWERED_LEVEL` | error | `confidentiality LOW is lower than the MEDIUM of 'k'` (o `integrity ...`) | Quita el elemento o súbelo; los niveles solo suben |
 | `AMBIGUOUS_VALUE` | error | `confidentiality must have at most one value` (o `integrity`, `identifiability`) | Indica un solo valor |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `'k' is not personal data and has no identifiability` | Quita `identifiability` o comprueba que la clave es la correcta |
+| `DUPLICATE_FIELD` | error | `hides the field of the same name declared by Superclase; rename one of them` | Renombra uno de los dos campos: un campo se identifica por su nombre, así que un campo de una subclase no puede reutilizar el nombre de uno de la superclase |
 | `DEPRECATED_CATEGORY` | **aviso** | `data category 'k' is deprecated; use 'r'` | Sustituye la clave por la sugerida |
 
 Esta es una clase rota a propósito y la salida real de `verify`:

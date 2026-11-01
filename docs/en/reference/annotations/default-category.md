@@ -39,7 +39,7 @@ See the [resolution order](README.md#resolution-order).
 ## Rules enforced by the Classifier
 
 The classifier checks the `@DefaultCategory` of the classified class and of each of its superclasses. These
-violations have no field (`Violation.field()` is `null`) and their message starts with
+violations have no field (`Violation.path()` is `null`) and their message starts with
 `@DefaultCategory of <SimpleName>`.
 
 | Rule | Violation | Severity |

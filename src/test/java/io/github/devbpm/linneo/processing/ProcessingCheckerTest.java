@@ -96,8 +96,9 @@ class ProcessingCheckerTest {
                 () -> assertEquals(Set.of(LegalNature.ORDINARY, LegalNature.SPECIAL_CATEGORY), checked.natures()),
                 () -> assertTrue(checked.processesSpecialCategories()),
                 () -> assertFalse(checked.processesCriminalOffenceData()),
-                () -> assertEquals(Confidentiality.HIGH, checked.confidentiality()),
-                () -> assertEquals(Integrity.HIGH, checked.integrity()),
+                () -> assertEquals(Confidentiality.HIGH, checked.protection().confidentiality()),
+                () -> assertEquals(Integrity.HIGH, checked.protection().integrity()),
+                () -> assertEquals(Set.of(LegalNature.SPECIAL_CATEGORY), checked.protection().natures()),
                 () -> assertTrue(checked.isValid()));
     }
 
@@ -109,7 +110,7 @@ class ProcessingCheckerTest {
                 .legalBasis(LegalBasis.CONTRACT).retention("End of the course").build());
         assertAll(
                 () -> assertEquals(List.of(), checked.violations()),
-                () -> assertEquals(Confidentiality.HIGH, checked.confidentiality()),
+                () -> assertEquals(Confidentiality.HIGH, checked.protection().confidentiality()),
                 () -> assertEquals(Confidentiality.MEDIUM,
                         taxonomy.requireCategory(Categories.USER_CONTENT_PRIVATE).confidentiality()),
                 () -> assertFalse(checker.check(enrollment().build()).dataCategories().stream()

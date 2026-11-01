@@ -99,14 +99,18 @@ io.github.devbpm.linneo.classify.ClassificationException: 2 classification error
 Each line is a `Violation`, printed as:
 
 ```
-<SEVERITY> <CODE> <fully qualified class>[.<field>]: <message>
+<SEVERITY> <CODE> <fully qualified class>[.<path>]: <message>
 ```
 
 - The class is the one **being classified**, even when the field is declared in a superclass.
-- The field part is missing when the problem is on a class annotation (`@DefaultCategory`).
+- The path (the field name) is missing when the problem is on a class annotation (`@DefaultCategory`).
 - The message names the key or annotation involved.
 
-Programmatically, `ClassificationException.errors()` returns the same `Violation`s, each with `type()`, `field()`,
+The message lists the first 50 errors. If there are more, a last line counts all of them by code
+(`... and 70 more; all of them by code: LOWERED_LEVEL 12, UNCLASSIFIED_FIELD 108`), so a large model does not bury
+the build log. `ClassificationException.errors()` always has every error.
+
+Programmatically, `ClassificationException.errors()` returns the same `Violation`s, each with `type()`, `path()`,
 `severity()`, `code()` and `message()`. That is useful to group or count them:
 
 ```java
@@ -134,6 +138,7 @@ The messages below are the exact ones Linneo produces (with `X` for the class, `
 | `LOWERED_LEVEL` | error | `confidentiality LOW is lower than the MEDIUM of 'k'` (or `integrity ...`) | Remove the element or raise it; levels only go up |
 | `AMBIGUOUS_VALUE` | error | `confidentiality must have at most one value` (or `integrity`, `identifiability`) | Give one value |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `'k' is not personal data and has no identifiability` | Remove `identifiability`, or check that the key is right |
+| `DUPLICATE_FIELD` | error | `hides the field of the same name declared by Superclass; rename one of them` | Rename one of the two fields: a field is identified by its name, so a subclass field cannot reuse the name of a superclass field |
 | `DEPRECATED_CATEGORY` | **warning** | `data category 'k' is deprecated; use 'r'` | Replace the key with the one suggested |
 
 Here is a deliberately broken class and the real output of `verify`:

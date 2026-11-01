@@ -17,6 +17,7 @@ package io.github.devbpm.linneo.processing;
 
 import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Term;
 import io.github.devbpm.linneo.internal.Json;
 
@@ -100,8 +101,10 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
                     : String.join("; ", activity.transfers().stream().map(t -> t.destination() + " (art. "
                     + t.safeguard().article() + ": " + t.safeguard().fideslangName() + ")").toList()));
             row(out, "Retention (art. 30.1.f)", activity.retention() == null ? "Not declared" : activity.retention());
-            row(out, "Required protection (art. 30.1.g)", "Confidentiality " + label(checked.confidentiality())
-                    + ", integrity " + label(checked.integrity()) + (checked.secret() ? ", includes secrets" : ""));
+            Protection protection = checked.protection();
+            row(out, "Required protection (art. 30.1.g)", "Confidentiality " + label(protection.confidentiality())
+                    + ", integrity " + label(protection.integrity())
+                    + (protection.secret() ? ", includes secrets" : ""));
             row(out, "Impact assessment (art. 35)", activity.impactAssessment() == null ? "None"
                     : activity.impactAssessment());
             if (!checked.warnings().isEmpty()) {
@@ -159,9 +162,9 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
             }
             json.raw("protection", new Json()
                     .field("natures", checked.natures().stream().map(LegalNature::name).toList())
-                    .field("confidentiality", checked.confidentiality().name())
-                    .field("integrity", checked.integrity().name())
-                    .field("secret", checked.secret()).end());
+                    .field("confidentiality", checked.protection().confidentiality().name())
+                    .field("integrity", checked.protection().integrity().name())
+                    .field("secret", checked.protection().secret()).end());
             json.field("openPoints", checked.warnings().stream().map(ProcessingViolation::message).toList());
             items.add(json.end());
         }

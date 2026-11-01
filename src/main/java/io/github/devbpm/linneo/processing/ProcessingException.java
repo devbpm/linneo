@@ -15,13 +15,15 @@
  */
 package io.github.devbpm.linneo.processing;
 
+import io.github.devbpm.linneo.internal.Messages;
+
 import java.io.Serial;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Thrown by {@link ProcessingChecker#verify(java.util.Collection)} when a processing activity is incomplete or
- * would be unlawful as declared. The message lists every error, one per line.
+ * would be unlawful as declared. The message lists the first 50 errors, one per line, and counts all of them by
+ * code; {@link #errors()} has them all.
  *
  * @since 0.1.0
  */
@@ -38,8 +40,7 @@ public class ProcessingException extends RuntimeException {
      * @param errors the errors found, at least one
      */
     public ProcessingException(List<ProcessingViolation> errors) {
-        super(errors.size() + " processing error(s):" + errors.stream().map(v -> "\n - " + v)
-                .collect(Collectors.joining()));
+        super(Messages.errors("processing", errors, ProcessingViolation::code));
         this.errors = List.copyOf(errors);
     }
 

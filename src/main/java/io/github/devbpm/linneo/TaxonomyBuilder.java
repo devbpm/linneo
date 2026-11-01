@@ -406,9 +406,7 @@ public final class TaxonomyBuilder {
             }
             DataCategory replacement = built.get(replacedBy);
             if (!category.nature().admits(replacement.nature())
-                    || replacement.confidentiality().compareTo(category.confidentiality()) < 0
-                    || replacement.integrity().compareTo(category.integrity()) < 0
-                    || category.secret() && !replacement.secret()) {
+                    || !replacement.protection().covers(category.protection())) {
                 throw new TaxonomyException("The replacement '" + replacedBy + "' of data category '"
                         + category.key() + "' has weaker protection: " + describe(replacement) + " instead of "
                         + describe(category));

@@ -93,7 +93,7 @@ public class ExpenseClaim {
 
 ```java
 new Classifier(taxonomy).verify(List.of(ExpenseClaim.class)).get(0).fields().forEach(f ->
-        System.out.println(f.field() + ": " + f.category().key() + " " + f.category().nature() + " "
+        System.out.println(f.path() + ": " + f.category().key() + " " + f.category().nature() + " "
                 + f.confidentiality() + " " + f.integrity()));
 ```
 

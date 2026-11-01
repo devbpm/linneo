@@ -94,7 +94,8 @@ WARNING MISSING_RETENTION alumni-newsletter: Declare the envisaged time limit fo
 ```
 
 `check` nunca lanza excepciones por un problema de la actividad: devuelve una `CheckedActivity` con los términos
-resueltos, los datos personales, la protección que requieren y todas las infracciones. Aquí `checked.isValid()` es
+resueltos, los datos personales, la protección que requieren (`checked.protection()`, una `Protection` con la
+confidencialidad, la integridad y la marca de secreto) y todas las infracciones. Aquí `checked.isValid()` es
 `false`.
 
 Las dos líneas muestran la regla de todo el paquete:
@@ -321,8 +322,8 @@ La actividad de matrícula se ha dejado a propósito sin plazo de conservación:
 ## Verificar en un test
 
 Como con el clasificador, lo importante es ejecutar la comprobación en cada compilación. `verify` comprueba todas las
-actividades y lanza una `ProcessingException` con **todos los errores de todas las actividades**; si no hay ninguno,
-devuelve el `ProcessingRecord`:
+actividades y lanza una `ProcessingException` con **todos los errores de todas las actividades** (su mensaje lista los
+50 primeros y los cuenta todos por código); si no hay ninguno, devuelve el `ProcessingRecord`:
 
 ```java
 package edu.example.university;

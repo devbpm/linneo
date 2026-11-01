@@ -19,6 +19,7 @@ After this module you will be able to:
 
 - obtain the classification of a class with `classify` and read a `ClassClassification`;
 - read a `FieldClassification`: category, basis, effective levels, identifiability, personal and secret flags;
+- get the `Protection` of a field and the `ceiling()` of a whole class;
 - list the personal fields of a model and build a data inventory;
 - assemble a report in the style of a record of processing activities (RoPA) from your own description of
   processes plus the classification;
@@ -45,18 +46,21 @@ result, so a report built from an invalid classification would silently leave th
 | Member | Returns |
 |---|---|
 | `type()` | the class |
-| `fields()` | one `FieldClassification` per classified field, **superclass fields first**, in declaration order |
+| `fields()` | one `FieldClassification` per classified field, **superclass fields first**, then the order the JVM reports (usually declaration order, not guaranteed): identify a field by its path, never by its position |
+| `exempted()` | the fields excluded with `@Exempt`, each with its declaring class, path and reason |
 | `violations()` | every problem found, errors and warnings |
 | `isValid()` | `true` if there is no error (warnings allowed) |
 | `errors()` | only the errors |
 | `personalFields()` | the fields whose `isPersonal()` is `true` |
 | `holdsPersonalData()` | whether any field is personal |
-| `field(name)` | the classification of one field, or empty if unknown, excluded (`@Exempt`, `static`, `transient`) or in error |
+| `field(path)` | the classification of one field, or empty if unknown, excluded (`@Exempt`, `static`, `transient`) or in error |
+| `ceiling()`, `ceilingOf(path)` | the protection the whole class, or one field and what is below it, requires (see below) |
 
 ```java
 student.holdsPersonalData();                              // true
 student.field("displayName");                             // Optional.empty: @Exempt
 student.field("email").orElseThrow().category().key();    // "user.contact.email"
+student.exempted().get(0).path();                         // "displayName"
 ```
 
 ## `FieldClassification`
@@ -64,7 +68,7 @@ student.field("email").orElseThrow().category().key();    // "user.contact.email
 | Component | Meaning |
 |---|---|
 | `declaringClass()` | the class that declares the field (`AuditedEntity` for `createdBy`) |
-| `field()` | the field name |
+| `path()` | the field's name, which identifies it within the classified class (`fieldName()` returns its last segment) |
 | `category()` | the `DataCategory`, already resolved to its replacement if the key was deprecated |
 | `basis()` | where the category comes from: `DECLARED` (`@Category`), `CLASS_DEFAULT` (`@DefaultCategory`), `BY_ROW` (ceiling of `@CategoryByRow`) |
 | `reason()` | the reason of a class default, or the `declaredBy` of a per-row field; `null` for `DECLARED` |
@@ -72,29 +76,34 @@ student.field("email").orElseThrow().category().key();    // "user.contact.email
 | `identifiability()` | `IDENTIFIED`, `PSEUDONYMIZED`, `ANONYMIZED` or `AGGREGATED`; `null` when the category is not personal |
 | `isPersonal()` | personal category **and** stored `IDENTIFIED` or `PSEUDONYMIZED` |
 | `isSecret()` | the category's secret flag |
+| `protection()` | the `Protection` of the stored values (see below) |
 
-`toString()` gives a compact line, handy in logs and assertions:
+`toString()` gives a compact line with the path, the category and the basis, handy in logs and assertions. It does
+not name the declaring class: use `declaringClass()` when you need it.
 
 ```java
 student.fields().forEach(System.out::println);
 ```
 
 ```
-AuditedEntity.createdBy = user.account.username (DECLARED)
-AuditedEntity.createdAt = system.operations (CLASS_DEFAULT)
-AuditedEntity.updatedAt = system.operations (CLASS_DEFAULT)
-AuditedEntity.version = system.operations (CLASS_DEFAULT)
-Student.id = user.unique_id (DECLARED)
-Student.nationalId = user.government_id.national_identification_number (DECLARED)
-Student.firstName = user.name.first (DECLARED)
-Student.lastName = user.name.last (DECLARED)
-Student.email = user.contact.email (DECLARED)
-Student.dateOfBirth = user.demographic.date_of_birth (DECLARED)
-Student.disabilityDegree = user.health_and_medical.disability (DECLARED)
-Student.analyticsId = user.unique_id.pseudonymous (DECLARED)
-Student.academicStatus = user.education.status (DECLARED)
-Student.counsellingNotes = user.content.private (DECLARED)
+createdBy = user.account.username (DECLARED)
+createdAt = system.operations (CLASS_DEFAULT)
+updatedAt = system.operations (CLASS_DEFAULT)
+version = system.operations (CLASS_DEFAULT)
+id = user.unique_id (DECLARED)
+nationalId = user.government_id.national_identification_number (DECLARED)
+firstName = user.name.first (DECLARED)
+lastName = user.name.last (DECLARED)
+email = user.contact.email (DECLARED)
+dateOfBirth = user.demographic.date_of_birth (DECLARED)
+disabilityDegree = user.health_and_medical.disability (DECLARED)
+analyticsId = user.unique_id.pseudonymous (DECLARED)
+academicStatus = user.education.status (DECLARED)
+counsellingNotes = user.content.private (DECLARED)
 ```
+
+The lines come in that order because the JVM reports the fields in declaration order, which is usual but not
+guaranteed; never rely on a position, look fields up by `field(path)`.
 
 A few values worth noticing:
 
@@ -106,6 +115,26 @@ A few values worth noticing:
 - `Attachment.content`: `basis()` is `BY_ROW`, `reason()` is `"the documentType of the owning Document"`, category
   `user.health_and_medical` (the ceiling).
 - `Staff.passwordHash`: `isSecret()` is `true`.
+
+## Protection of a field and of a class
+
+`protection()` gives the protection a field's stored values require as one `Protection` (nature, confidentiality,
+integrity and secret flag, see the [reference](../reference/protection-levels.md#protection)). It uses the field's
+effective levels, and its nature is `NONE` when the values are anonymized or aggregated, because they are no longer
+personal data. `ClassClassification.ceiling()` joins the protection of every field: what an export of whole records,
+or a column that stores the record serialized, needs.
+
+```java
+ClassClassification statistics = classifier.classify(CourseStatistics.class);
+statistics.field("averageMark").orElseThrow().protection().natures();   // [NONE]: aggregated, not personal data
+
+Protection staffCeiling = classifier.classify(Staff.class).ceiling();
+staffCeiling.natures();          // [CRIMINAL_OFFENCE]
+staffCeiling.confidentiality();  // HIGH
+staffCeiling.secret();           // true: passwordHash
+```
+
+`ceilingOf(path)` does the same for one field and every field whose path starts with it followed by a dot.
 
 ## A data inventory
 
@@ -124,7 +153,7 @@ for (ClassClassification entity : model) {
         DataCategory category = field.category();
         System.out.println(String.join(";",
                 entity.type().getSimpleName(),
-                field.field(),
+                field.path(),
                 category.key(),
                 category.nature().name(),
                 field.confidentiality().name(),
@@ -247,7 +276,7 @@ public final class LogMasking {
     public Set<String> loggableFields(Class<?> type) {
         return loggable.computeIfAbsent(type, t -> classifier.classify(t).fields().stream()
                 .filter(LogMasking::mayBeLogged)
-                .map(FieldClassification::field)
+                .map(FieldClassification::path)
                 .collect(Collectors.toUnmodifiableSet()));
     }
 
@@ -329,7 +358,7 @@ for (ClassClassification c : model) {
     c.personalFields().stream()
             .filter(f -> f.category().nature() != LegalNature.ORDINARY)
             .forEach(f -> System.out.println(
-                    c.type().getSimpleName() + "." + f.field() + " (" + f.category().key() + ")"));
+                    c.type().getSimpleName() + "." + f.path() + " (" + f.category().key() + ")"));
 }
 ```
 
@@ -348,7 +377,7 @@ Map<String, List<String>> byCategory = new TreeMap<>();
 for (ClassClassification c : model) {
     for (FieldClassification f : c.personalFields()) {
         byCategory.computeIfAbsent(f.category().key(), k -> new ArrayList<>())
-                .add(c.type().getSimpleName() + "." + f.field());
+                .add(c.type().getSimpleName() + "." + f.path());
     }
 }
 byCategory.forEach((key, fields) -> System.out.println(key + " -> " + fields));
@@ -364,7 +393,7 @@ enum Treatment { CLEAR, MASK, OMIT }
 
 Map<String, Treatment> treatments(Class<?> type) {
     return classifier.classify(type).fields().stream().collect(Collectors.toUnmodifiableMap(
-            FieldClassification::field,
+            FieldClassification::path,
             f -> f.isSecret() ? Treatment.OMIT : f.isPersonal() ? Treatment.MASK : Treatment.CLEAR));
 }
 ```
@@ -380,7 +409,7 @@ category is personal, but the stored values summarise many students, so `FieldCl
 
 **Quiz**
 
-1. Superclass fields first (`AuditedEntity`'s), then `Student`'s, each in declaration order.
+1. Superclass fields first (`AuditedEntity`'s), then `Student`'s, each in the order the JVM reports (usually declaration order, not guaranteed).
 2. `CLASS_DEFAULT`, with the reason of `AuditedEntity`'s `@DefaultCategory`:
    `"technical audit timestamps and optimistic-lock version"`.
 3. When the category is not personal.

@@ -184,7 +184,7 @@ DataHubCatalog catalog = DataHubCatalog.of(taxonomy);
 ClassClassification student = new Classifier(taxonomy).classify(Student.class);
 
 Map<String, List<String>> termsByField = student.fields().stream()
-        .collect(Collectors.toMap(FieldClassification::field, catalog::termsOf));
+        .collect(Collectors.toMap(FieldClassification::path, catalog::termsOf));
 ```
 
 En la tabla cada URN aparece abreviado: todos empiezan por `urn:li:glossaryTerm:`.

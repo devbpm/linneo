@@ -63,7 +63,7 @@ module io.github.devbpm.linneo {
 
 | Paquete | Exportado | Contenido |
 |---|---|---|
-| `io.github.devbpm.linneo` | sí | La taxonomía (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), sus términos (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), los enumerados de protección y las constantes de claves (`Categories`, `DataUses`, `DataSubjects`) |
+| `io.github.devbpm.linneo` | sí | La taxonomía (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), sus términos (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), los enumerados de protección y `Protection`, y las constantes de claves (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | sí | Las anotaciones que declaran qué contiene cada campo de un modelo: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@Exempt` |
 | `io.github.devbpm.linneo.classify` | sí | Lectura y verificación de las anotaciones de un modelo: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException` |
 | `io.github.devbpm.linneo.processing` | sí | Las actividades de tratamiento y el registro de actividades de tratamiento del RGPD: `ProcessingActivity`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord` |
@@ -96,7 +96,7 @@ module com.example.app {
 - [Taxonomía](taxonomy.md) — `Taxonomy` (`standard`, `load`, `builder`, búsquedas, obsolescencia, navegación) y
   `TaxonomyException`.
 - [Términos](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`.
-- [Niveles de protección](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`
+- [Niveles de protección](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`, `Protection`
   y la regla de herencia.
 - [Taxonomía estándar](standard-taxonomy.md) — la taxonomía de fideslang incluida, los añadidos y la política de
   protección de Linneo, los formatos TSV.
@@ -130,7 +130,7 @@ module com.example.app {
 **Clasificación** (`io.github.devbpm.linneo.classify`)
 
 - [Classifier](classify/classifier.md) — `Classifier`, `ClassificationException`.
-- [Resultados](classify/results.md) — `ClassClassification`, `FieldClassification`.
+- [Resultados](classify/results.md) — `ClassClassification` (con `Exemption`), `FieldClassification`.
 - [Violaciones](classify/violations.md) — `Violation` y cada `Code`.
 
 **Actividades de tratamiento** (`io.github.devbpm.linneo.processing`)

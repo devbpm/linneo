@@ -15,12 +15,11 @@
  */
 package io.github.devbpm.linneo.processing;
 
-import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.DataSubject;
 import io.github.devbpm.linneo.DataUse;
-import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -36,16 +35,14 @@ import java.util.Set;
  * @param dataSubjects the data subjects, deprecated keys replaced
  * @param dataCategories the personal data categories processed, from the declared keys and the personal fields of
  *        the entities, in key order
- * @param confidentiality the highest confidentiality of that data, field-level raises included; {@code PUBLIC}
- *        when there is none
- * @param integrity the highest integrity of that data, field-level raises included; {@code LOW} when there is none
- * @param secret whether any of that data is a secret
+ * @param protection the least protection that covers all that data, field-level raises included;
+ *        {@link Protection#LOWEST} when there is none
  * @param violations the problems found
  * @since 0.1.0
  */
 public record CheckedActivity(ProcessingActivity activity, List<DataUse> purposes, List<DataSubject> dataSubjects,
-                              List<DataCategory> dataCategories, Confidentiality confidentiality, Integrity integrity,
-                              boolean secret, List<ProcessingViolation> violations) {
+                              List<DataCategory> dataCategories, Protection protection,
+                              List<ProcessingViolation> violations) {
 
     /**
      * Checks the components and makes the lists immutable.
@@ -54,9 +51,7 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
      * @param purposes the data uses
      * @param dataSubjects the data subjects
      * @param dataCategories the personal data categories
-     * @param confidentiality the highest confidentiality
-     * @param integrity the highest integrity
-     * @param secret whether any data is a secret
+     * @param protection the protection the data requires
      * @param violations the problems found
      */
     public CheckedActivity {
@@ -64,8 +59,7 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
         purposes = List.copyOf(purposes);
         dataSubjects = List.copyOf(dataSubjects);
         dataCategories = List.copyOf(dataCategories);
-        Objects.requireNonNull(confidentiality, "confidentiality");
-        Objects.requireNonNull(integrity, "integrity");
+        Objects.requireNonNull(protection, "protection");
         violations = List.copyOf(violations);
     }
 

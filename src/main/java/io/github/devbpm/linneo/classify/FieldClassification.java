@@ -19,6 +19,8 @@ import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Integrity;
+import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Protection;
 
 import java.util.Objects;
 
@@ -26,7 +28,7 @@ import java.util.Objects;
  * The classification of one field: its category and the effective protection of the field.
  *
  * @param declaringClass the class that declares the field
- * @param field the field name
+ * @param path the field's name, which identifies it within the classified class
  * @param category the current data category (a deprecated key is already resolved to its replacement)
  * @param basis where the category comes from
  * @param reason the reason of a class default or what decides a per-row category; {@code null} for a declared one
@@ -35,7 +37,7 @@ import java.util.Objects;
  * @param identifiability how the value points to the person; {@code null} when the category is not personal
  * @since 0.1.0
  */
-public record FieldClassification(Class<?> declaringClass, String field, DataCategory category, Basis basis,
+public record FieldClassification(Class<?> declaringClass, String path, DataCategory category, Basis basis,
                                   String reason, Confidentiality confidentiality, Integrity integrity,
                                   Identifiability identifiability) {
 
@@ -64,7 +66,7 @@ public record FieldClassification(Class<?> declaringClass, String field, DataCat
      * Checks the mandatory components.
      *
      * @param declaringClass the declaring class
-     * @param field the field name
+     * @param path the field path
      * @param category the data category
      * @param basis the basis
      * @param reason the reason or {@code null}
@@ -74,11 +76,20 @@ public record FieldClassification(Class<?> declaringClass, String field, DataCat
      */
     public FieldClassification {
         Objects.requireNonNull(declaringClass, "declaringClass");
-        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(path, "path");
         Objects.requireNonNull(category, "category");
         Objects.requireNonNull(basis, "basis");
         Objects.requireNonNull(confidentiality, "confidentiality");
         Objects.requireNonNull(integrity, "integrity");
+    }
+
+    /**
+     * The name of the field: the last segment of its {@linkplain #path() path}.
+     *
+     * @return the field name as declared in {@link #declaringClass()}
+     */
+    public String fieldName() {
+        return path.substring(path.lastIndexOf('.') + 1);
     }
 
     /**
@@ -101,8 +112,20 @@ public record FieldClassification(Class<?> declaringClass, String field, DataCat
         return category.secret();
     }
 
+    /**
+     * The protection the stored values require: the category's nature when they are {@linkplain #isPersonal()
+     * personal data} and {@link LegalNature#NONE} when they are anonymized or aggregated, with the field's effective
+     * levels and the category's secret flag.
+     *
+     * @return the protection of the field
+     */
+    public Protection protection() {
+        return Protection.of(isPersonal() ? category.nature() : LegalNature.NONE, confidentiality, integrity,
+                isSecret());
+    }
+
     @Override
     public String toString() {
-        return declaringClass.getSimpleName() + "." + field + " = " + category.key() + " (" + basis + ")";
+        return path + " = " + category.key() + " (" + basis + ")";
     }
 }

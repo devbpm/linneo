@@ -31,7 +31,7 @@ consulta [Errores y avisos](README.md#errores-y-avisos). Las instancias son inmu
 | `Jurisdiction jurisdiction()` | [`Jurisdiction`](#jurisdiction) | El derecho nacional que este comprobador aplica además del RGPD. |
 | `CheckedActivity check(ProcessingActivity activity)` | [`CheckedActivity`](#checkedactivity) | Comprueba una actividad: sus términos resueltos, sus datos personales, la protección que requieren y cada infracción encontrada. Nunca lanza excepciones por un problema de la actividad. `NullPointerException` si `activity` es `null`. |
 | `List<CheckedActivity> checkAll(Collection<ProcessingActivity> activities)` | lista | Un resultado por actividad, en el orden dado. Una actividad cuya clave ya usó otra anterior recibe además el error `DUPLICATE_ACTIVITY`; la primera no. |
-| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Ejecuta `checkAll` y lanza una [`ProcessingException`](#processingexception) con **todos los errores de todas las actividades** si hay alguno. Los avisos no hacen fallar. |
+| `ProcessingRecord verify(Collection<ProcessingActivity> activities)` | [`ProcessingRecord`](record.md) | Ejecuta `checkAll` y lanza una [`ProcessingException`](#processingexception) con **todos los errores de todas las actividades** si hay alguno (su mensaje lista los 50 primeros). Los avisos no hacen fallar. |
 | `ProcessingRecord verify(ProcessingActivity... activities)` | [`ProcessingRecord`](record.md) | Lo mismo, con las actividades una a una. |
 
 ```java
@@ -97,9 +97,11 @@ Los datos personales de una actividad son la unión de dos fuentes:
   sus niveles **efectivos**, de modo que cuenta una confidencialidad o integridad elevada en el campo.
 
 Las categorías se guardan una sola vez cada una, ordenadas por clave, en `CheckedActivity.dataCategories()`. La
-protección que requiere la actividad es la confidencialidad y la integridad más altas de todas esas aportaciones
-(`PUBLIC` y `LOW` si no hay ninguna), e incluye secretos si alguna es un secreto. Sus naturalezas jurídicas deciden si
-la actividad trata categorías especiales (artículo 9) o datos penales (artículo 10).
+protección que requiere la actividad, `CheckedActivity.protection()`, es la
+[combinación](../protection-levels.md#protection) de todas esas aportaciones: la confidencialidad y la integridad más
+altas (`PUBLIC` y `LOW` si no hay ninguna), secreto si alguna es un secreto y la más estricta de sus naturalezas
+jurídicas (solo `NONE` si no hay ninguna). Las naturalezas jurídicas de las categorías deciden si la actividad trata
+categorías especiales (artículo 9) o datos penales (artículo 10).
 
 Los campos personales de una entidad no siempre son de los interesados de la actividad. En el modelo universitario del
 curso, todas las entidades heredan de una superclase de auditoría cuyo campo `createdBy` guarda el nombre de usuario
@@ -112,8 +114,8 @@ estudiantes. Declara las categorías por clave cuando una entidad contiene más 
 
 ```java
 public record CheckedActivity(ProcessingActivity activity, List<DataUse> purposes, List<DataSubject> dataSubjects,
-                              List<DataCategory> dataCategories, Confidentiality confidentiality, Integrity integrity,
-                              boolean secret, List<ProcessingViolation> violations)
+                              List<DataCategory> dataCategories, Protection protection,
+                              List<ProcessingViolation> violations)
 ```
 
 | Componente | Descripción |
@@ -122,20 +124,18 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
 | `purposes` | Los usos de datos, sin las claves desconocidas y con las obsoletas sustituidas. |
 | `dataSubjects` | Los sujetos de datos, del mismo modo. |
 | `dataCategories` | Las categorías de datos personales tratadas, de las claves declaradas y de los campos personales de las entidades, en orden de clave. |
-| `confidentiality` | La confidencialidad más alta de esos datos, incluidas las elevaciones en los campos; `PUBLIC` si no hay ninguno. |
-| `integrity` | La integridad más alta de esos datos, incluidas las elevaciones en los campos; `LOW` si no hay ninguno. |
-| `secret` | Si alguno de esos datos es un secreto. |
+| `protection` | La menor [`Protection`](../protection-levels.md#protection) que cubre todos esos datos, incluidas las elevaciones en los campos; `Protection.LOWEST` si no hay ninguno. Su `confidentiality()`, `integrity()` y `secret()` son lo que el registro muestra como protección requerida. |
 | `violations` | Todos los problemas encontrados, errores y avisos. |
 
-El constructor canónico copia las listas (inmutables) y lanza `NullPointerException` si `activity`,
-`confidentiality`, `integrity` o una lista es `null`.
+El constructor canónico copia las listas (inmutables) y lanza `NullPointerException` si `activity`, `protection` o una
+lista es `null`.
 
 | Método | Descripción |
 |---|---|
 | `boolean isValid()` | `true` si no hay ningún error; los avisos se admiten. |
 | `List<ProcessingViolation> errors()` | Las infracciones de gravedad `ERROR`. |
 | `List<ProcessingViolation> warnings()` | Las infracciones de gravedad `WARNING`: los puntos abiertos del registro. |
-| `Set<LegalNature> natures()` | Las naturalezas jurídicas de `dataCategories` (nunca `NONE`). |
+| `Set<LegalNature> natures()` | Las naturalezas jurídicas de `dataCategories` (nunca `NONE`), todas ellas; `protection().natures()` conserva solo las más estrictas. |
 | `boolean processesSpecialCategories()` | `true` si alguna categoría es `SPECIAL_CATEGORY` (artículo 9). |
 | `boolean processesCriminalOffenceData()` | `true` si alguna categoría es `CRIMINAL_OFFENCE` (artículo 10). |
 
@@ -143,7 +143,7 @@ El constructor canónico copia las listas (inmutables) y lanza `NullPointerExcep
 CheckedActivity checked = checker.check(admissions);
 checked.isValid();                      // true
 checked.natures();                      // [ORDINARY, SPECIAL_CATEGORY]
-checked.confidentiality();              // HIGH
+checked.protection().confidentiality(); // HIGH
 checked.warnings();                     // []
 ```
 
@@ -261,7 +261,10 @@ La lanza `ProcessingChecker.verify` cuando una actividad está incompleta o ser�
 | `List<ProcessingViolation> errors()` | Los errores, todos de gravedad `ERROR`, de todas las actividades verificadas, en el orden de las actividades. |
 
 El mensaje es el número de errores seguido de una línea por error, con el formato de
-[`ProcessingViolation.toString()`](#processingviolation). Verificar dos veces la misma actividad más una vacía da:
+[`ProcessingViolation.toString()`](#processingviolation). Lista los 50 primeros errores; si hay más, una última línea
+indica cuántos quedaron fuera y cuenta todos los errores por código, en orden alfabético, como en
+`... and 70 more; all of them by code: MISSING_PURPOSE 60, UNKNOWN_KEY 60`. `errors()` siempre contiene todos.
+Verificar dos veces la misma actividad más una vacía da:
 
 ```text
 4 processing error(s):

@@ -115,6 +115,7 @@ El constructor canónico lanza `NullPointerException` si `info`, `nature`, `conf
 | Método | Devuelve | Descripción |
 |---|---|---|
 | `boolean isPersonal()` | `boolean` | `true` salvo que `nature` sea `LegalNature.NONE`. |
+| `Protection protection()` | [`Protection`](protection-levels.md#protection) | La naturaleza, la confidencialidad, la integridad y el indicador de secreto de la categoría como un único valor, para compararlo con otras protecciones. |
 | `String attribute(String name)` | `String` | El valor del atributo, o `null` si ni esta categoría ni ningún ancestro lo fija. |
 
 ```java
@@ -123,6 +124,7 @@ health.nature();            // SPECIAL_CATEGORY
 health.confidentiality();   // HIGH
 health.isPersonal();        // true
 health.secret();            // false
+health.protection();        // las cuatro facetas anteriores como una Protection
 ```
 
 ## DataUse

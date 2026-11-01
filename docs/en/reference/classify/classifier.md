@@ -25,7 +25,7 @@ immutable and thread-safe.
 | `Classifier(Taxonomy taxonomy)` | — | Creates a classifier for a taxonomy; keys must belong to it. `NullPointerException` if `taxonomy` is `null`. |
 | `ClassClassification classify(Class<?> type)` | [`ClassClassification`](results.md#classclassification) | Classifies one class: its field classifications and every violation found. Never throws for classification problems. `NullPointerException` if `type` is `null`. |
 | `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | immutable list | One classification per class, in the given order. |
-| `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | immutable list | Classifies the classes and throws `ClassificationException` listing **every error of every class** if there is any. Warnings do not fail. Returns the classifications when there is no error. |
+| `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | immutable list | Classifies the classes and throws `ClassificationException` carrying **every error of every class** if there is any (its message lists the first 50). Warnings do not fail. Returns the classifications when there is no error. |
 
 ```java
 @Test
@@ -48,7 +48,10 @@ new Classifier(Taxonomy.load()).verify(entities);
 - The class and its superclasses, from the topmost superclass down to the class itself. The walk stops before
   `Object`, `Record` and `Enum`; interfaces are not visited.
 - For each class, the fields returned by `getDeclaredFields()`. The resulting `fields()` list holds superclass fields
-  first, in declaration order.
+  first and, within a class, the order the JVM reports, which is usually the declaration order but is not guaranteed.
+  A field is identified by its `path`, which is its name, never by its position.
+- Because a field is identified by its name, a field that **hides** a superclass field of the same name is a
+  `DUPLICATE_FIELD` error: only the superclass field is classified.
 - **Excluded** without any annotation: `static`, `transient` and synthetic fields (such as the reference to the
   enclosing instance in an inner class), and fields whose name starts with `$$_` (added by bytecode tools, for
   example Hibernate's enhancement: `$$_hibernate_interceptor`).
@@ -57,7 +60,8 @@ new Classifier(Taxonomy.load()).verify(entities);
 - **Embedded objects are not entered.** The classifier does not descend into the type of a field: a JPA `@Embedded`
   address is one field, classified by its own annotations, and the embeddable class must be verified as well, for
   example by passing it to `verify` together with the entities.
-- Fields marked [`@Exempt`](../annotations/exempt.md) are skipped after their annotation is checked.
+- Fields marked [`@Exempt`](../annotations/exempt.md) are not classified after their annotation is checked, and
+  `ClassClassification.exempted()` lists them with their reasons.
 - Annotations are read from the field itself (`getDeclaredAnnotation`), so on a record they must target the
   component's field, which `@Category`, `@CategoryByRow` and `@Exempt` do.
 
@@ -66,7 +70,7 @@ Each remaining field is resolved by the [resolution order](../annotations/README
 the classified class, otherwise `UNCLASSIFIED_FIELD`.
 
 Order of violations in a `ClassClassification`: first the checks of each `@DefaultCategory` in the hierarchy (top
-down), then the field checks in field order.
+down), then the field checks in the order of the fields.
 
 ## Fail-closed behaviour
 
@@ -79,7 +83,8 @@ Nothing is classified by default. These are **errors** (they fail `verify` and m
 - annotations that exclude each other (`CONFLICTING_ANNOTATIONS`);
 - a level lower than the category's (`LOWERED_LEVEL`);
 - more than one value in an optional element of `@Category` (`AMBIGUOUS_VALUE`);
-- an identifiability on a non-personal category (`IDENTIFIABILITY_NOT_APPLICABLE`).
+- an identifiability on a non-personal category (`IDENTIFIABILITY_NOT_APPLICABLE`);
+- a field that hides a superclass field of the same name (`DUPLICATE_FIELD`).
 
 A deprecated key is the only **warning** (`DEPRECATED_CATEGORY`): the field is classified with the current
 replacement. A field with an error is usually missing from `fields()`; see [Violations](violations.md) for the exact
@@ -98,13 +103,21 @@ Thrown by `Classifier.verify` when a model is not fully and correctly classified
 | `List<Violation> errors()` | The errors, all of severity `ERROR`, from every verified class. |
 
 The message is the number of errors followed by one line per error, each in the format of
-[`Violation.toString()`](violations.md#violation):
+[`Violation.toString()`](violations.md#violation). It lists the first 50 errors; if there are more, a last line says
+how many were left out and counts all the errors by code. `errors()` always has every error.
 
 ```text
 3 classification error(s):
  - ERROR UNCLASSIFIED_FIELD com.example.Person.undecided: no @Category on the field and no @DefaultCategory on Person
  - ERROR MISSING_REASON com.example.WrongDefault: @DefaultCategory of WrongDefault needs a reason
  - ERROR PERSONAL_DEFAULT com.example.WrongDefault: @DefaultCategory of WrongDefault names 'user.contact', which is personal data: declare personal fields one by one with @Category
+```
+
+With 120 errors the message lists the first 50 and ends with a line like this, where the codes are in alphabetical
+order:
+
+```text
+ ... and 70 more; all of them by code: LOWERED_LEVEL 12, UNCLASSIFIED_FIELD 108
 ```
 
 The `errors` list is held in a `transient` field: it is not preserved if the exception is serialized.

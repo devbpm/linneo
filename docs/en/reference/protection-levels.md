@@ -10,12 +10,14 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/Integrity.java
   - src/main/java/io/github/devbpm/linneo/Identifiability.java
   - src/main/java/io/github/devbpm/linneo/DataCategory.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
 -->
 
 # Protection levels
 
 A [`DataCategory`](terms.md#datacategory) carries four protection facets: `nature`, `confidentiality`,
-`integrity` and `secret`. `Identifiability` is not a facet of the category: it belongs to the field (see
+`integrity` and `secret`. [`Protection`](#protection) groups them in one value that can be compared and joined.
+`Identifiability` is not a facet of the category: it belongs to the field (see
 [`@Category`](annotations/category.md)).
 
 | Facet | Type | Values (least → most protective) | Where |
@@ -26,7 +28,7 @@ A [`DataCategory`](terms.md#datacategory) carries four protection facets: `natur
 | secret | `boolean` | `false`, `true` | category |
 | identifiability | `Identifiability` | `IDENTIFIED`, `PSEUDONYMIZED`, `ANONYMIZED`, `AGGREGATED` | field only |
 
-All four enums are `@since 0.1.0`.
+All four enums, and the `Protection` record, are `@since 0.1.0`.
 
 ## LegalNature
 
@@ -44,6 +46,7 @@ All four enums are `@since 0.1.0`.
 |---|---|
 | `boolean isPersonal()` | `false` only for `NONE`. |
 | `boolean admits(LegalNature child)` | Whether a child category may have nature `child` when its parent has this one. |
+| `boolean covers(LegalNature other)` | Whether data of this nature needs at least the protection that data of `other` needs: `true` if this nature is `other` or stricter than it. A partial order, see below. |
 | `boolean requiresMaximumProtection()` | `true` for `SPECIAL_CATEGORY` and `CRIMINAL_OFFENCE`: data of that nature must have `HIGH` confidentiality and `HIGH` integrity. |
 
 `admits` is the rule the builder uses for the nature of a child category:
@@ -62,10 +65,28 @@ category may have special-category or criminal-offence children, and those keep 
 a `SPECIAL_CATEGORY` or `CRIMINAL_OFFENCE` category that does not resolve (declared or inherited) to `HIGH`
 confidentiality and `HIGH` integrity.
 
+`covers` orders the natures by how much protection their data needs. [`Protection.covers`](#protection) compares
+protections with it:
+
+| Nature | Covers |
+|---|---|
+| `NONE` | `NONE` |
+| `ORDINARY` | `NONE`, `ORDINARY` |
+| `SPECIAL_CATEGORY` | `NONE`, `ORDINARY`, `SPECIAL_CATEGORY` |
+| `CRIMINAL_OFFENCE` | `NONE`, `ORDINARY`, `CRIMINAL_OFFENCE` |
+
+The order is partial: `SPECIAL_CATEGORY` and `CRIMINAL_OFFENCE` are both stricter than `ORDINARY` but neither covers
+the other, since each brings obligations the other does not. `admits` is narrower than `covers`: a hierarchy also
+keeps whether it holds personal data, so a `NONE` category never has a personal child.
+
 ```java
 LegalNature.ORDINARY.admits(LegalNature.SPECIAL_CATEGORY);           // true
 LegalNature.SPECIAL_CATEGORY.admits(LegalNature.CRIMINAL_OFFENCE);   // false
 LegalNature.NONE.admits(LegalNature.ORDINARY);                       // false
+
+LegalNature.SPECIAL_CATEGORY.covers(LegalNature.ORDINARY);           // true
+LegalNature.SPECIAL_CATEGORY.covers(LegalNature.CRIMINAL_OFFENCE);   // false
+LegalNature.ORDINARY.covers(LegalNature.NONE);                       // true
 ```
 
 ## Confidentiality
@@ -156,6 +177,85 @@ was inherited. In the standard taxonomy, for example:
 
 At field level, [`@Category`](annotations/category.md) applies the same direction: a field may raise
 confidentiality or integrity above its category's, never lower them (`LOWERED_LEVEL`).
+
+## Protection
+
+`io.github.devbpm.linneo.Protection` — `public record Protection(...)`, `@since 0.1.0`
+
+The protection some data requires, as one value: the four facets of a category. Linneo uses it wherever protections
+are compared: a category and its replacement, the fields of a class
+([`FieldClassification.protection()`](classify/results.md)), the personal data of a processing activity
+([`CheckedActivity.protection()`](processing/checker.md)), or the same classification in two versions of a model.
+
+```java
+public record Protection(Set<LegalNature> natures, Confidentiality confidentiality,
+                         Integrity integrity, boolean secret)
+```
+
+| Component | Description |
+|---|---|
+| `natures` | The strictest legal natures of the data, never empty: `LegalNature.NONE` alone for data that is not personal. |
+| `confidentiality` | The [confidentiality](#confidentiality) level. |
+| `integrity` | The [integrity](#integrity) level. |
+| `secret` | Whether the data grants access and must never be read back, exported or published. |
+
+The component is a set because the natures are only partially ordered: the protection of a record that holds health
+data and criminal records keeps both natures, and covers neither one alone. The canonical constructor drops every
+nature that another one in the set covers (`{ORDINARY, SPECIAL_CATEGORY}` becomes `{SPECIAL_CATEGORY}`) and makes the
+set immutable, so equal protections are equal records. It throws `NullPointerException` for a `null` component and
+`IllegalArgumentException` if `natures` is empty.
+
+| Member | Description |
+|---|---|
+| `static Protection of(LegalNature nature, Confidentiality confidentiality, Integrity integrity, boolean secret)` | The protection of data of a single nature. |
+| `static final Protection LOWEST` | Not personal, `PUBLIC`, `LOW` integrity, not secret. Every protection covers it, and joining it changes nothing. |
+| `boolean covers(Protection other)` | Whether this protection is at least as strict as `other` in every facet: each of the other's natures is covered by one of these ([`LegalNature.covers`](#legalnature)), the levels are not lower, and a secret stays a secret. |
+| `Direction comparedTo(Protection before)` | How this protection compares with an earlier one, such as that of the same field in the previous version of a model. See [`Direction`](#direction). |
+| `Protection join(Protection other)` | The least protection that covers both: the strictest natures of both, the higher levels, and secret if either is. |
+| `static Protection joinAll(Collection<Protection> protections)` | The join of all of them, or `LOWEST` if there are none. |
+| `boolean isPersonal()` | `true` if a nature is personal. |
+| `boolean requiresMaximumProtection()` | `true` if a nature is `SPECIAL_CATEGORY` or `CRIMINAL_OFFENCE`. |
+
+`covers` is a partial order: when one protection is stricter in a facet and weaker in another, neither covers the
+other. `join` is the least upper bound of that order, so the protection of data that holds several kinds of data is
+the join of their protections.
+
+### Direction
+
+`Protection.Direction` (`@since 0.1.0`) is the result of `comparedTo`.
+
+| Constant | Meaning |
+|---|---|
+| `SAME` | The protection is the same. |
+| `TIGHTENED` | The new protection covers the old one: stricter in at least one facet and no weaker in any. |
+| `LOOSENED` | The old protection covers the new one: weaker in at least one facet and no stricter in any. |
+| `MIXED` | Stricter in one facet and weaker in another, or a nature that is not comparable with the old one, such as special category data becoming criminal offence data. It deserves the same review as a loosening. |
+
+| Method | Description |
+|---|---|
+| `boolean weakens()` | `true` for `LOOSENED` and `MIXED`: some protection is lower, so someone should review the change. |
+| `Direction and(Direction other)` | Combines this direction with that of another facet of the same change: `SAME` yields the other one, equal directions stay, and any other pair is `MIXED`. |
+
+```java
+Protection contact = Protection.of(LegalNature.ORDINARY, Confidentiality.MEDIUM, Integrity.LOW, false);
+Protection health = Protection.of(LegalNature.SPECIAL_CATEGORY, Confidentiality.HIGH, Integrity.HIGH, false);
+Protection criminal = Protection.of(LegalNature.CRIMINAL_OFFENCE, Confidentiality.HIGH, Integrity.HIGH, false);
+
+health.covers(contact);                      // true
+health.covers(criminal);                     // false: special category and criminal offence are not comparable
+
+Protection both = health.join(criminal);     // natures SPECIAL_CATEGORY and CRIMINAL_OFFENCE, HIGH, HIGH
+both.covers(health);                         // true
+both.covers(criminal);                       // true
+
+health.comparedTo(contact);                  // TIGHTENED
+contact.comparedTo(health);                  // LOOSENED
+criminal.comparedTo(health);                 // MIXED, and MIXED.weakens() is true
+Protection.joinAll(List.of());               // Protection.LOWEST
+
+DataCategory category = Taxonomy.standard().requireCategory(Categories.USER_HEALTH_AND_MEDICAL);
+category.protection().covers(contact);       // true
+```
 
 See also: [Terms](terms.md) · [Standard taxonomy](standard-taxonomy.md) · [Extending the taxonomy](extending.md) ·
 [`@Category`](annotations/category.md) · course: [The taxonomy](../course/02-the-taxonomy.md)

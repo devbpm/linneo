@@ -149,10 +149,10 @@ class DataHubIT {
         for (FieldClassification field : fields) {
             List<String> expected = CATALOG.termsOf(field);
             String urn = "urn:li:dataset:(urn:li:dataPlatform:mysql,linneo_it.t_"
-                    + field.field().toLowerCase(Locale.ROOT) + ",PROD)";
-            ingest(new DhProposal("dataset", urn, "schemaMetadata", schema(field.field())));
-            ingest(new DhProposal("dataset", urn, "editableSchemaMetadata", fieldTerms(field.field(), expected)));
-            assertEquals(Map.of(), difference(expected, urns(aspect(urn, "editableSchemaMetadata"))), field.field());
+                    + field.path().toLowerCase(Locale.ROOT) + ",PROD)";
+            ingest(new DhProposal("dataset", urn, "schemaMetadata", schema(field.path())));
+            ingest(new DhProposal("dataset", urn, "editableSchemaMetadata", fieldTerms(field.path(), expected)));
+            assertEquals(Map.of(), difference(expected, urns(aspect(urn, "editableSchemaMetadata"))), field.path());
         }
     }
 

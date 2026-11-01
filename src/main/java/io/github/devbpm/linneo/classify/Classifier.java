@@ -24,6 +24,7 @@ import io.github.devbpm.linneo.annotation.Exempt;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.Taxonomy;
+import io.github.devbpm.linneo.classify.ClassClassification.Exemption;
 import io.github.devbpm.linneo.classify.FieldClassification.Basis;
 import io.github.devbpm.linneo.classify.Violation.Code;
 import io.github.devbpm.linneo.classify.Violation.Severity;
@@ -33,7 +34,9 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -48,7 +51,9 @@ import java.util.Optional;
  *   <li>the {@link DefaultCategory @DefaultCategory} of the class being classified;</li>
  *   <li>none: an {@link Code#UNCLASSIFIED_FIELD} error.</li>
  * </ol>
- * Fields marked {@link Exempt @Exempt} are skipped. A deprecated key still classifies the field, with its
+ * Fields marked {@link Exempt @Exempt} are not classified, and {@link ClassClassification#exempted()} lists them.
+ * A field is identified by its name, so a field that hides a superclass field of the same name is an
+ * {@link Code#DUPLICATE_FIELD} error. A deprecated key still classifies the field, with its
  * replacement, and is reported as a warning. The classifier only reads annotations, never field values, so it needs
  * no access to the classes beyond what {@link Class#getDeclaredFields()} requires.
  * <p>
@@ -94,20 +99,28 @@ public final class Classifier {
         Objects.requireNonNull(type, "type");
         type = unproxied(type);
         List<FieldClassification> fields = new ArrayList<>();
+        List<Exemption> exempted = new ArrayList<>();
         List<Violation> violations = new ArrayList<>();
         List<Class<?>> hierarchy = hierarchyOf(type);
         for (Class<?> declaring : hierarchy) {
             checkDefault(type, declaring, violations);
         }
+        Map<String, Class<?>> declaredBy = new HashMap<>();
         for (Class<?> declaring : hierarchy) {
             for (Field field : declaring.getDeclaredFields()) {
                 if (isExcluded(field)) {
                     continue;
                 }
-                classifyField(type, field, violations).ifPresent(fields::add);
+                Class<?> earlier = declaredBy.putIfAbsent(field.getName(), declaring);
+                if (earlier != null) {
+                    violations.add(error(type, field.getName(), Code.DUPLICATE_FIELD, "hides the field of the same"
+                            + " name declared by " + earlier.getSimpleName() + "; rename one of them"));
+                    continue;
+                }
+                classifyField(type, field, exempted, violations).ifPresent(fields::add);
             }
         }
-        return new ClassClassification(type, fields, violations);
+        return new ClassClassification(type, fields, exempted, violations);
     }
 
     /**
@@ -136,7 +149,8 @@ public final class Classifier {
         return classifications;
     }
 
-    private Optional<FieldClassification> classifyField(Class<?> type, Field field, List<Violation> violations) {
+    private Optional<FieldClassification> classifyField(Class<?> type, Field field, List<Exemption> exempted,
+                                                       List<Violation> violations) {
         Category category = field.getDeclaredAnnotation(Category.class);
         CategoryByRow byRow = field.getDeclaredAnnotation(CategoryByRow.class);
         Exempt exempt = field.getDeclaredAnnotation(Exempt.class);
@@ -145,6 +159,8 @@ public final class Classifier {
             if (category != null || byRow != null) {
                 violations.add(error(type, name, Code.CONFLICTING_ANNOTATIONS,
                         "@Exempt cannot be combined with @Category or @CategoryByRow"));
+            } else {
+                exempted.add(new Exemption(field.getDeclaringClass(), name, exempt.value()));
             }
             if (exempt.value().isBlank()) {
                 violations.add(error(type, name, Code.MISSING_REASON, "@Exempt needs a reason"));

@@ -21,13 +21,13 @@ import java.util.Objects;
  * A problem found while classifying a class.
  *
  * @param type the class being classified
- * @param field the field involved, or {@code null} for a problem with a class annotation
+ * @param path the path of the field involved, or {@code null} for a problem with a class annotation
  * @param severity whether it fails verification
  * @param code what kind of problem it is
  * @param message a description naming the key or annotation involved
  * @since 0.1.0
  */
-public record Violation(Class<?> type, String field, Severity severity, Code code, String message) {
+public record Violation(Class<?> type, String path, Severity severity, Code code, String message) {
 
     /**
      * Whether a violation fails {@link Classifier#verify(java.util.Collection)}.
@@ -93,14 +93,19 @@ public record Violation(Class<?> type, String field, Severity severity, Code cod
         /**
          * A field declares an identifiability for a category that is not personal.
          */
-        IDENTIFIABILITY_NOT_APPLICABLE
+        IDENTIFIABILITY_NOT_APPLICABLE,
+
+        /**
+         * A field has the name of a field of a superclass, so its path would not identify it.
+         */
+        DUPLICATE_FIELD
     }
 
     /**
      * Checks the mandatory components.
      *
      * @param type the class
-     * @param field the field or {@code null}
+     * @param path the field path or {@code null}
      * @param severity the severity
      * @param code the code
      * @param message the message
@@ -123,6 +128,6 @@ public record Violation(Class<?> type, String field, Severity severity, Code cod
 
     @Override
     public String toString() {
-        return severity + " " + code + " " + type.getName() + (field == null ? "" : "." + field) + ": " + message;
+        return severity + " " + code + " " + type.getName() + (path == null ? "" : "." + path) + ": " + message;
     }
 }
