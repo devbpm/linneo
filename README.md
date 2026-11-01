@@ -34,6 +34,7 @@ private Integer disabilityDegree;
 - [The taxonomy](#the-taxonomy)
 - [Extending the taxonomy](#extending-the-taxonomy)
 - [Processing activities (GDPR)](#processing-activities-gdpr)
+- [Keeping stored records in step](#keeping-stored-records-in-step)
 - [Data catalogs](#data-catalogs)
 - [Design principles](#design-principles)
 - [Versioning](#versioning)
@@ -54,18 +55,26 @@ the build fail when the model and its classification drift apart.
 
 - **One taxonomy, keyed like a tree.** The complete [fideslang](https://github.com/ethyca/fideslang) default
   taxonomy, plus Linneo's extensions for every GDPR article 9 category, education data (`user.education.*`) and
-  non-personal data (`system.*`, `org.*`, `reference.*`): 125 data categories, 63 data uses and 21 data subjects.
+  non-personal data (`system.*`, `org.*`, `reference.*`): 126 data categories, 63 data uses and 22 data subjects.
 - **Protection travels with the category.** Each category carries its GDPR nature (ordinary, special category,
   criminal offence or not personal), its confidentiality, its integrity and whether it is a secret. Children inherit
   them and can only make them stricter.
-- **Annotations on the model.** `@Category`, `@DefaultCategory`, `@CategoryByRow` and `@Exempt`, with compile-time
+- **Annotations on the model.** `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom` for values
+  computed from other fields, `@Composite` for embedded parts and `@Exempt` for technical fields, with compile-time
   constants for every key, so a typo does not compile.
+- **One comparison of protection.** `Protection` orders natures and levels partially (special category and criminal
+  offence data are not comparable), so a derived value, a stored composite or a stricter classification set at run
+  time is never allowed to protect less than its source.
 - **A classifier for your tests.** Fails the build when a field has no classification, a key is unknown or a level
   is weakened.
 - **GDPR record of processing activities.** Declare each processing activity (purposes, data subjects, the
   annotated entities, lawful basis, article 9.2 and 10 conditions, retention, transfers) and get it checked against
   the classification: special category data without an article 9.2 condition fails the build. The article 30 record
   comes out as Markdown or JSON.
+- **Stored copies kept in step.** The classification of the whole model as data (`DataInventory`), compared with
+  what an application stored (`InventoryDiff`), with fingerprints to skip unchanged starts; the taxonomy as text
+  (`Taxonomy.toTsv()`) and its changes between versions (`TaxonomyDiff`), so applications can migrate keys and
+  review every change that weakens protection.
 - **Data catalog ready.** The taxonomy, and the tags of each column, for [OpenMetadata](https://open-metadata.org/)
   (classifications and nested tags), [DataHub](https://datahub.com/) (a business glossary) and
   [Apache Atlas](https://atlas.apache.org/) (classification types, usable by Apache Ranger tag policies).
@@ -352,7 +361,34 @@ bases use the same values as fideslang's privacy declarations.
 an error for the special categories of article 9.1 (ideology, religion, trade union membership, sexual orientation,
 beliefs, racial or ethnic origin), and the missing legal reference warning notes that article 9.2 needs a statute.
 
+The bases, retention, recipients, transfers and impact assessment form the activity's `Governance`. An application
+whose data protection officer edits them keeps them in its own storage and checks `activity.withGovernance(stored)`;
+each `ProcessingViolation` names its `element()`, and `element().isGovernance()` tells a gap for the officer from a
+mistake in the code.
+
 Linneo checks what you declare; it is not legal advice and does not replace your own assessment.
+
+## Keeping stored records in step
+
+Applications keep copies of the classification: a field table behind their screens, permissions, a data catalog.
+Linneo does not write them, it tells the application what to write. `Classifier.inventory` turns the model into a
+`DataInventory` under object keys the application chooses; `InventoryDiff` compares it with what was stored and says,
+for each field, whether it was added, removed or changed and whether its protection tightened or weakened:
+
+```java
+DataInventory declared = classifier.inventory(entities, type -> tableNameOf(type));
+if (!declared.fingerprint().equals(storedFingerprint)) {
+    InventoryDiff diff = InventoryDiff.between(storedInventory, declared, taxonomy);
+    diff.changes().forEach(change -> apply(change));           // insert, retire, rewrite: the application's job
+    diff.weakening().forEach(change -> requestReview(change));  // weaker protection is applied and reviewed
+}
+```
+
+The taxonomy is data too: keep `taxonomy.toTsv()` when you apply it, and on the next version compare with
+`TaxonomyDiff.between(Taxonomy.fromTsv(applied), taxonomy)`. `requireCompatible()` refuses removed terms and weaker
+protection, and `declared.affectedBy(diff)` lists the fields each changed category reaches. Since rows store keys and
+not levels, a stricter category protects them at once. The [course module](docs/en/course/10-reconciliation.md)
+walks through a whole reconciliation, with its performance on a model of 800 entities.
 
 ## Data catalogs
 
@@ -414,6 +450,8 @@ The PII sensitivity threshold is configurable with
 - **Persistence-agnostic.** The classifier reads annotations by reflection and never reads field values; it works
   with JPA entities, records or plain classes.
 - **Fail closed.** An unclassified field, an unknown key or a weakened level is an error, not a default.
+- **Compare, never persist.** Linneo computes what the code declares and how it differs from a stored copy; reading,
+  writing, locking and auditing stay in the application.
 
 ## Versioning
 
@@ -423,7 +461,9 @@ Linneo follows [Semantic Versioning](https://semver.org/). For the taxonomy:
 - deprecating a term (with `replacedBy`) is a minor change: code that uses it keeps working;
 - removing a term or lowering a protection level is a major change.
 
-A key is never reused for a different meaning. Changes are listed in the [changelog](CHANGELOG.md).
+A key is never reused for a different meaning. `TaxonomyDiff.requiredBump()` grades the changes between two
+taxonomies with these rules, and the build checks them against the taxonomy of the last release. Changes are listed
+in the [changelog](CHANGELOG.md).
 
 ## Building from source
 

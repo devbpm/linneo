@@ -600,7 +600,8 @@ valid? Which of them would you show on the officer's screen and which would fail
 
 ---
 
-← Previous: [Module 8 — DataHub and Apache Atlas](08-datahub-and-atlas.md) · Back to the [course overview](README.md)
+← Previous: [Module 8 — DataHub and Apache Atlas](08-datahub-and-atlas.md) · Next:
+[Module 10 — Keeping stored records in step](10-reconciliation.md) →
 
 <details markdown="block">
 <summary><strong>Solutions</strong></summary>

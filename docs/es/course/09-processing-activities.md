@@ -616,8 +616,8 @@ actividad? ¿Cuáles mostrarías en la pantalla del delegado y cuáles harían f
 
 ---
 
-← Anterior: [Módulo 8 — DataHub y Apache Atlas](08-datahub-and-atlas.md) · Volver a la
-[presentación del curso](README.md)
+← Anterior: [Módulo 8 — DataHub y Apache Atlas](08-datahub-and-atlas.md) · Siguiente:
+[Módulo 10 — Mantener al día los registros guardados](10-reconciliation.md) →
 
 <details markdown="block">
 <summary><strong>Soluciones</strong></summary>
