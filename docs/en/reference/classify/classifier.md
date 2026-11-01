@@ -7,6 +7,7 @@ nav_order: 9
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
   - src/main/java/io/github/devbpm/linneo/classify/ClassificationException.java
+  - src/main/java/io/github/devbpm/linneo/classify/ModelClasses.java
 -->
 
 # Classifier
@@ -45,6 +46,41 @@ List<Class<?>> entities = entityManagerFactory.getMetamodel().getEntities().stre
         .toList();
 new Classifier(Taxonomy.load()).verify(entities);
 ```
+
+Without JPA, take the classes of a package with [`ModelClasses`](#modelclasses).
+
+## ModelClasses
+
+`io.github.devbpm.linneo.classify.ModelClasses` — `public final class`, `@since 0.1.0`
+
+Finds the classes of a model, so that a test verifies every class of the model and not just the ones someone
+remembered to list: a class added to the model without a classification then fails the build. It has no public
+constructor and only static methods.
+
+| Member | Description |
+|---|---|
+| `static List<Class<?>> inPackage(Class<?> anchor)` | The classes of the anchor's package. |
+| `static List<Class<?>> inPackageTree(Class<?> anchor)` | The classes of the anchor's package and of the packages below it. |
+
+```java
+@Test
+void everyClassOfTheModelIsClassified() {
+    new Classifier(Taxonomy.load()).verify(ModelClasses.inPackageTree(Student.class));
+}
+```
+
+- **Where the classes come from.** From the location the anchor class was loaded from: a directory or a JAR file, on
+  the class path or the module path. Classes of the same package in another location are not included.
+- **Which classes.** Classes and records, nested and abstract ones included. Interfaces, annotations, enums, anonymous
+  classes and local classes are left out, and so are synthetic classes, `package-info` and `module-info`. They are
+  loaded without being initialized and sorted by name, so the result is the same on every run.
+- **Everything is verified.** A package that also holds classes that are not data, such as services or repositories
+  implemented as classes, makes `verify` report their unclassified fields: filter the list first, for example by name.
+- **Fail-closed.** `IllegalArgumentException` if the anchor is in the unnamed package, if its location cannot be
+  listed (a JAR nested in another, classes generated at run time, a class without a location such as one of the JDK) or
+  does not exist, or if a class of the package cannot be loaded, for instance because an optional dependency is
+  missing. Nothing is skipped, so no class goes unverified; pass the classes explicitly then. `UncheckedIOException`
+  if the location cannot be read; `NullPointerException` if `anchor` is `null`.
 
 ## Which fields are scanned
 

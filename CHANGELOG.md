@@ -115,6 +115,10 @@ All notable changes to this project are documented in this file. The format foll
   of processing activities (added, removed, and per aspect: scope, personal data, protection with its direction,
   each governance element, open points), so a record rebuilt from what was approved can be compared with the current
   one before it is signed again. A record holds each activity key once.
+- `ModelClasses.inPackage(anchor)` and `inPackageTree(anchor)`: the classes and records of a model package, read
+  from where the anchor class was loaded (directory or JAR, class path or module path), so a test verifies every
+  class of the model, including the one nobody listed. A location or class that cannot be read is an error, never
+  skipped.
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
   `module-info.java`.

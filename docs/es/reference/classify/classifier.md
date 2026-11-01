@@ -7,6 +7,7 @@ nav_order: 9
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
   - src/main/java/io/github/devbpm/linneo/classify/ClassificationException.java
+  - src/main/java/io/github/devbpm/linneo/classify/ModelClasses.java
 -->
 
 # Classifier
@@ -46,6 +47,43 @@ List<Class<?>> entities = entityManagerFactory.getMetamodel().getEntities().stre
         .toList();
 new Classifier(Taxonomy.load()).verify(entities);
 ```
+
+Sin JPA, toma las clases de un paquete con [`ModelClasses`](#modelclasses).
+
+## ModelClasses
+
+`io.github.devbpm.linneo.classify.ModelClasses` — `public final class`, `@since 0.1.0`
+
+Encuentra las clases de un modelo, para que una prueba verifique todas las clases del modelo y no solo las que alguien
+se acordó de listar: una clase añadida al modelo sin clasificar hace entonces que falle la compilación. No tiene
+constructor público y solo tiene métodos estáticos.
+
+| Miembro | Descripción |
+|---|---|
+| `static List<Class<?>> inPackage(Class<?> anchor)` | Las clases del paquete del ancla. |
+| `static List<Class<?>> inPackageTree(Class<?> anchor)` | Las clases del paquete del ancla y de los paquetes que cuelgan de él. |
+
+```java
+@Test
+void everyClassOfTheModelIsClassified() {
+    new Classifier(Taxonomy.load()).verify(ModelClasses.inPackageTree(Student.class));
+}
+```
+
+- **De dónde salen las clases.** De la ubicación desde la que se cargó la clase ancla: un directorio o un archivo JAR,
+  en el class path o en el module path. Las clases del mismo paquete que estén en otra ubicación no se incluyen.
+- **Qué clases.** Clases y records, incluidos los anidados y los abstractos. Se dejan fuera las interfaces, las
+  anotaciones, los enumerados, las clases anónimas y las clases locales, y también las clases sintéticas,
+  `package-info` y `module-info`. Se cargan sin inicializarlas y se ordenan por nombre, así que el resultado es el
+  mismo en cada ejecución.
+- **Se verifica todo.** Un paquete que además contiene clases que no son datos, como servicios o repositorios
+  implementados como clases, hace que `verify` informe de sus campos sin clasificar: filtra antes la lista, por
+  ejemplo por nombre.
+- **Fail-closed.** `IllegalArgumentException` si el ancla está en el paquete sin nombre, si su ubicación no se puede
+  listar (un JAR dentro de otro, clases generadas en tiempo de ejecución, una clase sin ubicación como las del JDK) o
+  no existe, o si no se puede cargar una clase del paquete, por ejemplo porque falta una dependencia opcional. No se
+  omite nada, así que ninguna clase queda sin verificar; pasa entonces las clases de forma explícita.
+  `UncheckedIOException` si no se puede leer la ubicación; `NullPointerException` si `anchor` es `null`.
 
 ## Qué campos se examinan
 

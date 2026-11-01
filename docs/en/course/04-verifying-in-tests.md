@@ -8,6 +8,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
   - src/main/java/io/github/devbpm/linneo/classify/ClassificationException.java
   - src/main/java/io/github/devbpm/linneo/classify/Violation.java
+  - src/main/java/io/github/devbpm/linneo/classify/ModelClasses.java
 -->
 
 # Module 4 — Verifying in tests
@@ -20,7 +21,8 @@ After this module you will be able to:
 - read a `ClassificationException` and locate each problem;
 - recognise every kind of `Violation` and fix it;
 - handle warnings for deprecated keys;
-- feed the classifier with the entity classes of a JPA application.
+- feed the classifier with the entity classes of a JPA application, or with every class of a package so that none is
+  forgotten.
 
 ## Why a test
 
@@ -73,6 +75,8 @@ Points to note:
   that result.
 - `Classifier` is immutable and thread-safe; you can keep one in a static field. It only reads annotations through
   `Class.getDeclaredFields()`, never field values, so it needs no running database and no `setAccessible`.
+- The list in this test is written by hand, so a class nobody adds to it is never verified. "Not forgetting a class"
+  below takes the classes from the model itself.
 
 If you prefer to inspect a single class without throwing, use `classify(Class)` and its `isValid()`, `errors()` and
 `violations()` methods (module 5).
@@ -250,14 +254,47 @@ fields are classified as part of each entity. Neither do the **embeddables**, as
 paths such as `home.street`. An embeddable that is not marked `@Composite` shows up as an unclassified field of the
 entity (`UNCLASSIFIED_FIELD`).
 
-Without JPA, any source of classes works: a fixed list, a class path scan, the records of a package.
+Without JPA, any source of classes works: a fixed list, a class path scan, or `ModelClasses` below.
+
+## Not forgetting a class
+
+A hand-written list has a weakness: the class a developer adds next month is not in it, so it is the one nobody
+verifies. `ModelClasses` lists the classes of a package, read from where an anchor class was loaded from, so that the
+test verifies whatever the model contains:
+
+```java
+@Test
+void everyClassOfTheModelIsClassified() {
+    new Classifier(Taxonomy.load()).verify(ModelClasses.inPackageTree(Student.class));
+}
+```
+
+`inPackageTree` takes the package of `Student` and the packages below it; `inPackage` takes only the package. It
+returns classes and records, nested and abstract ones included, sorted by name, and leaves out interfaces, enums,
+annotations, anonymous classes and local classes. A new class with an unclassified field now fails the build with
+`UNCLASSIFIED_FIELD`, without anyone having listed it. With Maven or Gradle the test class itself is not in the list,
+even in the same package: it is in another location (the test classes).
+
+If the package also holds classes that are not data, such as a service with fields, filter the list before you verify
+it:
+
+```java
+List<Class<?>> model = ModelClasses.inPackageTree(Student.class).stream()
+        .filter(type -> !type.getSimpleName().endsWith("Service"))
+        .toList();
+new Classifier(Taxonomy.load()).verify(model);
+```
+
+`ModelClasses` is fail-closed too: a location it cannot list or a class it cannot load is an
+`IllegalArgumentException`, not a class that is silently skipped. Then pass the classes explicitly.
 
 ## Common mistakes
 
 - **Using `Taxonomy.standard()` in the test while the application uses extension keys** → `UNKNOWN_CATEGORY` for
   every extension key.
 - **Catching the exception and only logging it.** The point is to fail the build.
-- **Verifying only some entities.** Take them from the metamodel so new entities are covered automatically.
+- **Verifying only some entities.** Take them from the metamodel, or with `ModelClasses`, so new entities are covered
+  automatically.
 - **Fixing a violation by adding `@Exempt`** to a field that holds data. Review exemptions like code.
 - **Forgetting `@Composite` on an embeddable.** The embedded field has no category and is reported as
   `UNCLASSIFIED_FIELD`; the fix is the marker on the embeddable class, not an `@Exempt` on the field.

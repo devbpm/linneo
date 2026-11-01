@@ -171,7 +171,8 @@ void everyEntityIsClassified() {
 category used as a class default, a lowered level, conflicting annotations. Deprecated keys are reported as
 warnings and resolved to their replacement.
 
-With JPA you can take the classes from the metamodel:
+A list written by hand misses the next class someone adds. Take the classes from the model package instead,
+`ModelClasses.inPackageTree(Person.class)`, or with JPA from the metamodel:
 `entityManagerFactory.getMetamodel().getEntities().stream().map(EntityType::getJavaType).toList()`.
 
 ### 3. Use the classification

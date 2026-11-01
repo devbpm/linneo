@@ -8,6 +8,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
   - src/main/java/io/github/devbpm/linneo/classify/ClassificationException.java
   - src/main/java/io/github/devbpm/linneo/classify/Violation.java
+  - src/main/java/io/github/devbpm/linneo/classify/ModelClasses.java
 -->
 
 # Módulo 4 — Verificar en los tests
@@ -21,7 +22,8 @@ Al terminar este módulo serás capaz de:
 - leer una `ClassificationException` y localizar cada problema;
 - reconocer cada tipo de `Violation` y corregirlo;
 - gestionar los avisos por claves obsoletas;
-- alimentar el clasificador con las clases de entidad de una aplicación JPA.
+- alimentar el clasificador con las clases de entidad de una aplicación JPA, o con todas las clases de un paquete para
+  que no se olvide ninguna.
 
 ## Por qué un test
 
@@ -76,6 +78,8 @@ Puntos a tener en cuenta:
 - `Classifier` es inmutable y seguro entre hilos; puedes guardarlo en un campo estático. Solo lee anotaciones a través
   de `Class.getDeclaredFields()`, nunca valores de campos, así que no necesita una base de datos en marcha ni
   `setAccessible`.
+- La lista de este test está escrita a mano, así que una clase que nadie añada a ella no se verifica nunca. «No
+  olvidar una clase», más abajo, toma las clases del propio modelo.
 
 Si prefieres examinar una sola clase sin que se lance nada, usa `classify(Class)` y sus métodos `isValid()`,
 `errors()` y `violations()` (módulo 5).
@@ -253,14 +257,47 @@ se clasifican como parte de cada entidad. Tampoco los **embebibles**, siempre qu
 como `home.street`. Un embebible que no está marcado `@Composite` aparece como un campo sin clasificar de la entidad
 (`UNCLASSIFIED_FIELD`).
 
-Sin JPA vale cualquier fuente de clases: una lista fija, un escaneo del class path, los records de un paquete.
+Sin JPA vale cualquier fuente de clases: una lista fija, un escaneo del class path, o `ModelClasses`, más abajo.
+
+## No olvidar una clase
+
+Una lista escrita a mano tiene un punto débil: la clase que un desarrollador añada el mes que viene no está en ella, así
+que es la que nadie verifica. `ModelClasses` lista las clases de un paquete, leídas desde donde se cargó una clase
+ancla, para que el test verifique todo lo que contiene el modelo:
+
+```java
+@Test
+void everyClassOfTheModelIsClassified() {
+    new Classifier(Taxonomy.load()).verify(ModelClasses.inPackageTree(Student.class));
+}
+```
+
+`inPackageTree` toma el paquete de `Student` y los paquetes que cuelgan de él; `inPackage` toma solo el paquete.
+Devuelve clases y records, incluidos los anidados y los abstractos, ordenados por nombre, y deja fuera las interfaces,
+los enumerados, las anotaciones, las clases anónimas y las clases locales. Una clase nueva con un campo sin clasificar
+hace ahora fallar la compilación con `UNCLASSIFIED_FIELD`, sin que nadie la haya listado. Con Maven o Gradle, la propia
+clase de test no está en la lista, aunque esté en el mismo paquete: está en otra ubicación (las clases de test).
+
+Si el paquete contiene además clases que no son datos, como un servicio con campos, filtra la lista antes de
+verificarla:
+
+```java
+List<Class<?>> model = ModelClasses.inPackageTree(Student.class).stream()
+        .filter(type -> !type.getSimpleName().endsWith("Service"))
+        .toList();
+new Classifier(Taxonomy.load()).verify(model);
+```
+
+`ModelClasses` también es fail-closed: una ubicación que no puede listar o una clase que no puede cargar es una
+`IllegalArgumentException`, no una clase que se omite en silencio. Entonces pasa las clases de forma explícita.
 
 ## Errores frecuentes
 
 - **Usar `Taxonomy.standard()` en el test cuando la aplicación usa claves de una extensión** → `UNKNOWN_CATEGORY` en
   todas las claves de la extensión.
 - **Capturar la excepción y limitarse a registrarla en el log.** Lo que se busca es que falle la compilación.
-- **Verificar solo algunas entidades.** Tómalas del metamodelo para que las nuevas queden cubiertas automáticamente.
+- **Verificar solo algunas entidades.** Tómalas del metamodelo, o con `ModelClasses`, para que las nuevas queden
+  cubiertas automáticamente.
 - **Corregir una infracción añadiendo `@Exempt`** a un campo que contiene datos. Revisa las exenciones como código.
 - **Olvidar `@Composite` en un embebible.** El campo embebido no tiene categoría y se informa como
   `UNCLASSIFIED_FIELD`; la solución es el marcador en la clase embebible, no un `@Exempt` en el campo.
