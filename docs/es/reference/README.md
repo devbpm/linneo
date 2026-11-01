@@ -66,7 +66,7 @@ module io.github.devbpm.linneo {
 | `io.github.devbpm.linneo` | sí | La taxonomía (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), las diferencias entre dos versiones de ella (`TaxonomyDiff`, `TermChange`), sus términos (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), los enumerados de protección y `Protection`, y las constantes de claves (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | sí | Las anotaciones que declaran qué contiene cada campo de un modelo: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite`, `@Exempt` |
 | `io.github.devbpm.linneo.classify` | sí | Lectura y verificación de las anotaciones de un modelo: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException`; y la clasificación conservada como datos que una aplicación puede guardar y comparar: `DataInventory`, `InventoryField`, `InventoryDiff`, `FieldChange` |
-| `io.github.devbpm.linneo.processing` | sí | Las actividades de tratamiento y el registro de actividades de tratamiento del RGPD: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord` |
+| `io.github.devbpm.linneo.processing` | sí | Las actividades de tratamiento y el registro de actividades de tratamiento del RGPD: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord`, `RecordDiff`, `ActivityChange` |
 | `io.github.devbpm.linneo.catalog.openmetadata` | sí | La taxonomía como clasificaciones y etiquetas de OpenMetadata: `OpenMetadataCatalog`, `OpenMetadataMapping`, `OmClassification`, `OmTag`. Sin llamadas de red |
 | `io.github.devbpm.linneo.catalog.datahub` | sí | La taxonomía como glosario de negocio de DataHub: `DataHubCatalog`, `DataHubMapping`, `DhProposal`. Sin llamadas de red |
 | `io.github.devbpm.linneo.catalog.atlas` | sí | La taxonomía como clasificaciones de Apache Atlas: `AtlasCatalog`, `AtlasMapping`, `AtlasClassificationDef`. Sin llamadas de red |
@@ -148,7 +148,8 @@ module com.example.app {
   `TransferSafeguard`.
 - [ProcessingChecker](processing/checker.md) — `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation` con
   cada `Code` y `Element`, `ProcessingException`.
-- [ProcessingRecord](processing/record.md) — el registro en Markdown y en JSON.
+- [ProcessingRecord](processing/record.md) — el registro en Markdown y en JSON, su huella, `RecordDiff` y
+  `ActivityChange`.
 
 **OpenMetadata** (`io.github.devbpm.linneo.catalog.openmetadata`)
 

@@ -36,7 +36,9 @@ taxonomy and the classification of the model, and renders the record.
 | `Jurisdiction` | enum | The national law a checker applies on top of the GDPR (`EU`, `SPAIN`) | [ProcessingChecker](checker.md#jurisdiction) |
 | `ProcessingViolation` | record, with `Severity`, `Code` and `Element` | A problem found in an activity, and the part of it the problem is in | [ProcessingChecker](checker.md#processingviolation) |
 | `ProcessingException` | exception | Thrown by `verify` with every error | [ProcessingChecker](checker.md#processingexception) |
-| `ProcessingRecord` | record | The record of processing activities, as Markdown or JSON | [ProcessingRecord](record.md) |
+| `ProcessingRecord` | record | The record of processing activities, as Markdown or JSON, with its fingerprint | [ProcessingRecord](record.md) |
+| `RecordDiff` | class | The differences between two records, activity by activity | [ProcessingRecord](record.md#recorddiff) |
+| `ActivityChange` | record, with `Aspect` | How one activity differs between two records, and what changed in it | [ProcessingRecord](record.md#activitychange) |
 
 ## How it relates to the taxonomy
 

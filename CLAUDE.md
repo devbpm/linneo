@@ -79,7 +79,9 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   `ProcessingViolation` names its `Element`, which says whether the problem is in the scope or in the governance.
   `ProcessingChecker` resolves them against the taxonomy, runs the `Classifier` on the entities and reports
   `ProcessingViolation`s with the same fail-closed split as `classify`: unlawful-as-declared is an error, a gap in
-  the record is a warning. `verify` returns a `ProcessingRecord` (article 30 record, `toMarkdown`/`toJson`).
+  the record is a warning. `verify` returns a `ProcessingRecord` (article 30 record, `toMarkdown`/`toJson`, unique
+  activity keys). `RecordDiff` compares two records into `ActivityChange`s; it and `ProcessingRecord.fingerprint()`
+  both use `ActivityChange.content`, so equal fingerprints always mean an empty diff.
 - **`extension.university`** — `UniversityTaxonomy`, an optional `TaxonomyExtension` for higher education with its
   key constants (`UniversityCategories`, `UniversityDataUses`, `UniversityDataSubjects`). Deliberately **not**
   declared as a `provides` service in `module-info.java`, so `Taxonomy.load()` never applies it; users call

@@ -36,7 +36,9 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 | `Jurisdiction` | enum | El derecho nacional que un comprobador aplica además del RGPD (`EU`, `SPAIN`) | [ProcessingChecker](checker.md#jurisdiction) |
 | `ProcessingViolation` | record, con `Severity`, `Code` y `Element` | Un problema encontrado en una actividad, y la parte de ella en la que está | [ProcessingChecker](checker.md#processingviolation) |
 | `ProcessingException` | excepción | La lanza `verify` con todos los errores | [ProcessingChecker](checker.md#processingexception) |
-| `ProcessingRecord` | record | El registro de actividades de tratamiento, en Markdown o JSON | [ProcessingRecord](record.md) |
+| `ProcessingRecord` | record | El registro de actividades de tratamiento, en Markdown o JSON, con su huella | [ProcessingRecord](record.md) |
+| `RecordDiff` | class | Las diferencias entre dos registros, actividad por actividad | [ProcessingRecord](record.md#recorddiff) |
+| `ActivityChange` | record, con `Aspect` | Cómo difiere una actividad entre dos registros, y qué cambió en ella | [ProcessingRecord](record.md#activitychange) |
 
 ## Relación con la taxonomía
 

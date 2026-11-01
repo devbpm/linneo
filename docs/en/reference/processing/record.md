@@ -7,6 +7,8 @@ nav_order: 4
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
+  - src/main/java/io/github/devbpm/linneo/processing/ActivityChange.java
 -->
 
 # ProcessingRecord
@@ -20,7 +22,8 @@ public record ProcessingRecord(List<CheckedActivity> activities)
 The record of processing activities of a controller (GDPR article 30.1). [`ProcessingChecker.verify`](checker.md)
 builds it from activities without errors, so every activity in it has a lawful basis and the conditions its data
 needs. The warnings of each activity travel with it as **open points**. The record renders as Markdown for people
-and as JSON for tools.
+and as JSON for tools. Its [fingerprint](#fingerprint) tells whether it is still the record someone approved, and
+[`RecordDiff`](#recorddiff) what changed since.
 
 **The texts the record adds are in English** (row labels, `None declared`, `Open points:`, the messages of the open
 points), whatever the language of the application. The names of purposes, data subjects and categories come from
@@ -31,11 +34,12 @@ descriptions, interests, references, retention, recipients, destinations — are
 
 | Member | Description |
 |---|---|
-| `ProcessingRecord(List<CheckedActivity> activities)` | Copies the list (immutable). Throws `IllegalArgumentException` if any activity has an error, with the message `The processing activity '<key>' has errors and cannot go in the record: [...]`, so a record only holds valid activities (warnings are allowed). It does not check for duplicate keys; normally you get a record from `verify`, which reports every error. |
+| `ProcessingRecord(List<CheckedActivity> activities)` | Copies the list (immutable). Throws `IllegalArgumentException` if any activity has an error, with the message `The processing activity '<key>' has errors and cannot go in the record: [...]`, so a record only holds valid activities (warnings are allowed). It also throws `IllegalArgumentException` if two activities have the same key (`Two processing activities of the record have the key '<key>'`), so each key is in the record once. Normally you get a record from `verify`, which reports every error. |
 | `List<CheckedActivity> activities()` | The checked activities, in declaration order. |
-| `Optional<CheckedActivity> activity(String key)` | The first activity with that key, or empty. |
+| `Optional<CheckedActivity> activity(String key)` | The activity with that key, or empty. |
 | `String toMarkdown(String title)` | The record as a Markdown document whose level-1 heading is `title` (for example the controller's name). `NullPointerException` if `title` is `null`. |
 | `String toJson()` | The record as a JSON object. |
+| `String fingerprint()` | The SHA-256 of the content of the record, as 64 hexadecimal digits; see [Fingerprint](#fingerprint). |
 
 ## Markdown
 
@@ -166,6 +170,109 @@ The JSON of the record above (one line):
 
 The `code` members are the enum constant names, so a tool can map them back with `LegalBasis.valueOf(...)` and the
 like; the `fideslang` members can fill the matching fields of a fideslang privacy declaration.
+
+## Comparing records
+
+A record is a value the application computes, so it can compare two of them: the record the data protection officer
+approved and the one that applies now. `fingerprint()` tells at once whether anything changed, and two types of
+`io.github.devbpm.linneo.processing`, `RecordDiff` and `ActivityChange`, say what.
+
+### Fingerprint
+
+`fingerprint()` is the SHA-256 (UTF-8, lower-case hexadecimal, 64 digits) of the content of the record, activity by
+activity in key order and aspect by aspect as `RecordDiff` compares them. Two records have the same fingerprint exactly
+when `RecordDiff` finds no change between them, whatever the order of their activities. It says that something changed,
+not what. An application keeps it with the record the officer approved, to know whether the record still is that one.
+
+### RecordDiff
+
+`io.github.devbpm.linneo.processing.RecordDiff` — `public final class`, `@since 0.1.0`. Immutable; there is no public
+constructor.
+
+| Member | Description |
+|---|---|
+| `static RecordDiff between(ProcessingRecord before, ProcessingRecord after)` | Compares two records: `before` is the earlier one, such as the approved one. `NullPointerException` if either is `null`. |
+| `List<ActivityChange> changes()` | The changes, one per activity added, removed or changed, by activity key. Immutable. |
+| `Optional<ActivityChange> change(String activity)` | The change of one activity, or empty if the activity is the same in both records or in neither. |
+| `boolean isEmpty()` | `true` if no activity was added, removed or changed. |
+
+An activity only `after` has is `ADDED`, one only `before` has is `REMOVED`; for the others the diff reports the aspects
+whose content differs. The order of the elements of a list (purposes, recipients, open points...) is not part of the
+content.
+
+Both records are computed, so the earlier one is rebuilt from what the application stored: the governance the data
+protection function keeps, and the [data inventory](../classify/inventory.md) and the taxonomy of the record that was
+approved. Checked against what applies now, the same activities show what a new taxonomy, a change of the data model or
+an edit of the governance does to the record, before anyone signs it:
+
+```java
+ProcessingRecord approved = new ProcessingChecker(appliedTaxonomy, Jurisdiction.SPAIN, storedInventory)
+        .verify(activities);
+ProcessingRecord current = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, declared).verify(activities);
+
+RecordDiff diff = RecordDiff.between(approved, current);
+for (ActivityChange change : diff.changes()) {
+    System.out.println(change);   // activity 'contact': [PERSONAL_DATA, PROTECTION] TIGHTENED
+}
+```
+
+### ActivityChange
+
+`io.github.devbpm.linneo.processing.ActivityChange` — `public record`, `@since 0.1.0`
+
+```java
+public record ActivityChange(String activity, CheckedActivity before, CheckedActivity after, Set<Aspect> aspects,
+                             Direction direction)
+```
+
+How one activity differs between the two records.
+
+| Component | Nullable | Description |
+|---|---|---|
+| `activity` | no | The key of the activity. |
+| `before` | yes | The activity in the earlier record, or `null` if it was added. |
+| `after` | yes | The activity in the later record, or `null` if it was removed. |
+| `aspects` | no | What changed, never empty: an immutable set of [`Aspect`](#aspect). |
+| `direction` | no | How the protection the personal data of the activity requires changed, as [`Protection.Direction`](../protection-levels.md#direction): `TIGHTENED` means the activity now processes data that needs more protection, which may call for other bases or an impact assessment. `SAME` for an added or removed activity. |
+
+The canonical constructor throws `NullPointerException` if `activity` or `direction` is `null`, and
+`IllegalArgumentException` if `aspects` is `null` or empty, or if `before` and `after` are both `null`.
+
+| Member | Description |
+|---|---|
+| `boolean isGovernance()` | `true` if an aspect of the [governance](activity.md#governance) changed and nothing else did but the open points: a change the data protection function made, with the scope the code declares and the data it reaches unchanged. The open points that follow from it may change too. |
+
+`toString()` is `activity '<key>': <aspects>`, followed by the direction unless it is `SAME`.
+
+### Aspect
+
+`ActivityChange.Aspect` — nested `enum`, `@since 0.1.0`: what changed in an activity. `boolean isGovernance()` tells
+whether the aspect is part of the governance rather than of the scope declared in code or the data it reaches.
+
+| Aspect | `isGovernance()` | What changed |
+|---|---|---|
+| `ADDED` | `false` | The activity is new in the record. |
+| `REMOVED` | `false` | The activity is no longer in the record. |
+| `NAME` | `false` | The name. |
+| `DESCRIPTION` | `false` | The description. |
+| `PURPOSES` | `false` | The purposes, deprecated keys replaced. |
+| `DATA_SUBJECTS` | `false` | The categories of data subjects, deprecated keys replaced. |
+| `PERSONAL_DATA` | `false` | The personal data categories processed, whether declared or reached through entities and objects. |
+| `PROTECTION` | `false` | The protection the personal data requires; see `direction`. |
+| `LEGAL_BASIS` | `true` | The lawful basis. |
+| `LEGITIMATE_INTEREST` | `true` | The legitimate interest pursued. |
+| `SPECIAL_CATEGORY_CONDITION` | `true` | The article 9.2 condition. |
+| `CRIMINAL_DATA_BASIS` | `true` | The article 10 basis. |
+| `LEGAL_REFERENCE` | `true` | The law the bases rest on. |
+| `RECIPIENTS` | `true` | The recipients. |
+| `TRANSFERS` | `true` | The transfers to third countries or international organisations. |
+| `RETENTION` | `true` | The time limit for erasure. |
+| `IMPACT_ASSESSMENT` | `true` | The impact assessment. |
+| `OPEN_POINTS` | `false` | The open points: the warnings of the activity. |
+
+An edit of the retention or the recipients is a governance change, and it usually closes an open point too. A change in
+the data the activity reaches, such as a new field in a listed entity or a stricter category, shows in `PERSONAL_DATA`
+or `PROTECTION` and is not.
 
 See also: [ProcessingChecker](checker.md) · [ProcessingActivity](activity.md) · [Legal bases](bases.md) ·
 [Processing activities](README.md)

@@ -74,7 +74,8 @@ the build fail when the model and its classification drift apart.
 - **Stored copies kept in step.** The classification of the whole model as data (`DataInventory`), compared with
   what an application stored (`InventoryDiff`), with fingerprints to skip unchanged starts; the taxonomy as text
   (`Taxonomy.toTsv()`) and its changes between versions (`TaxonomyDiff`), so applications can migrate keys and
-  review every change that weakens protection.
+  review every change that weakens protection. Catalog tags come from stored records too, and two records of
+  processing activities can be compared (`RecordDiff`).
 - **Data catalog ready.** The taxonomy, and the tags of each column, for [OpenMetadata](https://open-metadata.org/)
   (classifications and nested tags), [DataHub](https://datahub.com/) (a business glossary) and
   [Apache Atlas](https://atlas.apache.org/) (classification types, usable by Apache Ranger tag policies).
@@ -387,8 +388,16 @@ if (!declared.fingerprint().equals(storedFingerprint)) {
 The taxonomy is data too: keep `taxonomy.toTsv()` when you apply it, and on the next version compare with
 `TaxonomyDiff.between(Taxonomy.fromTsv(applied), taxonomy)`. `requireCompatible()` refuses removed terms and weaker
 protection, and `declared.affectedBy(diff)` lists the fields each changed category reaches. Since rows store keys and
-not levels, a stricter category protects them at once. The [course module](docs/en/course/10-reconciliation.md)
-walks through a whole reconciliation, with its performance on a model of 800 entities.
+not levels, a stricter category protects them at once.
+
+The other copies follow the same way. Each catalog gives the tags of a stored `InventoryField`, resolved with the
+catalog's taxonomy, exactly as it gives those of the field's classification, so the tags a column had (the stored
+field, the taxonomy applied before) and the tags it needs (the declared field, the current taxonomy) tell what to
+remove and what to add.
+The record of processing activities has a `fingerprint()`, and `RecordDiff.between(approved, current)` lists the
+`ActivityChange`s since the data protection officer approved it: which activities, which aspects, and whether they
+now process data that needs more protection. The [course module](docs/en/course/10-reconciliation.md) walks through a
+whole reconciliation, with its performance on a model of 800 entities.
 
 ## Data catalogs
 

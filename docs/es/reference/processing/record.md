@@ -7,6 +7,8 @@ nav_order: 4
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
+  - src/main/java/io/github/devbpm/linneo/processing/ActivityChange.java
 -->
 
 # ProcessingRecord
@@ -20,7 +22,8 @@ public record ProcessingRecord(List<CheckedActivity> activities)
 El registro de actividades de tratamiento de un responsable (RGPD, artículo 30.1). [`ProcessingChecker.verify`](checker.md)
 lo construye a partir de actividades sin errores, de modo que cada actividad del registro tiene una base jurídica y
 las condiciones que necesitan sus datos. Los avisos de cada actividad viajan con ella como **puntos abiertos**. El
-registro se genera en Markdown para las personas y en JSON para las herramientas.
+registro se genera en Markdown para las personas y en JSON para las herramientas. Su [huella](#huella) dice si sigue
+siendo el registro que alguien aprobó, y [`RecordDiff`](#recorddiff) qué ha cambiado desde entonces.
 
 **Los textos que añade el registro están en inglés** (las etiquetas de las filas, `None declared`, `Open points:`, los
 mensajes de los puntos abiertos), sea cual sea el idioma de la aplicación. Los nombres de las finalidades, los
@@ -33,11 +36,12 @@ solo idioma.
 
 | Miembro | Descripción |
 |---|---|
-| `ProcessingRecord(List<CheckedActivity> activities)` | Copia la lista (inmutable). Lanza `IllegalArgumentException` si alguna actividad tiene un error, con el mensaje `The processing activity '<key>' has errors and cannot go in the record: [...]`, de modo que un registro solo contiene actividades válidas (los avisos se admiten). No comprueba claves duplicadas; lo normal es obtener el registro de `verify`, que notifica todos los errores. |
+| `ProcessingRecord(List<CheckedActivity> activities)` | Copia la lista (inmutable). Lanza `IllegalArgumentException` si alguna actividad tiene un error, con el mensaje `The processing activity '<key>' has errors and cannot go in the record: [...]`, de modo que un registro solo contiene actividades válidas (los avisos se admiten). También lanza `IllegalArgumentException` si dos actividades tienen la misma clave (`Two processing activities of the record have the key '<key>'`), de modo que cada clave está una sola vez en el registro. Lo normal es obtener el registro de `verify`, que notifica todos los errores. |
 | `List<CheckedActivity> activities()` | Las actividades comprobadas, en orden de declaración. |
-| `Optional<CheckedActivity> activity(String key)` | La primera actividad con esa clave, o vacío. |
+| `Optional<CheckedActivity> activity(String key)` | La actividad con esa clave, o vacío. |
 | `String toMarkdown(String title)` | El registro como documento Markdown cuyo encabezado de nivel 1 es `title` (por ejemplo, el nombre del responsable). `NullPointerException` si `title` es `null`. |
 | `String toJson()` | El registro como objeto JSON. |
+| `String fingerprint()` | El SHA-256 del contenido del registro, como 64 dígitos hexadecimales; véase [Huella](#huella). |
 
 ## Markdown
 
@@ -170,6 +174,110 @@ El JSON del registro anterior (en una sola línea):
 Los miembros `code` son los nombres de las constantes del enumerado, así que una herramienta puede recuperarlas con
 `LegalBasis.valueOf(...)` y similares; los miembros `fideslang` pueden rellenar los campos correspondientes de una
 declaración de privacidad de fideslang.
+
+## Comparar registros
+
+Un registro es un valor que calcula la aplicación, así que puede comparar dos: el que aprobó el delegado de protección
+de datos y el que rige ahora. `fingerprint()` dice de una vez si algo cambió, y dos tipos de
+`io.github.devbpm.linneo.processing`, `RecordDiff` y `ActivityChange`, dicen qué.
+
+### Huella
+
+`fingerprint()` es el SHA-256 (UTF-8, hexadecimal en minúscula, 64 dígitos) del contenido del registro, actividad a
+actividad por orden de clave y aspecto a aspecto como los compara `RecordDiff`. Dos registros tienen la misma huella
+exactamente cuando `RecordDiff` no encuentra ningún cambio entre ellos, sea cual sea el orden de sus actividades. Dice
+que algo cambió, no qué. Una aplicación la guarda junto al registro que aprobó el delegado, para saber si el registro
+sigue siendo ese.
+
+### RecordDiff
+
+`io.github.devbpm.linneo.processing.RecordDiff` — `public final class`, `@since 0.1.0`. Inmutable; no tiene
+constructor público.
+
+| Miembro | Descripción |
+|---|---|
+| `static RecordDiff between(ProcessingRecord before, ProcessingRecord after)` | Compara dos registros: `before` es el anterior, como el aprobado. `NullPointerException` si alguno es `null`. |
+| `List<ActivityChange> changes()` | Los cambios, uno por cada actividad añadida, eliminada o modificada, por clave de actividad. Inmutable. |
+| `Optional<ActivityChange> change(String activity)` | El cambio de una actividad, o vacío si la actividad es la misma en los dos registros o no está en ninguno. |
+| `boolean isEmpty()` | `true` si no se añadió, eliminó ni modificó ninguna actividad. |
+
+Una actividad que solo tiene `after` es `ADDED`, una que solo tiene `before` es `REMOVED`; en las demás, la diferencia
+da los aspectos cuyo contenido difiere. El orden de los elementos de una lista (finalidades, destinatarios, puntos
+abiertos...) no forma parte del contenido.
+
+Los dos registros se calculan, así que el anterior se reconstruye a partir de lo que la aplicación guardó: la gobernanza
+que mantiene la función de protección de datos, y el [inventario de datos](../classify/inventory.md) y la taxonomía del
+registro que se aprobó. Comprobadas con lo que rige ahora, las mismas actividades muestran qué hace al registro una
+taxonomía nueva, un cambio del modelo de datos o una edición de la gobernanza, antes de que nadie lo firme:
+
+```java
+ProcessingRecord approved = new ProcessingChecker(appliedTaxonomy, Jurisdiction.SPAIN, storedInventory)
+        .verify(activities);
+ProcessingRecord current = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, declared).verify(activities);
+
+RecordDiff diff = RecordDiff.between(approved, current);
+for (ActivityChange change : diff.changes()) {
+    System.out.println(change);   // activity 'contact': [PERSONAL_DATA, PROTECTION] TIGHTENED
+}
+```
+
+### ActivityChange
+
+`io.github.devbpm.linneo.processing.ActivityChange` — `public record`, `@since 0.1.0`
+
+```java
+public record ActivityChange(String activity, CheckedActivity before, CheckedActivity after, Set<Aspect> aspects,
+                             Direction direction)
+```
+
+Cómo difiere una actividad entre los dos registros.
+
+| Componente | Nulable | Descripción |
+|---|---|---|
+| `activity` | no | La clave de la actividad. |
+| `before` | sí | La actividad en el registro anterior, o `null` si se añadió. |
+| `after` | sí | La actividad en el registro posterior, o `null` si se eliminó. |
+| `aspects` | no | Qué cambió, nunca vacío: un conjunto inmutable de [`Aspect`](#aspect). |
+| `direction` | no | Cómo cambió la protección que requieren los datos personales de la actividad, como [`Protection.Direction`](../protection-levels.md#direction): `TIGHTENED` significa que la actividad ahora trata datos que necesitan más protección, lo que puede exigir otras bases o una evaluación de impacto. `SAME` en una actividad añadida o eliminada. |
+
+El constructor canónico lanza `NullPointerException` si `activity` o `direction` son `null`, e
+`IllegalArgumentException` si `aspects` es `null` o está vacío, o si `before` y `after` son ambos `null`.
+
+| Miembro | Descripción |
+|---|---|
+| `boolean isGovernance()` | `true` si cambió un aspecto de la [gobernanza](activity.md#governance) y nada más salvo los puntos abiertos: un cambio que hizo la función de protección de datos, con el alcance que declara el código y los datos que alcanza sin cambios. Los puntos abiertos que se derivan de él pueden cambiar también. |
+
+`toString()` es `activity '<key>': <aspects>`, seguido de la dirección salvo que sea `SAME`.
+
+### Aspect
+
+`ActivityChange.Aspect` — `enum` anidado, `@since 0.1.0`: qué cambió en una actividad. `boolean isGovernance()` dice si
+el aspecto forma parte de la gobernanza y no del alcance declarado en el código ni de los datos que alcanza.
+
+| Aspecto | `isGovernance()` | Qué cambió |
+|---|---|---|
+| `ADDED` | `false` | La actividad es nueva en el registro. |
+| `REMOVED` | `false` | La actividad ya no está en el registro. |
+| `NAME` | `false` | El nombre. |
+| `DESCRIPTION` | `false` | La descripción. |
+| `PURPOSES` | `false` | Las finalidades, con las claves obsoletas sustituidas. |
+| `DATA_SUBJECTS` | `false` | Las categorías de interesados, con las claves obsoletas sustituidas. |
+| `PERSONAL_DATA` | `false` | Las categorías de datos personales tratadas, declaradas o alcanzadas a través de entidades y objetos. |
+| `PROTECTION` | `false` | La protección que requieren los datos personales; véase `direction`. |
+| `LEGAL_BASIS` | `true` | La base jurídica. |
+| `LEGITIMATE_INTEREST` | `true` | El interés legítimo perseguido. |
+| `SPECIAL_CATEGORY_CONDITION` | `true` | La condición del artículo 9.2. |
+| `CRIMINAL_DATA_BASIS` | `true` | La base del artículo 10. |
+| `LEGAL_REFERENCE` | `true` | La ley en la que se apoyan las bases. |
+| `RECIPIENTS` | `true` | Los destinatarios. |
+| `TRANSFERS` | `true` | Las transferencias a terceros países u organizaciones internacionales. |
+| `RETENTION` | `true` | El plazo de supresión. |
+| `IMPACT_ASSESSMENT` | `true` | La evaluación de impacto. |
+| `OPEN_POINTS` | `false` | Los puntos abiertos: los avisos de la actividad. |
+
+Editar la conservación o los destinatarios es un cambio de gobernanza, y suele cerrar también un punto abierto. Un
+cambio en los datos que alcanza la actividad, como un campo nuevo en una entidad de la lista o una categoría más
+estricta, se ve en `PERSONAL_DATA` o en `PROTECTION` y no lo es.
 
 Véase también: [ProcessingChecker](checker.md) · [ProcessingActivity](activity.md) · [Bases jurídicas](bases.md) ·
 [Actividades de tratamiento](README.md)

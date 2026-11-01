@@ -55,7 +55,8 @@ By the end of the course you will be able to:
 9. Declare processing activities with their lawful bases, check them in a test and produce the record of processing
    activities as Markdown and JSON.
 10. Keep the copies of the classification an application stores (field tables, catalogs, the record) in step with the
-    code: build the data inventory, compare it with what is stored, and react to a new taxonomy.
+    code: build the data inventory, compare it with what is stored, react to a new taxonomy, update the tags of each
+    catalog column and tell what changed in the record since it was approved.
 
 ## Prerequisites
 
@@ -93,7 +94,7 @@ By the end of the course you will be able to:
 | 7 | [OpenMetadata](07-openmetadata.md) | Publish classifications and tags, compute the tags of each column, customise the names | 45 min |
 | 8 | [DataHub and Apache Atlas](08-datahub-and-atlas.md) | Publish a DataHub glossary and Atlas classification types, compute the terms and classifications of each column, compare the three catalogues | 60 min |
 | 9 | [Processing activities and the record](09-processing-activities.md) | Declare processing activities with their lawful bases, tell errors from warnings, verify them in a test and produce the record of processing activities | 60 min |
-| 10 | [Keeping stored records in step](10-reconciliation.md) | Build the data inventory, compare it with a stored copy, review weakening changes, react to a new taxonomy, check activities from stored records | 45 min |
+| 10 | [Keeping stored records in step](10-reconciliation.md) | Build the data inventory, compare it with a stored copy, review weakening changes, react to a new taxonomy, update catalog tags column by column, check activities from stored records, compare the record with the approved one | 60 min |
 
 Total: about 10 hours. Modules 1 and 2 are conceptual; modules 3 to 10 are hands-on. Data protection readers can
 follow modules 1, 2, 5 and 9 on their own.

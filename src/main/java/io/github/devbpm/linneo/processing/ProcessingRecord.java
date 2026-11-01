@@ -20,40 +20,73 @@ import io.github.devbpm.linneo.LegalNature;
 import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Term;
 import io.github.devbpm.linneo.internal.Json;
+import io.github.devbpm.linneo.internal.Tsv;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The record of processing activities of a controller (GDPR article 30.1), built by
  * {@link ProcessingChecker#verify(java.util.Collection)} from activities without errors.
  * <p>
  * It renders as Markdown for people, with one section per activity and its open points (the warnings), and as
- * JSON for tools. The texts it adds are in English; the names come from the taxonomy and the activities.
+ * JSON for tools. The texts it adds are in English; the names come from the taxonomy and the activities. Its
+ * {@linkplain #fingerprint() fingerprint} tells whether it is still the record someone approved, and
+ * {@link RecordDiff} what changed since.
  *
- * @param activities the checked activities, in declaration order
+ * @param activities the checked activities, in declaration order, each key once
  * @since 0.1.0
  */
 public record ProcessingRecord(List<CheckedActivity> activities) {
 
+    private static final String FORMAT = "linneo-record";
+    private static final int VERSION = 1;
+
     /**
-     * Checks that every activity is valid and makes the list immutable.
+     * Checks that every activity is valid and has its own key, and makes the list immutable.
      *
      * @param activities the checked activities, none with an error
-     * @throws IllegalArgumentException if an activity has an error; use
+     * @throws IllegalArgumentException if an activity has an error, or two have the same key; use
      *         {@link ProcessingChecker#verify(java.util.Collection)}, which reports them all
      */
     public ProcessingRecord {
         activities = List.copyOf(activities);
+        Set<String> keys = new HashSet<>();
         for (CheckedActivity activity : activities) {
             if (!activity.isValid()) {
                 throw new IllegalArgumentException("The processing activity '" + activity.activity().key()
                         + "' has errors and cannot go in the record: " + activity.errors());
             }
+            if (!keys.add(activity.activity().key())) {
+                throw new IllegalArgumentException("Two processing activities of the record have the key '"
+                        + activity.activity().key() + "'");
+            }
         }
+    }
+
+    /**
+     * The fingerprint of the record: the SHA-256, in hexadecimal, of its content, activity by activity in key order
+     * and aspect by aspect as {@link RecordDiff} compares them. Two records have the same fingerprint exactly when
+     * {@code RecordDiff} finds no change between them, whatever the order of their activities. An application keeps
+     * it with the record the data protection officer approved, to know whether the record still is that one.
+     *
+     * @return 64 hexadecimal digits
+     */
+    public String fingerprint() {
+        Tsv tsv = new Tsv(FORMAT, VERSION);
+        activities.stream().sorted(Comparator.comparing(checked -> checked.activity().key())).forEach(checked ->
+                ActivityChange.content(checked).forEach((aspect, content) -> {
+                    List<String> row = new ArrayList<>(List.of(checked.activity().key(), aspect.name()));
+                    row.addAll(content);
+                    tsv.row(row.toArray());
+                }));
+        return Tsv.fingerprint(tsv.text());
     }
 
     /**

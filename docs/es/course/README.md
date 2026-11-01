@@ -58,8 +58,9 @@ Al terminar el curso serás capaz de:
 9. Declarar actividades de tratamiento con sus bases jurídicas, comprobarlas en un test y generar el registro de
    actividades de tratamiento en Markdown y JSON.
 10. Mantener al día con el código las copias de la clasificación que guarda una aplicación (tablas de campos,
-    catálogos, el registro): construir el inventario de datos, compararlo con lo guardado y reaccionar a una
-    taxonomía nueva.
+    catálogos, el registro): construir el inventario de datos, compararlo con lo guardado, reaccionar a una
+    taxonomía nueva, actualizar las etiquetas de cada columna del catálogo y saber qué cambió en el registro desde que
+    se aprobó.
 
 ## Requisitos previos
 
@@ -98,7 +99,7 @@ Al terminar el curso serás capaz de:
 | 7 | [OpenMetadata](07-openmetadata.md) | Publicar clasificaciones y etiquetas, calcular las etiquetas de cada columna y personalizar los nombres | 45 min |
 | 8 | [DataHub y Apache Atlas](08-datahub-and-atlas.md) | Publicar un glosario de DataHub y tipos de clasificación de Atlas, calcular los términos y clasificaciones de cada columna y comparar los tres catálogos | 60 min |
 | 9 | [Actividades de tratamiento y el registro](09-processing-activities.md) | Declarar actividades de tratamiento con sus bases jurídicas, distinguir errores de avisos, verificarlas en un test y generar el registro de actividades de tratamiento | 60 min |
-| 10 | [Mantener al día los registros guardados](10-reconciliation.md) | Construir el inventario de datos, compararlo con una copia guardada, revisar los cambios que rebajan la protección, reaccionar a una taxonomía nueva y comprobar actividades desde registros guardados | 45 min |
+| 10 | [Mantener al día los registros guardados](10-reconciliation.md) | Construir el inventario de datos, compararlo con una copia guardada, revisar los cambios que rebajan la protección, reaccionar a una taxonomía nueva, actualizar las etiquetas del catálogo columna a columna, comprobar actividades desde registros guardados y comparar el registro con el aprobado | 60 min |
 
 Total: unas 10 horas. Los módulos 1 y 2 son conceptuales; del 3 al 10 son prácticos. Los perfiles de protección de
 datos pueden seguir por su cuenta los módulos 1, 2, 5 y 9.

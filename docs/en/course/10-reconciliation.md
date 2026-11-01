@@ -17,6 +17,12 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
+  - src/main/java/io/github/devbpm/linneo/processing/ActivityChange.java
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OpenMetadataCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/datahub/DataHubCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/atlas/AtlasCatalog.java
 -->
 
 # Module 10 — Keeping stored records in step
@@ -30,7 +36,9 @@ After this module you will be able to:
 - compare what is stored with what the code declares (`InventoryDiff`), apply the result and send every change that
   weakens protection to a review;
 - keep the taxonomy the application applied and react to a new version of Linneo with `TaxonomyDiff`;
-- check processing activities from stored records, with the governance the data protection officer keeps.
+- keep the tags of a data catalog in step with the stored copy, column by column;
+- check processing activities from stored records, with the governance the data protection officer keeps;
+- tell what changed in the record of processing activities since the officer approved it (`RecordDiff`).
 
 Modules 3, 4 and 9 are required.
 
@@ -180,6 +188,42 @@ protection, or a deprecated key that now resolves elsewhere.
 Because the rows store keys, a tightened category needs no update at all: the next read resolves the stricter level.
 That is rule 3 at work.
 
+## Catalogs that follow the stored copy
+
+A data catalog is one more copy: modules 7 and 8 put tags on each column. The tags of a column depend on two things,
+the field and the taxonomy, so a column needs new tags when its field changed (`InventoryDiff`) or when the taxonomy
+changed a category it uses (`affectedBy`). The catalogs accept a stored `InventoryField` as well as a
+`FieldClassification`, and resolve it with their own taxonomy, so the tags a column had are those of the stored field
+under the taxonomy you applied, and the tags it needs are those of the declared field under the current one:
+
+```java
+OpenMetadataCatalog was = OpenMetadataCatalog.of(Taxonomy.fromTsv(applied));  // as of the last start
+OpenMetadataCatalog now = OpenMetadataCatalog.of(taxonomy);
+for (FieldChange change : diff.changes()) {
+    List<String> before = change.before() == null ? List.of() : was.tagsOf(change.before());
+    List<String> after = change.after() == null ? List.of() : now.tagsOf(change.after());
+    List<String> remove = new ArrayList<>(before);
+    remove.removeAll(after);
+    List<String> add = new ArrayList<>(after);
+    add.removeAll(before);
+    catalogClient.patchColumnTags(change.object(), change.path(), remove, add);   // one request per column
+}
+```
+
+Do the same for every field `declared.affectedBy(changes)` lists, with the same field before and after. Three details
+matter:
+
+- **Remove and add in one request.** Most of these classifications are mutually exclusive in OpenMetadata
+  (`Confidentiality.Low` and `Confidentiality.High` cannot coexist), so adding first is refused.
+- **Leave the other tags alone.** Only the difference between the two Linneo lists is removed; the tags people add
+  by hand never appear in either list.
+- **An exempted field has no tags.** A field that became exempt loses every Linneo tag; one that was retired too
+  (`after` is `null`).
+
+`DataHubCatalog.termsOf(InventoryField)` and `AtlasCatalog.classificationsOf(InventoryField)` work the same way. The
+catalog's definitions (the classifications and tags of the taxonomy itself) are idempotent requests: send them again
+after a taxonomy change, before the columns.
+
 ## Processing activities from stored records
 
 Module 9 declared activities in code. In many organisations the **scope** of an activity is known to the developers
@@ -207,6 +251,37 @@ checked.violations().forEach(v -> {
 
 `objects(...)` names objects of a data inventory instead of classes, so the same check runs in a back office that
 has only the stored inventory and never sees the entity classes.
+
+## The record the officer signed
+
+The record of processing activities is a copy too, and the one with a signature on it. The officer approves a
+version; afterwards a new field, a stricter taxonomy or an edit of the governance can change what it says. Keep the
+`fingerprint()` of the record that was approved: if the current record has the same one, nothing changed, whatever
+the order of the activities. If not, rebuild the approved record from what you stored when it was approved, the
+inventory, the taxonomy and the governance, and compare:
+
+```java
+ProcessingRecord approved = new ProcessingChecker(Taxonomy.fromTsv(approvedTaxonomy), Jurisdiction.SPAIN,
+        approvedInventory).verify(approvedActivities);
+ProcessingRecord current = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, declared).verify(activities);
+if (!current.fingerprint().equals(approval.fingerprint())) {
+    for (ActivityChange change : RecordDiff.between(approved, current).changes()) {
+        officer.review(change);                     // added, removed, or the aspects that changed
+    }
+}
+```
+
+Each `ActivityChange` names the activity and its `aspects`: `ADDED` or `REMOVED`, the scope (`PURPOSES`,
+`DATA_SUBJECTS`), the data (`PERSONAL_DATA`, `PROTECTION`), each element of the governance (`LEGAL_BASIS`,
+`RETENTION`, `RECIPIENTS`…) and the `OPEN_POINTS`. Two of its answers route the review:
+
+- `isGovernance()`: only the governance changed (with the open points that follow from it), so the officer is
+  looking at their own edit;
+- `direction()`: `TIGHTENED` means the activity now processes data that needs more protection, the case where the
+  lawful basis, an article 9 condition or an impact assessment may no longer be enough.
+
+A change to the scope in code is better caught earlier, in the pull request: keep `record.toMarkdown(title)` under
+version control the way the last section keeps the inventory.
 
 ## Performance
 
@@ -254,6 +329,10 @@ void classificationIsReviewed() throws IOException {
 - **Ignoring `weakening()` because the code is right.** The code wins, but someone must confirm the weaker
   protection was intended.
 - **Skipping on the fingerprint forever.** Hand edits of code-owned columns are only repaired by a full comparison.
+- **Adding a column's new tags before removing the old ones.** Mutually exclusive classifications refuse the second
+  level; send both in one request.
+- **Comparing the current record with a record rebuilt from current data.** The diff is then empty by construction:
+  rebuild the approved record from the inventory, taxonomy and governance stored when it was approved.
 
 ## Exercises
 
@@ -271,6 +350,15 @@ deprecates it with the replacement `user.contact.phone_number`. Which `TermChang
 **Exercise 10.4 — Golden file.** Add the test of the last section to the university model and make one
 classification change. Read the failure message and the diff of `inventory.tsv`.
 
+**Exercise 10.5 — A column's tags.** `students.notes` was stored with `user.content.private`; the code now declares
+`user.health_and_medical`. With the default OpenMetadata names, which tags does the column lose and which does it
+gain? Could you send them as two requests, additions first?
+
+**Exercise 10.6 — The signed record.** The officer approved the record. Since then a developer added
+`@Category(USER_HEALTH_AND_MEDICAL_DISABILITY)` to a field of an object the activity `enrollment` reads, and the
+officer added the article 9 condition. Which aspects does the `ActivityChange` of `enrollment` have, what is its
+direction, and is `isGovernance()` true?
+
 ## Self-check quiz
 
 1. Which steps of a reconciliation does Linneo do, and which does the application do?
@@ -279,6 +367,8 @@ classification change. Read the failure message and the diff of `inventory.tsv`.
 4. A category becomes stricter in a new taxonomy. Which of `InventoryDiff` and `affectedBy` reports it?
 5. What does `requireCompatible()` refuse?
 6. Why can a back office check processing activities without the entity classes?
+7. Which two catalogs does a column change need, and why two?
+8. When do two records have the same fingerprint?
 
 ## Further reading
 
@@ -287,6 +377,8 @@ classification change. Read the failure message and the diff of `inventory.tsv`.
 - [Reference — Taxonomy diff](../reference/taxonomy-diff.md)
 - [Reference — Protection levels](../reference/protection-levels.md)
 - [Reference — ProcessingChecker](../reference/processing/checker.md)
+- [Reference — The record of processing activities](../reference/processing/record.md)
+- [Reference — OpenMetadata catalog](../reference/openmetadata/catalog.md)
 
 ---
 
@@ -313,11 +405,27 @@ only if the introducing version changed). Deprecating with a first replacement i
 **Exercise 10.4.** The failure message names the test, and the diff of the file shows the changed line, with the
 old and new key, basis, levels or identifiability, which is what the reviewer needs.
 
+**Exercise 10.5.** It loses `DataCategory.user.content.private`, `PersonalData.Personal`, `Confidentiality.Medium`
+and `Integrity.Medium`, and gains `DataCategory.user.health_and_medical`, `PersonalData.SpecialCategory`,
+`Confidentiality.High` and `Integrity.High`; `PII.Sensitive` and `Identifiability.Identified` stay. Not as two
+requests with additions first: the personal data, confidentiality and integrity classifications are mutually
+exclusive, so the server refuses a second level while the first is still on the column.
+
+**Exercise 10.6.** `PERSONAL_DATA` (a new category), `PROTECTION` and `SPECIAL_CATEGORY_CONDITION`, plus
+`OPEN_POINTS` if a warning appears, such as the impact assessment recommendation when no assessment is referenced. The
+direction is `TIGHTENED`: the activity now processes special category data. `isGovernance()` is false, because the
+data changed too; the officer's edit is part of the same change. Note the order of events: until the condition was
+added, the current record could not be built at all, because special category data without an article 9 condition is
+an error.
+
 **Quiz.** 1: Linneo declares, compares and tells the direction; the application reads, writes, locks and audits.
 2: the category's levels belong to the taxonomy, which can change without the code changing; keeping only the
 field's own raises separates the two causes. 3: nothing, it is `SAME`; check `after().isPersonal(taxonomy)` for new
 personal data. 4: `affectedBy`; `InventoryDiff` compares under one taxonomy and sees only code changes. 5: a removed
 term, a weaker or mixed protection, and a deprecated key that resolves to another replacement than before. 6:
-activities can name objects of a stored `DataInventory`, and the checker resolves them with the taxonomy.
+activities can name objects of a stored `DataInventory`, and the checker resolves them with the taxonomy. 7: one of
+the taxonomy applied before, for the tags the column has, and one of the current taxonomy, for the tags it needs;
+tags depend on the field and on the taxonomy. 8: exactly when `RecordDiff` finds no change between them, whatever the
+order of their activities.
 
 </details>

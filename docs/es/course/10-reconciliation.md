@@ -17,6 +17,12 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
+  - src/main/java/io/github/devbpm/linneo/processing/ActivityChange.java
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OpenMetadataCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/datahub/DataHubCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/atlas/AtlasCatalog.java
 -->
 
 # Módulo 10 — Mantener al día los registros guardados
@@ -31,8 +37,10 @@ Al terminar este módulo sabrás:
 - comparar lo guardado con lo que declara el código (`InventoryDiff`), aplicar el resultado y llevar a revisión cada
   cambio que rebaje la protección;
 - guardar la taxonomía que aplicó la aplicación y reaccionar a una nueva versión de Linneo con `TaxonomyDiff`;
+- mantener las etiquetas de un catálogo de datos al día con la copia guardada, columna a columna;
 - comprobar actividades de tratamiento a partir de registros guardados, con el gobierno que mantiene el delegado de
-  protección de datos.
+  protección de datos;
+- saber qué ha cambiado en el registro de actividades de tratamiento desde que el delegado lo aprobó (`RecordDiff`).
 
 Los módulos 3, 4 y 9 son necesarios.
 
@@ -185,6 +193,43 @@ término eliminado, una protección más débil o mixta, o una clave obsoleta qu
 Como las filas guardan claves, una categoría más estricta no necesita ninguna actualización: la siguiente lectura
 resuelve el nivel más estricto. Es la regla 3 en acción.
 
+## Catálogos que siguen a la copia guardada
+
+Un catálogo de datos es una copia más: los módulos 7 y 8 ponen etiquetas en cada columna. Las etiquetas de una columna
+dependen de dos cosas, el campo y la taxonomía, así que una columna necesita etiquetas nuevas cuando cambió su campo
+(`InventoryDiff`) o cuando la taxonomía cambió una categoría que usa (`affectedBy`). Los catálogos aceptan un
+`InventoryField` guardado además de un `FieldClassification`, y lo resuelven con su propia taxonomía, de modo que las
+etiquetas que tenía la columna son las del campo guardado con la taxonomía que aplicaste, y las que necesita son las
+del campo declarado con la actual:
+
+```java
+OpenMetadataCatalog was = OpenMetadataCatalog.of(Taxonomy.fromTsv(applied));  // la del último arranque
+OpenMetadataCatalog now = OpenMetadataCatalog.of(taxonomy);
+for (FieldChange change : diff.changes()) {
+    List<String> before = change.before() == null ? List.of() : was.tagsOf(change.before());
+    List<String> after = change.after() == null ? List.of() : now.tagsOf(change.after());
+    List<String> remove = new ArrayList<>(before);
+    remove.removeAll(after);
+    List<String> add = new ArrayList<>(after);
+    add.removeAll(before);
+    catalogClient.patchColumnTags(change.object(), change.path(), remove, add);   // una petición por columna
+}
+```
+
+Haz lo mismo con cada campo que lista `declared.affectedBy(changes)`, con el mismo campo antes y después. Importan
+tres detalles:
+
+- **Quita y añade en una sola petición.** La mayoría de estas clasificaciones son mutuamente excluyentes en
+  OpenMetadata (`Confidentiality.Low` y `Confidentiality.High` no pueden convivir), así que añadir primero se rechaza.
+- **No toques las demás etiquetas.** Solo se quita la diferencia entre las dos listas de Linneo; las etiquetas que
+  la gente añade a mano no aparecen en ninguna de las dos.
+- **Un campo exento no tiene etiquetas.** Un campo que pasa a exento pierde todas las de Linneo; uno retirado también
+  (`after` es `null`).
+
+`DataHubCatalog.termsOf(InventoryField)` y `AtlasCatalog.classificationsOf(InventoryField)` funcionan igual. Las
+definiciones del catálogo (las clasificaciones y etiquetas de la propia taxonomía) son peticiones idempotentes:
+envíalas de nuevo tras un cambio de taxonomía, antes que las columnas.
+
 ## Actividades de tratamiento desde registros guardados
 
 El módulo 9 declaró las actividades en código. En muchas organizaciones el **alcance** de una actividad lo conocen los
@@ -212,6 +257,37 @@ checked.violations().forEach(v -> {
 
 `objects(...)` nombra objetos de un inventario de datos en lugar de clases, así que la misma comprobación funciona en
 un back office que solo tiene el inventario guardado y nunca ve las clases de las entidades.
+
+## El registro que firmó el delegado
+
+El registro de actividades de tratamiento también es una copia, y la que lleva una firma. El delegado aprueba una
+versión; después, un campo nuevo, una taxonomía más estricta o un cambio del gobierno pueden alterar lo que dice.
+Guarda la `fingerprint()` del registro aprobado: si el registro actual tiene la misma, nada ha cambiado, sea cual sea
+el orden de las actividades. Si no, reconstruye el registro aprobado con lo que guardaste al aprobarlo (el inventario,
+la taxonomía y el gobierno) y compara:
+
+```java
+ProcessingRecord approved = new ProcessingChecker(Taxonomy.fromTsv(approvedTaxonomy), Jurisdiction.SPAIN,
+        approvedInventory).verify(approvedActivities);
+ProcessingRecord current = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, declared).verify(activities);
+if (!current.fingerprint().equals(approval.fingerprint())) {
+    for (ActivityChange change : RecordDiff.between(approved, current).changes()) {
+        officer.review(change);                     // añadida, eliminada, o los aspectos que cambiaron
+    }
+}
+```
+
+Cada `ActivityChange` nombra la actividad y sus `aspects`: `ADDED` o `REMOVED`, el alcance (`PURPOSES`,
+`DATA_SUBJECTS`), los datos (`PERSONAL_DATA`, `PROTECTION`), cada elemento del gobierno (`LEGAL_BASIS`, `RETENTION`,
+`RECIPIENTS`…) y los `OPEN_POINTS`. Dos de sus respuestas orientan la revisión:
+
+- `isGovernance()`: solo cambió el gobierno (con los puntos abiertos que se siguen de él), así que el delegado está
+  viendo su propio cambio;
+- `direction()`: `TIGHTENED` indica que la actividad trata ahora datos que necesitan más protección, justo el caso en
+  que la base jurídica, una condición del artículo 9 o una evaluación de impacto pueden dejar de bastar.
+
+Un cambio del alcance en el código se detecta mejor antes, en la pull request: guarda `record.toMarkdown(title)` bajo
+control de versiones, igual que la última sección guarda el inventario.
 
 ## Rendimiento
 
@@ -263,6 +339,10 @@ void classificationIsReviewed() throws IOException {
   débil era intencionada.
 - **Saltarse la comparación por la huella para siempre.** Las ediciones a mano de columnas que manda el código solo se
   reparan con una comparación completa.
+- **Añadir las etiquetas nuevas de una columna antes de quitar las viejas.** Las clasificaciones mutuamente
+  excluyentes rechazan el segundo nivel; envía las dos cosas en una petición.
+- **Comparar el registro actual con uno reconstruido con los datos actuales.** El diff sale vacío por construcción:
+  reconstruye el registro aprobado con el inventario, la taxonomía y el gobierno guardados al aprobarlo.
 
 ## Ejercicios
 
@@ -280,6 +360,15 @@ deja obsoleta con el sustituto `user.contact.phone_number`. ¿Qué aspectos de `
 **Ejercicio 10.4 — Fichero de referencia.** Añade el test de la última sección al modelo de la universidad y haz un
 cambio de clasificación. Lee el mensaje del fallo y la diferencia de `inventory.tsv`.
 
+**Ejercicio 10.5 — Las etiquetas de una columna.** `students.notes` se guardó con `user.content.private`; el código
+declara ahora `user.health_and_medical`. Con los nombres por defecto de OpenMetadata, ¿qué etiquetas pierde la
+columna y cuáles gana? ¿Podrías enviarlas en dos peticiones, primero las nuevas?
+
+**Ejercicio 10.6 — El registro firmado.** El delegado aprobó el registro. Desde entonces, una desarrolladora añadió
+`@Category(USER_HEALTH_AND_MEDICAL_DISABILITY)` a un campo de un objeto que lee la actividad `enrollment`, y el
+delegado añadió la condición del artículo 9. ¿Qué aspectos tiene el `ActivityChange` de `enrollment`, cuál es su
+dirección y es `isGovernance()` verdadero?
+
 ## Autoevaluación
 
 1. ¿Qué pasos de una reconciliación hace Linneo y cuáles la aplicación?
@@ -288,6 +377,8 @@ cambio de clasificación. Lee el mensaje del fallo y la diferencia de `inventory
 4. Una categoría se vuelve más estricta en una taxonomía nueva. ¿Cuál de `InventoryDiff` y `affectedBy` lo informa?
 5. ¿Qué rechaza `requireCompatible()`?
 6. ¿Por qué un back office puede comprobar actividades de tratamiento sin las clases de las entidades?
+7. ¿Qué dos catálogos necesita el cambio de una columna, y por qué dos?
+8. ¿Cuándo tienen dos registros la misma huella?
 
 ## Para saber más
 
@@ -296,6 +387,8 @@ cambio de clasificación. Lee el mensaje del fallo y la diferencia de `inventory
 - [Referencia — Diferencias entre taxonomías](../reference/taxonomy-diff.md)
 - [Referencia — Niveles de protección](../reference/protection-levels.md)
 - [Referencia — ProcessingChecker](../reference/processing/checker.md)
+- [Referencia — El registro de actividades de tratamiento](../reference/processing/record.md)
+- [Referencia — Catálogo de OpenMetadata](../reference/openmetadata/catalog.md)
 
 ---
 
@@ -322,12 +415,27 @@ cambio; mígralas a `user.contact.phone_number`, o consérvalas y deja que la ta
 **Ejercicio 10.4.** El mensaje del fallo nombra el test, y la diferencia del fichero muestra la línea cambiada, con la
 clave, base, niveles o identificabilidad de antes y de ahora, que es lo que necesita quien revisa.
 
+**Ejercicio 10.5.** Pierde `DataCategory.user.content.private`, `PersonalData.Personal`, `Confidentiality.Medium` e
+`Integrity.Medium`, y gana `DataCategory.user.health_and_medical`, `PersonalData.SpecialCategory`,
+`Confidentiality.High` e `Integrity.High`; `PII.Sensitive` e `Identifiability.Identified` se quedan. No en dos
+peticiones con las nuevas primero: las clasificaciones de datos personales, confidencialidad e integridad son
+mutuamente excluyentes, así que el servidor rechaza un segundo nivel mientras el primero siga en la columna.
+
+**Ejercicio 10.6.** `PERSONAL_DATA` (una categoría nueva), `PROTECTION` y `SPECIAL_CATEGORY_CONDITION`, más
+`OPEN_POINTS` si aparece un aviso, como la recomendación de evaluación de impacto cuando no se cita ninguna. La
+dirección es `TIGHTENED`: la actividad trata ahora datos de categoría especial. `isGovernance()` es falso, porque
+también cambiaron los datos; el cambio del delegado forma parte del mismo cambio. Fíjate en el orden: hasta que se
+añadió la condición, el registro actual ni siquiera podía construirse, porque datos de categoría especial sin condición
+del artículo 9 son un error.
+
 **Autoevaluación.** 1: Linneo declara, compara y dice la dirección; la aplicación lee, escribe, bloquea y audita.
 2: los niveles de la categoría son de la taxonomía, que puede cambiar sin que cambie el código; guardar solo los que
 eleva el campo separa las dos causas. 3: nada, es `SAME`; mira `after().isPersonal(taxonomy)` para detectar datos
 personales nuevos. 4: `affectedBy`; `InventoryDiff` compara con una sola taxonomía y solo ve cambios del código. 5: un
 término eliminado, una protección más débil o mixta, y una clave obsoleta que se resuelve a un sustituto distinto del
 de antes. 6: las actividades pueden nombrar objetos de un `DataInventory` guardado, y el comprobador los resuelve con
-la taxonomía.
+la taxonomía. 7: uno con la taxonomía aplicada antes, para las etiquetas que tiene la columna, y otro con la actual,
+para las que necesita; las etiquetas dependen del campo y de la taxonomía. 8: exactamente cuando `RecordDiff` no
+encuentra ningún cambio entre ellos, sea cual sea el orden de sus actividades.
 
 </details>

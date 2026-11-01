@@ -111,6 +111,10 @@ All notable changes to this project are documented in this file. The format foll
   and `AtlasCatalog.classificationsOf(InventoryField)` give what the `FieldClassification` overloads give for the same
   field, resolved with the catalog's taxonomy, so an application can publish from its inventory and update a column
   with the difference between its earlier and current tags. `InventoryField.identifiability(Taxonomy)`.
+- `ProcessingRecord.fingerprint()` and `RecordDiff.between(before, after)`: the `ActivityChange`s between two records
+  of processing activities (added, removed, and per aspect: scope, personal data, protection with its direction,
+  each governance element, open points), so a record rebuilt from what was approved can be compared with the current
+  one before it is signed again. A record holds each activity key once.
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
   `module-info.java`.
