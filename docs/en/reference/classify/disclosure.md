@@ -6,6 +6,7 @@ nav_order: 11.2
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/classify/DisclosurePolicy.java
+  - src/main/java/io/github/devbpm/linneo/export/postgresql/PostgresAnonymizer.java
 -->
 
 # Disclosure policy
@@ -122,5 +123,23 @@ DisclosurePolicy.Treatment stored = logs.treatment(inventoryField, taxonomy);   
 The application reads the values (through getters, a serializer filter or a logging converter) and applies the
 treatment of each path; Linneo never touches them. What `MASK` looks like is also the application's decision.
 
+## In the database
+
+For the copies of production data that test environments use, `PostgresAnonymizer` turns a policy into database
+masking rules: the `SECURITY LABEL FOR anon` statements of PostgreSQL Anonymizer that mask or null each column. `OMIT`
+becomes `MASKED WITH VALUE NULL`, `MASK` a `dummy_*` function that gives a fake value of the same kind (or `NULL` when
+Linneo does not know a function for the category) and `CLEAR` removes the rule. Linneo writes the statements and the
+application runs them; see [PostgreSQL Anonymizer](../export/postgresql.md).
+
+```java
+import io.github.devbpm.linneo.export.postgresql.PostgresAnonymizer;
+
+ClassClassification student = classifier.classify(Student.class);
+
+List<String> statements = PostgresAnonymizer.of(DisclosurePolicy.forLogs())
+        .labels(student, path -> "students." + path);
+```
+
 See also: [Results](results.md) · [Data inventory](inventory.md) · [Protection levels](../protection-levels.md) ·
-course: [Using the classification](../../course/05-using-the-classification.md)
+[PostgreSQL Anonymizer](../export/postgresql.md) · course:
+[Using the classification](../../course/05-using-the-classification.md)

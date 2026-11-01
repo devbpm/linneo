@@ -230,6 +230,8 @@
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            <!-- java -jar linneo.jar runs the command line (internal, not part of the API). -->
+                            <mainClass>io.github.devbpm.linneo.internal.Cli</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

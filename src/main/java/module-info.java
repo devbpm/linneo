@@ -25,6 +25,12 @@
  *   <li>{@link io.github.devbpm.linneo.catalog.openmetadata} &mdash; the taxonomy as OpenMetadata classifications and tags;</li>
  *   <li>{@link io.github.devbpm.linneo.catalog.datahub} &mdash; the taxonomy as a DataHub business glossary;</li>
  *   <li>{@link io.github.devbpm.linneo.catalog.atlas} &mdash; the taxonomy as Apache Atlas classifications;</li>
+ *   <li>{@link io.github.devbpm.linneo.ens} &mdash; the security category of a system under the Spanish ENS;</li>
+ *   <li>{@link io.github.devbpm.linneo.export.odcs} &mdash; the classification of a data inventory as the schema of
+ *       an Open Data Contract Standard data contract;</li>
+ *   <li>{@link io.github.devbpm.linneo.export.openapi} &mdash; the classification of an API's data as an OpenAPI
+ *       extension;</li>
+ *   <li>{@link io.github.devbpm.linneo.export.postgresql} &mdash; masking rules for PostgreSQL Anonymizer;</li>
  *   <li>{@link io.github.devbpm.linneo.extension.university} &mdash; an optional extension for universities;</li>
  *   <li>{@link io.github.devbpm.linneo.extension.finance} &mdash; an optional extension for finance and
  *       accounting;</li>
@@ -47,6 +53,10 @@ module io.github.devbpm.linneo {
     exports io.github.devbpm.linneo.catalog.openmetadata;
     exports io.github.devbpm.linneo.catalog.datahub;
     exports io.github.devbpm.linneo.catalog.atlas;
+    exports io.github.devbpm.linneo.ens;
+    exports io.github.devbpm.linneo.export.odcs;
+    exports io.github.devbpm.linneo.export.openapi;
+    exports io.github.devbpm.linneo.export.postgresql;
     exports io.github.devbpm.linneo.extension.university;
     exports io.github.devbpm.linneo.extension.finance;
     exports io.github.devbpm.linneo.extension.supplychain;

@@ -137,6 +137,13 @@ All notable changes to this project are documented in this file. The format foll
 - `BreachAssessment`: the severity of a personal data breach with ENISA's methodology (context × ease of
   identification + circumstances), scored from the classification of the affected fields, and whether to notify the
   supervisory authority (GDPR article 33) and tell the data subjects (article 34).
+- `EnsCategorization` (package `ens`): the security category of a system under the Spanish Esquema Nacional de
+  Seguridad, with confidentiality and integrity valued from the classification and the other dimensions declared.
+- Exports to more tools, in the `export` packages: `PostgresAnonymizer` (masking rules for PostgreSQL Anonymizer
+  that follow a `DisclosurePolicy`), `OpenApiExtension` (the `x-linneo` extension of each API property) and
+  `OdcsSchema` (the schema of an Open Data Contract Standard contract from a data inventory).
+- A command line in the JAR (`java -jar linneo.jar`): write a taxonomy, compare taxonomies or inventories with exit
+  codes for build pipelines, and export the taxonomy to the catalogs.
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
   `module-info.java`.

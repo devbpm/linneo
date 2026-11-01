@@ -13,6 +13,11 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/package-info.java
   - src/main/java/io/github/devbpm/linneo/catalog/datahub/package-info.java
   - src/main/java/io/github/devbpm/linneo/catalog/atlas/package-info.java
+  - src/main/java/io/github/devbpm/linneo/ens/package-info.java
+  - src/main/java/io/github/devbpm/linneo/export/odcs/package-info.java
+  - src/main/java/io/github/devbpm/linneo/export/openapi/package-info.java
+  - src/main/java/io/github/devbpm/linneo/export/postgresql/package-info.java
+  - src/main/java/io/github/devbpm/linneo/internal/Cli.java
   - src/main/java/io/github/devbpm/linneo/extension/university/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/finance/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/supplychain/package-info.java
@@ -29,9 +34,13 @@ the fideslang default taxonomy plus Linneo's extensions for non-personal and edu
 carries the protection it requires (legal nature, confidentiality, integrity, secret), which children inherit and may
 only make stricter. Models declare what they hold with annotations, a `Classifier` checks those annotations in tests,
 processing activities tie purposes, data subjects and personal data to their lawful bases and produce the GDPR record
-of processing activities, and three exporters translate the taxonomy for a data catalogue: `OpenMetadataCatalog`
-(OpenMetadata classifications and tags), `DataHubCatalog` (a DataHub business glossary) and `AtlasCatalog` (Apache
-Atlas classifications).
+of processing activities (and screens each activity for the need of an impact assessment), and three exporters
+translate the taxonomy for a data catalogue: `OpenMetadataCatalog` (OpenMetadata classifications and tags),
+`DataHubCatalog` (a DataHub business glossary) and `AtlasCatalog` (Apache Atlas classifications). Three more exporters
+publish the classification of a model's fields to the tools beside the code: an OpenAPI extension, masking rules for
+PostgreSQL Anonymizer and the schema of an Open Data Contract Standard data contract. Optional helpers orient the
+severity of a personal data breach and the security category of a system under the Spanish ENS, and the JAR has a
+command line.
 Applications add their own terms through a `TaxonomyExtension`, and Linneo ships five optional ones (universities,
 finance, supply chain, project operations and human resources) that are applied only on request.
 
@@ -50,6 +59,10 @@ module io.github.devbpm.linneo {
     exports io.github.devbpm.linneo.catalog.openmetadata;
     exports io.github.devbpm.linneo.catalog.datahub;
     exports io.github.devbpm.linneo.catalog.atlas;
+    exports io.github.devbpm.linneo.ens;
+    exports io.github.devbpm.linneo.export.odcs;
+    exports io.github.devbpm.linneo.export.openapi;
+    exports io.github.devbpm.linneo.export.postgresql;
     exports io.github.devbpm.linneo.extension.university;
     exports io.github.devbpm.linneo.extension.finance;
     exports io.github.devbpm.linneo.extension.supplychain;
@@ -65,16 +78,20 @@ module io.github.devbpm.linneo {
 | `io.github.devbpm.linneo` | yes | The taxonomy (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), the differences between two versions of it (`TaxonomyDiff`, `TermChange`), its terms (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), the protection enums and `Protection`, and the key constants (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | yes | The annotations that declare what each field of a model holds: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite`, `@Exempt` |
 | `io.github.devbpm.linneo.classify` | yes | Reading and verifying the annotations of a model: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException`, `ModelClasses`; what may leave the system for a field: `DisclosurePolicy`; and the classification kept as data that an application can store and compare: `DataInventory`, `InventoryField`, `InventoryDiff`, `FieldChange` |
-| `io.github.devbpm.linneo.processing` | yes | Processing activities and the GDPR record of processing activities: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord`, `RecordDiff`, `ActivityChange`, `SubjectRights` |
+| `io.github.devbpm.linneo.processing` | yes | Processing activities and the GDPR record of processing activities: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord`, `RecordDiff`, `ActivityChange`, `SubjectRights`; the screening of the need for an impact assessment, `ImpactScreening`; and the severity of a personal data breach, `BreachAssessment` |
 | `io.github.devbpm.linneo.catalog.openmetadata` | yes | The taxonomy as OpenMetadata classifications and tags: `OpenMetadataCatalog`, `OpenMetadataMapping`, `OmClassification`, `OmTag`. No network calls |
 | `io.github.devbpm.linneo.catalog.datahub` | yes | The taxonomy as a DataHub business glossary: `DataHubCatalog`, `DataHubMapping`, `DhProposal`. No network calls |
 | `io.github.devbpm.linneo.catalog.atlas` | yes | The taxonomy as Apache Atlas classifications: `AtlasCatalog`, `AtlasMapping`, `AtlasClassificationDef`. No network calls |
+| `io.github.devbpm.linneo.ens` | yes | The security category of a system under the Spanish ENS (Real Decreto 311/2022): `EnsCategorization` |
+| `io.github.devbpm.linneo.export.openapi` | yes | The classification of an API's data as the `x-linneo` OpenAPI extension: `OpenApiExtension` |
+| `io.github.devbpm.linneo.export.postgresql` | yes | Masking rules for PostgreSQL Anonymizer that follow a disclosure policy: `PostgresAnonymizer`. It connects to no database |
+| `io.github.devbpm.linneo.export.odcs` | yes | The classification of a data inventory as the `schema` of an Open Data Contract Standard data contract: `OdcsSchema` |
 | `io.github.devbpm.linneo.extension.university` | yes | An optional extension for universities, not applied by default: `UniversityTaxonomy` and its key constants `UniversityCategories`, `UniversityDataUses`, `UniversityDataSubjects` |
 | `io.github.devbpm.linneo.extension.finance` | yes | An optional extension for finance and accounting, not applied by default: `FinanceTaxonomy` and its key constants `FinanceCategories`, `FinanceDataUses`, `FinanceDataSubjects` |
 | `io.github.devbpm.linneo.extension.supplychain` | yes | An optional extension for supply chain management, not applied by default: `SupplyChainTaxonomy` and its key constants `SupplyChainCategories`, `SupplyChainDataUses`, `SupplyChainDataSubjects` |
 | `io.github.devbpm.linneo.extension.projectoperations` | yes | An optional extension for project operations, not applied by default: `ProjectOperationsTaxonomy` and its key constants `ProjectOperationsCategories`, `ProjectOperationsDataUses`, `ProjectOperationsDataSubjects` |
 | `io.github.devbpm.linneo.extension.humanresources` | yes | An optional extension for human resources and payroll, not applied by default: `HumanResourcesTaxonomy` and its key constants `HumanResourcesCategories`, `HumanResourcesDataUses`, `HumanResourcesDataSubjects` |
-| `io.github.devbpm.linneo.internal` | no | `StandardTaxonomy`, which loads the bundled TSV resources, and `Json`, the minimal JSON writer shared by the three exporters. Not part of the public API |
+| `io.github.devbpm.linneo.internal` | no | `StandardTaxonomy`, which loads the bundled TSV resources, `Json`, the minimal JSON writer shared by the exporters, and the [command line](command-line.md) of the JAR. Not part of the public API |
 
 The `uses` clause lets `Taxonomy.load()` and `TaxonomyBuilder.withExtensions()` find extensions with
 `java.util.ServiceLoader`; see [Extending the taxonomy](extending.md). The module has no `provides` clause: the
@@ -136,7 +153,8 @@ module com.example.app {
 - [Results](classify/results.md) — `ClassClassification` (with `Exemption`), `FieldClassification`.
 - [Violations](classify/violations.md) — `Violation` and every `Code`.
 - [Disclosure policy](classify/disclosure.md) — `DisclosurePolicy` and its `Treatment`: whether the value of a field
-  is shown, masked or left out in a log, an export or an API.
+  is shown, masked or left out in a log, an export or an API; [`PostgresAnonymizer`](export/postgresql.md) turns it
+  into database masking rules.
 - [Data inventory](classify/inventory.md) — `DataInventory`, `InventoryField`, `InventoryDiff`, `FieldChange`: the
   classification as data, its text form and fingerprints, and the comparison of two inventories.
 
@@ -153,6 +171,15 @@ module com.example.app {
   `ActivityChange`.
 - [SubjectRights](processing/subject-rights.md) — `SubjectRights`: the activities that process the data of a category
   of data subjects and the rights their lawful basis gives them.
+- [ImpactScreening](processing/impact-screening.md) — `ImpactScreening`, `Criterion`, `Factor`, `Outcome`: whether an
+  activity needs a data protection impact assessment, from the criteria of the EDPB guidelines and article 35.3.
+- [BreachAssessment](processing/breach-assessment.md) — `BreachAssessment`: the severity of a personal data breach under
+  ENISA's methodology, and what the GDPR asks of the controller.
+
+**Spanish ENS** (`io.github.devbpm.linneo.ens`)
+
+- [ENS categorization](ens.md) — `EnsCategorization`: the security category of a system from the classification of its
+  data and the dimensions its owner declares.
 
 **OpenMetadata** (`io.github.devbpm.linneo.catalog.openmetadata`)
 
@@ -170,6 +197,20 @@ module com.example.app {
 - [Catalog](atlas/catalog.md) — `AtlasCatalog`, `AtlasClassificationDef`, classification types, typedefs and
   classification bodies.
 - [Mapping](atlas/mapping.md) — `AtlasMapping`.
+
+**Export** (`io.github.devbpm.linneo.export.openapi`, `.postgresql`, `.odcs`)
+
+- [Export overview](export/README.md) — what the three exporters have in common.
+- [OpenAPI extension](export/openapi.md) — `OpenApiExtension`: the `x-linneo` extension of each property of an API
+  description.
+- [PostgreSQL Anonymizer](export/postgresql.md) — `PostgresAnonymizer`: the `SECURITY LABEL` statements that mask or
+  null each column, following a disclosure policy.
+- [Open Data Contract Standard](export/odcs.md) — `OdcsSchema`: the `schema` of a data contract from a data inventory.
+
+**Command line**
+
+- [Command line](command-line.md) — `java -jar linneo.jar`: write the taxonomy, compare taxonomies and inventories and
+  write the catalog requests, with exit codes for a pipeline.
 
 ## Data catalogues compared
 

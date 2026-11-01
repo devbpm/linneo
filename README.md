@@ -69,6 +69,7 @@ the build fail when the model and its classification drift apart.
   is weakened. `ModelClasses` finds the classes of the model package, so a class nobody listed is verified too.
 - **Safe outputs.** `DisclosurePolicy` tells, field by field, whether a value may be shown, must be masked or left
   out of a log, an export or a test copy; a field that needs more protection never gets a laxer treatment.
+  `PostgresAnonymizer` turns a policy into PostgreSQL Anonymizer masking rules for the copies test environments use.
 - **GDPR record of processing activities.** Declare each processing activity (purposes, data subjects, the
   annotated entities, lawful basis, article 9.2 and 10 conditions, retention, transfers) and get it checked against
   the classification: special category data without an article 9.2 condition fails the build. The article 30 record
@@ -77,6 +78,8 @@ the build fail when the model and its classification drift apart.
 - **Impact assessments and breaches.** Each activity is screened against the EDPB criteria for a data protection
   impact assessment (`ImpactScreening`): a mandatory case without one fails the build. `BreachAssessment` scores a
   breach of classified fields with ENISA's methodology and says whether to notify the authority and the people.
+- **Spanish public sector.** `EnsCategorization` values confidentiality and integrity for the Esquema Nacional de
+  Seguridad from the classification.
 - **Stored copies kept in step.** The classification of the whole model as data (`DataInventory`), compared with
   what an application stored (`InventoryDiff`), with fingerprints to skip unchanged starts; the taxonomy as text
   (`Taxonomy.toTsv()`) and its changes between versions (`TaxonomyDiff`), so applications can migrate keys and
@@ -84,7 +87,10 @@ the build fail when the model and its classification drift apart.
   processing activities can be compared (`RecordDiff`).
 - **Data catalog ready.** The taxonomy, and the tags of each column, for [OpenMetadata](https://open-metadata.org/)
   (classifications and nested tags), [DataHub](https://datahub.com/) (a business glossary) and
-  [Apache Atlas](https://atlas.apache.org/) (classification types, usable by Apache Ranger tag policies).
+  [Apache Atlas](https://atlas.apache.org/) (classification types, usable by Apache Ranger tag policies), plus the
+  `x-linneo` extension of an OpenAPI description and the schema of an Open Data Contract Standard contract.
+- **A command line.** `java -jar linneo.jar` writes a taxonomy, compares taxonomies or stored inventories with exit
+  codes a build pipeline can act on, and exports the taxonomy to the catalogs, with no Java to write.
 - **Extensible.** Add your own terms or tighten existing ones through a `TaxonomyExtension`, loaded with
   `ServiceLoader`.
 

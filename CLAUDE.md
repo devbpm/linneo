@@ -30,7 +30,7 @@ On Windows use `mvnw.cmd`. The build is strict, so "it compiles in the IDE" is n
 ## Architecture
 
 Packages are organised by role and audience, not by taxonomy dimension (categories, uses and subjects share the
-same `Term` model). Eight exported packages plus one internal one (not exported in `module-info.java`):
+same `Term` model). Sixteen exported packages plus one internal one (not exported in `module-info.java`):
 
 - **`io.github.devbpm.linneo`** — the taxonomy model, protection enums, key constants, `TaxonomyBuilder`, the
   drafts and `TaxonomyExtension`. `Protection` is the single partial order for comparing protection (`covers`,
@@ -90,6 +90,11 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   (WP248 criteria from the activity plus `Governance.riskFactors`) drives the checker's impact assessment error and
   warning; `BreachAssessment` follows ENISA's 2013 severity methodology. Legal rules are fixed and cited, not
   configurable: what the code cannot see is declared, never guessed.
+- **`ens`** — `EnsCategorization`, the Spanish ENS category of a system: confidentiality and integrity from the
+  classification (only raised by declarations), authenticity, traceability and availability declared.
+- **`export.postgresql`**, **`export.openapi`**, **`export.odcs`** — `PostgresAnonymizer`, `OpenApiExtension` and
+  `OdcsSchema` write text for other tools (masking rules, an API extension, a data contract schema), like the
+  catalogs, and make no connection. `internal.Cli` is the JAR's Main-Class (`java -jar linneo.jar`).
 - **`extension.university`** — `UniversityTaxonomy`, an optional `TaxonomyExtension` for higher education with its
   key constants (`UniversityCategories`, `UniversityDataUses`, `UniversityDataSubjects`). Deliberately **not**
   declared as a `provides` service in `module-info.java`, so `Taxonomy.load()` never applies it; users call

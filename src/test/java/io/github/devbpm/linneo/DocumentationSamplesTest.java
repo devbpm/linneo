@@ -90,7 +90,8 @@ class DocumentationSamplesTest {
     /** What every sample may use without importing it, as the pages assume. */
     private static final String IMPORTS = Stream.of(
                     API, API + ".annotation", API + ".classify", API + ".processing", API + ".catalog.openmetadata",
-                    API + ".catalog.datahub", API + ".catalog.atlas", API + ".extension.university",
+                    API + ".catalog.datahub", API + ".catalog.atlas", API + ".ens", API + ".export.odcs",
+                    API + ".export.openapi", API + ".export.postgresql", API + ".extension.university",
                     API + ".extension.finance", API + ".extension.supplychain", API + ".extension.projectoperations",
                     API + ".extension.humanresources", "java.util", "java.util.function", "java.util.stream",
                     "java.time", "java.math", "java.io", "java.nio.file", "org.junit.jupiter.api")
