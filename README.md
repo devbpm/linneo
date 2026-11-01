@@ -66,7 +66,9 @@ the build fail when the model and its classification drift apart.
   offence data are not comparable), so a derived value, a stored composite or a stricter classification set at run
   time is never allowed to protect less than its source.
 - **A classifier for your tests.** Fails the build when a field has no classification, a key is unknown or a level
-  is weakened.
+  is weakened. `ModelClasses` finds the classes of the model package, so a class nobody listed is verified too.
+- **Safe outputs.** `DisclosurePolicy` tells, field by field, whether a value may be shown, must be masked or left
+  out of a log, an export or a test copy; a field that needs more protection never gets a laxer treatment.
 - **GDPR record of processing activities.** Declare each processing activity (purposes, data subjects, the
   annotated entities, lawful basis, article 9.2 and 10 conditions, retention, transfers) and get it checked against
   the classification: special category data without an article 9.2 condition fails the build. The article 30 record

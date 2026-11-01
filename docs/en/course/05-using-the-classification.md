@@ -8,6 +8,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/classify/ClassClassification.java
   - src/main/java/io/github/devbpm/linneo/classify/FieldClassification.java
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/DisclosurePolicy.java
   - src/main/java/io/github/devbpm/linneo/processing/package-info.java
 -->
 
@@ -392,6 +393,7 @@ field that is **not** in the map?
 - [Reference — Results](../reference/classify/results.md): `ClassClassification` and `FieldClassification`
 - [Reference — Classifier](../reference/classify/classifier.md)
 - [Reference — Data inventory](../reference/classify/inventory.md): the classification as data, to store and compare
+- [Reference — Disclosure policy](../reference/classify/disclosure.md): shown, masked or left out per channel
 - [Reference — Terms](../reference/terms.md): data uses and data subjects
 
 ---
@@ -451,6 +453,23 @@ Map<String, Treatment> treatments(Class<?> type) {
 
 A field that is not in the map must be treated as `MASK` (or `OMIT`): it may be a field in error or one added
 after the map was computed. Never default to `CLEAR`.
+
+Linneo has this decision as a class, `DisclosurePolicy`, with a guarantee that the expression above lacks. A policy is
+a set of thresholds in the partial order of `Protection`: a field whose protection covers a threshold gets at least
+that treatment, the strictest wins, and a secret is always `OMIT`. So **more protection never gets a laxer
+treatment**. The expression above shows a non-personal field of `HIGH` confidentiality in clear and masks special
+category data like any other personal data; nothing in it would notice.
+
+```java
+DisclosurePolicy logs = DisclosurePolicy.forLogs();
+Map<String, DisclosurePolicy.Treatment> treatments = logs.treatments(classifier.classify(Student.class));
+```
+
+`forLogs()` masks personal data and data of `HIGH` confidentiality, and omits special category data, criminal offence
+data and secrets, so the disability degree of `Student` is `OMIT`, not `MASK`. `treatments` throws for a class with
+errors instead of leaving its fields out, and lists the exempted fields as `CLEAR`. To write your own policy, add
+thresholds with `DisclosurePolicy.builder().mask(...).omit(...)`. The application still does the masking: Linneo
+never reads values. The [reference page](../reference/classify/disclosure.md) has the details.
 
 **Exercise 5.4**
 

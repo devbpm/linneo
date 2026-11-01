@@ -67,6 +67,9 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   `DataInventory.affectedBy(TaxonomyDiff)` gives the fields a taxonomy change reaches; the catalogs' `InventoryField`
   overloads publish a stored field exactly as its `FieldClassification` (`InventoryPublishingTest`). Linneo
   compares and never persists: reading, writing, locking and auditing a stored copy belong to the application.
+  `ModelClasses` lists the classes of a model package from the anchor class's location (fails rather than skips);
+  `DisclosurePolicy` maps a field's `Protection` to CLEAR/MASK/OMIT through thresholds, monotone by construction
+  (`DisclosurePolicyTest` checks it over every protection), secrets always OMIT.
   `tools/bench/InventoryBench.java` measures it on 800 entities. `classify` returns a
   `ClassClassification`; `verify` throws `ClassificationException` listing all errors. Design is fail-closed:
   unclassified fields, unknown keys, weakened levels, personal categories used as class defaults and conflicting

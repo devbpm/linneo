@@ -8,6 +8,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/classify/ClassClassification.java
   - src/main/java/io/github/devbpm/linneo/classify/FieldClassification.java
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/DisclosurePolicy.java
   - src/main/java/io/github/devbpm/linneo/processing/package-info.java
 -->
 
@@ -402,6 +403,7 @@ código de logging con un campo que **no** está en el mapa?
 - [Referencia — Clasificador](../reference/classify/classifier.md)
 - [Referencia — Inventario de datos](../reference/classify/inventory.md): la clasificación como datos, para guardar y
   comparar
+- [Referencia — Política de divulgación](../reference/classify/disclosure.md): mostrar, enmascarar u omitir por canal
 - [Referencia — Términos](../reference/terms.md): usos de datos e interesados
 
 ---
@@ -462,6 +464,24 @@ Map<String, Treatment> treatments(Class<?> type) {
 
 Un campo que no está en el mapa debe tratarse como `MASK` (u `OMIT`): puede ser un campo con errores o uno añadido
 después de calcular el mapa. Nunca debe tratarse por defecto como `CLEAR`.
+
+Linneo ofrece esta decisión como una clase, `DisclosurePolicy`, con una garantía de la que carece la expresión
+anterior. Una política es un conjunto de umbrales en el orden parcial de `Protection`: un campo cuya protección cubre
+un umbral recibe al menos ese tratamiento, gana el más estricto y un secreto es siempre `OMIT`. Así, **más protección
+nunca recibe un tratamiento más laxo**. La expresión anterior muestra en claro un campo no personal de confidencialidad
+`HIGH` y enmascara los datos de categoría especial como cualquier otro dato personal; nada en ella lo advertiría.
+
+```java
+DisclosurePolicy logs = DisclosurePolicy.forLogs();
+Map<String, DisclosurePolicy.Treatment> treatments = logs.treatments(classifier.classify(Student.class));
+```
+
+`forLogs()` enmascara los datos personales y los de confidencialidad `HIGH`, y omite los de categoría especial, los de
+condenas e infracciones penales y los secretos, así que el grado de discapacidad de `Student` es `OMIT` y no `MASK`.
+`treatments` lanza una excepción en una clase con errores en lugar de dejar fuera sus campos, y lista los campos
+exentos como `CLEAR`. Para escribir tu propia política, añade umbrales con
+`DisclosurePolicy.builder().mask(...).omit(...)`. La aplicación sigue haciendo el enmascaramiento: Linneo nunca lee
+valores. La [página de referencia](../reference/classify/disclosure.md) tiene los detalles.
 
 **Ejercicio 5.4**
 

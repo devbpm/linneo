@@ -119,6 +119,9 @@ All notable changes to this project are documented in this file. The format foll
   from where the anchor class was loaded (directory or JAR, class path or module path), so a test verifies every
   class of the model, including the one nobody listed. A location or class that cannot be read is an error, never
   skipped.
+- `DisclosurePolicy`: whether the values of a field may be shown, must be masked or left out (`Treatment`) in a
+  channel such as logs, exports or test copies, from thresholds on the `Protection` order, so a field that needs more
+  protection never gets a laxer treatment and secrets are always left out; `forLogs()` as a starting point.
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
   `module-info.java`.
