@@ -22,8 +22,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Excludes a field that holds no data of the model from classification: a value computed from other fields, a
- * cache or a technical handle. Static, synthetic and {@code transient} fields are always excluded.
+ * Excludes a field that holds no data of the model from classification: a cache, a technical handle or state that
+ * a framework keeps. Static, synthetic and {@code transient} fields are always excluded.
+ * <p>
+ * A value computed from other fields is data, not an exemption: the age computed from a date of birth is personal
+ * data. Classify it with {@link DerivedFrom @DerivedFrom} or {@link Category @Category}. Exempted fields are listed by
+ * {@link io.github.devbpm.linneo.classify.ClassClassification#exempted()}, so a review can see each exemption and
+ * notice when a field that used to be classified becomes exempt.
  *
  * @since 0.1.0
  */

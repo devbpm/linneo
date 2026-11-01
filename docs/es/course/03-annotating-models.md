@@ -8,6 +8,8 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/annotation/Category.java
   - src/main/java/io/github/devbpm/linneo/annotation/DefaultCategory.java
   - src/main/java/io/github/devbpm/linneo/annotation/CategoryByRow.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DerivedFrom.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Composite.java
   - src/main/java/io/github/devbpm/linneo/annotation/Exempt.java
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
   - src/main/resources/io/github/devbpm/linneo/internal/linneo-category-policy.tsv
@@ -23,20 +25,23 @@ Al terminar este módulo serás capaz de:
 - declarar la identificabilidad de un valor almacenado;
 - indicar una sola vez, con un motivo, que una clase no contiene datos personales, mediante `@DefaultCategory`;
 - clasificar un campo cuya categoría cambia de una fila a otra con `@CategoryByRow`;
-- excluir con `@Exempt` los campos que no contienen datos, y saber qué campos se excluyen automáticamente;
+- clasificar un valor calculado a partir de otros campos con `@DerivedFrom`, y un objeto de valor embebido con `@Composite`;
+- excluir con `@Exempt` los campos técnicos, y saber qué campos se excluyen automáticamente;
 - anotar correctamente records y jerarquías de clases;
 - elegir la clave adecuada para un campo y justificarla.
 
-## Las cuatro anotaciones de un vistazo
+## Las seis anotaciones de un vistazo
 
 | Anotación | Dónde | Dice |
 |---|---|---|
 | `@Category(clave)` | campo, componente de record | «este campo contiene datos de esta categoría» |
 | `@DefaultCategory(value = clave, reason = "...")` | clase | «todos los campos de esta clase sin anotación propia contienen estos datos **no personales**, porque…» |
 | `@CategoryByRow(declaredBy = "...", ceiling = clave)` | campo, componente de record | «la categoría depende de cada fila; esto es lo que la decide y esto es lo más protegida que puede ser» |
-| `@Exempt("motivo")` | campo, componente de record | «este campo no contiene datos del modelo, porque…» |
+| `@DerivedFrom("fuente")` | campo, componente de record | «este valor se calcula a partir de otros campos, así que es esos datos: toma su clasificación» |
+| `@Composite` | clase | «las instancias de esta clase forman parte de otros registros: los campos que la contienen se clasifican por sus propios campos» |
+| `@Exempt("motivo")` | campo, componente de record | «este es un campo técnico (caché, manejador, estado de un framework) que no contiene datos del modelo, porque…» |
 
-Las cuatro se leen por reflexión en tiempo de ejecución (`RetentionPolicy.RUNTIME`). Las lee el clasificador
+Las seis se leen por reflexión en tiempo de ejecución (`RetentionPolicy.RUNTIME`). Las lee el clasificador
 (módulo 4), que nunca lee los valores de los campos.
 
 ## `@Category`: un campo, una categoría
@@ -214,13 +219,16 @@ propia `@Category`, y los campos propios de `Student` **no** quedan cubiertos po
 Una subclase no debe reutilizar el nombre de un campo de la superclase: el clasificador identifica un campo por su
 nombre, así que el campo que oculta al otro se informa como un error `DUPLICATE_FIELD`. Renombra uno de los dos.
 
-La precedencia completa que aplica el clasificador a cada campo:
+La precedencia completa que aplica el clasificador a cada campo (`@DerivedFrom` y `@Composite` se presentan
+más adelante):
 
 1. `@Exempt` → el campo se omite.
 2. `@Category`, o el techo de `@CategoryByRow`.
-3. la `@DefaultCategory` de la clase que declara el campo.
-4. la `@DefaultCategory` de la clase que se clasifica.
-5. si no, `UNCLASSIFIED_FIELD`.
+3. `@DerivedFrom` sin categoría → la clasificación de su fuente.
+4. un campo de tipo `@Composite` → los campos del compuesto.
+5. la `@DefaultCategory` de la clase que declara el campo.
+6. la `@DefaultCategory` de la clase que se clasifica.
+7. si no, `UNCLASSIFIED_FIELD`.
 
 ## `@CategoryByRow`: cuando cada fila es distinta
 
@@ -254,15 +262,117 @@ OpenMetadata— se usa el techo. Por tanto, el campo recibe la protección del t
 `declaredBy` no puede estar vacío (`MISSING_REASON`). `@CategoryByRow` y `@Category` en el mismo campo es un error
 `CONFLICTING_ANNOTATIONS`.
 
-## `@Exempt`: campos que no contienen datos
+## `@DerivedFrom`: valores calculados a partir de otros campos
 
-Algunos campos no contienen datos del modelo: un valor calculado a partir de otros campos, una caché, un manejador
-técnico, una relación con otra entidad. `@Exempt` los excluye, con un motivo:
+Algunos campos no se capturan sino que se calculan: una edad a partir de una fecha de nacimiento, un nombre completo
+a partir de un nombre y unos apellidos. Un valor calculado a partir de datos es esos datos, o los revela: la edad de
+un estudiante es un dato personal. No debe eximirse. `@DerivedFrom` nombra los campos a partir de los que se calcula,
+y el clasificador mantiene coherentes ambos:
 
 ```java
-@Exempt("calculado a partir de firstName y lastName, nunca se guarda")
-private String displayName;
+public class StudentCard {                    // una tarjeta impresa para el estudiante; aún no forma parte del modelo
+
+    @Category(USER_NAME_FIRST)
+    private String firstName;
+
+    @Category(USER_NAME_LAST)
+    private String lastName;
+
+    @Category(USER_DEMOGRAPHIC_DATE_OF_BIRTH)
+    private LocalDate dateOfBirth;
+
+    @DerivedFrom("dateOfBirth")               // toma la clasificación de su fuente
+    private int age;
+
+    @Category(USER_NAME)                      // declara la suya, que debe proteger al menos tanto
+    @DerivedFrom({"firstName", "lastName"})
+    private String fullName;
+}
 ```
+
+- **Sin `@Category`** el campo toma la clasificación de su fuente: `age` es `user.demographic.date_of_birth`,
+  identificado, dato personal. Su `basis()` es `DERIVED` y `derivedFrom()` lista `["dateOfBirth"]` (módulo 5).
+- **Varias fuentes deben coincidir.** `firstName` y `lastName` tienen categorías distintas, así que `fullName` tiene que
+  declarar la suya con `@Category`, aquí `user.name`. Sin ella el campo es un error `AMBIGUOUS_DERIVATION`.
+- **Con `@Category`, el campo debe proteger al menos tanto como cada fuente.** `@Category(SYSTEM_OPERATIONS)` en `age`
+  es un error `WEAKER_THAN_SOURCE`: calcular un valor a partir de datos personales no lo hace menos personal.
+- **La única forma explícita de proteger menos** es declarar el valor anonimizado o agregado, algo que un revisor puede
+  ver. Una fila de estadísticas puede derivar su promedio del campo de otra clase con `type`:
+
+  ```java
+  public record CourseSummary(
+          @Category(REFERENCE_PUBLIC) String courseCode,
+          @Category(value = USER_EDUCATION_GRADE, identifiability = Identifiability.AGGREGATED)
+          @DerivedFrom(type = Grade.class, value = "mark") BigDecimal averageMark) {
+  }
+  ```
+
+  Aquí `averageMark` no es un dato personal (módulo 1), y si alguna vez se da otra categoría a `Grade.mark`, el
+  resumen se comprueba contra ella. `Grade` es la clase del ejercicio 3.1.
+- **Una fuente debe ser un campo clasificado** de la clase (o de `type`): una ruta que no existe, un campo `@Exempt` o
+  un campo con un error es `UNKNOWN_SOURCE`. Puede ser un campo heredado, una parte de un compuesto (`"home.city"`) u
+  otro campo derivado, siempre que ninguna derivación dependa de sí misma (`CYCLE`).
+- `@Exempt` y `@CategoryByRow` no pueden combinarse con `@DerivedFrom` (`CONFLICTING_ANNOTATIONS`).
+
+## `@Composite`: clases que forman parte de otros registros
+
+Los modelos JPA embeben objetos de valor pequeños, como una dirección, en varias entidades (`@Embeddable`). El
+clasificador lee los campos de la clase que recibe; para que un campo `Address` se clasifique por lo que contiene la
+dirección, marca la clase de valor `@Composite`:
+
+```java
+@Composite                                         // con JPA, junto a @Embeddable
+public class Address {
+
+    @Category(USER_CONTACT_ADDRESS_STREET)
+    private String street;
+
+    @Category(USER_CONTACT_ADDRESS_CITY)
+    private String city;
+
+    @Category(USER_CONTACT_ADDRESS_POSTAL_CODE)
+    private String postalCode;
+}
+
+public class ScholarshipApplication {              // aún no forma parte del modelo
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long id;
+
+    private Address home;                          // home.street, home.city, home.postalCode
+
+    private List<Address> previous;                // previous.street, previous.city, previous.postalCode
+
+    @Category(USER_CONTACT_ADDRESS)                // guardada como un solo valor, por ejemplo como JSON
+    private Address billing;
+}
+```
+
+Un campo sin anotar cuyo tipo es un compuesto (o un array, una colección o un `Optional` de él) se clasifica por los
+campos del compuesto, con la ruta `campo.parte`: `home.street`, `previous.city`. Un `Map` nunca se recorre.
+
+- El compuesto se resuelve con **sus propias** anotaciones y su `@DefaultCategory`, nunca con los de la clase
+  contenedora: un valor por defecto en `ScholarshipApplication` no llega a `Address`.
+- **Un compuesto guardado como un solo valor** (una columna JSON, por ejemplo) declara su categoría en el campo, como
+  hace `billing`. Esa categoría debe proteger al menos tanto como los campos del compuesto: `USER_CONTACT_ADDRESS`
+  basta para la dirección, pero `@Category(SYSTEM_OPERATIONS)` sería un error `WEAKER_THAN_PARTS`.
+- Un compuesto que se contiene a sí mismo (un `Node` con una lista de `Node`) no se puede expandir: el campo que
+  cierra el bucle es un error `CYCLE`; clasifica ese campo como un solo valor.
+- **Olvidar `@Composite` es seguro.** Sin él, `home` es un campo ordinario sin categoría, y el clasificador informa
+  `UNCLASSIFIED_FIELD`. No hace falta pasar las clases embebibles a `verify` por separado.
+
+## `@Exempt`: campos técnicos
+
+Algunos campos no contienen datos del modelo: una caché, un manejador técnico, un estado que mantiene un framework,
+una relación con otra entidad. `@Exempt` los excluye, con un motivo:
+
+```java
+@Exempt("caché del menú renderizado, se reconstruye bajo demanda")
+private String renderedMenu;
+```
+
+Un valor calculado a partir de otros campos **no** es un campo así: es un dato, y usa `@DerivedFrom` o `@Category`. Si
+te encuentras escribiendo «calculado a partir de…» como motivo, usa `@DerivedFrom`.
 
 ```java
 public class Document extends AuditedEntity {
@@ -290,8 +400,8 @@ compilador) y los que llevan el modificador Java **`transient`**.
 > **Nota sobre JPA.** `@jakarta.persistence.Transient` *no* es el modificador Java `transient`. Un campo anotado solo
 > con `@Transient` de JPA sigue siendo visible para el clasificador y necesita `@Exempt` (o una categoría).
 
-`@Exempt` no puede combinarse con `@Category` ni con `@CategoryByRow` (`CONFLICTING_ANNOTATIONS`), y su motivo no
-puede estar vacío (`MISSING_REASON`). La clasificación conserva los campos exentos y sus motivos
+`@Exempt` no puede combinarse con `@Category`, `@CategoryByRow` ni `@DerivedFrom` (`CONFLICTING_ANNOTATIONS`), y su
+motivo no puede estar vacío (`MISSING_REASON`). La clasificación conserva los campos exentos y sus motivos
 (`ClassClassification.exempted()`, módulo 5), de modo que un revisor puede ver qué se dejó fuera.
 
 ## Records
@@ -356,9 +466,6 @@ public class Student extends AuditedEntity {
 
     @Category(value = USER_CONTENT_PRIVATE, confidentiality = Confidentiality.HIGH)
     private String counsellingNotes;
-
-    @Exempt("calculado a partir de firstName y lastName, nunca se guarda")
-    private String displayName;
 }
 ```
 
@@ -374,11 +481,13 @@ public class Student extends AuditedEntity {
   el nivel estándar no es adecuado para tu organización, súbelo para todos con una extensión (módulo 6); bajarlo no es
   posible.
 - **Usar `identifiability` con claves no personales** (`IDENTIFIABILITY_NOT_APPLICABLE`).
-- **Eximir campos que sí contienen datos** para que pase la compilación. `@Exempt` es para campos que *no* contienen
-  datos del modelo; el motivo se revisa.
-- **Dejar sin anotar los campos `@Embedded` de JPA.** El clasificador no entra en los objetos embebidos: marca el
-  campo embebido con `@Exempt("embebido: Address se clasifica por separado")` y clasifica la propia clase embebible
-  (el módulo 4 muestra cómo incluir los embebibles).
+- **Eximir campos que sí contienen datos** para que pase la compilación. `@Exempt` es para campos técnicos que *no*
+  contienen datos del modelo; el motivo se revisa.
+- **Eximir un valor calculado** («calculado a partir de firstName y lastName»). Es un dato: usa `@DerivedFrom`, o
+  `@Category` si conoces su categoría.
+- **Dejar una clase embebida sin `@Composite`.** Una dirección `@Embedded` de JPA es entonces un campo sin categoría
+  (`UNCLASSIFIED_FIELD`). Marca la clase embebible `@Composite` y los campos que la contienen se clasifican por sus
+  campos; no hagas `@Exempt` del campo embebido.
 
 ## Ejercicios
 
@@ -436,15 +545,35 @@ public class ContactPreferences {
     private String name;
 
     @jakarta.persistence.Transient
-    private String cachedGreeting;
+    private String renderCache;
 }
 ```
 
-**Ejercicio 3.4 — ¿Por fila o no?** Para cada campo, elige entre `@Category`, `@CategoryByRow` y `@Exempt`, e indica
-la clave o el motivo: (a) el cuerpo de un mensaje que los estudiantes envían a secretaría; (b) un campo de fichero en
-una entidad genérica `Form` que guarda un formulario de beca o un certificado de discapacidad; (c) un `Map` usado
-como caché en memoria, con el modificador Java `transient`; (d) el número de adjuntos de un documento, calculado en
-el getter a partir de la lista.
+**Ejercicio 3.4 — ¿Por fila o no?** Para cada campo, elige entre `@Category`, `@CategoryByRow`, `@DerivedFrom` y
+`@Exempt`, e indica la clave, la fuente o el motivo: (a) el cuerpo de un mensaje que los estudiantes envían a
+secretaría; (b) un campo de fichero en una entidad genérica `Form` que guarda un formulario de beca o un certificado de
+discapacidad; (c) un `Map` usado como caché en memoria, con el modificador Java `transient`; (d) la edad de un
+estudiante, guardada en un campo `age` y calculada a partir de `dateOfBirth`.
+
+**Ejercicio 3.5 — Calculado y embebido.** `Address` es la clase `@Composite` de este módulo. Anota `Contact` e indica
+qué rutas informa el clasificador para `office`:
+
+```java
+public class Contact {
+    @Category(USER_NAME)
+    private String name;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    private Address office;
+    private String officeCity;       // la ciudad de la oficina, guardada para las búsquedas
+    private String initials;         // calculado a partir de name
+    private String emailDomain;      // calculado a partir de email
+}
+```
+
+¿Podría declararse `emailDomain` como `@Category(SYSTEM_OPERATIONS)` porque «un dominio no es personal»?
 
 ## Cuestionario de autoevaluación
 
@@ -454,6 +583,9 @@ el getter a partir de la lista.
 4. ¿Qué protección recibe un campo `@CategoryByRow`?
 5. ¿Qué campos se excluyen sin necesidad de anotación?
 6. Una superclase tiene `@DefaultCategory`. ¿Cubre los campos declarados en sus subclases?
+7. Un campo guarda la edad calculada a partir de una fecha de nacimiento. ¿Qué anotación lleva y qué clasificación
+   recibe?
+8. ¿Qué informa el clasificador para un campo de tipo `Address` cuando `Address` no está marcada `@Composite`?
 
 ## Para saber más
 
@@ -461,6 +593,8 @@ el getter a partir de la lista.
   [`@Category`](../reference/annotations/category.md),
   [`@DefaultCategory`](../reference/annotations/default-category.md),
   [`@CategoryByRow`](../reference/annotations/category-by-row.md),
+  [`@DerivedFrom`](../reference/annotations/derived-from.md),
+  [`@Composite`](../reference/annotations/composite.md),
   [`@Exempt`](../reference/annotations/exempt.md)
 - [Referencia — Clasificador](../reference/classify/classifier.md): orden de resolución y exclusiones
 
@@ -557,16 +691,45 @@ política estándar marca `user.authorization.password` como secreta).
 - `email`: no compila; necesita `value = USER_CONTACT_EMAIL`.
 - `theme`: identificabilidad en una clave no personal (`IDENTIFIABILITY_NOT_APPLICABLE`); quita `identifiability`.
 - `name`: dos valores de integridad (`AMBIGUOUS_VALUE`); deja uno, p. ej. `integrity = Integrity.HIGH`.
-- `cachedGreeting`: el `@Transient` de JPA no lo excluye y, sin valor por defecto, es `UNCLASSIFIED_FIELD`. Añade
-  `@Exempt("saludo calculado, nunca se guarda")` o hazlo `transient` de Java.
+- `renderCache`: el `@Transient` de JPA no lo excluye y, sin valor por defecto, es `UNCLASSIFIED_FIELD`. Añade
+  `@Exempt("caché de renderizado, se reconstruye bajo demanda")` o hazlo `transient` de Java.
 
 **Ejercicio 3.4**
 
 (a) `@Category(USER_CONTENT_PRIVATE)` (sube la confidencialidad si los mensajes suelen contener detalles sensibles).
 (b) `@CategoryByRow(declaredBy = "el tipo de formulario", ceiling = USER_HEALTH_AND_MEDICAL)`: un certificado de
-discapacidad es un dato de salud. (c) Nada: los campos `transient` de Java se excluyen automáticamente. (d) Si es un
-campo, `@Exempt("recuento derivado de attachments")`; si solo es un getter sin campo, no hay nada que clasificar: el
-clasificador lee campos, no métodos.
+discapacidad es un dato de salud. (c) Nada: los campos `transient` de Java se excluyen automáticamente. (d)
+`@DerivedFrom("dateOfBirth")`: la edad es un dato personal igual que la fecha de nacimiento, así que toma
+`user.demographic.date_of_birth`; con `@Exempt` quedaría oculta a toda revisión. Si solo es un getter sin campo, no hay
+nada que clasificar: el clasificador lee campos, no métodos.
+
+**Ejercicio 3.5**
+
+```java
+public class Contact {
+    @Category(USER_NAME)
+    private String name;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    private Address office;                              // office.street, office.city, office.postalCode
+
+    @DerivedFrom("office.city")                          // user.contact.address.city
+    private String officeCity;
+
+    @DerivedFrom("name")                                 // user.name
+    private String initials;
+
+    @DerivedFrom("email")                                // user.contact.email
+    private String emailDomain;
+}
+```
+
+`office` no es un campo por sí mismo: el clasificador informa `office.street`, `office.city` y `office.postalCode`.
+`emailDomain` no puede ser `@Category(SYSTEM_OPERATIONS)`: un valor calculado a partir de datos personales debe
+proteger al menos tanto como su fuente (`WEAKER_THAN_SOURCE`). Solo un valor declarado anonimizado o agregado, como un
+promedio sobre muchas personas, puede proteger menos.
 
 **Cuestionario**
 
@@ -577,5 +740,9 @@ clasificador lee campos, no métodos.
 5. Los campos `static`, los sintéticos y los `transient` de Java.
 6. No. Cubre los campos que declara la clase anotada (y, cuando esa clase es la que se clasifica, los campos sin
    anotar heredados de superclases sin valor por defecto propio).
+7. `@DerivedFrom("dateOfBirth")`. Toma la clasificación de su fuente: `user.demographic.date_of_birth`, identificado,
+   dato personal, con base `DERIVED`.
+8. `UNCLASSIFIED_FIELD` para ese campo, salvo que un valor por defecto de la clase lo cubra como un solo valor: sin
+   `@Composite` es un campo ordinario.
 
 </details>

@@ -98,7 +98,35 @@ public record Violation(Class<?> type, String path, Severity severity, Code code
         /**
          * A field has the name of a field of a superclass, so its path would not identify it.
          */
-        DUPLICATE_FIELD
+        DUPLICATE_FIELD,
+
+        /**
+         * A source of a {@link io.github.devbpm.linneo.annotation.DerivedFrom @DerivedFrom} field is missing, is
+         * exempted or has an error, or no source is given.
+         */
+        UNKNOWN_SOURCE,
+
+        /**
+         * A derived field without a category has sources with different classifications.
+         */
+        AMBIGUOUS_DERIVATION,
+
+        /**
+         * A derived field declares a category that protects less than one of its sources, without declaring the
+         * value anonymized or aggregated.
+         */
+        WEAKER_THAN_SOURCE,
+
+        /**
+         * A field that stores a {@link io.github.devbpm.linneo.annotation.Composite composite} as one value declares
+         * a category that protects less than the composite's fields.
+         */
+        WEAKER_THAN_PARTS,
+
+        /**
+         * A composite contains itself, or derived fields depend on each other.
+         */
+        CYCLE
     }
 
     /**

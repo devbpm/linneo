@@ -110,8 +110,8 @@ public record ClassClassification(Class<?> type, List<FieldClassification> field
     }
 
     /**
-     * The protection a field requires together with everything below it: the field itself and every field whose
-     * path starts with its path.
+     * The protection a field requires together with everything below it: the field itself or, for a field that
+     * holds a {@linkplain io.github.devbpm.linneo.annotation.Composite composite}, every field of the composite.
      *
      * @param path a field path
      * @return the least protection that covers the field and the fields below it, or {@link Protection#LOWEST} if

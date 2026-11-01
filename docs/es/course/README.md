@@ -45,7 +45,8 @@ Al terminar el curso serás capaz de:
 1. Explicar las cuatro naturalezas jurídicas que usa Linneo (datos personales ordinarios, categorías especiales,
    datos penales y datos no personales) y las facetas de confidencialidad, integridad e identificabilidad.
 2. Recorrer la taxonomía, elegir la clave adecuada para un campo y justificar la elección.
-3. Anotar un modelo de datos con `@Category`, `@DefaultCategory`, `@CategoryByRow` y `@Exempt`.
+3. Anotar un modelo de datos con `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite` y
+   `@Exempt`.
 4. Escribir un test que haga fallar la compilación cuando el modelo no esté clasificado por completo y
    correctamente, y corregir cada tipo de infracción que notifique.
 5. Usar la clasificación en tiempo de ejecución: listar los campos personales, generar un inventario de datos y
@@ -87,7 +88,7 @@ Al terminar el curso serás capaz de:
 |---|---|---|---|
 | 1 | [Por qué clasificar los datos](01-why-classify.md) | Explicar las naturalezas del RGPD, la confidencialidad, la integridad, la identificabilidad y los secretos; entender el enfoque de fallo seguro | 45 min |
 | 2 | [La taxonomía](02-the-taxonomy.md) | Leer claves con puntos, entender la protección heredada y explorar la taxonomía con la API `Taxonomy` | 60 min |
-| 3 | [Anotar los modelos](03-annotating-models.md) | Anotar campos y clases, elevar niveles, declarar la identificabilidad y tratar records, herencia y datos por fila | 90 min |
+| 3 | [Anotar los modelos](03-annotating-models.md) | Anotar campos y clases, elevar niveles, declarar la identificabilidad y tratar records, herencia, datos por fila, valores calculados y clases embebidas | 90 min |
 | 4 | [Verificar en los tests](04-verifying-in-tests.md) | Hacer fallar la compilación ante campos sin clasificar o mal clasificados; leer y corregir cada infracción | 60 min |
 | 5 | [Usar la clasificación](05-using-the-classification.md) | Listar campos personales, generar un inventario de datos y un informe tipo RAT, decidir qué puede ir a los logs | 60 min |
 | 6 | [Extender la taxonomía](06-extending-the-taxonomy.md) | Añadir términos y protección más estricta con una `TaxonomyExtension` registrada mediante `ServiceLoader`; aplicar la extensión universitaria que incluye Linneo | 60 min |

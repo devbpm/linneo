@@ -35,7 +35,8 @@ There are no level or identifiability elements: the field takes the ceiling's le
 | `declaredBy` must not be blank | `MISSING_REASON` (`@CategoryByRow needs declaredBy`) | error | **yes** (the error is still reported) |
 | `ceiling` must be a key of the taxonomy | `UNKNOWN_CATEGORY` (`unknown data category '<key>'`) | error | no |
 | A deprecated `ceiling` is replaced by its current replacement | `DEPRECATED_CATEGORY` | warning | yes, with the replacement |
-| Not combined with `@Category` or `@Exempt` | `CONFLICTING_ANNOTATIONS` | error | no |
+| Not combined with `@Category`, `@DerivedFrom` or `@Exempt` | `CONFLICTING_ANNOTATIONS` | error | no |
+| On a field that holds a [`@Composite`](composite.md) (stored as one value), the ceiling protects at least as much as the composite's fields | `WEAKER_THAN_PARTS` | error | **yes** (the error is still reported) |
 
 ## Resulting FieldClassification
 

@@ -16,7 +16,10 @@ doc-sources:
 Lee las anotaciones de clasificación de las clases y las comprueba contra una [`Taxonomy`](../taxonomy.md). Funciona
 igual con clases normales, records y entidades JPA, y no necesita ninguna biblioteca de persistencia. Solo lee
 anotaciones, nunca los valores de los campos, así que no necesita más acceso a las clases que el que exige
-`Class.getDeclaredFields()`. Las instancias son inmutables y seguras entre hilos.
+`Class.getDeclaredFields()`. Las instancias son inmutables y seguras entre hilos: cada llamada lee una sola vez cada
+clase que necesita (la clase, las clases [`@Composite`](../annotations/composite.md) que contiene y las clases cuyos
+campos nombran sus campos [`@DerivedFrom`](../annotations/derived-from.md)), detecta ciclos y no conserva nada entre
+llamadas.
 
 ## Métodos
 
@@ -24,7 +27,7 @@ anotaciones, nunca los valores de los campos, así que no necesita más acceso a
 |---|---|---|
 | `Classifier(Taxonomy taxonomy)` | — | Crea un clasificador para una taxonomía; las claves deben pertenecer a ella. `NullPointerException` si `taxonomy` es `null`. |
 | `ClassClassification classify(Class<?> type)` | [`ClassClassification`](results.md#classclassification) | Clasifica una clase: las clasificaciones de sus campos y todas las violaciones encontradas. No lanza excepciones por problemas de clasificación. `NullPointerException` si `type` es `null`. |
-| `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | lista inmutable | Una clasificación por clase, en el orden recibido. |
+| `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | lista inmutable | Una clasificación por clase, en el orden recibido. Una clase que usan varias de ellas, como compuesto o como fuente de campos derivados, se lee una sola vez. |
 | `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | lista inmutable | Clasifica las clases y, si hay algún error, lanza `ClassificationException` con **todos los errores de todas las clases** (su mensaje lista los 50 primeros). Los avisos no hacen fallar. Si no hay errores, devuelve las clasificaciones. |
 
 ```java
@@ -57,20 +60,35 @@ new Classifier(Taxonomy.load()).verify(entities);
   bytecode, por ejemplo la mejora de Hibernate: `$$_hibernate_interceptor`).
 - **Proxies de Hibernate.** Una clase cuyo nombre contiene `$HibernateProxy$` se clasifica como la entidad que
   extiende: el `type()` de su [`ClassClassification`](results.md#classclassification) es la entidad, no el proxy.
-- **No se entra en los objetos incrustados.** El clasificador no desciende al tipo de un campo: una dirección
-  `@Embedded` de JPA es un campo, clasificado por sus propias anotaciones, y la clase incrustable debe verificarse
-  también, por ejemplo pasándola a `verify` junto con las entidades.
+- **Se entra en los compuestos.** Un campo sin anotación propia cuyo tipo es una clase
+  [`@Composite`](../annotations/composite.md), o un array, una colección o un `Optional` de ella, se clasifica por los
+  campos del compuesto: una entrada por campo, con la ruta `campo.parte` (`home.street`), con las anotaciones y el
+  `@DefaultCategory` del propio compuesto, no los de la clase contenedora. Un `Map` nunca se recorre. Una clase que no
+  está marcada `@Composite`, como una clase `@Embedded` de JPA, es un campo ordinario que necesita una categoría
+  propia (o un valor por defecto de la clase): marca la clase `@Composite` en lugar de pasarla a `verify` por
+  separado.
+- **Campos derivados.** Un campo marcado con [`@DerivedFrom`](../annotations/derived-from.md) toma la clasificación de
+  su fuente, o declara una que protege al menos tanto. Sus fuentes pueden estar declaradas después de él, ser a su vez
+  campos derivados, ser partes de un compuesto o pertenecer a otra clase (`type`), que el clasificador también lee.
 - Los campos marcados con [`@Exempt`](../annotations/exempt.md) no se clasifican tras comprobar su anotación, y
-  `ClassClassification.exempted()` los lista con sus motivos.
+  `ClassClassification.exempted()` los lista con sus motivos. `@Exempt` es para campos técnicos; un valor calculado a
+  partir de otros campos es un dato y usa `@DerivedFrom` o `@Category`.
 - Las anotaciones se leen del propio campo (`getDeclaredAnnotation`), así que en un record deben aplicarse al campo
-  del componente, cosa que hacen `@Category`, `@CategoryByRow` y `@Exempt`.
+  del componente, cosa que hacen `@Category`, `@CategoryByRow`, `@DerivedFrom` y `@Exempt`.
 
 Cada campo restante se resuelve según el [orden de resolución](../annotations/README.md#orden-de-resolución): su
-propio `@Category` o `@CategoryByRow`, después el `@DefaultCategory` de la clase que lo declara, después el
-`@DefaultCategory` de la clase clasificada y, si no, `UNCLASSIFIED_FIELD`.
+propio `@Category` o `@CategoryByRow`; para un campo `@DerivedFrom` sin categoría, la clasificación de su fuente; para
+un campo de tipo compuesto, los campos del compuesto; después el `@DefaultCategory` de la clase que lo declara, después
+el `@DefaultCategory` de la clase clasificada y, si no, `UNCLASSIFIED_FIELD`.
 
 Orden de las violaciones en una `ClassClassification`: primero las comprobaciones de cada `@DefaultCategory` de la
-jerarquía (de arriba abajo) y después las de los campos, en el orden de los campos.
+jerarquía (de arriba abajo), después las de los campos, en el orden de los campos (los problemas de un compuesto, en la
+posición del campo que lo contiene) y, al final, las de los campos derivados, que esperan a sus fuentes.
+
+La protección nunca baja en silencio: un campo derivado debe proteger al menos tanto como cada una de sus fuentes,
+salvo que declare un valor anonimizado o agregado, y un compuesto guardado como un solo valor debe proteger al menos
+tanto como los campos del compuesto. Un compuesto que se contiene a sí mismo, o derivaciones que dependen unas de
+otras, son un `CYCLE`.
 
 ## Comportamiento cerrado ante fallos (fail-closed)
 
@@ -84,7 +102,12 @@ Nada se clasifica por defecto. Son **errores** (hacen fallar `verify` y ponen `i
 - un nivel inferior al de la categoría (`LOWERED_LEVEL`);
 - más de un valor en un elemento opcional de `@Category` (`AMBIGUOUS_VALUE`);
 - una identificabilidad en una categoría no personal (`IDENTIFIABILITY_NOT_APPLICABLE`);
-- un campo que oculta otro del mismo nombre de una superclase (`DUPLICATE_FIELD`).
+- un campo que oculta otro del mismo nombre de una superclase (`DUPLICATE_FIELD`);
+- un campo derivado cuya fuente no existe, está exenta o tiene un error, o que no tiene ninguna (`UNKNOWN_SOURCE`);
+- un campo derivado sin categoría cuyas fuentes se clasifican de forma distinta (`AMBIGUOUS_DERIVATION`);
+- un campo derivado que protege menos que una fuente y no se declara anonimizado o agregado (`WEAKER_THAN_SOURCE`);
+- un compuesto guardado como un solo valor que protege menos que sus campos (`WEAKER_THAN_PARTS`);
+- un compuesto que se contiene a sí mismo, o campos derivados que dependen unos de otros (`CYCLE`).
 
 Una clave obsoleta es el único **aviso** (`DEPRECATED_CATEGORY`): el campo se clasifica con la sustituta vigente. Un
 campo con error normalmente no aparece en `fields()`; consulta [Violaciones](violations.md) para ver el efecto exacto

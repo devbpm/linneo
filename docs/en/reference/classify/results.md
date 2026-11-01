@@ -42,7 +42,7 @@ lists.
 | `boolean holdsPersonalData()` | `boolean` | `true` if any field is personal. |
 | `Optional<FieldClassification> field(String path)` | `Optional` | The classification of a field by path; empty if the field is unknown, excluded, exempt or was dropped because of an error. A field that hides a superclass field of the same name is not classified (`DUPLICATE_FIELD`), so a path is never ambiguous. |
 | `Protection ceiling()` | [`Protection`](../protection-levels.md#protection) | The protection a record of the class requires as a whole: the join of the protection of its fields, or `Protection.LOWEST` if there are none. It is what an export of whole records, or a column that stores the record serialized, needs. |
-| `Protection ceilingOf(String path)` | [`Protection`](../protection-levels.md#protection) | The protection a field requires together with everything below it: the join of the field and of every field whose path starts with its path followed by a dot, or `Protection.LOWEST` if there is none. `NullPointerException` if `path` is `null`. |
+| `Protection ceilingOf(String path)` | [`Protection`](../protection-levels.md#protection) | The protection a field requires together with everything below it: the field itself or, for a field that holds a [`@Composite`](../annotations/composite.md), every field of the composite. It is the join of the field and of every field whose path starts with its path followed by a dot, or `Protection.LOWEST` if there is none. `NullPointerException` if `path` is `null`. |
 
 ```java
 Classifier classifier = new Classifier(Taxonomy.standard());
@@ -52,6 +52,7 @@ person.personalFields();
 DataCategory category = person.field("email").orElseThrow().category();
 Protection whole = person.ceiling();                 // what a whole Person record requires
 Protection email = person.ceilingOf("email");        // the field and any field below it
+Protection home = person.ceilingOf("home");          // a composite field: all of home.street, home.city, ...
 ```
 
 ### Exemption
@@ -65,35 +66,37 @@ classified is visible.
 | Component | Description |
 |---|---|
 | `declaringClass` | The class that declares the field. |
-| `path` | The field path. |
+| `path` | The field path: its name, or `field.part` for an exempt field of a [`@Composite`](../annotations/composite.md) the class holds. |
 | `reason` | Why the field holds no data of the model: the value of `@Exempt`. |
 
 The canonical constructor throws `NullPointerException` if a component is `null`. An `@Exempt` combined with
-`@Category` or `@CategoryByRow` is a `CONFLICTING_ANNOTATIONS` error and is not listed.
+`@Category`, `@CategoryByRow` or `@DerivedFrom` is a `CONFLICTING_ANNOTATIONS` error and is not listed.
 
 ## FieldClassification
 
 ```java
 public record FieldClassification(Class<?> declaringClass, String path, DataCategory category, Basis basis,
                                   String reason, Confidentiality confidentiality, Integrity integrity,
-                                  Identifiability identifiability)
+                                  Identifiability identifiability, List<String> derivedFrom)
 ```
 
 The classification of one field: its category and the effective protection of the field.
 
 | Component | Nullable | Description |
 |---|---|---|
-| `declaringClass` | no | The class that declares the field (a superclass for inherited fields). |
-| `path` | no | The field's name, which identifies it within the classified class. |
+| `declaringClass` | no | The class that declares the field (a superclass for inherited fields, the composite for a field of a [`@Composite`](../annotations/composite.md)). |
+| `path` | no | Identifies the field within the classified class: its name, or `field.part` for a field of a composite it holds (`home.street`). |
 | `category` | no | The **current** data category: a deprecated key is already resolved to its replacement. |
 | `basis` | no | Where the category comes from (see `Basis`). |
 | `reason` | yes | The `reason` of a class default or the `declaredBy` of a per-row category; `null` for `DECLARED`. |
 | `confidentiality` | no | The category's level, or the stricter one the field declares. |
 | `integrity` | no | The category's level, or the stricter one the field declares. |
 | `identifiability` | yes | How the value points to the person; `null` when the category is not personal (and for class defaults, which are never personal). |
+| `derivedFrom` | no | For a [`DERIVED`](#basis) field, its sources: field paths of the same class (a composite path is expanded to its fields), or `ClassName#path`, with the binary name of the class, for a field of another class. Empty for any other field. |
 
 The canonical constructor throws `NullPointerException` if `declaringClass`, `path`, `category`, `basis`,
-`confidentiality` or `integrity` is `null`.
+`confidentiality` or `integrity` is `null`. A `null` `derivedFrom` means none; the list is copied into an immutable
+one.
 
 ### Basis
 
@@ -104,6 +107,10 @@ The canonical constructor throws `NullPointerException` if `declaringClass`, `pa
 | `DECLARED` | a [`@Category`](../annotations/category.md) on the field | `null` |
 | `CLASS_DEFAULT` | the [`@DefaultCategory`](../annotations/default-category.md) of a class | the default's `reason` |
 | `BY_ROW` | the ceiling of a [`@CategoryByRow`](../annotations/category-by-row.md) | `declaredBy` |
+| `DERIVED` | a [`@DerivedFrom`](../annotations/derived-from.md) field: the classification of its source, or the category it declares, which protects at least as much as its sources | `null` |
+
+The fields of a [`@Composite`](../annotations/composite.md) have the basis their own class gives them, not a basis of
+their own.
 
 ### Methods
 

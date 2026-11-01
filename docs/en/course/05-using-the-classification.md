@@ -58,9 +58,11 @@ result, so a report built from an invalid classification would silently leave th
 
 ```java
 student.holdsPersonalData();                              // true
-student.field("displayName");                             // Optional.empty: @Exempt
 student.field("email").orElseThrow().category().key();    // "user.contact.email"
-student.exempted().get(0).path();                         // "displayName"
+
+ClassClassification document = classifier.classify(Document.class);
+document.field("attachments");                            // Optional.empty: @Exempt
+document.exempted().get(0).path();                        // "attachments"
 ```
 
 ## `FieldClassification`
@@ -68,15 +70,16 @@ student.exempted().get(0).path();                         // "displayName"
 | Component | Meaning |
 |---|---|
 | `declaringClass()` | the class that declares the field (`AuditedEntity` for `createdBy`) |
-| `path()` | the field's name, which identifies it within the classified class (`fieldName()` returns its last segment) |
+| `path()` | identifies the field within the classified class: its name, or `field.part` for a field of a `@Composite` it holds (`fieldName()` returns its last segment) |
 | `category()` | the `DataCategory`, already resolved to its replacement if the key was deprecated |
-| `basis()` | where the category comes from: `DECLARED` (`@Category`), `CLASS_DEFAULT` (`@DefaultCategory`), `BY_ROW` (ceiling of `@CategoryByRow`) |
+| `basis()` | where the category comes from: `DECLARED` (`@Category`), `CLASS_DEFAULT` (`@DefaultCategory`), `BY_ROW` (ceiling of `@CategoryByRow`), `DERIVED` (`@DerivedFrom`) |
 | `reason()` | the reason of a class default, or the `declaredBy` of a per-row field; `null` for `DECLARED` |
 | `confidentiality()`, `integrity()` | the **effective** levels: the category's, or the stricter ones the field declares |
 | `identifiability()` | `IDENTIFIED`, `PSEUDONYMIZED`, `ANONYMIZED` or `AGGREGATED`; `null` when the category is not personal |
 | `isPersonal()` | personal category **and** stored `IDENTIFIED` or `PSEUDONYMIZED` |
 | `isSecret()` | the category's secret flag |
 | `protection()` | the `Protection` of the stored values (see below) |
+| `derivedFrom()` | for a `DERIVED` field, its sources; empty for any other |
 
 `toString()` gives a compact line with the path, the category and the basis, handy in logs and assertions. It does
 not name the declaring class: use `declaringClass()` when you need it.
@@ -116,6 +119,33 @@ A few values worth noticing:
   `user.health_and_medical` (the ceiling).
 - `Staff.passwordHash`: `isSecret()` is `true`.
 
+### Derived fields and composites
+
+The two annotations of module 3 that add information to the result. For a `@DerivedFrom` field the basis is
+`DERIVED` and `derivedFrom()` says what it was computed from (`StudentCard` is the class of module 3):
+
+```java
+FieldClassification age = classifier.classify(StudentCard.class).field("age").orElseThrow();
+age.basis();                  // DERIVED
+age.category().key();         // "user.demographic.date_of_birth", that of dateOfBirth
+age.derivedFrom();            // ["dateOfBirth"]
+age.isPersonal();             // true
+```
+
+For a source in another class, `derivedFrom()` holds `ClassName#path` with the binary name of the class, for example
+`edu.example.university.Grade#mark` for `CourseSummary.averageMark`.
+
+A `@Composite` is expanded into one entry per field, with the path `field.part` and the composite as the declaring
+class (`ScholarshipApplication` is the class of module 3):
+
+```java
+ClassClassification application = classifier.classify(ScholarshipApplication.class);
+FieldClassification city = application.field("home.city").orElseThrow();
+city.fieldName();             // "city"
+city.declaringClass();        // Address
+application.ceilingOf("home"); // the protection that covers every field of home
+```
+
 ## Protection of a field and of a class
 
 `protection()` gives the protection a field's stored values require as one `Protection` (nature, confidentiality,
@@ -134,7 +164,8 @@ staffCeiling.confidentiality();  // HIGH
 staffCeiling.secret();           // true: passwordHash
 ```
 
-`ceilingOf(path)` does the same for one field and every field whose path starts with it followed by a dot.
+`ceilingOf(path)` does the same for one field and every field whose path starts with it followed by a dot: for a
+composite field such as `home`, everything the composite holds (`home.street`, `home.city`, ...).
 
 ## A data inventory
 
@@ -192,7 +223,7 @@ Reinforced protection (art. 9/10): Attachment
 `CourseStatistics` does not appear at all: its fields are reference data or aggregated.
 
 Field names are not column names: map them with your persistence layer's naming rules if the inventory must speak
-in tables and columns.
+in tables and columns. The fields of an embedded `@Composite` appear with their path (`home.city`).
 
 ## A RoPA-style report
 

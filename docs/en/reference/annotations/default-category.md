@@ -32,7 +32,9 @@ those fields hold **no personal data**, with the reason. Personal data is always
   superclasses that declare no default of their own.
 - It is **not inherited**: a subclass without its own `@DefaultCategory` does not use its superclass's default for
   the fields the subclass declares.
-- Field annotations (`@Category`, `@CategoryByRow`, `@Exempt`) always take precedence.
+- Field annotations (`@Category`, `@CategoryByRow`, `@DerivedFrom`, `@Exempt`) always take precedence.
+- It does not reach into a [`@Composite`](composite.md): a field of the annotated class whose type is a composite is
+  classified by the composite's fields, which are resolved with the composite's own annotations and default.
 
 See the [resolution order](README.md#resolution-order).
 

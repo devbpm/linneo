@@ -59,8 +59,8 @@ class ClassifierTest {
         private static final String CONSTANT = "x";
         private String code;
         private transient String cache;
-        @Exempt("computed from code")
-        private String label;
+        @Exempt("cache of the rendered menu")
+        private String renderCache;
     }
 
     @SuppressWarnings("unused")
@@ -227,9 +227,9 @@ class ClassifierTest {
     @DisplayName("exempted fields are listed with their reason")
     void exempted() {
         ClassClassification menu = classifier.classify(MenuGroup.class);
-        assertEquals(List.of(new ClassClassification.Exemption(MenuGroup.class, "label", "computed from code")),
-                menu.exempted());
-        assertTrue(menu.field("label").isEmpty());
+        assertEquals(List.of(new ClassClassification.Exemption(MenuGroup.class, "renderCache",
+                "cache of the rendered menu")), menu.exempted());
+        assertTrue(menu.field("renderCache").isEmpty());
     }
 
     @Test

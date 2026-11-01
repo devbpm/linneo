@@ -20,7 +20,10 @@
  * A model declares what it holds with {@link io.github.devbpm.linneo.annotation.Category @Category} on each field,
  * {@link io.github.devbpm.linneo.annotation.DefaultCategory @DefaultCategory} on a class whose fields hold no
  * personal data, {@link io.github.devbpm.linneo.annotation.CategoryByRow @CategoryByRow} when the category depends
- * on each row, and {@link io.github.devbpm.linneo.annotation.Exempt @Exempt} on fields that hold no data at all.
+ * on each row, {@link io.github.devbpm.linneo.annotation.DerivedFrom @DerivedFrom} on values computed from other
+ * fields, {@link io.github.devbpm.linneo.annotation.Composite @Composite} on classes that are part of other records,
+ * such as an embedded address, and {@link io.github.devbpm.linneo.annotation.Exempt @Exempt} on fields that hold no
+ * data at all.
  * Use the constants of {@link io.github.devbpm.linneo.Categories} as keys, and verify the annotations with
  * {@link io.github.devbpm.linneo.classify.Classifier}.
  */

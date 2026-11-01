@@ -22,24 +22,28 @@ import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
 import io.github.devbpm.linneo.Protection;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
  * The classification of one field: its category and the effective protection of the field.
  *
  * @param declaringClass the class that declares the field
- * @param path the field's name, which identifies it within the classified class
+ * @param path identifies the field within the classified class: its name, or {@code field.part} for a field of a
+ *        {@linkplain io.github.devbpm.linneo.annotation.Composite composite} it holds
  * @param category the current data category (a deprecated key is already resolved to its replacement)
  * @param basis where the category comes from
  * @param reason the reason of a class default or what decides a per-row category; {@code null} for a declared one
  * @param confidentiality the category's level, or the stricter one the field declares
  * @param integrity the category's level, or the stricter one the field declares
  * @param identifiability how the value points to the person; {@code null} when the category is not personal
+ * @param derivedFrom for a {@linkplain Basis#DERIVED derived} field, its sources: field paths of the same class, or
+ *        {@code ClassName#path} for a field of another class; empty otherwise
  * @since 0.1.0
  */
 public record FieldClassification(Class<?> declaringClass, String path, DataCategory category, Basis basis,
                                   String reason, Confidentiality confidentiality, Integrity integrity,
-                                  Identifiability identifiability) {
+                                  Identifiability identifiability, List<String> derivedFrom) {
 
     /**
      * Where the category of a field comes from.
@@ -59,7 +63,13 @@ public record FieldClassification(Class<?> declaringClass, String path, DataCate
         /**
          * The ceiling of a {@link io.github.devbpm.linneo.annotation.CategoryByRow @CategoryByRow}.
          */
-        BY_ROW
+        BY_ROW,
+
+        /**
+         * A {@link io.github.devbpm.linneo.annotation.DerivedFrom @DerivedFrom} field: the classification of its
+         * source, or the category it declares, which protects at least as much as its sources.
+         */
+        DERIVED
     }
 
     /**
@@ -73,6 +83,7 @@ public record FieldClassification(Class<?> declaringClass, String path, DataCate
      * @param confidentiality the effective confidentiality
      * @param integrity the effective integrity
      * @param identifiability the identifiability or {@code null}
+     * @param derivedFrom the sources of a derived field; {@code null} means none
      */
     public FieldClassification {
         Objects.requireNonNull(declaringClass, "declaringClass");
@@ -81,6 +92,7 @@ public record FieldClassification(Class<?> declaringClass, String path, DataCate
         Objects.requireNonNull(basis, "basis");
         Objects.requireNonNull(confidentiality, "confidentiality");
         Objects.requireNonNull(integrity, "integrity");
+        derivedFrom = derivedFrom == null ? List.of() : List.copyOf(derivedFrom);
     }
 
     /**

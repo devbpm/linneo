@@ -8,6 +8,8 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/annotation/Category.java
   - src/main/java/io/github/devbpm/linneo/annotation/DefaultCategory.java
   - src/main/java/io/github/devbpm/linneo/annotation/CategoryByRow.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DerivedFrom.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Composite.java
   - src/main/java/io/github/devbpm/linneo/annotation/Exempt.java
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
   - src/main/resources/io/github/devbpm/linneo/internal/linneo-category-policy.tsv
@@ -23,20 +25,23 @@ After this module you will be able to:
 - declare the identifiability of a stored value;
 - state once, with a reason, that a class holds no personal data, using `@DefaultCategory`;
 - classify a field whose category changes from row to row with `@CategoryByRow`;
-- exclude fields that hold no data with `@Exempt`, and know which fields are excluded automatically;
+- classify a value computed from other fields with `@DerivedFrom`, and an embedded value object with `@Composite`;
+- exclude technical fields with `@Exempt`, and know which fields are excluded automatically;
 - annotate records and class hierarchies correctly;
 - choose the right key for a field and justify it.
 
-## The four annotations at a glance
+## The six annotations at a glance
 
 | Annotation | Where | Says |
 |---|---|---|
 | `@Category(key)` | field, record component | "this field holds data of this category" |
 | `@DefaultCategory(value = key, reason = "...")` | class | "every field of this class without its own annotation holds this **non-personal** data, because…" |
 | `@CategoryByRow(declaredBy = "...", ceiling = key)` | field, record component | "the category depends on each row; this is what decides it, and this is the most protective it can be" |
-| `@Exempt("reason")` | field, record component | "this field holds no data of the model, because…" |
+| `@DerivedFrom("source")` | field, record component | "this value is computed from other fields, so it is that data: it takes their classification" |
+| `@Composite` | class | "instances of this class are part of other records: the fields that hold it are classified by its own fields" |
+| `@Exempt("reason")` | field, record component | "this is a technical field (cache, handle, framework state) that holds no data of the model, because…" |
 
-All four are read by reflection at run time (`RetentionPolicy.RUNTIME`). The classifier (module 4) reads them; it
+All six are read by reflection at run time (`RetentionPolicy.RUNTIME`). The classifier (module 4) reads them; it
 never reads field values.
 
 ## `@Category`: one field, one category
@@ -209,13 +214,15 @@ So `createdAt`, `updatedAt` and `version` are `system.operations` in every subcl
 A subclass must not reuse the name of a superclass field: the classifier identifies a field by its name, so the
 field that hides the other is reported as a `DUPLICATE_FIELD` error. Rename one of the two.
 
-The complete precedence the classifier applies to each field:
+The complete precedence the classifier applies to each field (`@DerivedFrom` and `@Composite` are introduced below):
 
 1. `@Exempt` → the field is skipped.
 2. `@Category`, or the ceiling of `@CategoryByRow`.
-3. the `@DefaultCategory` of the declaring class.
-4. the `@DefaultCategory` of the class being classified.
-5. otherwise `UNCLASSIFIED_FIELD`.
+3. `@DerivedFrom` without a category → the classification of its source.
+4. a field of a `@Composite` type → the fields of the composite.
+5. the `@DefaultCategory` of the declaring class.
+6. the `@DefaultCategory` of the class being classified.
+7. otherwise `UNCLASSIFIED_FIELD`.
 
 ## `@CategoryByRow`: when each row is different
 
@@ -249,15 +256,116 @@ used. The field therefore gets the ceiling's protection (`SPECIAL_CATEGORY`, `HI
 `declaredBy` must not be blank (`MISSING_REASON`). `@CategoryByRow` and `@Category` on the same field is a
 `CONFLICTING_ANNOTATIONS` error.
 
-## `@Exempt`: fields that hold no data
+## `@DerivedFrom`: values computed from other fields
 
-Some fields hold no data of the model: a value computed from other fields, a cache, a technical handle, a
-relationship to another entity. `@Exempt` excludes them, with a reason:
+Some fields are not captured but computed: an age from a date of birth, a full name from a first and a last name.
+A value computed from data is that data, or reveals it: the age of a student is personal data. It must not be
+exempted. `@DerivedFrom` names the fields it is computed from, and the classifier keeps the two consistent:
 
 ```java
-@Exempt("computed from firstName and lastName, never stored")
-private String displayName;
+public class StudentCard {                    // a card printed for the student; not part of the model so far
+
+    @Category(USER_NAME_FIRST)
+    private String firstName;
+
+    @Category(USER_NAME_LAST)
+    private String lastName;
+
+    @Category(USER_DEMOGRAPHIC_DATE_OF_BIRTH)
+    private LocalDate dateOfBirth;
+
+    @DerivedFrom("dateOfBirth")               // takes the classification of its source
+    private int age;
+
+    @Category(USER_NAME)                      // declares its own, which must protect at least as much
+    @DerivedFrom({"firstName", "lastName"})
+    private String fullName;
+}
 ```
+
+- **Without `@Category`** the field takes the classification of its source: `age` is `user.demographic.date_of_birth`,
+  identified, personal data. Its `basis()` is `DERIVED` and `derivedFrom()` lists `["dateOfBirth"]` (module 5).
+- **Several sources must agree.** `firstName` and `lastName` have different categories, so `fullName` has to declare
+  its own with `@Category`, here `user.name`. Without it the field is an `AMBIGUOUS_DERIVATION` error.
+- **With `@Category`, the field must protect at least as much as every source.** `@Category(SYSTEM_OPERATIONS)` on
+  `age` is a `WEAKER_THAN_SOURCE` error: computing a value from personal data does not make it less personal.
+- **The one explicit way to protect less** is to declare the value anonymized or aggregated, which a reviewer can see.
+  A statistics row can derive its average from the field of another class with `type`:
+
+  ```java
+  public record CourseSummary(
+          @Category(REFERENCE_PUBLIC) String courseCode,
+          @Category(value = USER_EDUCATION_GRADE, identifiability = Identifiability.AGGREGATED)
+          @DerivedFrom(type = Grade.class, value = "mark") BigDecimal averageMark) {
+  }
+  ```
+
+  Here `averageMark` is not personal data (module 1), and if `Grade.mark` is ever given another category the
+  summary is checked against it. `Grade` is the class of exercise 3.1.
+- **A source must be a classified field** of the class (or of `type`): a path that does not exist, an `@Exempt` field
+  or a field with an error is `UNKNOWN_SOURCE`. It may be an inherited field, a part of a composite (`"home.city"`) or
+  another derived field, as long as no derivation depends on itself (`CYCLE`).
+- `@Exempt` and `@CategoryByRow` cannot be combined with `@DerivedFrom` (`CONFLICTING_ANNOTATIONS`).
+
+## `@Composite`: classes that are part of other records
+
+JPA models embed small value objects, such as an address, in several entities (`@Embeddable`). The classifier reads
+the fields of the class it is given; for an `Address` field to be classified by what the address holds, mark the
+value class `@Composite`:
+
+```java
+@Composite                                         // with JPA, next to @Embeddable
+public class Address {
+
+    @Category(USER_CONTACT_ADDRESS_STREET)
+    private String street;
+
+    @Category(USER_CONTACT_ADDRESS_CITY)
+    private String city;
+
+    @Category(USER_CONTACT_ADDRESS_POSTAL_CODE)
+    private String postalCode;
+}
+
+public class ScholarshipApplication {              // not part of the model so far
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long id;
+
+    private Address home;                          // home.street, home.city, home.postalCode
+
+    private List<Address> previous;                // previous.street, previous.city, previous.postalCode
+
+    @Category(USER_CONTACT_ADDRESS)                // stored as one value, for example as JSON
+    private Address billing;
+}
+```
+
+An unannotated field whose type is a composite (or an array, a collection or an `Optional` of one) is classified by
+the composite's fields, with the path `field.part`: `home.street`, `previous.city`. A `Map` is never entered.
+
+- The composite is resolved with **its own** annotations and `@DefaultCategory`, never with the holder's: a default
+  on `ScholarshipApplication` does not reach `Address`.
+- **A composite stored as one value** (a JSON column, say) declares its category on the field, as `billing` does.
+  That category must protect at least as much as the fields of the composite: `USER_CONTACT_ADDRESS` is enough for
+  the address, but `@Category(SYSTEM_OPERATIONS)` would be a `WEAKER_THAN_PARTS` error.
+- A composite that contains itself (a `Node` with a list of `Node`) cannot be expanded: the field that closes the
+  loop is a `CYCLE` error; classify that field as one value.
+- **Forgetting `@Composite` is safe.** Without it, `home` is an ordinary field with no category, and the classifier
+  reports `UNCLASSIFIED_FIELD`. You do not need to pass the embeddable classes to `verify` separately.
+
+## `@Exempt`: technical fields
+
+Some fields hold no data of the model: a cache, a technical handle, state that a framework keeps, a relationship to
+another entity. `@Exempt` excludes them, with a reason:
+
+```java
+@Exempt("cache of the rendered menu, rebuilt on demand")
+private String renderedMenu;
+```
+
+A value computed from other fields is **not** such a field: it is data, and uses `@DerivedFrom` or `@Category`. If you
+find yourself writing "computed from..." as a reason, use `@DerivedFrom`.
 
 ```java
 public class Document extends AuditedEntity {
@@ -285,8 +393,8 @@ compiler) and fields with the Java **`transient`** modifier.
 > **JPA note.** `@jakarta.persistence.Transient` is *not* the Java `transient` modifier. A field annotated only with
 > JPA's `@Transient` is still seen by the classifier and needs `@Exempt` (or a category).
 
-`@Exempt` cannot be combined with `@Category` or `@CategoryByRow` (`CONFLICTING_ANNOTATIONS`), and its reason must
-not be blank (`MISSING_REASON`). The classification keeps the exempt fields and their reasons
+`@Exempt` cannot be combined with `@Category`, `@CategoryByRow` or `@DerivedFrom` (`CONFLICTING_ANNOTATIONS`), and its
+reason must not be blank (`MISSING_REASON`). The classification keeps the exempt fields and their reasons
 (`ClassClassification.exempted()`, module 5), so a reviewer can see what was left out.
 
 ## Records
@@ -351,9 +459,6 @@ public class Student extends AuditedEntity {
 
     @Category(value = USER_CONTENT_PRIVATE, confidentiality = Confidentiality.HIGH)
     private String counsellingNotes;
-
-    @Exempt("computed from firstName and lastName, never stored")
-    private String displayName;
 }
 ```
 
@@ -368,11 +473,13 @@ public class Student extends AuditedEntity {
   standard level is wrong for your organisation everywhere, raise it for everyone with an extension (module 6) — it
   cannot be lowered.
 - **Using `identifiability` on non-personal keys** (`IDENTIFIABILITY_NOT_APPLICABLE`).
-- **Exempting fields that do hold data** to make the build pass. `@Exempt` is for fields that hold *no* data of the
-  model; the reason is reviewed.
-- **Leaving JPA `@Embedded` fields unannotated.** The classifier does not descend into embedded objects: mark the
-  embedded field `@Exempt("embedded: Address is classified on its own")` and classify the embeddable class itself
-  (module 4 shows how to include embeddables).
+- **Exempting fields that do hold data** to make the build pass. `@Exempt` is for technical fields that hold *no* data
+  of the model; the reason is reviewed.
+- **Exempting a computed value** ("computed from firstName and lastName"). It is data: use `@DerivedFrom`, or
+  `@Category` if you know its category.
+- **Leaving an embedded class without `@Composite`.** A JPA `@Embedded` address is then one field with no category
+  (`UNCLASSIFIED_FIELD`). Mark the embeddable class `@Composite` and the fields that hold it are classified by its
+  fields; do not `@Exempt` the embedded field.
 
 ## Exercises
 
@@ -430,15 +537,35 @@ public class ContactPreferences {
     private String name;
 
     @jakarta.persistence.Transient
-    private String cachedGreeting;
+    private String renderCache;
 }
 ```
 
-**Exercise 3.4 — Per row or not?** For each field, decide between `@Category`, `@CategoryByRow` and `@Exempt`, and
-give the key or reason: (a) the body of a message students send to the secretariat; (b) a file field in a generic
-`Form` entity that stores either a scholarship form or a disability certificate; (c) a `Map` used as an in-memory
-cache, with the Java `transient` modifier; (d) the number of attachments of a document, computed in the getter
-from the list.
+**Exercise 3.4 — Per row or not?** For each field, decide between `@Category`, `@CategoryByRow`, `@DerivedFrom` and
+`@Exempt`, and give the key, the source or the reason: (a) the body of a message students send to the secretariat;
+(b) a file field in a generic `Form` entity that stores either a scholarship form or a disability certificate; (c) a
+`Map` used as an in-memory cache, with the Java `transient` modifier; (d) the age of a student, kept in an `age`
+field and computed from `dateOfBirth`.
+
+**Exercise 3.5 — Computed and embedded.** `Address` is the `@Composite` class of this module. Annotate `Contact`, and
+say which paths the classifier reports for `office`:
+
+```java
+public class Contact {
+    @Category(USER_NAME)
+    private String name;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    private Address office;
+    private String officeCity;       // the city of the office, kept for searches
+    private String initials;         // computed from name
+    private String emailDomain;      // computed from email
+}
+```
+
+Could `emailDomain` be declared `@Category(SYSTEM_OPERATIONS)` because "a domain is not personal"?
 
 ## Self-check quiz
 
@@ -448,6 +575,9 @@ from the list.
 4. Which protection does a `@CategoryByRow` field get?
 5. Which fields are excluded without any annotation?
 6. A superclass has `@DefaultCategory`. Does it cover the fields declared in its subclasses?
+7. A field holds the age computed from a date of birth. Which annotation does it take, and what classification does
+   it get?
+8. What does the classifier report for a field of type `Address` when `Address` is not marked `@Composite`?
 
 ## Further reading
 
@@ -455,6 +585,8 @@ from the list.
   [`@Category`](../reference/annotations/category.md),
   [`@DefaultCategory`](../reference/annotations/default-category.md),
   [`@CategoryByRow`](../reference/annotations/category-by-row.md),
+  [`@DerivedFrom`](../reference/annotations/derived-from.md),
+  [`@Composite`](../reference/annotations/composite.md),
   [`@Exempt`](../reference/annotations/exempt.md)
 - [Reference — Classifier](../reference/classify/classifier.md): resolution order and exclusions
 
@@ -551,18 +683,47 @@ from the certificate says something about convictions. No field is special categ
 - `email`: does not compile; it needs `value = USER_CONTACT_EMAIL`.
 - `theme`: identifiability on a non-personal key (`IDENTIFIABILITY_NOT_APPLICABLE`); remove `identifiability`.
 - `name`: two integrity values (`AMBIGUOUS_VALUE`); keep one, e.g. `integrity = Integrity.HIGH`.
-- `cachedGreeting`: JPA's `@Transient` does not exclude it, and without a default it is `UNCLASSIFIED_FIELD`. Add
-  `@Exempt("computed greeting, never stored")` or make it Java `transient`.
+- `renderCache`: JPA's `@Transient` does not exclude it, and without a default it is `UNCLASSIFIED_FIELD`. Add
+  `@Exempt("rendering cache, rebuilt on demand")` or make it Java `transient`.
 
 **Exercise 3.4**
 
 (a) `@Category(USER_CONTENT_PRIVATE)` (raise confidentiality if messages routinely contain sensitive details).
 (b) `@CategoryByRow(declaredBy = "the form type", ceiling = USER_HEALTH_AND_MEDICAL)` — a disability certificate is
-health data. (c) Nothing: Java `transient` fields are excluded automatically. (d) If it is a field, `@Exempt("count
-derived from attachments")`; if it is only a getter with no field, there is nothing to classify — the classifier
-reads fields, not methods.
+health data. (c) Nothing: Java `transient` fields are excluded automatically. (d) `@DerivedFrom("dateOfBirth")`: the
+age is personal data like the date of birth, so it takes `user.demographic.date_of_birth`; `@Exempt` would hide it
+from every review. If it is only a getter with no field, there is nothing to classify — the classifier reads fields,
+not methods.
 
-**Quiz**
+**Exercise 3.5**
+
+```java
+public class Contact {
+    @Category(USER_NAME)
+    private String name;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    private Address office;                              // office.street, office.city, office.postalCode
+
+    @DerivedFrom("office.city")                          // user.contact.address.city
+    private String officeCity;
+
+    @DerivedFrom("name")                                 // user.name
+    private String initials;
+
+    @DerivedFrom("email")                                // user.contact.email
+    private String emailDomain;
+}
+```
+
+`office` is not a field of its own: the classifier reports `office.street`, `office.city` and `office.postalCode`.
+`emailDomain` cannot be `@Category(SYSTEM_OPERATIONS)`: a value computed from personal data must protect at least as
+much as its source (`WEAKER_THAN_SOURCE`). Only a value declared anonymized or aggregated, such as an average over
+many people, may protect less.
+
+**Quiz
 
 1. Java allows the single-element shorthand only when `value` is the only element given.
 2. A `LOWERED_LEVEL` error; levels can only be raised.
@@ -571,5 +732,9 @@ reads fields, not methods.
 5. `static`, synthetic and Java `transient` fields.
 6. No. It covers the fields the annotated class declares (and, when that class is the one classified, unannotated
    fields inherited from superclasses without their own default).
+7. `@DerivedFrom("dateOfBirth")`. It takes the classification of its source: `user.demographic.date_of_birth`,
+   identified, personal data, with basis `DERIVED`.
+8. `UNCLASSIFIED_FIELD` for that field, unless a class default covers it as one value: without `@Composite` it is an
+   ordinary field.
 
 </details>

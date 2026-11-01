@@ -38,7 +38,7 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   dotted strings whose parent is the key prefix (`user.contact.email` → `user.contact`). The builder and drafts
   must stay in this package: they rely on package-private access (the `Taxonomy` constructor, `TermDraft.info()`,
   `CategoryDraft.declared*()`) so that only `build()` can create a validated `Taxonomy`.
-- **`annotation`** — `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@Exempt`.
+- **`annotation`** — `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite`, `@Exempt`.
 - **`internal.StandardTaxonomy`** — loads the bundled TSV resources from
   `src/main/resources/io/github/devbpm/linneo/internal/` into a `TaxonomyBuilder`:
   - `fideslang-data-{categories,uses,subjects}.tsv` — fideslang verbatim (version in `FIDESLANG_VERSION`).
@@ -52,7 +52,10 @@ same `Term` model). Eight exported packages plus one internal one (not exported 
   throws `TaxonomyException`); `secret` is OR-ed down the tree. `replaced_by` targets of deprecated terms are
   checked here too. The built `Taxonomy` is immutable.
 - **`classify`** — `Classifier` reflects over a class hierarchy's fields (never reads values), resolves each field
-  through its annotations or a class-level `@DefaultCategory`, and collects `Violation`s. `classify` returns a
+  through its annotations, a `@Composite` type (one entry per part, path `field.part`), a `@DerivedFrom` source or a
+  class-level `@DefaultCategory`, and collects `Violation`s. Each call runs a private `Run` that reads every class
+  once and detects cycles, so the `Classifier` itself stays immutable; it also records what each field declares
+  (`Classifier.Declared`) for the data inventory. `classify` returns a
   `ClassClassification`; `verify` throws `ClassificationException` listing all errors. Design is fail-closed:
   unclassified fields, unknown keys, weakened levels, personal categories used as class defaults and conflicting
   annotations are errors; deprecated keys are warnings resolved to their replacement.

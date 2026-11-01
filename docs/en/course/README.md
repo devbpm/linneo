@@ -43,7 +43,8 @@ By the end of the course you will be able to:
 1. Explain the four GDPR natures Linneo uses (ordinary personal data, special category, criminal offence data, not
    personal data) and the confidentiality, integrity and identifiability facets.
 2. Navigate the taxonomy, pick the right key for a field and justify the choice.
-3. Annotate a data model with `@Category`, `@DefaultCategory`, `@CategoryByRow` and `@Exempt`.
+3. Annotate a data model with `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite` and
+   `@Exempt`.
 4. Write a test that fails the build when the model is not fully and correctly classified, and fix every kind of
    violation it reports.
 5. Use the classification at run time: list personal fields, produce a data inventory, drive masking decisions.
@@ -83,7 +84,7 @@ By the end of the course you will be able to:
 |---|---|---|---|
 | 1 | [Why classify data](01-why-classify.md) | Explain GDPR natures, confidentiality, integrity, identifiability and secrets; understand the fail-closed approach | 45 min |
 | 2 | [The taxonomy](02-the-taxonomy.md) | Read dotted keys, understand inherited protection, explore the taxonomy with the `Taxonomy` API | 60 min |
-| 3 | [Annotating models](03-annotating-models.md) | Annotate fields and classes, raise levels, declare identifiability, handle records, inheritance and per-row data | 90 min |
+| 3 | [Annotating models](03-annotating-models.md) | Annotate fields and classes, raise levels, declare identifiability, handle records, inheritance, per-row data, computed values and embedded classes | 90 min |
 | 4 | [Verifying in tests](04-verifying-in-tests.md) | Fail the build on unclassified or wrongly classified fields; read and fix every violation | 60 min |
 | 5 | [Using the classification](05-using-the-classification.md) | List personal fields, build a data inventory and a RoPA-style report, decide what may be logged | 60 min |
 | 6 | [Extending the taxonomy](06-extending-the-taxonomy.md) | Add terms and stricter protection with a `TaxonomyExtension` registered through `ServiceLoader`; apply the university extension shipped with Linneo | 60 min |

@@ -32,7 +32,10 @@ con [`@Category`](category.md).
   que no declaran un valor por defecto propio.
 - **No se hereda**: una subclase sin su propio `@DefaultCategory` no usa el de su superclase para los campos que
   declara ella.
-- Las anotaciones de campo (`@Category`, `@CategoryByRow`, `@Exempt`) siempre tienen prioridad.
+- Las anotaciones de campo (`@Category`, `@CategoryByRow`, `@DerivedFrom`, `@Exempt`) siempre tienen prioridad.
+- No llega al interior de un [`@Composite`](composite.md): un campo de la clase anotada cuyo tipo es un compuesto se
+  clasifica por los campos del compuesto, que se resuelven con las anotaciones y el valor por defecto del propio
+  compuesto.
 
 Consulta el [orden de resolución](README.md#orden-de-resolución).
 

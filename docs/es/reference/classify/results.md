@@ -42,7 +42,7 @@ inmutables.
 | `boolean holdsPersonalData()` | `boolean` | `true` si algún campo es personal. |
 | `Optional<FieldClassification> field(String path)` | `Optional` | La clasificación de un campo por ruta; vacío si el campo no existe, está excluido, está exento o se descartó por un error. Un campo que oculta otro del mismo nombre de una superclase no se clasifica (`DUPLICATE_FIELD`), así que una ruta nunca es ambigua. |
 | `Protection ceiling()` | [`Protection`](../protection-levels.md#protection) | La protección que requiere un registro de la clase en conjunto: la combinación de la protección de sus campos, o `Protection.LOWEST` si no hay ninguno. Es lo que necesita una exportación de registros completos o una columna que guarda el registro serializado. |
-| `Protection ceilingOf(String path)` | [`Protection`](../protection-levels.md#protection) | La protección que requiere un campo junto con todo lo que cuelga de él: la combinación del campo y de cada campo cuya ruta empieza por la suya seguida de un punto, o `Protection.LOWEST` si no hay ninguno. `NullPointerException` si `path` es `null`. |
+| `Protection ceilingOf(String path)` | [`Protection`](../protection-levels.md#protection) | La protección que requiere un campo junto con todo lo que cuelga de él: el propio campo o, en un campo que contiene un [`@Composite`](../annotations/composite.md), todos los campos del compuesto. Es la combinación del campo y de cada campo cuya ruta empieza por la suya seguida de un punto, o `Protection.LOWEST` si no hay ninguno. `NullPointerException` si `path` es `null`. |
 
 ```java
 Classifier classifier = new Classifier(Taxonomy.standard());
@@ -52,6 +52,7 @@ person.personalFields();
 DataCategory category = person.field("email").orElseThrow().category();
 Protection whole = person.ceiling();                 // lo que requiere un registro Person completo
 Protection email = person.ceilingOf("email");        // el campo y cualquier campo que cuelgue de él
+Protection home = person.ceilingOf("home");          // un campo compuesto: todos los home.street, home.city, ...
 ```
 
 ### Exemption
@@ -65,35 +66,37 @@ estaba clasificado.
 | Componente | Descripción |
 |---|---|
 | `declaringClass` | La clase que declara el campo. |
-| `path` | La ruta del campo. |
+| `path` | La ruta del campo: su nombre, o `campo.parte` para un campo exento de un [`@Composite`](../annotations/composite.md) que contiene la clase. |
 | `reason` | Por qué el campo no contiene datos del modelo: el valor de `@Exempt`. |
 
 El constructor canónico lanza `NullPointerException` si un componente es `null`. Un `@Exempt` combinado con
-`@Category` o `@CategoryByRow` es un error `CONFLICTING_ANNOTATIONS` y no se lista.
+`@Category`, `@CategoryByRow` o `@DerivedFrom` es un error `CONFLICTING_ANNOTATIONS` y no se lista.
 
 ## FieldClassification
 
 ```java
 public record FieldClassification(Class<?> declaringClass, String path, DataCategory category, Basis basis,
                                   String reason, Confidentiality confidentiality, Integrity integrity,
-                                  Identifiability identifiability)
+                                  Identifiability identifiability, List<String> derivedFrom)
 ```
 
 La clasificación de un campo: su categoría y la protección efectiva del campo.
 
 | Componente | Admite `null` | Descripción |
 |---|---|---|
-| `declaringClass` | no | La clase que declara el campo (una superclase en los campos heredados). |
-| `path` | no | El nombre del campo, que lo identifica dentro de la clase clasificada. |
+| `declaringClass` | no | La clase que declara el campo (una superclase en los campos heredados, el compuesto en un campo de un [`@Composite`](../annotations/composite.md)). |
+| `path` | no | Identifica el campo dentro de la clase clasificada: su nombre, o `campo.parte` para un campo de un compuesto que contiene (`home.street`). |
 | `category` | no | La categoría **vigente**: una clave obsoleta ya está resuelta a su sustituta. |
 | `basis` | no | De dónde viene la categoría (ver `Basis`). |
 | `reason` | sí | El `reason` de un valor por defecto de clase o el `declaredBy` de una categoría por fila; `null` para `DECLARED`. |
 | `confidentiality` | no | El nivel de la categoría, o el más estricto que declara el campo. |
 | `integrity` | no | El nivel de la categoría, o el más estricto que declara el campo. |
 | `identifiability` | sí | Cómo apunta el valor a la persona; `null` si la categoría no es personal (y en los valores por defecto de clase, que nunca son personales). |
+| `derivedFrom` | no | En un campo [`DERIVED`](#basis), sus fuentes: rutas de campos de la misma clase (una ruta de compuesto se expande a sus campos), o `ClassName#path`, con el nombre binario de la clase, para un campo de otra clase. Vacía en cualquier otro campo. |
 
 El constructor canónico lanza `NullPointerException` si `declaringClass`, `path`, `category`, `basis`,
-`confidentiality` o `integrity` son `null`.
+`confidentiality` o `integrity` son `null`. Un `derivedFrom` `null` significa ninguna; la lista se copia en una
+inmutable.
 
 ### Basis
 
@@ -104,6 +107,10 @@ El constructor canónico lanza `NullPointerException` si `declaringClass`, `path
 | `DECLARED` | un [`@Category`](../annotations/category.md) en el campo | `null` |
 | `CLASS_DEFAULT` | el [`@DefaultCategory`](../annotations/default-category.md) de una clase | el `reason` del valor por defecto |
 | `BY_ROW` | el techo de un [`@CategoryByRow`](../annotations/category-by-row.md) | `declaredBy` |
+| `DERIVED` | un campo [`@DerivedFrom`](../annotations/derived-from.md): la clasificación de su fuente, o la categoría que declara, que protege al menos tanto como sus fuentes | `null` |
+
+Los campos de un [`@Composite`](../annotations/composite.md) tienen la base que les da su propia clase, no una base
+propia.
 
 ### Métodos
 

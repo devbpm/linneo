@@ -60,9 +60,11 @@ avisar.
 
 ```java
 student.holdsPersonalData();                              // true
-student.field("displayName");                             // Optional.empty: @Exempt
 student.field("email").orElseThrow().category().key();    // "user.contact.email"
-student.exempted().get(0).path();                         // "displayName"
+
+ClassClassification document = classifier.classify(Document.class);
+document.field("attachments");                            // Optional.empty: @Exempt
+document.exempted().get(0).path();                        // "attachments"
 ```
 
 ## `FieldClassification`
@@ -70,15 +72,16 @@ student.exempted().get(0).path();                         // "displayName"
 | Componente | Significado |
 |---|---|
 | `declaringClass()` | la clase que declara el campo (`AuditedEntity` en el caso de `createdBy`) |
-| `path()` | el nombre del campo, que lo identifica dentro de la clase clasificada (`fieldName()` devuelve su último segmento) |
+| `path()` | identifica el campo dentro de la clase clasificada: su nombre, o `campo.parte` para un campo de un `@Composite` que contiene (`fieldName()` devuelve su último segmento) |
 | `category()` | la `DataCategory`, ya resuelta en su sustituta si la clave era obsoleta |
-| `basis()` | de dónde viene la categoría: `DECLARED` (`@Category`), `CLASS_DEFAULT` (`@DefaultCategory`), `BY_ROW` (techo de `@CategoryByRow`) |
+| `basis()` | de dónde viene la categoría: `DECLARED` (`@Category`), `CLASS_DEFAULT` (`@DefaultCategory`), `BY_ROW` (techo de `@CategoryByRow`), `DERIVED` (`@DerivedFrom`) |
 | `reason()` | el motivo de un valor por defecto de clase, o el `declaredBy` de un campo por fila; `null` en `DECLARED` |
 | `confidentiality()`, `integrity()` | los niveles **efectivos**: los de la categoría o los más estrictos que declare el campo |
 | `identifiability()` | `IDENTIFIED`, `PSEUDONYMIZED`, `ANONYMIZED` o `AGGREGATED`; `null` si la categoría no es personal |
 | `isPersonal()` | categoría personal **y** almacenada `IDENTIFIED` o `PSEUDONYMIZED` |
 | `isSecret()` | la marca de secreto de la categoría |
 | `protection()` | la `Protection` de los valores almacenados (ver más abajo) |
+| `derivedFrom()` | en un campo `DERIVED`, sus fuentes; vacía en cualquier otro |
 
 `toString()` produce una línea compacta con la ruta, la categoría y el origen, útil en logs y aserciones. No nombra la
 clase declarante: usa `declaringClass()` cuando la necesites.
@@ -117,6 +120,33 @@ Algunos valores que conviene observar:
   categoría es `user.health_and_medical` (el techo).
 - `Staff.passwordHash`: `isSecret()` es `true`.
 
+### Campos derivados y compuestos
+
+Las dos anotaciones del módulo 3 que añaden información al resultado. En un campo `@DerivedFrom` el origen es
+`DERIVED` y `derivedFrom()` dice a partir de qué se calculó (`StudentCard` es la clase del módulo 3):
+
+```java
+FieldClassification age = classifier.classify(StudentCard.class).field("age").orElseThrow();
+age.basis();                  // DERIVED
+age.category().key();         // "user.demographic.date_of_birth", la de dateOfBirth
+age.derivedFrom();            // ["dateOfBirth"]
+age.isPersonal();             // true
+```
+
+Para una fuente de otra clase, `derivedFrom()` contiene `ClassName#path` con el nombre binario de la clase, por ejemplo
+`edu.example.university.Grade#mark` para `CourseSummary.averageMark`.
+
+Un `@Composite` se expande en una entrada por campo, con la ruta `campo.parte` y el compuesto como clase declarante
+(`ScholarshipApplication` es la clase del módulo 3):
+
+```java
+ClassClassification application = classifier.classify(ScholarshipApplication.class);
+FieldClassification city = application.field("home.city").orElseThrow();
+city.fieldName();             // "city"
+city.declaringClass();        // Address
+application.ceilingOf("home"); // la protección que cubre todos los campos de home
+```
+
 ## Protección de un campo y de una clase
 
 `protection()` da la protección que requieren los valores almacenados de un campo como una única `Protection`
@@ -136,7 +166,8 @@ staffCeiling.confidentiality();  // HIGH
 staffCeiling.secret();           // true: passwordHash
 ```
 
-`ceilingOf(path)` hace lo mismo para un campo y para todo campo cuya ruta empiece por la suya seguida de un punto.
+`ceilingOf(path)` hace lo mismo para un campo y para todo campo cuya ruta empiece por la suya seguida de un punto: en
+un campo compuesto como `home`, todo lo que contiene el compuesto (`home.street`, `home.city`, ...).
 
 ## Un inventario de datos
 
@@ -194,7 +225,8 @@ Aquí `identifiability()` nunca es `null`, porque `personalFields()` solo contie
 `CourseStatistics` no aparece: sus campos son datos de referencia o agregados.
 
 Los nombres de campo no son nombres de columna: tradúcelos con las reglas de nombrado de tu capa de persistencia si el
-inventario debe hablar de tablas y columnas.
+inventario debe hablar de tablas y columnas. Los campos de un `@Composite` embebido aparecen con su ruta
+(`home.city`).
 
 ## Un informe tipo RAT
 

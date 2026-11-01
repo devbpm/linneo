@@ -16,7 +16,9 @@ doc-sources:
 Reads the classification annotations of classes and checks them against a [`Taxonomy`](../taxonomy.md). It works on
 plain classes, records and JPA entities alike and needs no persistence library. It only reads annotations, never
 field values, so it needs no access to the classes beyond what `Class.getDeclaredFields()` requires. Instances are
-immutable and thread-safe.
+immutable and thread-safe: each call reads every class it needs once (the class, the [`@Composite`](../annotations/composite.md)
+classes it holds and the classes whose fields its [`@DerivedFrom`](../annotations/derived-from.md) fields name), detects
+cycles, and keeps nothing between calls.
 
 ## Methods
 
@@ -24,7 +26,7 @@ immutable and thread-safe.
 |---|---|---|
 | `Classifier(Taxonomy taxonomy)` | — | Creates a classifier for a taxonomy; keys must belong to it. `NullPointerException` if `taxonomy` is `null`. |
 | `ClassClassification classify(Class<?> type)` | [`ClassClassification`](results.md#classclassification) | Classifies one class: its field classifications and every violation found. Never throws for classification problems. `NullPointerException` if `type` is `null`. |
-| `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | immutable list | One classification per class, in the given order. |
+| `List<ClassClassification> classifyAll(Collection<? extends Class<?>> types)` | immutable list | One classification per class, in the given order. A class used by several of them, as a composite or as the source of derived fields, is read once. |
 | `List<ClassClassification> verify(Collection<? extends Class<?>> types)` | immutable list | Classifies the classes and throws `ClassificationException` carrying **every error of every class** if there is any (its message lists the first 50). Warnings do not fail. Returns the classifications when there is no error. |
 
 ```java
@@ -57,20 +59,33 @@ new Classifier(Taxonomy.load()).verify(entities);
   example Hibernate's enhancement: `$$_hibernate_interceptor`).
 - **Hibernate proxies.** A class whose name contains `$HibernateProxy$` is classified as the entity it extends: the
   `type()` of its [`ClassClassification`](results.md#classclassification) is the entity, not the proxy.
-- **Embedded objects are not entered.** The classifier does not descend into the type of a field: a JPA `@Embedded`
-  address is one field, classified by its own annotations, and the embeddable class must be verified as well, for
-  example by passing it to `verify` together with the entities.
+- **Composites are entered.** A field with no annotation of its own whose type is a
+  [`@Composite`](../annotations/composite.md) class, or an array, a collection or an `Optional` of one, is classified
+  by the composite's fields: one entry per field, with the path `field.part` (`home.street`), under the composite's
+  own annotations and `@DefaultCategory`, not the holder's. A `Map` is never descended into. A class that is not
+  marked `@Composite`, such as a JPA `@Embedded` class, is one ordinary field that needs a category of its own (or a class default): mark the
+  class `@Composite` rather than passing it to `verify` separately.
+- **Derived fields.** A field marked [`@DerivedFrom`](../annotations/derived-from.md) takes the classification of its
+  source, or declares one that protects at least as much. Its sources may be declared after it, be derived fields
+  themselves, be parts of a composite, or belong to another class (`type`), which the classifier reads as well.
 - Fields marked [`@Exempt`](../annotations/exempt.md) are not classified after their annotation is checked, and
-  `ClassClassification.exempted()` lists them with their reasons.
+  `ClassClassification.exempted()` lists them with their reasons. `@Exempt` is for technical fields; a value computed
+  from other fields is data and uses `@DerivedFrom` or `@Category`.
 - Annotations are read from the field itself (`getDeclaredAnnotation`), so on a record they must target the
-  component's field, which `@Category`, `@CategoryByRow` and `@Exempt` do.
+  component's field, which `@Category`, `@CategoryByRow`, `@DerivedFrom` and `@Exempt` do.
 
 Each remaining field is resolved by the [resolution order](../annotations/README.md#resolution-order): its own
-`@Category` or `@CategoryByRow`, then the `@DefaultCategory` of the declaring class, then the `@DefaultCategory` of
-the classified class, otherwise `UNCLASSIFIED_FIELD`.
+`@Category` or `@CategoryByRow`; for a `@DerivedFrom` field without a category, the classification of its source; for
+a field of a composite type, the fields of the composite; then the `@DefaultCategory` of the declaring class, then the
+`@DefaultCategory` of the classified class, otherwise `UNCLASSIFIED_FIELD`.
 
 Order of violations in a `ClassClassification`: first the checks of each `@DefaultCategory` in the hierarchy (top
-down), then the field checks in the order of the fields.
+down), then the field checks in the order of the fields (the problems of a composite at the position of the field that
+holds it), and last the checks of the derived fields, which wait for their sources.
+
+Protection never drops silently: a derived field must protect at least as much as each of its sources unless it
+declares an anonymized or aggregated value, and a composite stored as one value must protect at least as much as the
+fields of the composite. A composite that contains itself, or derivations that depend on each other, are a `CYCLE`.
 
 ## Fail-closed behaviour
 
@@ -84,7 +99,12 @@ Nothing is classified by default. These are **errors** (they fail `verify` and m
 - a level lower than the category's (`LOWERED_LEVEL`);
 - more than one value in an optional element of `@Category` (`AMBIGUOUS_VALUE`);
 - an identifiability on a non-personal category (`IDENTIFIABILITY_NOT_APPLICABLE`);
-- a field that hides a superclass field of the same name (`DUPLICATE_FIELD`).
+- a field that hides a superclass field of the same name (`DUPLICATE_FIELD`);
+- a derived field whose source is missing, exempted or in error, or that has none (`UNKNOWN_SOURCE`);
+- a derived field without a category whose sources are classified differently (`AMBIGUOUS_DERIVATION`);
+- a derived field that protects less than a source and is not declared anonymized or aggregated (`WEAKER_THAN_SOURCE`);
+- a composite stored as one value that protects less than its fields (`WEAKER_THAN_PARTS`);
+- a composite that contains itself, or derived fields that depend on each other (`CYCLE`).
 
 A deprecated key is the only **warning** (`DEPRECATED_CATEGORY`): the field is classified with the current
 replacement. A field with an error is usually missing from `fields()`; see [Violations](violations.md) for the exact

@@ -106,7 +106,8 @@ Cada línea es una `Violation`, impresa como:
 ```
 
 - La clase es la que **se está clasificando**, aunque el campo esté declarado en una superclase.
-- La ruta (el nombre del campo) falta cuando el problema está en una anotación de clase (`@DefaultCategory`).
+- La ruta es el nombre del campo (`campo.parte` para un campo de un `@Composite` que contiene la clase, módulo 3).
+  Falta cuando el problema está en una anotación de clase (`@DefaultCategory`).
 - El mensaje nombra la clave o la anotación implicada.
 
 El mensaje lista los 50 primeros errores. Si hay más, una última línea los cuenta todos por código
@@ -133,15 +134,20 @@ Los mensajes de abajo son exactamente los que produce Linneo (con `X` para la cl
 
 | Código | Gravedad | Mensaje | Corrección |
 |---|---|---|---|
-| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (o `on Superclase or X` para un campo heredado) | Añade `@Category` (o `@CategoryByRow`/`@Exempt`), o una `@DefaultCategory` no personal si la clase no contiene datos personales |
+| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (o `on Superclase or X` para un campo heredado) | Añade `@Category` (o `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), o una `@DefaultCategory` no personal si la clase no contiene datos personales; en una clase embebida, márcala `@Composite` |
 | `UNKNOWN_CATEGORY` | error | `unknown data category 'k'` | Corrige la clave (usa las constantes de `Categories`) o asegúrate de que se carga la extensión que la define (`Taxonomy.load()`) |
 | `PERSONAL_DEFAULT` | error | `@DefaultCategory of X names 'k', which is personal data: declare personal fields one by one with @Category` | Quita el valor por defecto y anota los campos personales uno a uno |
 | `MISSING_REASON` | error | `@DefaultCategory of X needs a reason`, `@Exempt needs a reason` o `@CategoryByRow needs declaredBy` | Escribe el motivo para el revisor |
-| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category or @CategoryByRow` o `@Category and @CategoryByRow cannot be used together` | Deja solo una |
+| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom` o `@CategoryByRow cannot be combined with @Category or @DerivedFrom` | Deja solo una (`@Category` con `@DerivedFrom` está permitido) |
 | `LOWERED_LEVEL` | error | `confidentiality LOW is lower than the MEDIUM of 'k'` (o `integrity ...`) | Quita el elemento o súbelo; los niveles solo suben |
 | `AMBIGUOUS_VALUE` | error | `confidentiality must have at most one value` (o `integrity`, `identifiability`) | Indica un solo valor |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `'k' is not personal data and has no identifiability` | Quita `identifiability` o comprueba que la clave es la correcta |
 | `DUPLICATE_FIELD` | error | `hides the field of the same name declared by Superclase; rename one of them` | Renombra uno de los dos campos: un campo se identifica por su nombre, así que un campo de una subclase no puede reutilizar el nombre de uno de la superclase |
+| `UNKNOWN_SOURCE` | error | `@DerivedFrom needs at least one source` o `the source 's' is not a classified field of X` o `the source 's' has an error` | Nombra un campo clasificado como fuente; un campo `@Exempt` o con un error no puede ser fuente |
+| `AMBIGUOUS_DERIVATION` | error | `its sources [...] have different classifications; declare the category of the derived value with @Category` | Añade `@Category` al campo derivado |
+| `WEAKER_THAN_SOURCE` | error | `'k' protects less than its source(s) [...]; a value derived from data needs at least its protection, unless it is declared anonymized or aggregated` | Declara una categoría que proteja al menos tanto, o quita `@Category` para tomar la de la fuente |
+| `WEAKER_THAN_PARTS` | error | `'k' protects less than the fields of X need (...)` | Declara una categoría que cubra todos los campos del compuesto guardado como un solo valor |
+| `CYCLE` | error | `the composite X contains itself; classify the field as one value with @Category or @CategoryByRow` o `is derived from itself through other derived fields` | Clasifica como un solo valor el campo que cierra el bucle, o rompe la derivación circular |
 | `DEPRECATED_CATEGORY` | **aviso** | `data category 'k' is deprecated; use 'r'` | Sustituye la clave por la sugerida |
 
 Esta es una clase rota a propósito y la salida real de `verify`:
@@ -165,9 +171,9 @@ public class BadFields {
  - ERROR LOWERED_LEVEL edu.example.university.BadFields.disabilityDegree: confidentiality MEDIUM is lower than the HIGH of 'user.health_and_medical.disability'
  - ERROR IDENTIFIABILITY_NOT_APPLICABLE edu.example.university.BadFields.theme: 'system.configuration' is not personal data and has no identifiability
  - ERROR AMBIGUOUS_VALUE edu.example.university.BadFields.name: integrity must have at most one value
- - ERROR CONFLICTING_ANNOTATIONS edu.example.university.BadFields.email2: @Exempt cannot be combined with @Category or @CategoryByRow
+ - ERROR CONFLICTING_ANNOTATIONS edu.example.university.BadFields.email2: @Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom
  - ERROR MISSING_REASON edu.example.university.BadFields.email2: @Exempt needs a reason
- - ERROR CONFLICTING_ANNOTATIONS edu.example.university.BadFields.both: @Category and @CategoryByRow cannot be used together
+ - ERROR CONFLICTING_ANNOTATIONS edu.example.university.BadFields.both: @CategoryByRow cannot be combined with @Category or @DerivedFrom
  - ERROR MISSING_REASON edu.example.university.BadFields.blob: @CategoryByRow needs declaredBy
 ```
 
@@ -223,29 +229,29 @@ assertTrue(warnings.isEmpty(), () -> "Sustituye las claves obsoletas: " + warnin
 ## Obtener las clases desde JPA
 
 Enumerar las clases a mano funciona en un modelo pequeño, pero es fácil olvidar alguna. Con JPA, tómalas del
-metamodelo. Incluye también los **embebibles**, porque el clasificador no entra en los campos `@Embedded`:
+metamodelo:
 
 ```java
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.classify.Classifier;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.metamodel.ManagedType;
-import jakarta.persistence.metamodel.Metamodel;
+import jakarta.persistence.metamodel.EntityType;
 import java.util.List;
-import java.util.stream.Stream;
 
 static void verifyAllEntities(EntityManagerFactory entityManagerFactory) {
-    Metamodel metamodel = entityManagerFactory.getMetamodel();
-    List<Class<?>> classes = Stream.concat(metamodel.getEntities().stream(), metamodel.getEmbeddables().stream())
-            .<Class<?>>map(ManagedType::getJavaType)
+    List<Class<?>> entities = entityManagerFactory.getMetamodel().getEntities().stream()
+            .<Class<?>>map(EntityType::getJavaType)
             .toList();
-    new Classifier(Taxonomy.load()).verify(classes);
+    new Classifier(Taxonomy.load()).verify(entities);
 }
 ```
 
 Llámalo desde un test de integración que ya tenga un `EntityManagerFactory` (por ejemplo, un test de Spring Boot con
 un `EntityManagerFactory` inyectado). No hace falta enumerar las superclases mapeadas como `AuditedEntity`: sus campos
-se clasifican como parte de cada entidad.
+se clasifican como parte de cada entidad. Tampoco los **embebibles**, siempre que estén marcados con `@Composite`
+(módulo 3): el clasificador entra en ellos desde cada entidad que contiene uno e informa de sus problemas en rutas
+como `home.street`. Un embebible que no está marcado `@Composite` aparece como un campo sin clasificar de la entidad
+(`UNCLASSIFIED_FIELD`).
 
 Sin JPA vale cualquier fuente de clases: una lista fija, un escaneo del class path, los records de un paquete.
 
@@ -256,7 +262,8 @@ Sin JPA vale cualquier fuente de clases: una lista fija, un escaneo del class pa
 - **Capturar la excepción y limitarse a registrarla en el log.** Lo que se busca es que falle la compilación.
 - **Verificar solo algunas entidades.** Tómalas del metamodelo para que las nuevas queden cubiertas automáticamente.
 - **Corregir una infracción añadiendo `@Exempt`** a un campo que contiene datos. Revisa las exenciones como código.
-- **Olvidar los embebibles.** Sus campos son invisibles si no se verifica también la clase embebible.
+- **Olvidar `@Composite` en un embebible.** El campo embebido no tiene categoría y se informa como
+  `UNCLASSIFIED_FIELD`; la solución es el marcador en la clase embebible, no un `@Exempt` en el campo.
 - **Ignorar los avisos para siempre.** Una clave obsoleta sigue funcionando, pero la sustituta es la que usarán el
   catálogo y los informes.
 
@@ -273,7 +280,7 @@ y escribe la corrección.
  - ERROR UNCLASSIFIED_FIELD edu.example.university.Staff.officePhone: no @Category on the field and no @DefaultCategory on Staff
  - ERROR LOWERED_LEVEL edu.example.university.Grade.mark: integrity MEDIUM is lower than the HIGH of 'user.education.grade'
  - ERROR PERSONAL_DEFAULT edu.example.university.Building: @DefaultCategory of Building names 'user.workplace', which is personal data: declare personal fields one by one with @Category
- - ERROR CONFLICTING_ANNOTATIONS edu.example.university.Document.attachments: @Exempt cannot be combined with @Category or @CategoryByRow
+ - ERROR CONFLICTING_ANNOTATIONS edu.example.university.Document.attachments: @Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom
 ```
 
 **Ejercicio 4.3 — Modo estricto.** Amplía tu test para que falle también si hay algún aviso, con un mensaje que los
@@ -288,7 +295,7 @@ enumere.
 2. ¿Hace una infracción `DEPRECATED_CATEGORY` que `verify` lance la excepción?
 3. En `ERROR UNCLASSIFIED_FIELD edu.example.university.Student.createdAt: ...`, ¿qué clase declara `createdAt`?
 4. ¿Por qué debe usar el test `Taxonomy.load()`?
-5. ¿Por qué hay que incluir los embebibles de JPA en las clases verificadas?
+5. ¿Por qué no hace falta enumerar los embebibles de JPA en las clases verificadas, y qué deben llevar en su lugar?
 
 ## Para saber más
 
@@ -316,8 +323,8 @@ módulo 3 y no imprime nada (no hay avisos).
 - `Building`: `user.workplace` es personal. Un edificio es un dato de la organización: usa
   `@DefaultCategory(value = ORG_LOCATION, reason = "edificios y aulas de la universidad")` y anota con su propia
   `@Category` cualquier campo personal (por ejemplo, el nombre del responsable del edificio).
-- `Document.attachments`: lleva `@Exempt` y una categoría a la vez. Un campo de relación no contiene datos por sí
-  mismo: deja solo `@Exempt("relación: cada Attachment se clasifica por separado")`.
+- `Document.attachments`: lleva `@Exempt` junto con otra anotación de clasificación. Un campo de relación no contiene
+  datos por sí mismo: deja solo `@Exempt("relación: cada Attachment se clasifica por separado")`.
 
 **Ejercicio 4.3**
 
@@ -348,7 +355,8 @@ try {
 3. La salida no lo dice: nombra la clase que se clasifica (`Student`). `createdAt` puede estar declarado en una
    superclase (en nuestro modelo, `AuditedEntity`).
 4. Para que se apliquen las extensiones registradas en la aplicación y se conozcan sus claves.
-5. El clasificador no entra en los campos `@Embedded`; los campos del embebible solo se comprueban si se verifica la
-   clase embebible.
+5. El clasificador entra en una clase `@Composite` desde cada clase que la contiene, así que los campos del embebible
+   se comprueban como parte de cada entidad. Deben llevar `@Composite`; sin él, el campo embebido es
+   `UNCLASSIFIED_FIELD`.
 
 </details>

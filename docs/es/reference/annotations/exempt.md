@@ -15,8 +15,12 @@ doc-sources:
 `io.github.devbpm.linneo.annotation.Exempt` —
 `@Documented @Retention(RUNTIME) @Target({FIELD, RECORD_COMPONENT})`, `@since 0.1.0`
 
-Excluye de la clasificación un campo que no contiene datos del modelo: un valor calculado a partir de otros campos,
-una caché o un manejador técnico.
+Excluye de la clasificación un campo técnico que no contiene datos del modelo: una caché, un manejador o un estado
+que mantiene un framework.
+
+Un valor calculado a partir de otros campos **no** es un campo así: la edad calculada a partir de una fecha de
+nacimiento es un dato personal. Se clasifica con [`@DerivedFrom`](derived-from.md) o [`@Category`](category.md),
+nunca con `@Exempt`.
 
 Los campos estáticos, sintéticos, `transient` y `$$_...` (los añade Hibernate) se excluyen **siempre** y no necesitan anotación. Un `@Exempt` en uno
 de esos campos se ignora por completo (ni siquiera se comprueba su motivo).
@@ -32,18 +36,23 @@ de esos campos se ignora por completo (ni siquiera se comprueba su motivo).
 | Regla | Violación | Gravedad |
 |---|---|---|
 | `value` no puede estar en blanco | `MISSING_REASON` (`@Exempt needs a reason`) | error |
-| No combinarla con `@Category` ni con `@CategoryByRow` | `CONFLICTING_ANNOTATIONS` (`@Exempt cannot be combined with @Category or @CategoryByRow`) | error |
+| No combinarla con `@Category`, `@CategoryByRow` ni `@DerivedFrom` | `CONFLICTING_ANNOTATIONS` (`@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom`) | error |
 
 Un campo exento nunca aparece en `ClassClassification.fields()`, tenga o no violaciones; ambas comprobaciones pueden
 informar sobre el mismo campo. Un campo exento se lista, con su motivo, en
 [`ClassClassification.exempted()`](../classify/results.md#exemption), para que se note cuando se excluye un campo que
-antes estaba clasificado; la excepción es un campo que combina `@Exempt` con `@Category` o `@CategoryByRow`, que es un
-error y no se lista.
+antes estaba clasificado; la excepción es un campo que combina `@Exempt` con `@Category`, `@CategoryByRow` o
+`@DerivedFrom`, que es un error y no se lista.
+
+Un campo exento no puede ser la fuente de un [`@DerivedFrom`](derived-from.md): la fuente debe ser un campo
+clasificado (`UNKNOWN_SOURCE`). Un campo exento dentro de un [`@Composite`](composite.md) se lista en `exempted()`
+con la ruta `campo.parte`.
 
 ## Ejemplo
 
 ```java
 import io.github.devbpm.linneo.annotation.Category;
+import io.github.devbpm.linneo.annotation.DerivedFrom;
 import io.github.devbpm.linneo.annotation.Exempt;
 import static io.github.devbpm.linneo.Categories.*;
 
@@ -52,12 +61,15 @@ public class Person {
     @Category(USER_NAME)
     private String fullName;
 
-    @Exempt("computed from fullName")
+    @DerivedFrom("fullName")        // calculado a partir de fullName: es un dato, no va con @Exempt
     private String initials;
 
-    private transient Object cache;     // excluido sin anotación
+    @Exempt("handle the persistence framework keeps")
+    private Object handle;          // técnico: no contiene datos del modelo
+
+    private transient Object cache; // excluido sin anotación
 }
 ```
 
-Véase también: [Visión general de las anotaciones](README.md) · [Classifier](../classify/classifier.md) ·
+Véase también: [Visión general de las anotaciones](README.md) · [`@DerivedFrom`](derived-from.md) · [Classifier](../classify/classifier.md) ·
 [Violaciones](../classify/violations.md) · curso: [Anotar modelos](../../course/03-annotating-models.md)

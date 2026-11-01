@@ -26,6 +26,7 @@ import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.annotation.Category;
+import io.github.devbpm.linneo.annotation.Composite;
 import io.github.devbpm.linneo.processing.ProcessingViolation.Code;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,20 @@ class ProcessingCheckerTest {
     static class Note {
         @Category(value = Categories.USER_CONTENT_PRIVATE, confidentiality = Confidentiality.HIGH)
         private String text;
+    }
+
+    @SuppressWarnings("unused")
+    @Composite
+    static class MedicalHistory {
+        @Category(Categories.USER_HEALTH_AND_MEDICAL)
+        private String condition;
+    }
+
+    @SuppressWarnings("unused")
+    static class Applicant {
+        @Category(Categories.USER_NAME)
+        private String name;
+        private MedicalHistory history;
     }
 
     @SuppressWarnings("unused")
@@ -306,5 +321,16 @@ class ProcessingCheckerTest {
                         () -> new ProcessingRecord(List.of(checker.check(enrollment().legalBasis(null).build())))),
                 () -> assertThrows(IllegalArgumentException.class, () -> new Transfer(" ",
                         TransferSafeguard.ADEQUACY_DECISION)));
+    }
+    @Test
+    @DisplayName("the personal data of a composite held by an entity counts, with its nature")
+    void composite() {
+        CheckedActivity checked = checker.check(ProcessingActivity.builder("admission", "Admission")
+                .purposes(DataUses.EDUCATION_ADMISSION).dataSubjects(DataSubjects.APPLICANT).entities(Applicant.class)
+                .legalBasis(LegalBasis.CONTRACT).retention("Two years").build());
+        assertAll(
+                () -> assertEquals(List.of(Categories.USER_HEALTH_AND_MEDICAL, Categories.USER_NAME),
+                        checked.dataCategories().stream().map(DataCategory::key).toList()),
+                () -> assertTrue(codes(checked).contains(Code.MISSING_SPECIAL_CATEGORY_CONDITION)));
     }
 }

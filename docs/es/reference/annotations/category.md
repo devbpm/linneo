@@ -41,6 +41,8 @@ valor.
 | `integrity` no inferior a la de la categoría | `LOWERED_LEVEL` (`integrity <i> is lower than the <ci> of '<key>'`) | error | no |
 | `identifiability` solo en categorías personales | `IDENTIFIABILITY_NOT_APPLICABLE` (`'<key>' is not personal data and has no identifiability`) | error | no |
 | No combinarla con `@CategoryByRow` ni con `@Exempt` | `CONFLICTING_ANNOTATIONS` | error | no |
+| En un campo que contiene un [`@Composite`](composite.md) (guardado como un solo valor), protege al menos tanto como los campos del compuesto | `WEAKER_THAN_PARTS` | error | **sí** (el error se informa igualmente) |
+| Con [`@DerivedFrom`](derived-from.md), protege al menos tanto como cada fuente, salvo que declare el valor anonimizado o agregado | `WEAKER_THAN_SOURCE` | error | no |
 
 Notas:
 
@@ -55,7 +57,7 @@ Notas:
 | Componente | Valor |
 |---|---|
 | `category` | la categoría resuelta |
-| `basis` | `DECLARED` |
+| `basis` | `DECLARED` (`DERIVED` cuando el campo tiene además `@DerivedFrom`) |
 | `reason` | `null` |
 | `confidentiality` / `integrity` | el valor declarado o el de la categoría |
 | `identifiability` | el valor declarado, o `IDENTIFIED`, en una categoría personal; `null` en una no personal |
@@ -103,6 +105,7 @@ private String c;
 private String d;
 ```
 
-Véase también: [Visión general de las anotaciones](README.md) · [Niveles de protección](../protection-levels.md) ·
+Véase también: [Visión general de las anotaciones](README.md) · [`@DerivedFrom`](derived-from.md) ·
+[`@Composite`](composite.md) · [Niveles de protección](../protection-levels.md) ·
 [Constantes de claves](../key-constants.md) · [Violaciones](../classify/violations.md) ·
 curso: [Anotar modelos](../../course/03-annotating-models.md)

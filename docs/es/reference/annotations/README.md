@@ -9,13 +9,16 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/annotation/Category.java
   - src/main/java/io/github/devbpm/linneo/annotation/DefaultCategory.java
   - src/main/java/io/github/devbpm/linneo/annotation/CategoryByRow.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DerivedFrom.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Composite.java
   - src/main/java/io/github/devbpm/linneo/annotation/Exempt.java
+  - src/main/java/io/github/devbpm/linneo/annotation/package-info.java
   - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
 -->
 
 # Anotaciones
 
-Cuatro anotaciones de `io.github.devbpm.linneo.annotation` declaran qué contiene un modelo de datos. Todas son
+Seis anotaciones de `io.github.devbpm.linneo.annotation` declaran qué contiene un modelo de datos. Todas son
 `@Documented`, `@Retention(RUNTIME)` y `@since 0.1.0`. Las lee el [`Classifier`](../classify/classifier.md), que
 nunca lee los valores de los campos.
 
@@ -24,7 +27,9 @@ nunca lee los valores de los campos.
 | `@Category` | campo, componente de record | la categoría de un campo, opcionalmente con niveles más estrictos y su identificabilidad | [category.md](category.md) |
 | `@DefaultCategory` | tipo | la categoría no personal de todos los campos sin anotar de una clase, con el motivo | [default-category.md](default-category.md) |
 | `@CategoryByRow` | campo, componente de record | un campo cuya categoría depende de cada fila, con la categoría más protectora que puede tener una fila | [category-by-row.md](category-by-row.md) |
-| `@Exempt` | campo, componente de record | un campo que no contiene datos del modelo, con el motivo | [exempt.md](exempt.md) |
+| `@DerivedFrom` | campo, componente de record | un campo cuyo valor se calcula a partir de otros campos: toma su clasificación, o declara una que protege al menos tanto | [derived-from.md](derived-from.md) |
+| `@Composite` | tipo | una clase que forma parte de otro registro, como una dirección embebida: los campos que la contienen se clasifican por los campos de la propia clase | [composite.md](composite.md) |
+| `@Exempt` | campo, componente de record | un campo técnico (caché, manejador, estado de un framework) que no contiene datos del modelo, con el motivo | [exempt.md](exempt.md) |
 
 En un componente de record, las anotaciones se aplican también al campo del componente, que es lo que lee el
 clasificador.
@@ -35,6 +40,10 @@ El clasificador recorre la clase y sus superclases (se detiene antes de `Object`
 todos los campos que declaran salvo los **estáticos**, **transient** y **sintéticos** (y los llamados `$$_...`, que añade Hibernate), que se omiten siempre sin
 necesidad de anotación. Consulta [Classifier](../classify/classifier.md#qué-campos-se-examinan).
 
+Un campo sin anotación propia cuyo tipo es una clase [`@Composite`](composite.md) (o un array, una colección o un
+`Optional` de ella) no se clasifica como un solo campo: se clasifica cada campo del compuesto, con la ruta
+`campo.parte`.
+
 ## Orden de resolución
 
 Para cada campo considerado, gana la primera regla que se cumple:
@@ -42,15 +51,19 @@ Para cada campo considerado, gana la primera regla que se cumple:
 | # | Regla | Resultado (`FieldClassification.basis()`) |
 |---|---|---|
 | 1 | El campo tiene `@Exempt` | se omite: sin clasificación |
-| 2 | El campo tiene `@Category` | la categoría declarada (`DECLARED`) |
+| 2 | El campo tiene `@Category` | la categoría declarada (`DECLARED`; `DERIVED` si además tiene `@DerivedFrom`) |
 | 2 | El campo tiene `@CategoryByRow` | la categoría techo (`BY_ROW`) |
-| 3 | La clase que **declara** el campo tiene `@DefaultCategory` | ese valor por defecto (`CLASS_DEFAULT`) |
-| 4 | La clase **que se clasifica** tiene `@DefaultCategory` | ese valor por defecto (`CLASS_DEFAULT`) |
-| 5 | ninguna de las anteriores | error `UNCLASSIFIED_FIELD` |
+| 3 | El campo tiene `@DerivedFrom` y no tiene `@Category` | la clasificación de su fuente (`DERIVED`) |
+| 4 | El tipo del campo es una clase `@Composite`, o un array, una colección o un `Optional` de ella | una clasificación por cada campo del compuesto, con la ruta `campo.parte`, cada una como la resuelve su propia clase |
+| 5 | La clase que **declara** el campo tiene `@DefaultCategory` | ese valor por defecto (`CLASS_DEFAULT`) |
+| 6 | La clase **que se clasifica** tiene `@DefaultCategory` | ese valor por defecto (`CLASS_DEFAULT`) |
+| 7 | ninguna de las anteriores | error `UNCLASSIFIED_FIELD` |
 
 Consecuencias:
 
 - Una anotación en el campo siempre prevalece sobre el valor por defecto de la clase.
+- Los campos de un compuesto se resuelven con las anotaciones y el `@DefaultCategory` del propio compuesto, nunca
+  con el valor por defecto de la clase que lo contiene.
 - El `@DefaultCategory` de una superclase cubre los campos que declara esa superclase, aunque se clasifique una
   subclase.
 - El `@DefaultCategory` de una subclase cubre los campos que declara y los campos heredados sin anotar de
@@ -64,11 +77,12 @@ Consecuencias:
 
 | Combinación en un campo | Violación | Efecto |
 |---|---|---|
-| `@Exempt` + `@Category` y/o `@CategoryByRow` | `CONFLICTING_ANNOTATIONS`: `@Exempt cannot be combined with @Category or @CategoryByRow` | se omite el campo (el motivo de `@Exempt` se sigue comprobando) |
-| `@Category` + `@CategoryByRow` | `CONFLICTING_ANNOTATIONS`: `@Category and @CategoryByRow cannot be used together` | el campo no se clasifica |
-| `@Category` o `@CategoryByRow` + `@DefaultCategory` de la clase | ninguna | prevalece la anotación del campo |
+| `@Exempt` + `@Category`, `@CategoryByRow` y/o `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom` | se omite el campo (el motivo de `@Exempt` se sigue comprobando) |
+| `@CategoryByRow` + `@Category` y/o `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@CategoryByRow cannot be combined with @Category or @DerivedFrom` | el campo no se clasifica |
+| `@Category` + `@DerivedFrom` | ninguna | el campo declara su categoría y debe proteger al menos tanto como sus fuentes |
+| `@Category`, `@CategoryByRow` o `@DerivedFrom` + `@DefaultCategory` de la clase | ninguna | prevalece la anotación del campo |
 
-Todos los conflictos son errores. Consulta [Violaciones](../classify/violations.md) para ver todos los códigos.
+Los conflictos son errores. Consulta [Violaciones](../classify/violations.md) para ver todos los códigos.
 
 ## Ejemplo
 
@@ -84,13 +98,14 @@ public class MenuGroup {
     @Category(USER_UNIQUE_ID)                 // DECLARED: prevalece sobre el valor por defecto
     private Long createdBy;
 
-    @Exempt("computed from code")
-    private String displayKey;                // se omite
+    @Exempt("cache of the rendered menu")
+    private String renderedMenu;              // se omite
 
     private transient String cache;           // se omite: transient
 }
 ```
 
 Véase también: [`@Category`](category.md) · [`@DefaultCategory`](default-category.md) ·
-[`@CategoryByRow`](category-by-row.md) · [`@Exempt`](exempt.md) · [Classifier](../classify/classifier.md) ·
+[`@CategoryByRow`](category-by-row.md) · [`@DerivedFrom`](derived-from.md) · [`@Composite`](composite.md) ·
+[`@Exempt`](exempt.md) · [Classifier](../classify/classifier.md) ·
 curso: [Anotar modelos](../../course/03-annotating-models.md)

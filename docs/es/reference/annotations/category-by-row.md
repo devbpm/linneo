@@ -35,7 +35,8 @@ No hay elementos de nivel ni de identificabilidad: el campo toma los niveles del
 | `declaredBy` no puede estar en blanco | `MISSING_REASON` (`@CategoryByRow needs declaredBy`) | error | **sí** (el error se informa igualmente) |
 | `ceiling` debe ser una clave de la taxonomía | `UNKNOWN_CATEGORY` (`unknown data category '<key>'`) | error | no |
 | Un `ceiling` obsoleto se sustituye por su sustituta vigente | `DEPRECATED_CATEGORY` | aviso | sí, con la sustituta |
-| No combinarla con `@Category` ni con `@Exempt` | `CONFLICTING_ANNOTATIONS` | error | no |
+| No combinarla con `@Category`, `@DerivedFrom` ni `@Exempt` | `CONFLICTING_ANNOTATIONS` | error | no |
+| En un campo que contiene un [`@Composite`](composite.md) (guardado como un solo valor), el techo protege al menos tanto como los campos del compuesto | `WEAKER_THAN_PARTS` | error | **sí** (el error se informa igualmente) |
 
 ## FieldClassification resultante
 
