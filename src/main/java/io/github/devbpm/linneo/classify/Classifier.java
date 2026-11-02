@@ -56,6 +56,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Reads the classification annotations of classes and checks them against a {@link Taxonomy}.
@@ -646,21 +647,33 @@ public final class Classifier {
         private void checkParts(Whole whole) {
             Slot slot = slots.get(whole.name());
             FieldClassification classification = slot == null ? null : slot.result;
-            if (whole.basis() != HowClassified.EXEMPT && classification == null) {
+            if (classification != null) {
+                checkComposites(whole, classification);
+                checkReferences(whole, whole.basis() == HowClassified.EXEMPT ? null : classification);
+            } else if (whole.basis() == HowClassified.EXEMPT) {
+                checkReferences(whole, null);
+            }
+        }
+
+        // The composites a classified field stores as one value.
+        private void checkComposites(Whole whole, FieldClassification classification) {
+            if (whole.composites().isEmpty()) {
                 return;
             }
-            if (!whole.composites().isEmpty()) {
-                Optional<Protection> ceiling = ceilingOf(whole.composites());
-                if (ceiling.isEmpty()) {
-                    error(whole.name(), Code.WEAKER_THAN_PARTS, "the fields of " + names(whole.composites())
-                            + " have errors, so what '" + classification.category().key() + "' must protect is"
-                            + " unknown");
-                } else if (!classification.protection().covers(ceiling.get())) {
-                    error(whole.name(), Code.WEAKER_THAN_PARTS, "'" + classification.category().key()
-                            + "' protects less than the fields of " + names(whole.composites()) + " need ("
-                            + describe(ceiling.get()) + ")");
-                }
+            Optional<Protection> ceiling = ceilingOf(whole.composites());
+            if (ceiling.isEmpty()) {
+                error(whole.name(), Code.WEAKER_THAN_PARTS, "the fields of " + names(whole.composites())
+                        + " have errors, so what '" + classification.category().key() + "' must protect is"
+                        + " unknown");
+            } else if (!classification.protection().covers(ceiling.get())) {
+                error(whole.name(), Code.WEAKER_THAN_PARTS, "'" + classification.category().key()
+                        + "' protects less than the fields of " + names(whole.composites()) + " need ("
+                        + describe(ceiling.get()) + ")");
             }
+        }
+
+        // The references a field holds, under a class default (its classification) or an exemption (null).
+        private void checkReferences(Whole whole, FieldClassification classDefault) {
             Class<?> personal = null;
             Class<?> unknown = null;
             for (Class<?> reference : whole.references()) {
@@ -680,13 +693,13 @@ public final class Classifier {
                     : ", whose fields have errors, so whether it holds personal data is unknown: fix them, or")
                     + " declare what the field stores with @Category, or take the classification of the record's"
                     + " key with @DerivedFrom(type = " + referred + ".class, value = \"id\")";
-            if (whole.basis() == HowClassified.EXEMPT) {
+            if (classDefault == null) {
                 error(whole.name(), Code.CONFLICTING_ANNOTATIONS, "@Exempt is for a field that holds no data of the"
                         + " model, and this one refers to " + referred + advice);
             } else {
                 refused.add(whole.name());
                 error(whole.name(), Code.UNCLASSIFIED_FIELD, "the class default '"
-                        + classification.category().key() + "' does not apply: the field refers to " + referred
+                        + classDefault.category().key() + "' does not apply: the field refers to " + referred
                         + advice);
             }
         }
@@ -1259,7 +1272,10 @@ public final class Classifier {
         };
     }
 
-    private record Parameterized(Class<?> raw, Type owner, Type[] arguments) implements ParameterizedType {
+    // The types substitute creates. Equality follows the contracts of the reflection interfaces, as the JDK's own
+    // implementations do: by content, arrays included, and with any implementation of the same interface.
+    // Package-private for the test of those contracts.
+    record Parameterized(Class<?> raw, Type owner, Type[] arguments) implements ParameterizedType {
         @Override
         public Type[] getActualTypeArguments() {
             return arguments.clone();
@@ -1274,16 +1290,48 @@ public final class Classifier {
         public Type getOwnerType() {
             return owner;
         }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof ParameterizedType p && raw.equals(p.getRawType())
+                    && Objects.equals(owner, p.getOwnerType()) && Arrays.equals(arguments, p.getActualTypeArguments());
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(arguments) ^ Objects.hashCode(owner) ^ raw.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return raw.getTypeName() + Arrays.stream(arguments).map(Type::getTypeName)
+                    .collect(Collectors.joining(", ", "<", ">"));
+        }
     }
 
-    private record GenericArray(Type component) implements GenericArrayType {
+    record GenericArray(Type component) implements GenericArrayType {
         @Override
         public Type getGenericComponentType() {
             return component;
         }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof GenericArrayType g && component.equals(g.getGenericComponentType());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(component);
+        }
+
+        @Override
+        public String toString() {
+            return component.getTypeName() + "[]";
+        }
     }
 
-    private record Wildcard(Type[] upper, Type[] lower) implements WildcardType {
+    record Wildcard(Type[] upper, Type[] lower) implements WildcardType {
         @Override
         public Type[] getUpperBounds() {
             return upper.clone();
@@ -1292,6 +1340,28 @@ public final class Classifier {
         @Override
         public Type[] getLowerBounds() {
             return lower.clone();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof WildcardType w && Arrays.equals(upper, w.getUpperBounds())
+                    && Arrays.equals(lower, w.getLowerBounds());
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(lower) ^ Arrays.hashCode(upper);
+        }
+
+        @Override
+        public String toString() {
+            if (lower.length > 0) {
+                return "? super " + Arrays.stream(lower).map(Type::getTypeName).collect(Collectors.joining(" & "));
+            }
+            if (upper.length == 0 || upper[0] == Object.class) {
+                return "?";
+            }
+            return "? extends " + Arrays.stream(upper).map(Type::getTypeName).collect(Collectors.joining(" & "));
         }
     }
 

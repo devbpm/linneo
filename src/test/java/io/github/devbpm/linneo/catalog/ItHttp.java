@@ -56,7 +56,11 @@ public final class ItHttp {
      * @param base the URL every path is appended to
      */
     public ItHttp(String base) {
-        this.base = base.replaceAll("/+$", "");
+        int end = base.length();
+        while (end > 0 && base.charAt(end - 1) == '/') {
+            end--;
+        }
+        this.base = base.substring(0, end);
     }
 
     /**

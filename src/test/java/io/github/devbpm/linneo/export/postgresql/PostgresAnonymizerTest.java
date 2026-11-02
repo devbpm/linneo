@@ -25,6 +25,7 @@ import io.github.devbpm.linneo.classify.ClassClassification;
 import io.github.devbpm.linneo.classify.Classifier;
 import io.github.devbpm.linneo.classify.DataInventory;
 import io.github.devbpm.linneo.classify.DisclosurePolicy;
+import io.github.devbpm.linneo.classify.FieldClassification;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -163,5 +164,16 @@ class PostgresAnonymizerTest {
                         custom.label("user.first", student.field("firstName").orElseThrow())),
                 () -> assertThrows(IllegalArgumentException.class,
                         () -> anonymizer.withValue(Categories.USER_NAME, " ")));
+    }
+
+    @Test
+    @DisplayName("quoted names keep their escaped quotes, and a huge one is refused rather than overflowing the stack")
+    void quotedNames() {
+        FieldClassification email = classifier.classify(Student.class).field("email").orElseThrow();
+        String huge = "\"" + "a\"\"".repeat(200_000) + "\"";
+        assertAll(
+                () -> assertTrue(anonymizer.label("\"Student \"\"A\"\"\".\"e-mail\"", email)
+                        .startsWith("SECURITY LABEL FOR anon ON COLUMN \"Student \"\"A\"\"\".\"e-mail\" IS ")),
+                () -> assertThrows(IllegalArgumentException.class, () -> anonymizer.label("students." + huge, email)));
     }
 }

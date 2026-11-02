@@ -74,22 +74,31 @@ class DocumentationSamplesTest {
     private static final Pattern IMPORT = Pattern.compile("^(import\\s+(static\\s+)?[\\w.]+(\\.\\*)?\\s*;).*$");
     private static final Pattern PACKAGE = Pattern.compile("^package\\s+[\\w.]+\\s*;.*$");
     private static final Pattern MODULE = Pattern.compile("^(open\\s+)?module\\s+([\\w.]+)\\s*\\{");
-    private static final Pattern TYPE = Pattern.compile("^(@\\w+(\\(.*\\))?\\s+)*" + MODIFIERS
-            + "(class|interface|enum|record|@interface)\\s+(\\w+)");
+    // Annotations, with arguments nested one level deep, never backtrack: each one is followed by whitespace.
+    private static final Pattern TYPE = Pattern.compile("^(?:@(?!interface\\b)\\w++"
+            + "(?:\\([^()]*+(?:\\([^()]*+\\)[^()]*+)*+\\))?+\\s++)*+" + MODIFIERS
+            + "(?<kind>class|interface|enum|record|@interface)\\s+(?<name>\\w+)");
     private static final Pattern PUBLIC_TYPE = Pattern.compile("(?m)^public\\s+(?=" + MODIFIERS
             + "(class|interface|enum|record|@interface)\\s)");
-    private static final Pattern METHOD = Pattern.compile("^(?!(return|new|else|throw|class|interface|enum|record)\\b)"
-            + "\\w[\\w<>\\[\\], ?]*\\s+"
-            + "(?!(if|for|while|switch|catch|synchronized)\\b)\\w+\\s*\\(.*\\)\\s*(throws\\s+[\\w., ]+)?\\s*\\{\\s*$");
+    /** The words a line that declares a method does not start with. */
+    private static final Pattern NOT_A_METHOD = Pattern.compile(
+            "(return|new|else|throw|class|interface|enum|record)\\b");
+    /** The return type and modifiers of a method, such as {@code public static Map<String, List<X>>}. */
+    private static final Pattern RETURN_TYPE = Pattern.compile("\\w[\\w<>\\[\\], ?]*+");
+    /** What follows the parameters of a method declared on one line. */
+    private static final Pattern AFTER_PARAMETERS = Pattern.compile("\\s*+(throws\\s++[\\w., ]++)?+\\s*+\\{\\s*+");
+    /** Statements that look like a method declaration: {@code if (x) {}}. */
+    private static final Set<String> CONTROL = Set.of("if", "for", "while", "switch", "catch", "synchronized");
     private static final Pattern MEMBER_MODIFIER = Pattern.compile("^(private|protected|public|static|abstract)\\s");
     private static final Pattern DIAGNOSTIC = Pattern.compile("^S(\\d+)_(\\d+)\\.java:(\\d+):\\d+: "
-            + "(compiler\\.err\\.[\\w.]+):?\\s?(.*)$");
+            + "(compiler\\.err\\.[\\w.]++):?\\s?(.*)$");
     private static final Pattern DECLARED_TYPE = Pattern.compile(
             "\\b(class|interface|enum|record|@interface)\\s+([A-Z]\\w*)");
     // A capitalized name with a lower-case letter: a type, not a constant such as ENTITIES.
     private static final Pattern NESTED_IMPORT = Pattern.compile(
             "import\\s+(?:static\\s+)?(io\\.github\\.devbpm\\.linneo[\\w.]*\\.[A-Z]\\w*)\\.([A-Z]\\w*|\\*)\\s*;");
-    private static final Pattern MISSING_TYPE = Pattern.compile("kindname\\.(class|variable), ([A-Z]\\w*[a-z]\\w*),");
+    private static final Pattern MISSING_TYPE = Pattern.compile(
+            "kindname\\.(class|variable), ([A-Z][A-Z0-9_]*+[a-z]\\w*+),");
     /**
      * Types the pages use without declaring them: frameworks' and the JDK's types the samples do not import, and
      * application types a page only names.
@@ -97,7 +106,8 @@ class DocumentationSamplesTest {
     private static final Set<String> CONTEXT_TYPES = Set.of("Bean", "ConcurrentHashMap", "Customer", "Entities",
             "EntityManagerFactory", "EntityType", "FieldRow", "Invoice", "OpenApiCustomizer", "Schema", "Setting",
             "WrongFields");
-    private static final Pattern DIRECTIVE = Pattern.compile("(requires|exports|opens|uses|provides)\\s+([^;]+);");
+    private static final Pattern ANONYMOUS = Pattern.compile("\\$\\d");
+    private static final Pattern DIRECTIVE = Pattern.compile("(requires|exports|opens|uses|provides)\\s++([^;]+);");
     /**
      * A missing name shaped like a key constant ({@code USER_CONTACT_EMAIL}): every key constant is imported, so it
      * names a key the taxonomy does not have. Constants a page declares for itself are better named otherwise.
@@ -355,10 +365,37 @@ class DocumentationSamplesTest {
                     + " receiver\n" + code + "\n; } }\n").toList();
         }
         if (topLevel.getFirst().startsWith("@")
-                || topLevel.stream().anyMatch(l -> MEMBER_MODIFIER.matcher(l).find() || METHOD.matcher(l).find())) {
+                || topLevel.stream().anyMatch(l -> MEMBER_MODIFIER.matcher(l).find() || declaresMethod(l))) {
             return List.of(type + "\n" + code + "\n}\n");
         }
         return List.of(type + " void run() throws Exception {\n" + code + "\n} }\n");
+    }
+
+    /**
+     * Whether a line declares a method: a return type, whitespace, a name that is not a statement keyword, the
+     * parameters up to the last parenthesis, maybe a {@code throws} clause, and an opening brace. The parameters start
+     * at the first parenthesis, since a type has none, so the name is the word right before it.
+     */
+    private static boolean declaresMethod(String line) {
+        int open = line.indexOf('(');
+        int close = line.lastIndexOf(')');
+        if (open < 0 || close < open || NOT_A_METHOD.matcher(line).lookingAt()) {
+            return false;
+        }
+        String head = line.substring(0, open).stripTrailing();
+        int name = head.length();
+        while (name > 0 && isWordCharacter(head.charAt(name - 1))) {
+            name--;
+        }
+        String type = head.substring(0, name);
+        return name < head.length() && !type.isBlank() && Character.isWhitespace(type.charAt(type.length() - 1))
+                && RETURN_TYPE.matcher(type.stripTrailing()).matches() && !CONTROL.contains(head.substring(name))
+                && AFTER_PARAMETERS.matcher(line.substring(close + 1)).matches();
+    }
+
+    /** A character of {@code \w}: an ASCII letter, a digit or an underscore. */
+    private static boolean isWordCharacter(char c) {
+        return c < 128 && (Character.isLetterOrDigit(c) || c == '_');
     }
 
     /** The lines of a sample that start at its first column, without blank lines and comments. */
@@ -470,7 +507,7 @@ class DocumentationSamplesTest {
             return !declared.contains(missing.group(2));
         }
         // OldName.Nested: javac reports the package OldName that does not exist.
-        return code.equals("compiler.err.doesnt.exist") && arguments.matches("[A-Z]\\w*[a-z]\\w*")
+        return code.equals("compiler.err.doesnt.exist") && arguments.matches("[A-Z][A-Z0-9_]*+[a-z]\\w*+")
                 && !declared.contains(arguments);
     }
 
@@ -527,8 +564,8 @@ class DocumentationSamplesTest {
         String code = sample.text().replaceAll("//[^\n]*", "").replaceAll("\\s+", " ").strip();
         Matcher signature = TYPE.matcher(code);
         assertTrue(signature.find());
-        String kind = signature.group(5);
-        String name = signature.group(6);
+        String kind = signature.group("kind");
+        String name = signature.group("name");
         List<Class<?>> candidates = types.getOrDefault(name, List.of());
         if (candidates.isEmpty()) {
             return List.of(sample.at(0) + ": the library has no public type " + name);
@@ -613,7 +650,7 @@ class DocumentationSamplesTest {
             for (Path file : walk.filter(p -> p.toString().endsWith(".class")).toList()) {
                 String name = classes.relativize(file).toString().replace(File.separatorChar, '.')
                         .replaceAll("\\.class$", "");
-                if (name.endsWith("module-info") || name.matches(".*\\$\\d.*")) {
+                if (name.endsWith("module-info") || ANONYMOUS.matcher(name).find()) {
                     continue;
                 }
                 Class<?> type;

@@ -89,7 +89,8 @@ public final class PostgresAnonymizer {
             Map.entry("user.name.first", "anon.dummy_first_name()"),
             Map.entry("user.name.last", "anon.dummy_last_name()"));
     private static final String NULL_VALUE = "MASKED WITH VALUE NULL";
-    private static final String PART = "([A-Za-z_][A-Za-z0-9_$]*|\"([^\"]|\"\")+\")";
+    // An identifier, plain or quoted ("" is a quote); possessive, so a long quoted one cannot overflow the stack.
+    private static final String PART = "([A-Za-z_][A-Za-z0-9_$]*+|\"(?:[^\"]|\"\")++\")";
     private static final Pattern PART_PATTERN = Pattern.compile(PART);
     // NAMEDATALEN - 1 in a default PostgreSQL build.
     private static final int MAX_IDENTIFIER = 63;
