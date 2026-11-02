@@ -29,7 +29,7 @@ matrícula, admisión, verificación de antecedentes del personal y boletín de 
 > ¿Buscas el contrato exacto de un tipo o una anotación? Está en la [referencia](../reference/README.md). El curso
 > explica el *porqué* y el *cómo*; la referencia establece el *qué*.
 
-> Hay también una [edición HTML de este curso](course-html/index.html), en dieciocho capítulos y dos anexos, que
+> Hay también una [edición HTML de este curso](../course-html/index.html), en dieciocho capítulos y dos anexos, que
 > recorre todas las herramientas de la biblioteca y está diseñada para cumplir las WCAG 2.2 de nivel AA.
 
 ## A quién va dirigido

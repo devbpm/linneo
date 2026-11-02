@@ -159,7 +159,7 @@ both languages, and stamps the review. The `PreToolUse` hook `.claude/hooks/docs
 that stamp matches the current library diff; afterwards `git add docs/` and retry. The hook's fingerprint uses
 `git diff`, so a new file under `src/main` counts only once it is staged: `git add` it before running the subagent.
 
-`docs/es/course/course-html/` is a Spanish-only edition of the course as static HTML pages (WCAG 2.2 AA, no front
+`docs/es/course-html` is a Spanish-only edition of the course as static HTML pages (WCAG 2.2 AA, no front
 matter, shared `recursos/curso.css`, no JavaScript); its layout and sample format are described in `CONTRIBUTING.md`.
 
 `DocumentationSamplesTest` compiles every ```` ```java ```` block of `README.md` and `docs/` against the library

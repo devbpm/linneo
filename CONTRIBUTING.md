@@ -115,7 +115,7 @@ touches `docs/` and deploys it from `main`.
   Type signatures without a body (`public record Protection(...)`) are compared with the real types, and module
   declarations with `module-info.java`. An exercise with deliberate mistakes is preceded by
   `<!-- unchecked: the reason -->`. Run it on its own with `./mvnw test -Dtest=DocumentationSamplesTest`.
-- **HTML course.** `docs/es/course/course-html/` is a Spanish edition of the course as static HTML pages, written
+- **HTML course.** `docs/es/course-html` is a Spanish edition of the course as static HTML pages, written
   for WCAG 2.2 level AA: no front matter (Jekyll copies them as they are), one shared stylesheet
   (`recursos/curso.css`, with light and dark colour tokens whose contrast is at least 4.5:1) and no JavaScript.
   Each page has the `doc-sources` comment right after its doctype. Every page repeats the same header, chapter
