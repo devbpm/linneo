@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/export/postgresql/PostgresAnonymizer.java
+  - src/main/java/io/github/devbpm/linneo/export/postgresql/package-info.java
+  - src/main/java/io/github/devbpm/linneo/export/openapi/OpenApiExtension.java
+  - src/main/java/io/github/devbpm/linneo/export/openapi/package-info.java
+  - src/main/java/io/github/devbpm/linneo/export/odcs/OdcsSchema.java
+  - src/main/java/io/github/devbpm/linneo/export/odcs/package-info.java
+  - src/main/java/io/github/devbpm/linneo/internal/Json.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 16. Exportar a PostgreSQL, OpenAPI y ODCS · Curso de Linneo</title>
+<meta name="description" content="Publica la clasificación en reglas de PostgreSQL Anonymizer, en la extensión x-linneo de OpenAPI y en el esquema de un contrato ODCS.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html" aria-current="page"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 16. Exportar a PostgreSQL, OpenAPI y ODCS</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 16</span> Exportar a PostgreSQL, OpenAPI y ODCS</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>75 minutos</dd></div>
+<div><dt>Parte V:</dt><dd>Integración y práctica</dd></div>
+</dl>
+<p class="entradilla">La clasificación es más útil cuando llega a las herramientas que rodean al código: la base de
+datos que guarda los valores, la descripción de la <abbr title="interfaz de programación de aplicaciones">API</abbr>
+que los publica y el contrato de datos que leen otros equipos.
+Este capítulo presenta los tres exportadores de Linneo, que escriben el texto que espera cada una de esas herramientas,
+y enseña a integrarlos sin perder el control de lo que se publica.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#tres-exportadores">Tres exportadores, un mismo principio</a></li>
+<li><a href="#postgresql">PostgreSQL Anonymizer: <code>PostgresAnonymizer</code></a></li>
+<li><a href="#openapi">La extensión OpenAPI: <code>OpenApiExtension</code></a></li>
+<li><a href="#odcs">El contrato de datos: <code>OdcsSchema</code></a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>generar con <code>PostgresAnonymizer</code> las reglas de enmascaramiento de PostgreSQL Anonymizer que siguen una
+política de divulgación;</li>
+<li>declarar funciones y valores de sustitución para tus columnas, incluidas las columnas <code>NOT NULL</code>, y
+prever qué regla recibe una columna que guarda varios campos;</li>
+<li>añadir a la descripción OpenAPI de una API la extensión <code>x-linneo</code> de cada propiedad con
+<code>OpenApiExtension</code>;</li>
+<li>escribir con <code>OdcsSchema</code> la sección <code>schema</code> de un contrato de datos del Open Data Contract
+Standard a partir de un inventario de datos;</li>
+<li>alimentar los tres exportadores desde el código o desde un inventario guardado;</li>
+<li>explicar qué hace cada exportador y qué queda en manos de la aplicación.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo usa la política de divulgación del <a href="07-uso.html">capítulo 7</a>
+(<code>DisclosurePolicy</code> y sus tratamientos <code>CLEAR</code>, <code>MASK</code> y <code>OMIT</code>) y el
+inventario de datos del <a href="08-inventario.html">capítulo 8</a>. Los ejemplos usan el modelo de la universidad y
+la taxonomía estándar; las salidas son las reales de ese modelo.</p>
+
+<h2 id="tres-exportadores">Tres exportadores, un mismo principio</h2>
+<p>Los catálogos de datos del <a href="17-catalogos.html">capítulo 17</a> publican la <strong>taxonomía</strong>. Los
+exportadores de este capítulo publican la <strong>clasificación de los campos</strong> de un modelo en las
+herramientas que acompañan al código.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-16-1">
+<table>
+<caption id="tabla-16-1">Tabla 16.1. Los tres exportadores</caption>
+<thead>
+<tr><th scope="col">Clase</th><th scope="col">Paquete</th><th scope="col">Escribe</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>PostgresAnonymizer</code></th><td><code>io.github.devbpm.linneo.export.postgresql</code></td>
+<td>Las sentencias <code>SECURITY LABEL</code> de PostgreSQL Anonymizer que enmascaran u omiten cada columna según una
+política.</td></tr>
+<tr><th scope="row"><code>OpenApiExtension</code></th><td><code>io.github.devbpm.linneo.export.openapi</code></td>
+<td>La extensión <code>x-linneo</code> de cada propiedad de la descripción de una API, como mapas o como
+<abbr title="JavaScript Object Notation">JSON</abbr>.</td></tr>
+<tr><th scope="row"><code>OdcsSchema</code></th><td><code>io.github.devbpm.linneo.export.odcs</code></td>
+<td>La sección <code>schema</code> de un contrato de datos
+<abbr title="Open Data Contract Standard">ODCS</abbr> v3, a partir de un inventario, como JSON.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Los tres comparten cinco características:</p>
+<ol>
+<li><strong>Escriben texto y nada más.</strong> Ninguno se conecta a una base de datos, lee o escribe la descripción
+de la API, edita un contrato ni hace llamadas de red. La aplicación decide a qué columna, propiedad o contrato
+pertenece cada campo y aplica el resultado.</li>
+<li><strong>La protección sale de la clasificación</strong>, nunca de los valores: un campo se describe por su
+categoría, sus niveles efectivos y su marca de secreto.</li>
+<li><strong>Dos entradas.</strong> Una <code>ClassClassification</code> o una <code>FieldClassification</code> describe
+lo que declara el código ahora. Un <code>InventoryField</code> resuelto con una <code>Taxonomy</code> describe lo
+que una aplicación guardó, de modo que el mismo exportador funciona en un <span lang="en">back office</span> sin las
+clases del modelo.
+<code>PostgresAnonymizer</code> y <code>OpenApiExtension</code> aceptan ambas; <code>OdcsSchema</code> lee el
+inventario.</li>
+<li><strong>Una clase con errores se rechaza.</strong> Cuando un exportador recibe una
+<code>ClassClassification</code> con errores, lanza <code>IllegalArgumentException</code>, porque un campo con un
+error no tiene clasificación y quedaría sin protección.</li>
+<li><strong>Los campos exentos no contienen datos.</strong> <code>PostgresAnonymizer</code> les da una etiqueta sin
+regla, <code>OpenApiExtension</code> no les da extensión y <code>OdcsSchema</code> los deja fuera.</li>
+</ol>
+
+<h2 id="postgresql">PostgreSQL Anonymizer: <code>PostgresAnonymizer</code></h2>
+
+<h3 id="para-que-sirve-postgres">Para qué sirve</h3>
+<p>Los entornos de pruebas suelen trabajar con copias de los datos de producción. PostgreSQL Anonymizer es una
+extensión de PostgreSQL que enmascara columnas en vistas enmascaradas y en volcados anonimizados a partir de
+<strong>etiquetas de seguridad</strong>: una sentencia <code>SECURITY LABEL FOR anon ON COLUMN ...</code> por columna
+dice cómo se enmascara. Escribir esas sentencias a mano repite la clasificación en otro sitio, con el riesgo de que se
+desvíen. <code>PostgresAnonymizer</code> las genera a partir de la clasificación y de una
+<code>DisclosurePolicy</code>.</p>
+
+<h3 id="de-tratamiento-a-regla">De un tratamiento a una regla</h3>
+<p>La política decide el tratamiento de cada campo, y el anonimizador lo convierte en una regla:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-16-2">
+<table>
+<caption id="tabla-16-2">Tabla 16.2. La regla de cada tratamiento</caption>
+<thead>
+<tr><th scope="col">Tratamiento</th><th scope="col">Regla</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>OMIT</code></th><td><code>MASKED WITH VALUE NULL</code>, o el valor declarado para la
+categoría con <code>withValue</code>.</td></tr>
+<tr><th scope="row"><code>MASK</code></th><td><code>MASKED WITH FUNCTION ...</code> si Linneo conoce una función para la
+categoría o un ancestro; si no, lo mismo que <code>OMIT</code>.</td></tr>
+<tr><th scope="row"><code>CLEAR</code></th><td>Ninguna: la sentencia es <code>... IS NULL;</code>, que elimina cualquier
+regla de la columna.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Un campo enmascarado se sustituye por un valor falso del mismo tipo cuando Linneo conoce una función para él. Si no
+la conoce, lo omite: Linneo no sabe el tipo de la columna, y omitir el valor es la opción más estricta. Las funciones
+que conoce son las funciones <code>dummy_*</code> que recomienda la versión 2 de PostgreSQL Anonymizer; las devuelve
+<code>masks()</code>:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-16-3">
+<table>
+<caption id="tabla-16-3">Tabla 16.3. Funciones de enmascaramiento incluidas</caption>
+<thead>
+<tr><th scope="col">Categoría</th><th scope="col">Función</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>user.account.username</code></th><td><code>anon.dummy_username()</code></td></tr>
+<tr><th scope="row"><code>user.contact.address.city</code></th><td><code>anon.dummy_city_name()</code></td></tr>
+<tr><th scope="row"><code>user.contact.address.country</code></th><td><code>anon.dummy_country_name()</code></td></tr>
+<tr><th scope="row"><code>user.contact.address.postal_code</code></th><td><code>anon.dummy_post_code()</code></td></tr>
+<tr><th scope="row"><code>user.contact.address.state</code></th><td><code>anon.dummy_state_name()</code></td></tr>
+<tr><th scope="row"><code>user.contact.address.street</code></th><td><code>anon.dummy_street_name()</code></td></tr>
+<tr><th scope="row"><code>user.contact.email</code></th><td><code>anon.dummy_safe_email()</code></td></tr>
+<tr><th scope="row"><code>user.contact.phone_number</code></th><td><code>anon.dummy_phone_number()</code></td></tr>
+<tr><th scope="row"><code>user.device.ip_address</code></th><td><code>anon.dummy_ip()</code></td></tr>
+<tr><th scope="row"><code>user.name</code></th><td><code>anon.dummy_name()</code></td></tr>
+<tr><th scope="row"><code>user.name.first</code></th><td><code>anon.dummy_first_name()</code></td></tr>
+<tr><th scope="row"><code>user.name.last</code></th><td><code>anon.dummy_last_name()</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Una función se busca por la clave de la categoría y, si no hay, por la de su madre, y así hacia arriba en el árbol.
+Lo mismo vale para los valores de sustitución.</p>
+
+<h3 id="api-postgres">La API</h3>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-16-4">
+<table>
+<caption id="tabla-16-4">Tabla 16.4. Miembros de <code>PostgresAnonymizer</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Descripción</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>static of(DisclosurePolicy policy)</code></th><td>Las reglas que siguen una política, con las
+funciones de la Tabla 16.3.</td></tr>
+<tr><th scope="row"><code>withMask(String categoryKey, String function)</code></th><td>Un anonimizador nuevo con una
+función para una categoría y sus descendientes. <code>function</code> es el
+<abbr title="lenguaje de consulta estructurado">SQL</abbr> que sigue a <code>MASKED WITH FUNCTION</code>.</td></tr>
+<tr><th scope="row"><code>withValue(String categoryKey, String value)</code></th><td>Un anonimizador nuevo con el valor
+que sustituye a <code>NULL</code> en los valores omitidos de una categoría y sus descendientes.</td></tr>
+<tr><th scope="row"><code>masks()</code>, <code>values()</code></th><td>Las funciones y los valores por clave, en mapas
+inmutables ordenados.</td></tr>
+<tr><th scope="row"><code>rule(FieldClassification)</code>, <code>rule(InventoryField, Taxonomy)</code></th><td>El
+texto de la regla de un campo, o <code>null</code> si se muestra tal cual.</td></tr>
+<tr><th scope="row"><code>label(String column, FieldClassification)</code>, <code>label(String column, InventoryField,
+Taxonomy)</code></th><td>La sentencia de un campo para una columna.</td></tr>
+<tr><th scope="row"><code>labels(ClassClassification, Function&lt;String, String&gt; columns)</code></th><td>Las
+sentencias de todos los campos de una clase, una por columna.</td></tr>
+<tr><th scope="row"><code>labels(DataInventory, String object, Taxonomy, Function&lt;String, String&gt;
+columns)</code></th><td>Las sentencias de todos los campos de un objeto de un inventario, una por columna.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>withMask</code> y <code>withValue</code> no modifican el anonimizador: devuelven uno nuevo. Las instancias son
+inmutables y seguras entre hilos.</p>
+
+<h3 id="ejemplo-postgres">Un ejemplo con <code>Student</code></h3>
+<p>La aplicación decide la columna de cada campo. En la universidad, las columnas usan nombres en minúsculas separados
+por guiones bajos (<code>first_name</code> para <code>firstName</code>), así que una función pequeña traduce la
+ruta:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 16.1. Las reglas de la tabla <code>students</code> con la política para logs</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.export.postgresql.PostgresAnonymizer;
+
+static String column(String table, String path) {
+    return table + "." + path.replaceAll("([a-z0-9])([A-Z])", "$1_$2").replace('.', '_').toLowerCase(Locale.ROOT);
+}
+
+static void printStudentLabels(Classifier classifier) {
+    PostgresAnonymizer anonymizer = PostgresAnonymizer.of(DisclosurePolicy.forLogs());
+    anonymizer.labels(classifier.classify(Student.class), path -&gt; column("students", path))
+            .forEach(System.out::println);
+}
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-sql">SECURITY LABEL FOR anon ON COLUMN "students"."created_at" IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "students"."updated_at" IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "students"."version" IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "students"."created_by" IS 'MASKED WITH FUNCTION anon.dummy_username()';
+SECURITY LABEL FOR anon ON COLUMN "students"."id" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."national_id" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."first_name" IS 'MASKED WITH FUNCTION anon.dummy_first_name()';
+SECURITY LABEL FOR anon ON COLUMN "students"."last_name" IS 'MASKED WITH FUNCTION anon.dummy_last_name()';
+SECURITY LABEL FOR anon ON COLUMN "students"."email" IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';
+SECURITY LABEL FOR anon ON COLUMN "students"."date_of_birth" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."disability_degree" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."analytics_id" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."academic_status" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."counselling_notes" IS 'MASKED WITH VALUE NULL';
+</code></pre>
+<p>Cómo leer la salida:</p>
+<ul>
+<li><strong>Una sentencia por columna.</strong> Cada columna recibe exactamente una sentencia, también las de los
+campos que se muestran tal cual.</li>
+<li><strong>Primero las eliminaciones.</strong> Las sentencias <code>IS NULL</code>, que quitan una regla, van antes que
+las de enmascaramiento, cada grupo en el orden del primer campo de su columna. Por eso <code>created_by</code>, que
+la política enmascara, aparece después de <code>version</code>.</li>
+<li><strong>Funciones conocidas.</strong> Nombre, apellido, correo y usuario reciben un valor falso de su tipo.</li>
+<li><strong>Omisión cuando no hay función.</strong> <code>national_id</code> o <code>academic_status</code> se
+enmascaran según la política, pero Linneo no conoce una función para su categoría y los deja en <code>NULL</code>.
+<code>disability_degree</code> es <code>NULL</code> porque la política lo omite.</li>
+</ul>
+<p>Ejecutar de nuevo las sentencias tras un cambio de la clasificación o de la política pone todas las columnas al
+día: <code>IS NULL</code> elimina las reglas que ya no corresponden.</p>
+
+<h3 id="funciones-y-valores">Funciones y valores propios</h3>
+<p><code>withMask</code> declara una función para una categoría y las que cuelgan de ella, salvo que una clave más
+específica tenga la suya. <code>withValue</code> declara el valor que sustituye a <code>NULL</code> en los valores
+omitidos. Este segundo método es imprescindible en las columnas <code>NOT NULL</code>, como el hash de contraseña de
+<code>Staff</code>, que rechazarían <code>NULL</code>. El valor debe ser una constante que no diga nada del
+original.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 16.2. Reglas propias para la tabla <code>staff</code></figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">PostgresAnonymizer staffRules = PostgresAnonymizer.of(DisclosurePolicy.forLogs())
+        .withMask(USER_GOVERNMENT_ID, "anon.partial(social_security_number, 2, '********', 2)")
+        .withMask(USER_FINANCIAL_BANK_ACCOUNT, "anon.partial(iban, 4, '******', 2)")
+        .withValue(USER_AUTHORIZATION_PASSWORD, "'*'");
+staffRules.labels(classifier.classify(Staff.class), path -&gt; column("staff", path))
+        .forEach(System.out::println);
+</code></pre>
+</figure>
+<p>Un extracto de la salida, sin las cuatro primeras sentencias, que son como las de <code>students</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-sql">SECURITY LABEL FOR anon ON COLUMN "staff"."id" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "staff"."full_name" IS 'MASKED WITH FUNCTION anon.dummy_name()';
+SECURITY LABEL FOR anon ON COLUMN "staff"."work_email" IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';
+SECURITY LABEL FOR anon ON COLUMN "staff"."job_title" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "staff"."department" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "staff"."social_security_number" IS 'MASKED WITH FUNCTION anon.partial(social_security_number, 2, ''********'', 2)';
+SECURITY LABEL FOR anon ON COLUMN "staff"."iban" IS 'MASKED WITH FUNCTION anon.partial(iban, 4, ''******'', 2)';
+SECURITY LABEL FOR anon ON COLUMN "staff"."sex_offence_certificate_clear" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "staff"."password_hash" IS 'MASKED WITH VALUE ''*''';
+</code></pre>
+<p>La función declarada para <code>user.government_id</code> sirve a
+<code>user.government_id.social_security_number</code>. Las comillas simples de las reglas se duplican dentro de la
+etiqueta. <code>staffRules.rule(...)</code> devuelve el texto de la regla sin la sentencia: para
+<code>passwordHash</code>, <code>MASKED WITH VALUE '*'</code>; para <code>version</code>, <code>null</code>.</p>
+
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p>Una función declarada para una categoría llega a <strong>todas</strong> sus descendientes. Con
+<code>withMask(USER_EDUCATION, "anon.random_int_between(0, 10)")</code>, la columna <code>grades.course_code</code>
+(<code>user.education.course_history</code>), que guarda un texto, también recibe un entero aleatorio. Declara la
+función en la clave más específica que la necesite: con <code>withMask(USER_EDUCATION_GRADE, ...)</code>,
+<code>course_code</code> queda en <code>MASKED WITH VALUE NULL</code> y solo <code>mark</code> recibe la función.</p>
+</div>
+
+<h3 id="columnas-compartidas">Columnas compartidas</h3>
+<p>Varios campos pueden guardarse en una sola columna, por ejemplo un compuesto guardado como JSON. La función
+<code>columns</code> devuelve entonces la misma columna para todos ellos, y la columna recibe <strong>una</strong>
+sentencia: <code>MASKED WITH VALUE NULL</code> salvo que todos los campos se muestren tal cual, aunque cada uno tenga su
+propia función. Un valor falso del tipo de un campo no sirve en una columna que contiene varios.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 16.3. Las direcciones de una solicitud de beca, guardadas como JSON</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">PostgresAnonymizer.of(DisclosurePolicy.forLogs())
+        .labels(classifier.classify(ScholarshipApplication.class),
+                path -&gt; "scholarship_applications." + path.split("\\.")[0])
+        .forEach(System.out::println);
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-sql">SECURITY LABEL FOR anon ON COLUMN "scholarship_applications"."id" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "scholarship_applications"."home" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "scholarship_applications"."previous" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "scholarship_applications"."billing" IS 'MASKED WITH VALUE NULL';
+</code></pre>
+<p><code>home.street</code>, <code>home.city</code> y <code>home.postalCode</code> tienen cada uno una función
+<code>dummy_*</code>, pero comparten la columna <code>home</code>, que recibe <code>NULL</code>. Al revés, si todos los
+campos de una columna se muestran tal cual, como los de configuración de <code>MenuGroup</code> guardados en una
+columna <code>settings</code>, la columna recibe <code>IS NULL</code>. Una función <code>columns</code> que devuelve
+<code>null</code> deja el campo sin sentencia, para los campos que no tienen columna propia.</p>
+
+<h3 id="nombres-de-columna">Nombres de columna</h3>
+<p>Una columna se escribe <code>tabla.columna</code> o <code>esquema.tabla.columna</code>, y cada parte es un
+identificador simple o uno entre comillas dobles. Las sentencias escriben siempre las partes entre comillas, y pasan
+a minúsculas una parte sin comillas, como hace PostgreSQL al leerla. Así funcionan las palabras reservadas, y la
+sentencia nombra la misma columna que la base de datos:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-16-5">
+<table>
+<caption id="tabla-16-5">Tabla 16.5. Cómo se escribe una columna</caption>
+<thead>
+<tr><th scope="col">Columna recibida</th><th scope="col">En la sentencia</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Students.Email</code></th><td><code>"students"."email"</code></td></tr>
+<tr><th scope="row"><code>"Students"."e-mail"</code></th><td><code>"Students"."e-mail"</code></td></tr>
+<tr><th scope="row"><code>auth.user.email</code></th><td><code>"auth"."user"."email"</code></td></tr>
+<tr><th scope="row"><code>email</code></th><td><code>IllegalArgumentException</code>: falta la tabla.</td></tr>
+<tr><th scope="row"><code>students.email; DROP TABLE students</code></th><td><code>IllegalArgumentException</code>: no
+es un identificador cualificado.</td></tr>
+</tbody>
+</table>
+</div>
+<p>El mensaje de los dos últimos casos es <code>Not a qualified column name (table.column): ...</code>. Esta
+comprobación impide que una sentencia lleve otra cosa que la etiqueta. Una parte de más de 63 bytes en UTF-8 también
+se rechaza: PostgreSQL conserva solo los 63 primeros bytes de un nombre, así que dos nombres largos podrían ser la
+misma columna.</p>
+<p>La etiqueta es una constante de cadena que se lee igual sea cual sea <code>standard_conforming_strings</code>: una
+regla con una barra invertida se escribe como cadena de escape (<code>E'...'</code>) con la barra duplicada.</p>
+<p>Si dos grafías distintas nombran la misma columna, por ejemplo <code>public.students.email</code> y
+<code>students.email</code>, Linneo no puede saberlo y escribe dos sentencias. Como las eliminaciones van primero, la
+regla de enmascaramiento es la que queda.</p>
+
+<h3 id="desde-un-inventario-postgres">Desde un inventario guardado</h3>
+<p><code>labels(inventory, object, taxonomy, columns)</code> escribe las mismas sentencias a partir de un inventario,
+sin las clases del modelo. El conjunto de sentencias es el mismo que el de la clasificación; el orden dentro de cada
+grupo sigue el del inventario, que va por ruta. <code>tables</code> es el mapa de clases a tablas del
+<a href="08-inventario.html">capítulo 8</a>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">DataInventory inventory = classifier.inventory(List.of(Student.class, Staff.class), tables::get);
+List&lt;String&gt; statements = PostgresAnonymizer.of(DisclosurePolicy.forLogs())
+        .labels(inventory, "students", taxonomy, path -&gt; column("students", path));
+</code></pre>
+<p>Un objeto que no está en el inventario lanza <code>IllegalArgumentException</code> con el mensaje
+<code>The inventory has no object 'teachers'</code>: una clave mal escrita no puede producir en silencio una lista
+vacía de sentencias.</p>
+
+<h3 id="integrar-postgres">Integrarlo</h3>
+<ol>
+<li>Elige la política del canal. Para una copia de pruebas, <code>forLogs()</code> es un buen punto de partida; si el
+equipo de pruebas necesita más datos en claro, construye otra con <code>DisclosurePolicy.builder()</code>.</li>
+<li>Declara con <code>withMask</code> las funciones de las columnas que Linneo no conoce y con <code>withValue</code>
+los valores de las columnas <code>NOT NULL</code>.</li>
+<li>Genera las sentencias de todas las tablas, desde las clases o desde el inventario guardado.</li>
+<li>Ejecuta las sentencias con la herramienta de base de datos de la aplicación, en el script que prepara la copia de
+pruebas, cada vez que cambie la clasificación o la política.</li>
+</ol>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Las sentencias aplican la política a una copia, pero no la convierten en anónima por sí mismas: lo que se deja en
+claro sigue ahí, y una combinación de columnas en claro puede identificar a una persona. Linneo hace explícita la
+decisión columna a columna y la mantiene al día con el código; valorar si el resultado es suficiente para el uso
+previsto corresponde a los responsables del tratamiento y al delegado de protección de datos.</p>
+</div>
+
+<h3 id="limites-postgres">Límites</h3>
+<ul>
+<li>No conoce los tipos de las columnas: sin una función declarada, un valor enmascarado se omite.</li>
+<li>No sabe en qué columna está cada campo: lo dice la función <code>columns</code> de la aplicación.</li>
+<li>No ejecuta nada ni comprueba que la extensión esté instalada: escribe sentencias.</li>
+<li>Solo conoce las funciones de la Tabla 16.3; las demás las declaras tú.</li>
+</ul>
+
+<h2 id="openapi">La extensión OpenAPI: <code>OpenApiExtension</code></h2>
+
+<h3 id="para-que-sirve-openapi">Para qué sirve</h3>
+<p>Los datos que devuelve una API son datos que salen del sistema. Una descripción OpenAPI dice el tipo de cada
+propiedad, pero no qué datos personales lleva ni cuánta protección necesita. <code>OpenApiExtension</code> añade esa
+información como una extensión de la especificación, con el nombre de la constante
+<code>OpenApiExtension.NAME</code>, <code>"x-linneo"</code>. Quien consulte la descripción, una persona o una
+herramienta, sabe así qué propiedades contienen datos personales.</p>
+<p>Los objetos de transferencia de la API se clasifican como cualquier clase, normalmente con
+<code>@DerivedFrom</code>, de modo que una vista de una entidad toma la clasificación de los campos que copia.</p>
+
+<h3 id="la-extension">La extensión</h3>
+<p>El valor de la extensión es un objeto con estos miembros, en este orden:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-16-6">
+<table>
+<caption id="tabla-16-6">Tabla 16.6. Miembros de la extensión <code>x-linneo</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Presente</th><th scope="col">Valor</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>category</code></th><td>siempre</td><td>La clave de la categoría.</td></tr>
+<tr><th scope="row"><code>personal</code></th><td>siempre</td><td><code>true</code> si el campo contiene datos
+personales.</td></tr>
+<tr><th scope="row"><code>nature</code></th><td>solo en datos personales</td><td><code>ORDINARY</code>,
+<code>SPECIAL_CATEGORY</code> o <code>CRIMINAL_OFFENCE</code>.</td></tr>
+<tr><th scope="row"><code>confidentiality</code>, <code>integrity</code></th><td>siempre</td><td>Los niveles efectivos
+del campo.</td></tr>
+<tr><th scope="row"><code>identifiability</code></th><td>solo en datos personales</td><td><code>IDENTIFIED</code> o
+<code>PSEUDONYMIZED</code>.</td></tr>
+<tr><th scope="row"><code>secret</code></th><td>siempre</td><td><code>true</code> si el campo contiene un
+secreto.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Los valores son cadenas y booleanos, que cualquier biblioteca de OpenAPI puede añadir a una propiedad. La extensión
+también es válida en un JSON Schema, que ignora las palabras clave desconocidas.</p>
+
+<h3 id="api-openapi">La API</h3>
+<p>La clase no tiene constructor público ni estado: todos sus métodos son estáticos.</p>
+<dl class="definiciones">
+<dt><code>of(FieldClassification field)</code></dt>
+<dd>La extensión de una propiedad, como un mapa inmutable en orden estable.</dd>
+<dt><code>of(InventoryField field, Taxonomy taxonomy)</code></dt>
+<dd>La extensión de un campo guardado; un mapa vacío para un campo exento. <code>TaxonomyException</code> si la
+taxonomía no contiene la clave.</dd>
+<dt><code>of(ClassClassification classification)</code></dt>
+<dd>Las extensiones de todos los campos clasificados de una clase, por ruta y en el orden de los campos; los exentos
+no tienen. <code>IllegalArgumentException</code> si la clase tiene errores.</dd>
+<dt><code>toJson(ClassClassification classification)</code></dt>
+<dd>Lo mismo como un objeto JSON, para herramientas que no están escritas en Java.</dd>
+</dl>
+
+<h3 id="ejemplo-openapi">Un ejemplo con una vista de estudiante</h3>
+<p>La API de secretaría devuelve una vista reducida del estudiante. Sus campos derivan de <code>Student</code>, y uno de
+ellos, <code>examAdaptation</code>, indica si el estudiante tiene adaptación de exámenes, un valor calculado a partir
+del grado de discapacidad:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 16.4. Un objeto de transferencia clasificado</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = SYSTEM_OPERATIONS, reason = "datos de paginación de la respuesta")
+public class StudentView {
+
+    @DerivedFrom(type = Student.class, value = "id")
+    private Long id;
+
+    @DerivedFrom(type = Student.class, value = "firstName")
+    private String firstName;
+
+    @DerivedFrom(type = Student.class, value = "email")
+    private String email;
+
+    @DerivedFrom(type = Student.class, value = "academicStatus")
+    private String academicStatus;
+
+    @DerivedFrom(type = Student.class, value = "disabilityDegree")
+    private boolean examAdaptation;
+
+    private int page;
+
+    @Exempt("enlaces de hipermedia de la respuesta")
+    private String links;
+}
+</code></pre>
+</figure>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.export.openapi.OpenApiExtension;
+
+ClassClassification view = classifier.classify(StudentView.class);
+Map&lt;String, Map&lt;String, Object&gt;&gt; extensions = OpenApiExtension.of(view);
+extensions.forEach((path, extension) -&gt; System.out.println(path + " " + extension));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">id {category=user.unique_id, personal=true, nature=ORDINARY, confidentiality=LOW, integrity=MEDIUM, identifiability=IDENTIFIED, secret=false}
+firstName {category=user.name.first, personal=true, nature=ORDINARY, confidentiality=LOW, integrity=MEDIUM, identifiability=IDENTIFIED, secret=false}
+email {category=user.contact.email, personal=true, nature=ORDINARY, confidentiality=LOW, integrity=MEDIUM, identifiability=IDENTIFIED, secret=false}
+academicStatus {category=user.education.status, personal=true, nature=ORDINARY, confidentiality=MEDIUM, integrity=HIGH, identifiability=IDENTIFIED, secret=false}
+examAdaptation {category=user.health_and_medical.disability, personal=true, nature=SPECIAL_CATEGORY, confidentiality=HIGH, integrity=HIGH, identifiability=IDENTIFIED, secret=false}
+page {category=system.operations, personal=false, confidentiality=LOW, integrity=LOW, secret=false}
+</code></pre>
+<p>Tres observaciones:</p>
+<ul>
+<li><code>examAdaptation</code> es un booleano, pero hereda la categoría especial de su fuente. La descripción de la API
+lo dice, y quien la lea sabrá que esa respuesta revela datos de salud.</li>
+<li><code>page</code> no es personal, así que su extensión no tiene <code>nature</code> ni
+<code>identifiability</code>.</li>
+<li><code>links</code>, exento, no tiene extensión.</li>
+</ul>
+<p><code>OpenApiExtension.toJson(view)</code> da lo mismo como JSON, en una sola línea. Un extracto:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"id":{"category":"user.unique_id","personal":true,"nature":"ORDINARY","confidentiality":"LOW","integrity":"MEDIUM","identifiability":"IDENTIFIED","secret":false},"firstName":{...}}
+</code></pre>
+<p>En el extracto, <code>{...}</code> sustituye al resto del objeto, que sigue el mismo patrón para cada campo.</p>
+
+<h3 id="integrar-openapi">Integrarlo</h3>
+<p>Linneo no lee ni escribe la descripción de la API. La aplicación asigna cada ruta de campo a su propiedad, que
+puede tener otro nombre o estar anidada, y añade la extensión con la biblioteca que ya usa. Con springdoc, un
+<code>OpenApiCustomizer</code> recorre las propiedades del esquema:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 16.5. Añadir la extensión con springdoc</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.export.openapi.OpenApiExtension;
+import io.swagger.v3.oas.models.media.Schema;
+import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springframework.context.annotation.Bean;
+
+@Bean
+OpenApiCustomizer linneo(Classifier classifier) {
+    Map&lt;String, Map&lt;String, Object&gt;&gt; extensions = OpenApiExtension.of(classifier.classify(StudentView.class));
+    return openApi -&gt; {
+        Schema&lt;?&gt; schema = openApi.getComponents().getSchemas().get("StudentView");
+        extensions.forEach((path, extension) -&gt;
+                schema.getProperties().get(path).addExtension(OpenApiExtension.NAME, extension));
+    };
+}
+</code></pre>
+</figure>
+<p>springdoc y swagger-core son dependencias de la aplicación, no de Linneo, que no tiene ninguna. Una herramienta que
+no está escrita en Java toma el JSON de <code>toJson</code>, escrito durante la compilación donde pueda leerlo. Un
+<span lang="en">back office</span> que guarda un inventario usa <code>of(InventoryField, Taxonomy)</code>, que da la
+misma extensión que la clasificación del campo.</p>
+
+<h3 id="limites-openapi">Límites</h3>
+<ul>
+<li>Describe, no protege: la extensión informa, pero no impide que la API devuelva un dato.</li>
+<li>No sabe qué propiedad corresponde a cada campo: una propiedad renombrada o anidada la asigna la aplicación.</li>
+<li>Un compuesto aparece con rutas <code>campo.parte</code>, que la aplicación debe llevar a sus propiedades
+anidadas.</li>
+</ul>
+
+<h2 id="odcs">El contrato de datos: <code>OdcsSchema</code></h2>
+
+<h3 id="para-que-sirve-odcs">Para qué sirve</h3>
+<p>Un contrato de datos es el acuerdo entre quien produce un conjunto de datos y quien lo consume: qué objetos y
+propiedades contiene, quién es responsable y cómo debe tratarse. El Open Data Contract Standard (ODCS) es un formato
+abierto para escribirlo. <code>OdcsSchema</code> escribe la sección <code>schema</code> de un contrato ODCS v3 a
+partir de un inventario de datos: un objeto de esquema por cada objeto del inventario y una propiedad por cada campo
+clasificado. Así el contrato dice qué contiene cada propiedad y cómo debe protegerse.</p>
+
+<h3 id="la-propiedad-odcs">Qué dice una propiedad</h3>
+<p>Cada propiedad lleva cuatro miembros:</p>
+<dl class="definiciones">
+<dt><code>name</code></dt>
+<dd>La ruta del campo (<code>home.street</code> en una parte de un compuesto).</dd>
+<dt><code>classification</code></dt>
+<dd>Una etiqueta de la escala habitual de cuatro niveles, según la confidencialidad (Tabla 16.7).</dd>
+<dt><code>tags</code></dt>
+<dd>La clave de la categoría y, cuando corresponde, <code>personal-data</code>, <code>special-category</code>,
+<code>criminal-offence-data</code> y <code>secret</code>.</dd>
+<dt><code>customProperties</code></dt>
+<dd><code>linneo.category</code>, <code>linneo.confidentiality</code>, <code>linneo.integrity</code> y, solo en datos
+personales, <code>linneo.identifiability</code>, cada una como <code>{"property": ..., "value": ...}</code>.</dd>
+</dl>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-16-7">
+<table>
+<caption id="tabla-16-7">Tabla 16.7. La etiqueta <code>classification</code></caption>
+<thead>
+<tr><th scope="col">Confidencialidad</th><th scope="col"><code>classification</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>PUBLIC</code></th><td><code>public</code></td></tr>
+<tr><th scope="row"><code>LOW</code></th><td><code>internal</code></td></tr>
+<tr><th scope="row"><code>MEDIUM</code></th><td><code>confidential</code></td></tr>
+<tr><th scope="row"><code>HIGH</code></th><td><code>restricted</code></td></tr>
+<tr><th scope="row">cualquiera, con un secreto</th><td><code>restricted</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Los niveles son los efectivos: los de la categoría, con la elevación que declare el campo. El método estático
+<code>OdcsSchema.classification(Protection)</code> da la etiqueta de cualquier protección.</p>
+
+<h3 id="api-odcs">La API</h3>
+<dl class="definiciones">
+<dt><code>static OdcsSchema of(Taxonomy taxonomy)</code></dt>
+<dd>El escritor para una taxonomía, que resuelve las claves que guarda el inventario.</dd>
+<dt><code>String schemaJson(DataInventory inventory)</code></dt>
+<dd>La sección <code>schema</code>: una lista JSON con un objeto de esquema por objeto del inventario, en su
+orden.</dd>
+<dt><code>String objectJson(DataInventory inventory, String object)</code></dt>
+<dd>El objeto de esquema de un objeto, con <code>name</code>, <code>logicalType</code> (<code>object</code>) y
+<code>properties</code>.</dd>
+<dt><code>String propertyJson(InventoryField field)</code></dt>
+<dd>La propiedad de un campo clasificado.</dd>
+</dl>
+<p>Las instancias son inmutables y seguras entre hilos.</p>
+
+<h3 id="ejemplo-odcs">Un ejemplo con las estadísticas de asignaturas</h3>
+<figure class="ejemplo">
+<figcaption>Ejemplo 16.6. El esquema de un contrato para dos objetos</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.export.odcs.OdcsSchema;
+
+Map&lt;Class&lt;?&gt;, String&gt; tables = Map.of(Staff.class, "staff", CourseStatistics.class, "course_statistics");
+DataInventory inventory = classifier.inventory(List.of(Staff.class, CourseStatistics.class), tables::get);
+OdcsSchema odcs = OdcsSchema.of(taxonomy);
+String schema = odcs.schemaJson(inventory);                      // los dos objetos
+String statistics = odcs.objectJson(inventory, "course_statistics");
+</code></pre>
+</figure>
+<p>Linneo escribe el JSON en una sola línea. Con sangría añadida para leerlo, <code>statistics</code> es:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{
+  "name": "course_statistics",
+  "logicalType": "object",
+  "properties": [
+    {
+      "name": "averageMark",
+      "classification": "confidential",
+      "tags": ["user.education.grade"],
+      "customProperties": [
+        {"property": "linneo.category", "value": "user.education.grade"},
+        {"property": "linneo.confidentiality", "value": "MEDIUM"},
+        {"property": "linneo.integrity", "value": "HIGH"}
+      ]
+    },
+    {
+      "name": "courseCode",
+      "classification": "public",
+      "tags": ["reference.public"],
+      "customProperties": [
+        {"property": "linneo.category", "value": "reference.public"},
+        {"property": "linneo.confidentiality", "value": "PUBLIC"},
+        {"property": "linneo.integrity", "value": "MEDIUM"}
+      ]
+    },
+    {
+      "name": "passed",
+      "classification": "confidential",
+      "tags": ["user.education.grade"],
+      "customProperties": [
+        {"property": "linneo.category", "value": "user.education.grade"},
+        {"property": "linneo.confidentiality", "value": "MEDIUM"},
+        {"property": "linneo.integrity", "value": "HIGH"}
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>Las medias agregadas no llevan <code>personal-data</code> ni <code>linneo.identifiability</code>, porque no son
+datos personales, pero conservan la confidencialidad <code>MEDIUM</code> de su categoría y son
+<code>confidential</code>. Las propiedades van por ruta, como el inventario. Dos propiedades del objeto
+<code>staff</code>, obtenidas con <code>propertyJson</code> y con la misma sangría:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{
+  "name": "passwordHash",
+  "classification": "restricted",
+  "tags": ["user.authorization.password", "personal-data", "secret"],
+  "customProperties": [
+    {"property": "linneo.category", "value": "user.authorization.password"},
+    {"property": "linneo.confidentiality", "value": "HIGH"},
+    {"property": "linneo.integrity", "value": "HIGH"},
+    {"property": "linneo.identifiability", "value": "IDENTIFIED"}
+  ]
+}
+{
+  "name": "sexOffenceCertificateClear",
+  "classification": "restricted",
+  "tags": ["user.criminal_history", "personal-data", "criminal-offence-data"],
+  "customProperties": [
+    {"property": "linneo.category", "value": "user.criminal_history"},
+    {"property": "linneo.confidentiality", "value": "HIGH"},
+    {"property": "linneo.integrity", "value": "HIGH"},
+    {"property": "linneo.identifiability", "value": "IDENTIFIED"}
+  ]
+}
+</code></pre>
+
+<h3 id="objetos-desconocidos">Objetos desconocidos, campos exentos y claves que faltan</h3>
+<p><code>OdcsSchema</code> sigue el mismo criterio de fallo seguro que el resto de Linneo: lo que no puede describir con
+certeza lo rechaza en lugar de omitirlo en silencio.</p>
+<ul>
+<li><strong>Un objeto desconocido.</strong> <code>objectJson(inventory, "teachers")</code> lanza
+<code>IllegalArgumentException</code> con el mensaje <code>The inventory has no object 'teachers'</code>, en lugar de
+devolver un objeto de esquema vacío.</li>
+<li><strong>Un campo exento.</strong> <code>schemaJson</code> y <code>objectJson</code> lo dejan fuera, porque no
+contiene datos. Pedir su propiedad con <code>propertyJson</code> lanza <code>IllegalArgumentException</code>; para
+<code>documents.fileStore</code>, el mensaje es <code>documents.fileStore exempt: cliente del almacén de archivos, se
+abre bajo demanda is exempted and holds no data</code>.</li>
+<li><strong>Una clave que la taxonomía no contiene.</strong> Un inventario guardado con
+<code>user.contact.fax</code>, resuelto con la taxonomía estándar, lanza <code>TaxonomyException</code> con el mensaje
+<code>Unknown data category 'user.contact.fax'</code>. Antes de publicar, resuelve las claves obsoletas o eliminadas
+como explica el <a href="08-inventario.html#cambios-de-la-taxonomia">capítulo 8</a>.</li>
+</ul>
+
+<h3 id="integrar-odcs">Integrarlo</h3>
+<p>El resultado es JSON, que también es <abbr title="YAML Ain't Markup Language">YAML</abbr> válido. Incorpóralo al
+contrato bajo la clave <code>schema:</code>, o escríbelo en un fichero que incorpore la compilación del contrato.
+Linneo no conoce los servidores, los tipos de las propiedades ni los responsables del contrato: esa parte la mantiene
+el equipo que publica los datos. Como el esquema
+sale del inventario, sigue a la clasificación: regenéralo cuando <code>InventoryDiff</code> informe cambios, y la
+revisión del contrato mostrará el cambio de una clasificación como un cambio del contrato.</p>
+
+<h3 id="limites-odcs">Límites</h3>
+<ul>
+<li>Solo escribe la sección <code>schema</code>, y en ella solo la clasificación de cada propiedad.</li>
+<li>Los nombres de las propiedades son las rutas de los campos; si el contrato usa otros, la aplicación los
+asigna.</li>
+<li>Lee un inventario, no clases: construye el inventario con <code>Classifier.inventory</code> o léelo de la copia
+guardada.</li>
+</ul>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Esperar que Linneo ejecute las sentencias o actualice la descripción de la API.</dt>
+<dd>Los exportadores escriben texto. La aplicación ejecuta las sentencias, añade las extensiones y publica el
+contrato.</dd>
+<dt>Declarar una función de enmascaramiento en una categoría demasiado general.</dt>
+<dd>Llega a todas las descendientes, aunque guarden otro tipo de valor. Decláralas en la clave más específica.</dd>
+<dt>Olvidar <code>withValue</code> en una columna <code>NOT NULL</code>.</dt>
+<dd>El valor omitido es <code>NULL</code> y la columna lo rechaza. Declara una constante que no diga nada del
+original, como <code>'*'</code>.</dd>
+<dt>Pasar a <code>labels</code> una función de columnas que construye el SQL a mano.</dt>
+<dd><code>columns</code> devuelve nombres, no sentencias. Un nombre que no sea un identificador cualificado se
+rechaza.</dd>
+<dt>Construir una columna compartida y esperar una función <code>dummy_*</code>.</dt>
+<dd>Una columna con varios campos recibe <code>NULL</code> salvo que todos se muestren tal cual.</dd>
+<dt>Publicar el esquema ODCS de un inventario con claves que la taxonomía ya no tiene.</dt>
+<dd><code>OdcsSchema</code> lanza <code>TaxonomyException</code>. Concilia el inventario antes de publicar.</dd>
+<dt>Tratar la extensión <code>x-linneo</code> como un control de acceso.</dt>
+<dd>Describe la protección que necesita una propiedad, pero no impide que la API la devuelva.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Los tres exportadores escriben texto a partir de la clasificación o de un inventario guardado, y no se conectan a
+nada.</li>
+<li><code>PostgresAnonymizer</code> convierte una <code>DisclosurePolicy</code> en sentencias
+<code>SECURITY LABEL</code> de PostgreSQL Anonymizer: una por columna, primero las que eliminan reglas y después las
+que enmascaran.</li>
+<li><code>OMIT</code> da <code>MASKED WITH VALUE NULL</code> o el valor declarado con <code>withValue</code>;
+<code>MASK</code>, una función conocida o declarada con <code>withMask</code>, y si no la hay, lo mismo que
+<code>OMIT</code>; <code>CLEAR</code>, <code>IS NULL</code>.</li>
+<li>Una columna compartida es <code>NULL</code> salvo que todos sus campos sean <code>CLEAR</code>. Los identificadores
+se escriben entre comillas, en minúsculas si venían sin comillas, y con un máximo de 63 bytes.</li>
+<li><code>OpenApiExtension</code> da la extensión <code>x-linneo</code> de cada propiedad, con la categoría, la
+naturaleza, los niveles, la identificabilidad y el secreto.</li>
+<li><code>OdcsSchema</code> escribe la sección <code>schema</code> de un contrato ODCS v3 desde un inventario, con
+<code>classification</code>, <code>tags</code> y <code>customProperties</code>, y rechaza objetos desconocidos.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Una función demasiado general.</strong> Con la política para logs, ¿qué regla recibe
+<code>Enrollment.tuitionFee</code>? Si declaras
+<code>withMask(USER_FINANCIAL, "anon.random_int_between(100, 3000)")</code> para enmascarar el importe, ¿qué otra
+columna de <code>enrollments</code> recibe esa función y por qué es un problema?</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>Sin declarar nada, <code>MASKED WITH VALUE NULL</code>: la política enmascara el importe, pero Linneo no conoce una
+función para <code>user.financial.fee</code>. Con la función declarada en <code>user.financial</code>, también la
+recibe <code>scholarship_type</code> (<code>user.financial.scholarship</code>):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-sql">SECURITY LABEL FOR anon ON COLUMN "enrollments"."tuition_fee" IS 'MASKED WITH FUNCTION anon.random_int_between(100, 3000)';
+SECURITY LABEL FOR anon ON COLUMN "enrollments"."scholarship_type" IS 'MASKED WITH FUNCTION anon.random_int_between(100, 3000)';
+</code></pre>
+<p><code>scholarship_type</code> guarda un texto, y un entero aleatorio no tiene sentido en esa columna. Declara la
+función en <code>USER_FINANCIAL_FEE</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Una columna <code>NOT NULL</code>.</strong> La columna <code>staff.password_hash</code> es
+<code>NOT NULL</code>. Escribe el anonimizador y la sentencia que obtienes para ella.</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">String statement = PostgresAnonymizer.of(DisclosurePolicy.forLogs())
+        .withValue(USER_AUTHORIZATION_PASSWORD, "'*'")
+        .label("staff.password_hash", classifier.classify(Staff.class).field("passwordHash").orElseThrow());
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-sql">SECURITY LABEL FOR anon ON COLUMN "staff"."password_hash" IS 'MASKED WITH VALUE ''*''';
+</code></pre>
+<p>El hash es un secreto, así que toda política lo omite; el valor declarado sustituye a <code>NULL</code>. Las
+comillas simples de <code>'*'</code> se duplican dentro de la etiqueta.</p>
+</details>
+</li>
+<li>
+<p><strong>Otra política, otras reglas.</strong> Con la política <code>frontDesk</code> del capítulo 7, que enmascara
+los datos personales de confidencialidad <code>MEDIUM</code> o superior, ¿qué devuelve <code>rule</code> para
+<code>Student.email</code> y para <code>Student.nationalId</code>?</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<p>Para <code>email</code>, <code>null</code>: el correo es <code>LOW</code>, la política lo muestra tal cual y no hay
+regla. Para <code>nationalId</code>, <code>MASKED WITH VALUE NULL</code>: la política lo enmascara y Linneo no conoce
+una función para <code>user.government_id.national_identification_number</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Una propiedad no personal.</strong> ¿Qué miembros tiene la extensión <code>x-linneo</code> de
+<code>StudentView.page</code>, y cuáles faltan respecto a <code>StudentView.email</code>?</p>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<p><code>{category=system.operations, personal=false, confidentiality=LOW, integrity=LOW, secret=false}</code>. Faltan
+<code>nature</code> e <code>identifiability</code>, que solo aparecen en datos personales.</p>
+</details>
+</li>
+<li>
+<p><strong>Una columna de configuración.</strong> <code>MenuGroup</code> guarda <code>id</code> en su columna y el
+resto de campos en una columna JSON <code>settings</code>. ¿Qué sentencias escribe <code>labels</code> con la política
+para logs?</p>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<pre class="codigo salida" tabindex="0"><code class="language-sql">SECURITY LABEL FOR anon ON COLUMN "menu_groups"."id" IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "menu_groups"."settings" IS NULL;
+</code></pre>
+<p>Los campos de <code>MenuGroup</code> no son personales y su confidencialidad es <code>LOW</code>, así que todos son
+<code>CLEAR</code>. Una columna cuyos campos se muestran todos tal cual recibe <code>IS NULL</code>, aunque guarde
+varios campos.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué hace <code>PostgresAnonymizer</code> con las sentencias que genera?</p>
+<ol>
+<li>Las ejecuta en la base de datos que recibe.</li>
+<li>Nada: devuelve el texto y la aplicación lo ejecuta.</li>
+<li>Las guarda en un fichero del proyecto.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La respuesta correcta es la b. Ningún exportador se conecta a nada ni escribe ficheros: devuelven texto, y la
+aplicación decide dónde y cuándo usarlo.</p>
+</details>
+</li>
+<li>
+<p>La política enmascara un campo cuya categoría no tiene función conocida ni declarada. ¿Qué regla recibe?</p>
+<ol>
+<li><code>MASKED WITH FUNCTION anon.dummy_name()</code>, la función más general.</li>
+<li><code>MASKED WITH VALUE NULL</code>, o el valor declarado con <code>withValue</code>.</li>
+<li>Ninguna: se muestra tal cual.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La respuesta correcta es la b. Sin una función, Linneo no conoce el tipo de la columna y aplica la opción más
+estricta, omitir el valor. Nunca elige una función de otra categoría (a) ni rebaja el tratamiento a mostrar (c).</p>
+</details>
+</li>
+<li>
+<p>Tres campos de un compuesto se guardan en una columna JSON. Dos se enmascaran con una función conocida y uno se
+muestra tal cual. ¿Qué recibe la columna?</p>
+<ol>
+<li>La función del primer campo.</li>
+<li><code>IS NULL</code>, porque un campo se muestra tal cual.</li>
+<li><code>MASKED WITH VALUE NULL</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La respuesta correcta es la c. Una columna compartida solo queda sin regla si todos sus campos son
+<code>CLEAR</code>; en cualquier otro caso recibe <code>NULL</code>, porque un valor falso del tipo de un campo no
+sirve para una columna que contiene varios.</p>
+</details>
+</li>
+<li>
+<p>¿Cuándo aparece <code>nature</code> en la extensión <code>x-linneo</code>?</p>
+<ol>
+<li>Siempre.</li>
+<li>Solo cuando el campo contiene datos personales.</li>
+<li>Solo en las categorías especiales.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La respuesta correcta es la b. <code>nature</code> e <code>identifiability</code> solo aparecen en datos personales,
+de cualquier naturaleza: <code>ORDINARY</code>, <code>SPECIAL_CATEGORY</code> o <code>CRIMINAL_OFFENCE</code>.</p>
+</details>
+</li>
+<li>
+<p>¿Qué hace <code>OdcsSchema.objectJson</code> con una clave de objeto que el inventario no contiene?</p>
+<ol>
+<li>Devuelve un objeto de esquema sin propiedades.</li>
+<li>Lanza <code>IllegalArgumentException</code>.</li>
+<li>Devuelve <code>null</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La respuesta correcta es la b. Un objeto vacío (a) o <code>null</code> (c) ocultarían una clave mal escrita, y el
+contrato publicaría un objeto sin la clasificación de sus propiedades.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="07-uso.html#politica-de-divulgacion">Capítulo 7. Mostrar, enmascarar u omitir</a>: las políticas de
+divulgación.</li>
+<li><a href="08-inventario.html">Capítulo 8. El inventario de datos</a>: la entrada de <code>OdcsSchema</code> y de los
+exportadores en un <span lang="en">back office</span>.</li>
+<li><a href="17-catalogos.html">Capítulo 17. Catálogos de datos</a>: publicar la taxonomía y las etiquetas de las
+columnas.</li>
+<li><a href="../../reference/export/">Referencia: exportación</a>.</li>
+<li><a href="../../reference/export/postgresql.html">Referencia: PostgreSQL Anonymizer</a>.</li>
+<li><a href="../../reference/export/openapi.html">Referencia: extensión OpenAPI</a>.</li>
+<li><a href="../../reference/export/odcs.html">Referencia: Open Data Contract Standard</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="15-ens.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 15. Categoría ENS del sistema</a></li>
+<li><a href="17-catalogos.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 17. Catálogos de datos</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

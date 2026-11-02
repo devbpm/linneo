@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
+  - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/CheckedActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 13. Evaluación de impacto y brechas · Curso de Linneo</title>
+<meta name="description" content="Cribar si una actividad necesita una evaluación de impacto con ImpactScreening y orientar la gravedad de una brecha con BreachAssessment.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html" aria-current="page"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 13. Evaluación de impacto y brechas</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 13</span> Evaluación de impacto y brechas</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>75 minutos</dd></div>
+<div><dt>Parte IV:</dt><dd>Cumplimiento normativo</dd></div>
+</dl>
+<p class="entradilla">Dos preguntas llegan tarde o temprano al delegado de protección de datos: si una actividad
+necesita una evaluación de impacto y, cuando algo falla, si una violación de seguridad debe notificarse. Este
+capítulo presenta <code>ImpactScreening</code> y <code>BreachAssessment</code>, dos herramientas que responden con lo
+que el código ya sabe de los datos y dejan la decisión a quien le corresponde.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#orientaciones">Orientaciones, no decisiones</a></li>
+<li><a href="#criterios">Los criterios del cribado</a></li>
+<li><a href="#resultado-del-cribado">El resultado del cribado</a></li>
+<li><a href="#cribado-en-el-comprobador">El cribado en el comprobador</a></li>
+<li><a href="#criterio-aepd">El criterio propio de la AEPD en España</a></li>
+<li><a href="#brechas">Violaciones de seguridad: BreachAssessment</a></li>
+<li><a href="#brechas-en-la-universidad">Brechas en la universidad</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>explicar qué criterios de las directrices WP248 detecta Linneo a partir de los rasgos de los términos y cuáles
+hay que declarar como factores de riesgo;</li>
+<li>declarar factores de riesgo en el alcance y en la gobernanza de una actividad y predecir el resultado del cribado
+y su caso obligatorio;</li>
+<li>leer los hallazgos de un <code>ImpactScreening</code>, su evidencia y el resumen que aparece en el registro;</li>
+<li>relacionar el cribado con el error <code>IMPACT_ASSESSMENT_REQUIRED</code> y el aviso
+<code>IMPACT_ASSESSMENT_RECOMMENDED</code> del comprobador, incluida la regla propia de la
+<abbr title="Agencia Española de Protección de Datos">AEPD</abbr>;</li>
+<li>construir una <code>BreachAssessment</code> a partir de campos clasificados o de un inventario y declarar las
+circunstancias de la violación;</li>
+<li>interpretar la gravedad, la puntuación y las recomendaciones de notificación y comunicación, y explicar por qué no
+se notifica la pérdida de confidencialidad de datos ininteligibles.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo se apoya en tres anteriores. Del <a href="03-taxonomia.html">capítulo 3</a> necesitas los rasgos
+(<code>Trait</code>) de los términos; del <a href="11-actividades.html">capítulo 11</a>, las actividades de tratamiento,
+la separación entre alcance y gobernanza y el <code>ProcessingChecker</code>; del
+<a href="12-registro.html">capítulo 12</a>, el registro de actividades de tratamiento. La segunda mitad usa la
+clasificación de campos (<a href="06-verificacion.html">capítulo 6</a>) y el inventario de datos
+(<a href="08-inventario.html">capítulo 8</a>).</p>
+<p>Los ejemplos reutilizan el modelo de la universidad (<code>Student</code>, <code>Enrollment</code>,
+<code>Grade</code>, <code>Staff</code>, <code>CourseStatistics</code>) y las cuatro actividades de
+<code>UniversityActivities</code>: matrícula, admisión, verificación de antecedentes del personal y boletín de antiguos
+alumnos. Algunas actividades nuevas usan términos de la extensión universitaria, así que la taxonomía de este capítulo
+es la estándar más <code>UniversityTaxonomy</code>. Todas las salidas que se muestran son las reales de ese código.</p>
+
+<h2 id="orientaciones">Orientaciones, no decisiones</h2>
+<p>El Reglamento General de Protección de Datos
+(<abbr title="Reglamento General de Protección de Datos">RGPD</abbr>) pide al responsable del tratamiento dos
+valoraciones de riesgo muy distintas. Antes de tratar, el artículo 35 le obliga a hacer una evaluación de impacto
+relativa a la protección de datos (<abbr title="evaluación de impacto relativa a la protección de datos">EIPD</abbr>)
+cuando un tratamiento entraña probablemente un alto riesgo. Después de un incidente, los artículos 33 y 34 le obligan
+a notificar la violación de la seguridad de los datos personales (en adelante, brecha) a la autoridad de control y,
+si el riesgo es alto, a comunicarla a los interesados.</p>
+<p>Ambas valoraciones dependen en parte de hechos que el código conoce con certeza: qué datos trata cada actividad, qué
+naturaleza jurídica tienen, qué rasgos tienen sus términos, qué campos identifican a una persona. Linneo convierte esos
+hechos en dos orientaciones:</p>
+<ul>
+<li><code>ImpactScreening</code> es un <strong>cribado</strong>: dice qué criterios de las directrices sobre la EIPD
+del Grupo de Trabajo del Artículo 29 (WP248 rev.01), que el Comité Europeo de Protección de Datos
+(<abbr title="Comité Europeo de Protección de Datos">CEPD</abbr>) hizo suyas, cumple una actividad y si alguno de los
+casos del artículo 35.3 la hace obligatoria. No es la evaluación.</li>
+<li><code>BreachAssessment</code> puntúa la gravedad de una brecha con la metodología de la Agencia de la Unión Europea
+para la Ciberseguridad (<abbr title="Agencia de la Unión Europea para la Ciberseguridad">ENISA</abbr>) de 2013 y
+sugiere si notificar y comunicar. Es una orientación para las primeras horas.</li>
+</ul>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Ninguna de las dos herramientas decide. El cribado señala dónde mirar y por qué; la evaluación de impacto la hace
+el responsable con su delegado de protección de datos
+(<abbr title="delegado de protección de datos">DPD</abbr>). La puntuación de una brecha orienta; el responsable
+evalúa el riesgo de cada caso y decide si notifica. La propia explicación de <code>BreachAssessment</code> termina con
+<code>This is an orientation: the controller assesses the risk of each breach.</code></p>
+</div>
+
+<h2 id="criterios">Los criterios del cribado</h2>
+
+<h3 id="que-pide-el-articulo-35">Qué pide el artículo 35</h3>
+<p>El artículo 35.3 del RGPD enumera tres casos en los que la evaluación de impacto es obligatoria: la evaluación
+sistemática y exhaustiva de aspectos personales con decisiones automatizadas que producen efectos jurídicos
+(35.3.a), el tratamiento a gran escala de categorías especiales de datos o de datos penales (35.3.b) y la observación
+sistemática a gran escala de una zona de acceso público (35.3.c). Fuera de esos casos, las directrices WP248 rev.01
+proponen nueve criterios: cuando un tratamiento cumple dos o más, en la mayoría de los casos hace falta una
+evaluación. Además, cada autoridad de control publica su propia lista (artículo 35.4).</p>
+<p>Linneo modela los nueve criterios con el enumerado <code>ImpactScreening.Criterion</code>, en el orden de las
+directrices; <code>number()</code> devuelve su número, de 1 a 9.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-1">
+<table>
+<caption id="tabla-13-1">Tabla 13.1. Los nueve criterios y cómo los encuentra Linneo</caption>
+<thead>
+<tr><th scope="col"><code>Criterion</code></th><th scope="col">Criterio de las directrices</th>
+<th scope="col">Lo encuentra el código cuando</th><th scope="col">Se declara con</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">1. <code>EVALUATION</code></th><td>Evaluación o puntuación, incluida la elaboración de
+perfiles</td><td>una finalidad tiene el rasgo <code>EVALUATION</code></td><td><code>Factor.EVALUATION</code></td></tr>
+<tr><th scope="row">2. <code>AUTOMATED_DECISIONS</code></th><td>Decisiones automatizadas con efectos jurídicos o
+similares</td><td>nunca: no se ve en los términos</td><td><code>Factor.AUTOMATED_DECISIONS</code></td></tr>
+<tr><th scope="row">3. <code>SYSTEMATIC_MONITORING</code></th><td>Observación sistemática</td><td>una finalidad o una
+categoría de datos tiene el rasgo <code>MONITORING</code></td><td><code>Factor.SYSTEMATIC_MONITORING</code>,
+<code>Factor.PUBLICLY_ACCESSIBLE_AREA</code></td></tr>
+<tr><th scope="row">4. <code>SENSITIVE_DATA</code></th><td>Datos sensibles o de naturaleza muy personal</td><td>una
+categoría es de categoría especial o de datos penales, o tiene el rasgo <code>FINANCIAL</code>,
+<code>BEHAVIOURAL</code> o <code>PRIVATE_LIFE</code></td><td>no hay factor: siempre sale de los datos</td></tr>
+<tr><th scope="row">5. <code>LARGE_SCALE</code></th><td>Datos tratados a gran escala</td><td>nunca</td>
+<td><code>Factor.LARGE_SCALE</code></td></tr>
+<tr><th scope="row">6. <code>DATASET_MATCHING</code></th><td>Cotejo o combinación de conjuntos de datos</td>
+<td>nunca</td><td><code>Factor.DATASET_MATCHING</code></td></tr>
+<tr><th scope="row">7. <code>VULNERABLE_SUBJECTS</code></th><td>Datos de interesados vulnerables</td><td>un sujeto de
+datos o una categoría tiene el rasgo <code>VULNERABLE</code></td><td><code>Factor.VULNERABLE_SUBJECTS</code></td></tr>
+<tr><th scope="row">8. <code>INNOVATIVE_TECHNOLOGY</code></th><td>Uso innovador o nuevas soluciones tecnológicas u
+organizativas</td><td>nunca</td><td><code>Factor.INNOVATIVE_TECHNOLOGY</code></td></tr>
+<tr><th scope="row">9. <code>PREVENTS_RIGHTS</code></th><td>Tratamiento que impide ejercer un derecho o usar un
+servicio o un contrato</td><td>nunca</td><td><code>Factor.PREVENTS_RIGHTS</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="lo-que-ve-el-codigo">Lo que ve el código: los rasgos</h3>
+<p>El cribado no compara claves con listas. Lee los <strong>rasgos</strong> de los términos de la actividad, las
+propiedades que las reglas jurídicas consultan con <code>term.has(Trait.X)</code> (capítulo 3). Esto tiene una
+consecuencia práctica: un término de una extensión, o uno propio de tu aplicación, cuenta en cuanto declara sus rasgos,
+exactamente igual que un término estándar.</p>
+<p>La taxonomía estándar declara, entre otros, estos rasgos que el cribado lee:</p>
+<ul>
+<li><code>FINANCIAL</code> en <code>user.financial</code> y <code>user.payment</code>; <code>BEHAVIOURAL</code> en
+<code>user.behavior</code> y <code>user.location</code>; <code>PRIVATE_LIFE</code> en
+<code>user.content.private</code>. Los tres son datos de naturaleza muy personal (criterio 4).</li>
+<li><code>VULNERABLE</code> en los sujetos <code>employee</code>, <code>staff_member</code>,
+<code>faculty_member</code>, <code>trainee</code>, <code>patient</code> y <code>job_applicant</code>, y en las
+categorías <code>user.childrens</code>, <code>user.victim_status</code> y
+<code>user.government_id.immigration</code> (criterio 7).</li>
+<li><code>MONITORING</code> en las categorías <code>user.telemetry</code> y <code>user.sensor</code> (criterio 3).</li>
+<li><code>EVALUATION</code> en finalidades de elaboración de perfiles como
+<code>personalize.content.profiling</code> o <code>marketing.advertising.profiling</code> (criterio 1).</li>
+</ul>
+<p>La extensión universitaria añade los suyos. <code>education.learning_analytics</code> tiene <code>EVALUATION</code>
+y <code>MONITORING</code>, y <code>education.financial_aid.means_assessment</code> tiene <code>EVALUATION</code>.
+Como los rasgos se heredan, todos los hijos de un término los tienen: <code>user.financial.fee</code> es
+<code>FINANCIAL</code> porque <code>user.financial</code> lo es.</p>
+<p>El cribado trabaja con los términos que resolvió el comprobador: las claves obsoletas ya están sustituidas por su
+reemplazo y solo cuentan los datos personales. Un campo anonimizado o agregado no aporta su categoría a la actividad,
+así que tampoco aporta criterios.</p>
+
+<div class="recuadro recuadro-nota" role="note">
+<p class="recuadro-titulo">Nota</p>
+<p>Un estudiante no es un interesado vulnerable en la taxonomía estándar: <code>student</code> no tiene el rasgo
+<code>VULNERABLE</code>. Si tu universidad admite menores, el código no puede saberlo; es un hecho que se declara
+con <code>Factor.VULNERABLE_SUBJECTS</code>, como verás a continuación.</p>
+</div>
+
+<h3 id="factores-de-riesgo">Lo que solo saben las personas: los factores de riesgo</h3>
+<p>Varios criterios no se ven en ningún término. La escala del tratamiento, el cotejo de conjuntos de datos o que el
+código tome decisiones sin intervención humana son hechos, no propiedades de una clave. Linneo los recoge como
+<strong>factores de riesgo</strong>, los valores del enumerado <code>ImpactScreening.Factor</code>. Cada factor cumple
+un criterio, que devuelve <code>criterion()</code>.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-2">
+<table>
+<caption id="tabla-13-2">Tabla 13.2. Los factores de riesgo y el criterio que cumplen</caption>
+<thead>
+<tr><th scope="col"><code>Factor</code></th><th scope="col"><code>criterion()</code></th>
+<th scope="col">Qué significa</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>EVALUATION</code></th><td>1</td><td>Perfila o puntúa a las personas más allá de lo que
+muestran las finalidades.</td></tr>
+<tr><th scope="row"><code>AUTOMATED_DECISIONS</code></th><td>2</td><td>Decide automáticamente con efectos jurídicos o
+similares sobre las personas.</td></tr>
+<tr><th scope="row"><code>SYSTEMATIC_MONITORING</code></th><td>3</td><td>Observa, vigila o controla a las personas de
+forma sistemática.</td></tr>
+<tr><th scope="row"><code>PUBLICLY_ACCESSIBLE_AREA</code></th><td>3</td><td>Observa sistemáticamente una zona de acceso
+público; a gran escala es el caso 35.3.c.</td></tr>
+<tr><th scope="row"><code>LARGE_SCALE</code></th><td>5</td><td>Trata datos a gran escala: muchas personas, muchos
+datos, mucho tiempo o un área extensa.</td></tr>
+<tr><th scope="row"><code>DATASET_MATCHING</code></th><td>6</td><td>Coteja o combina conjuntos de datos de otros
+tratamientos o responsables.</td></tr>
+<tr><th scope="row"><code>VULNERABLE_SUBJECTS</code></th><td>7</td><td>Afecta a personas vulnerables que los
+interesados de la actividad no muestran, como menores entre los estudiantes.</td></tr>
+<tr><th scope="row"><code>INNOVATIVE_TECHNOLOGY</code></th><td>8</td><td>Usa tecnología o soluciones organizativas
+nuevas, como el acceso biométrico o los dispositivos conectados.</td></tr>
+<tr><th scope="row"><code>PREVENTS_RIGHTS</code></th><td>9</td><td>Puede impedir a las personas ejercer un derecho o
+usar un servicio o un contrato.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Los factores tienen dos sitios, porque tienen dos responsables, igual que el resto de la actividad
+(capítulo 11):</p>
+<ul>
+<li>lo que el <strong>código</strong> sabe que hace la actividad pertenece a su <strong>alcance</strong>: el
+componente <code>riskFactors</code> de <code>ProcessingActivity</code>, que se fija con el
+<code>riskFactors(...)</code> de su builder. El caso típico es <code>AUTOMATED_DECISIONS</code> cuando es el propio
+código el que decide;</li>
+<li>lo que solo sabe el <strong>delegado</strong>, como la escala, pertenece a la <strong>gobernanza</strong>:
+<code>Governance.riskFactors()</code>, que se fija con el <code>riskFactors(...)</code> de
+<code>Governance.Builder</code>.</li>
+</ul>
+<p>Ambos métodos <strong>añaden</strong> los factores que reciben a los ya declarados. El cribado lee la unión,
+<code>ProcessingActivity.allRiskFactors()</code>. Como <code>withGovernance</code> solo sustituye la gobernanza, una
+gobernanza guardada antes de que cambiara el código nunca elimina un factor que el código declara: el alcance es un
+suelo.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.1. Factores de riesgo en el alcance y en la gobernanza</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity alerts = ProcessingActivity.builder("dropout-alerts", "Dropout alerts")
+        .purposes(UniversityDataUses.EDUCATION_LEARNING_ANALYTICS)
+        .dataSubjects(DataSubjects.STUDENT)
+        .entities(Grade.class)
+        .riskFactors(ImpactScreening.Factor.AUTOMATED_DECISIONS)   // el código decide solo
+        .build();
+
+Governance stored = Governance.builder()
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 46")
+        .retention("Until the end of the academic year")
+        .riskFactors(ImpactScreening.Factor.LARGE_SCALE)          // lo sabe el delegado
+        .build();
+
+ProcessingActivity combined = alerts.withGovernance(stored);
+System.out.println(combined.riskFactors());
+System.out.println(combined.governance().riskFactors());
+System.out.println(combined.allRiskFactors());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">[AUTOMATED_DECISIONS]
+[LARGE_SCALE]
+[AUTOMATED_DECISIONS, LARGE_SCALE]
+</code></pre>
+
+<p>La actividad <code>dropout-alerts</code> avisa a los tutores cuando un modelo estima que un estudiante va a
+abandonar. El desarrollador sabe que el aviso se genera sin intervención humana y lo declara en el alcance. El
+delegado sabe que el modelo se aplica a toda la población de la universidad y lo declara en su gobernanza. Cuando
+compares dos versiones del registro, un cambio de los factores aparece como un aspecto distinto de
+<code>ActivityChange</code>: <code>RISK_FACTORS</code> si cambia la gobernanza y <code>DECLARED_RISK_FACTORS</code> si
+cambia el código (capítulo 12).</p>
+
+<h2 id="resultado-del-cribado">El resultado del cribado</h2>
+<p>Un <code>ImpactScreening</code> es un record con tres componentes: <code>outcome</code>, el resultado;
+<code>findings</code>, los criterios que se cumplen con lo que los muestra; y <code>mandatoryCase</code>, la disposición
+del artículo 35.3 que hace obligatoria la evaluación, o <code>null</code>. Toda <code>CheckedActivity</code> tiene el
+suyo en <code>screening()</code>, que equivale a <code>ImpactScreening.of(checked)</code>.</p>
+
+<h3 id="outcome">Outcome: de menos a más</h3>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-3">
+<table>
+<caption id="tabla-13-3">Tabla 13.3. Los valores de <code>ImpactScreening.Outcome</code></caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col">Cuándo</th><th scope="col">Lectura</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>NOT_INDICATED</code></th><td>ningún criterio</td><td>Nada en la actividad apunta a una
+evaluación.</td></tr>
+<tr><th scope="row"><code>POSSIBLE</code></th><td>un criterio</td><td>Puede hacer falta, según el caso.</td></tr>
+<tr><th scope="row"><code>LIKELY</code></th><td>dos criterios o más</td><td>En la mayoría de los casos se
+exige.</td></tr>
+<tr><th scope="row"><code>REQUIRED</code></th><td>un caso del artículo 35.3</td><td>Se exige.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Un criterio cuenta una sola vez, por muchas cosas que lo muestren. Declarar
+<code>SYSTEMATIC_MONITORING</code> y <code>PUBLICLY_ACCESSIBLE_AREA</code> a la vez suma un criterio, el 3, con dos
+entradas en su evidencia.</p>
+
+<h3 id="casos-obligatorios">Los casos obligatorios del artículo 35.3</h3>
+<p>Linneo comprueba los tres casos en este orden y se queda con el primero que se cumple:</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-4">
+<table>
+<caption id="tabla-13-4">Tabla 13.4. Cuándo devuelve <code>mandatoryCase()</code> cada disposición</caption>
+<thead>
+<tr><th scope="col"><code>mandatoryCase</code></th><th scope="col">Linneo lo encuentra cuando</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>35.3.a</code></th><td>se cumple el criterio 1 (por una finalidad <code>EVALUATION</code> o por
+<code>Factor.EVALUATION</code>) <strong>y</strong> se declara <code>Factor.AUTOMATED_DECISIONS</code></td></tr>
+<tr><th scope="row"><code>35.3.b</code></th><td>la actividad trata datos de categorías especiales o datos penales
+<strong>y</strong> se declara <code>Factor.LARGE_SCALE</code></td></tr>
+<tr><th scope="row"><code>35.3.c</code></th><td>se declaran <code>Factor.PUBLICLY_ACCESSIBLE_AREA</code>
+<strong>y</strong> <code>Factor.LARGE_SCALE</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Observa que los tres casos necesitan al menos un factor declarado. El código puede ver que una actividad trata
+datos de salud, pero no que lo hace a gran escala. Los datos de naturaleza muy personal (financieros, de ubicación,
+contenido privado) cumplen el criterio 4, pero no son un caso del artículo 35.3.b: solo lo son las categorías
+especiales y los datos penales.</p>
+
+<h3 id="hallazgos-y-evidencia">Hallazgos y evidencia ordenada</h3>
+<p>Cada <code>ImpactScreening.Finding</code> une un <code>criterion</code> con su <code>evidence</code>: un texto en
+inglés que enumera, separado por <code>; </code>, todo lo que cumple ese criterio. Cada entrada tiene una de estas
+formas: <code>purpose &lt;clave&gt;</code>, <code>special category data &lt;clave&gt;</code>,
+<code>criminal offence data &lt;clave&gt;</code>, <code>highly personal data &lt;clave&gt;</code>,
+<code>data category &lt;clave&gt;</code>, <code>data subjects &lt;clave&gt;</code> o
+<code>declared &lt;FACTOR&gt;</code>.</p>
+<p>La evidencia de cada criterio está <strong>ordenada</strong> y los hallazgos siguen el orden de las directrices.
+Por eso el cribado no depende del orden en que la actividad enumera sus términos: dos declaraciones con las mismas
+claves en otro orden dan el mismo cribado, el mismo registro y la misma huella. <code>criteria()</code> devuelve el
+conjunto de criterios, también en el orden de las directrices, y <code>summary()</code> lo resume en una línea.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.2. El cribado de las cuatro actividades de la universidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
+ProcessingChecker checker = new ProcessingChecker(taxonomy);
+
+for (CheckedActivity checked : checker.checkAll(UniversityActivities.all())) {
+    ImpactScreening screening = checked.screening();
+    System.out.println(checked.activity().key() + ": " + screening.outcome());
+    screening.findings().forEach(finding -&gt; System.out.println("  " + finding.criterion().number()
+            + ". " + finding.criterion() + ": " + finding.evidence()));
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">enrollment: POSSIBLE
+  4. SENSITIVE_DATA: highly personal data user.financial.fee; highly personal data user.financial.scholarship
+admissions: POSSIBLE
+  4. SENSITIVE_DATA: special category data user.health_and_medical.disability
+staff-screening: LIKELY
+  4. SENSITIVE_DATA: criminal offence data user.criminal_history
+  7. VULNERABLE_SUBJECTS: data subjects job_applicant
+alumni-newsletter: NOT_INDICATED
+</code></pre>
+
+<p>Lee cada línea como lo haría el delegado:</p>
+<ul>
+<li>La <strong>matrícula</strong> cumple el criterio 4 por la tasa y la beca de <code>Enrollment</code>, datos
+financieros. Un criterio solo hace <em>posible</em> una evaluación.</li>
+<li>La <strong>admisión</strong> trata el grado de discapacidad, una categoría especial: también un criterio. Sería un
+caso del artículo 35.3.b si alguien declarara que se trata a gran escala.</li>
+<li>La <strong>verificación de antecedentes</strong> trata datos penales de candidatos, y <code>job_applicant</code>
+es un interesado vulnerable. Dos criterios: la evaluación es probable. La actividad cita
+<code>DPIA-2026-02</code>, así que el comprobador no emite ninguna infracción por la evaluación.</li>
+<li>El <strong>boletín</strong> trata un nombre y un correo con una finalidad de mercadotecnia por correo. Ningún
+criterio.</li>
+</ul>
+<p>El registro muestra el mismo resultado. La fila del Markdown contiene <code>summary()</code>, y el
+<abbr title="JavaScript Object Notation">JSON</abbr>, un objeto
+<code>screening</code> con el resultado y los criterios. Para la verificación de antecedentes:</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">| Impact assessment screening | Likely required (2 criteria of WP248): 4. sensitive data: criminal offence data user.criminal_history; 7. vulnerable subjects: data subjects job_applicant |
+"screening":{"outcome":"LIKELY","criteria":["SENSITIVE_DATA","VULNERABLE_SUBJECTS"]}
+</code></pre>
+
+<h2 id="cribado-en-el-comprobador">El cribado en el comprobador</h2>
+<p>El <code>ProcessingChecker</code> criba cada actividad que trata datos personales. Si la actividad no cita ninguna
+evaluación de impacto (<code>Governance.impactAssessment()</code> es <code>null</code>), convierte el resultado en una
+infracción del elemento <code>IMPACT_ASSESSMENT</code>, que pertenece a la gobernanza:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-5">
+<table>
+<caption id="tabla-13-5">Tabla 13.5. Del resultado del cribado a la infracción</caption>
+<thead>
+<tr><th scope="col">Resultado</th><th scope="col">Infracción</th><th scope="col">Mensaje</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>REQUIRED</code></th><td><strong>error</strong> <code>IMPACT_ASSESSMENT_REQUIRED</code></td>
+<td><code>GDPR article &lt;caso&gt; requires an impact assessment; refer to it. &lt;summary&gt;</code></td></tr>
+<tr><th scope="row"><code>LIKELY</code></th><td><strong>aviso</strong>
+<code>IMPACT_ASSESSMENT_RECOMMENDED</code></td>
+<td><code>GDPR article 35 likely requires an impact assessment. &lt;summary&gt;</code></td></tr>
+<tr><th scope="row"><code>POSSIBLE</code>, <code>NOT_INDICATED</code></th><td>ninguna (salvo la regla de la AEPD en
+España)</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>La división sigue el principio de fallo seguro (<span lang="en">fail closed</span>) del paquete: un caso del
+artículo 35.3 sin evaluación haría el tratamiento ilícito tal como está declarado, así que es un error y hace fallar
+<code>verify</code>; una evaluación probable es una laguna del registro que el delegado debe revisar, así que es un
+aviso. Una actividad que cita una evaluación no recibe ninguna de las dos infracciones, sea cual sea el resultado, y el
+registro sigue mostrando su cribado.</p>
+
+<h3 id="un-aviso">Un aviso: la analítica del aprendizaje</h3>
+<p>La universidad analiza las calificaciones para detectar a tiempo a los estudiantes con dificultades. La finalidad
+<code>education.learning_analytics</code> de la extensión universitaria evalúa y observa a la vez. Este ejemplo y los
+siguientes usan el <code>checker</code> del Ejemplo 13.2, creado con la taxonomía que incluye la extensión:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.3. Dos criterios desde una sola finalidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity analytics = ProcessingActivity.builder("learning-analytics", "Learning analytics")
+        .purposes(UniversityDataUses.EDUCATION_LEARNING_ANALYTICS)
+        .dataSubjects(DataSubjects.STUDENT)
+        .entities(Grade.class)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 46")
+        .retention("Until the end of the academic year")
+        .build();
+
+CheckedActivity checked = checker.check(analytics);
+checked.violations().forEach(System.out::println);
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING IMPACT_ASSESSMENT_RECOMMENDED learning-analytics: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 1. evaluation: purpose education.learning_analytics; 3. systematic monitoring: purpose education.learning_analytics
+</code></pre>
+
+<p>La actividad es válida: el aviso es un punto abierto del registro. Desaparece cuando el delegado hace la evaluación
+y la cita con <code>impactAssessment(...)</code> en la gobernanza.</p>
+
+<h3 id="un-error">Un error: decisiones automatizadas</h3>
+<p>Las alertas de abandono del Ejemplo 13.1 usan la misma finalidad, pero además deciden sin intervención humana. Con
+<code>Factor.AUTOMATED_DECISIONS</code> en el alcance, el criterio 1 y el factor forman el caso 35.3.a:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.4. Un caso del artículo 35.3.a</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity alerts = ProcessingActivity.builder("dropout-alerts", "Dropout alerts")
+        .purposes(UniversityDataUses.EDUCATION_LEARNING_ANALYTICS)
+        .dataSubjects(DataSubjects.STUDENT)
+        .entities(Grade.class)
+        .riskFactors(ImpactScreening.Factor.AUTOMATED_DECISIONS)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 46")
+        .retention("Until the end of the academic year")
+        .build();
+
+CheckedActivity checked = checker.check(alerts);
+System.out.println(checked.isValid() + " " + checked.screening().mandatoryCase());
+checked.violations().forEach(System.out::println);
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">false 35.3.a
+ERROR IMPACT_ASSESSMENT_REQUIRED dropout-alerts: GDPR article 35.3.a requires an impact assessment; refer to it. Required (GDPR art. 35.3.a): 1. evaluation: purpose education.learning_analytics; 2. automated decisions: declared AUTOMATED_DECISIONS; 3. systematic monitoring: purpose education.learning_analytics
+</code></pre>
+
+<p>La gobernanza corrige el error citando la evaluación:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">CheckedActivity assessed = checker.check(alerts.withGovernance(alerts.governance().toBuilder()
+        .impactAssessment("DPIA-2026-05")
+        .build()));
+System.out.println(assessed.isValid() + " " + assessed.screening().outcome() + " " + assessed.violations());
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">true REQUIRED []
+</code></pre>
+
+<p>El resultado sigue siendo <code>REQUIRED</code>: el cribado describe la actividad, no el estado de su
+documentación.</p>
+
+<h3 id="la-escala-la-declara-el-delegado">La escala la declara el delegado</h3>
+<p>La admisión trata el grado de discapacidad de los solicitantes. Si el delegado concluye que la universidad lo trata
+a gran escala y lo declara en la gobernanza, la actividad pasa a ser un caso del artículo 35.3.b. Para ver el efecto,
+el ejemplo retira además la referencia a la evaluación que tenía la actividad:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.5. Un factor de la gobernanza crea un caso obligatorio</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Governance reviewed = UniversityActivities.ADMISSIONS.governance().toBuilder()
+        .impactAssessment(null)
+        .riskFactors(ImpactScreening.Factor.LARGE_SCALE)
+        .build();
+
+CheckedActivity checked = checker.check(UniversityActivities.ADMISSIONS.withGovernance(reviewed));
+checked.errors().forEach(error -&gt; System.out.println(error.element() + " " + error));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">IMPACT_ASSESSMENT ERROR IMPACT_ASSESSMENT_REQUIRED admissions: GDPR article 35.3.b requires an impact assessment; refer to it. Required (GDPR art. 35.3.b): 4. sensitive data: special category data user.health_and_medical.disability; 5. large scale: declared LARGE_SCALE
+</code></pre>
+
+<p>El elemento es <code>IMPACT_ASSESSMENT</code>, de gobernanza (<code>isGovernance()</code> es <code>true</code>):
+el error corresponde a la pantalla donde el delegado mantiene la actividad, no a la compilación del equipo de
+desarrollo. Si filtras los errores por elemento, como en el capítulo 11, una gobernanza incompleta no rompe la
+compilación pero queda visible.</p>
+
+<h2 id="criterio-aepd">El criterio propio de la AEPD en España</h2>
+<p>Un <code>ProcessingChecker</code> creado con <code>Jurisdiction.SPAIN</code> aplica también reglas españolas. Dos de
+ellas tocan la evaluación de impacto:</p>
+<ol>
+<li>El aviso <code>IMPACT_ASSESSMENT_RECOMMENDED</code> de un resultado <code>LIKELY</code> cita la lista de la AEPD
+del artículo 35.4: <code>GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4
+requires one in most cases that meet two criteria or more). &lt;summary&gt;</code>.</li>
+<li>La lista de la AEPD cuenta los datos biométricos de identificación y los datos genéticos como criterios propios,
+además de ser categorías especiales. Un dato biométrico cumple así dos criterios por sí solo. Linneo reconoce esas
+categorías por sus rasgos <code>BIOMETRIC</code> y <code>GENETIC</code>, y cuando el cribado no es ya
+<code>LIKELY</code> ni <code>REQUIRED</code> y la actividad no cita ninguna evaluación, emite un aviso
+<code>IMPACT_ASSESSMENT_RECOMMENDED</code> propio.</li>
+</ol>
+<p>El centro deportivo de la universidad controla el acceso con la huella dactilar de los estudiantes:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.6. El mismo acceso biométrico con y sin las reglas españolas</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity access = ProcessingActivity.builder("sports-centre-access", "Sports centre access")
+        .purposes(DataUses.ESSENTIAL_SERVICE_SECURITY)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_BIOMETRIC_FINGERPRINT)
+        .legalBasis(LegalBasis.CONSENT)
+        .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .retention("While the membership lasts")
+        .build();
+
+ProcessingChecker eu = new ProcessingChecker(taxonomy);
+ProcessingChecker spain = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN);
+System.out.println(eu.check(access).violations());
+spain.check(access).violations().forEach(System.out::println);
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">[]
+WARNING IMPACT_ASSESSMENT_RECOMMENDED sports-centre-access: The AEPD's list under GDPR article 35.4 counts biometric data for identification and genetic data as a criterion besides special category data, so an impact assessment is required in most cases: user.biometric.fingerprint. Possible (1 criterion of WP248): 4. sensitive data: special category data user.biometric.fingerprint
+</code></pre>
+
+<p>Con el RGPD solo, la huella es una categoría especial: un criterio, resultado <code>POSSIBLE</code> y ninguna
+infracción. Con las reglas españolas, el aviso nombra la categoría biométrica. El cribado en sí no cambia: el resumen
+sigue diciendo <code>Possible (1 criterion of WP248)</code>, y el registro muestra los criterios de las directrices
+como siempre. La regla de la AEPD vive en el comprobador, no en <code>ImpactScreening</code>.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>La lista de la autoridad de control tiene más supuestos de los que Linneo comprueba. El cribado es un punto de
+partida: revisa siempre el resultado frente a la lista vigente de la AEPD, como pide la documentación de
+<code>ImpactScreening</code>.</p>
+</div>
+
+<h2 id="brechas">Violaciones de seguridad: BreachAssessment</h2>
+<p>Una brecha es un incidente de seguridad que destruye, pierde, altera, comunica o da acceso no autorizado a datos
+personales. Cuando ocurre, el responsable tiene 72 horas desde que tiene constancia para notificarla a la autoridad
+de control (artículo 33.1 del RGPD), salvo que sea improbable que entrañe un riesgo; entonces basta con documentarla
+(artículo 33.5). Si el riesgo es alto, además la comunica a los interesados sin dilación indebida (artículo 34.1).</p>
+<p>En las primeras horas de un incidente, lo más difícil suele ser saber qué datos estaban en juego. Linneo ya lo sabe
+por la clasificación de los campos afectados. <code>BreachAssessment</code> lo aprovecha para puntuar la gravedad
+con la metodología de ENISA de 2013 («<span lang="en">Recommendations for a methodology of the assessment of
+severity of personal data breaches</span>», v1.0):</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">gravedad = contexto del tratamiento de datos × facilidad de identificación + circunstancias de la violación
+</code></pre>
+
+<p>Linneo puntúa los dos primeros factores a partir de la clasificación y de los rasgos de las categorías, y dice qué
+campo fija cada puntuación. Las circunstancias las declara quien gestiona la brecha. Las instancias son inmutables y
+se construyen con <code>BreachAssessment.builder()</code>.</p>
+
+<h3 id="contexto-del-tratamiento">El contexto del tratamiento de datos</h3>
+<p>El contexto mide lo críticos que son los datos afectados, de 1 a 4. Es el del campo personal más crítico.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-6">
+<table>
+<caption id="tabla-13-6">Tabla 13.6. La puntuación del contexto</caption>
+<thead>
+<tr><th scope="col">Contexto</th><th scope="col">Datos afectados</th><th scope="col">Motivo en inglés</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">4</th><td>categorías especiales o datos penales</td><td><code>sensitive data
+&lt;clave&gt;</code></td></tr>
+<tr><th scope="row">3</th><td>una categoría con el rasgo <code>FINANCIAL</code></td>
+<td><code>financial data &lt;clave&gt;</code></td></tr>
+<tr><th scope="row">2</th><td>una categoría con el rasgo <code>BEHAVIOURAL</code></td>
+<td><code>behavioural data &lt;clave&gt;</code></td></tr>
+<tr><th scope="row">1</th><td>cualquier otro dato personal</td><td><code>simple data &lt;clave&gt;</code></td></tr>
+<tr><th scope="row">0</th><td>ningún campo afectado es personal: no es una brecha de datos personales (artículo
+4.12)</td> <td><code>no personal data</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Con puntuaciones iguales, el motivo lo da el campo de clave menor, así que no depende del orden de los campos.</p>
+
+<h3 id="facilidad-de-identificacion">La facilidad de identificación</h3>
+<p>La facilidad de identificación mide con qué facilidad los datos afectados identifican a las personas. Es el nivel
+más alto de los campos afectados, leído de los rasgos de identificador de sus categorías y de la identificabilidad
+declarada en cada campo.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-7">
+<table>
+<caption id="tabla-13-7">Tabla 13.7. Los niveles de <code>BreachAssessment.Identification</code></caption>
+<thead>
+<tr><th scope="col">Nivel</th><th scope="col"><code>score()</code></th><th scope="col">Los campos afectados
+incluyen</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>MAXIMUM</code></th><td>1</td><td>un <code>DIRECT_IDENTIFIER</code> identificado: un nombre
+(<code>user.name</code>), un documento de identidad (<code>user.government_id</code>), datos biométricos o una imagen
+(<code>user.content.self_image</code>)</td></tr>
+<tr><th scope="row"><code>SIGNIFICANT</code></th><td>0,75</td><td>un <code>CONTACT_IDENTIFIER</code> identificado:
+contacto (<code>user.contact</code>) o cuenta (<code>user.account</code>)</td></tr>
+<tr><th scope="row"><code>LIMITED</code></th><td>0,5</td><td>un <code>INDIRECT_IDENTIFIER</code>
+(<code>user.unique_id</code>, <code>user.device</code>), un identificador seudonimizado, o cualquier otro dato
+personal</td></tr>
+<tr><th scope="row"><code>NEGLIGIBLE</code></th><td>0,25</td><td>ningún dato personal</td></tr>
+</tbody>
+</table>
+</div>
+<p>Tres reglas merecen atención:</p>
+<ul>
+<li><strong>Los datos anonimizados y agregados no identifican.</strong> Un campo declarado <code>ANONYMIZED</code> o
+<code>AGGREGATED</code> no es un dato personal, así que cuenta como <code>NEGLIGIBLE</code> y no aporta nada al
+contexto.</li>
+<li><strong>Un dato personal sin rasgo identificador cuenta como identificación limitada.</strong> Un grado de
+discapacidad o una calificación no nombran a nadie, pero son datos <em>de</em> alguien: quien los tiene puede llegar
+a la persona con cierto esfuerzo. El motivo dice entonces
+<code>personal data held about a person, &lt;clave&gt;</code>.</li>
+<li><strong>Un identificador directo o de contacto seudonimizado</strong> baja a <code>LIMITED</code>.</li>
+</ul>
+
+<h3 id="circunstancias">Las circunstancias de la violación</h3>
+<p>Las circunstancias suman de 0 a 2 puntos y las declara quien gestiona la brecha. Por defecto, todas son
+<code>NONE</code> y la intención maliciosa es <code>false</code>.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-8">
+<table>
+<caption id="tabla-13-8">Tabla 13.8. Las circunstancias y sus puntos</caption>
+<thead>
+<tr><th scope="col">Método del builder</th><th scope="col">Valores y puntos</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>confidentiality(Exposure)</code></th><td><code>NONE</code> 0 (no se perdió, o se expuso sin
+indicios de tratamiento ilícito); <code>KNOWN_RECIPIENTS</code> +0,25 (destinatarios conocidos, como un correo mal
+dirigido); <code>UNKNOWN_RECIPIENTS</code> +0,5 (número desconocido, como datos publicados en internet)</td></tr>
+<tr><th scope="row"><code>integrity(Alteration)</code></th><td><code>NONE</code> 0; <code>RECOVERABLE</code> +0,25
+(alterados, pero recuperables); <code>UNRECOVERABLE</code> +0,5 (el original no se puede recuperar)</td></tr>
+<tr><th scope="row"><code>availability(Unavailability)</code></th><td><code>NONE</code> 0 (se recupera sin dificultad);
+<code>TEMPORARY</code> +0,25; <code>PERMANENT</code> +0,5 (sin copia ni otra fuente)</td></tr>
+<tr><th scope="row"><code>malicious(true)</code></th><td>+0,5: la violación fue intencionada</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="gravedad">La gravedad</h3>
+<p><code>score()</code> calcula <code>contexto × identificación + circunstancias</code> y <code>severity()</code> lo
+convierte en un nivel: <code>LOW</code> por debajo de 2, <code>MEDIUM</code> de 2 a menos de 3, <code>HIGH</code> de
+3 a menos de 4 y <code>VERY_HIGH</code> desde 4. <code>individuals(n)</code> declara cuántas personas se ven afectadas;
+por encima de 100, <code>manyIndividuals()</code> es <code>true</code>, un indicador de la metodología que pesa en la
+valoración sin cambiar la puntuación.</p>
+
+<h3 id="notificar-y-comunicar">Notificar y comunicar</h3>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-9">
+<table>
+<caption id="tabla-13-9">Tabla 13.9. Lo que sugiere la evaluación</caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Es <code>true</code> cuando</th><th scope="col">Artículo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>notifyAuthority()</code></th><td>hay datos personales afectados, la gravedad no es
+<code>LOW</code> y no se perdió solo la confidencialidad de datos ininteligibles</td><td>33.1: notificar en 72 horas;
+si no, documentar (33.5)</td></tr>
+<tr><th scope="row"><code>communicateToSubjects()</code></th><td>hay datos personales afectados, la gravedad es
+<code>HIGH</code> o <code>VERY_HIGH</code> y no se perdió solo la confidencialidad de datos ininteligibles</td>
+<td>34.1; la excepción es 34.3.a</td></tr>
+</tbody>
+</table>
+</div>
+<p>La excepción de los <strong>datos ininteligibles</strong> merece una explicación. Con
+<code>unintelligible(true)</code> declaras que los datos eran ininteligibles para cualquiera sin acceso a ellos, por
+ejemplo porque estaban cifrados con una clave robusta que no quedó comprometida. Si en la brecha solo se perdió la
+confidencialidad de esos datos, quien los obtuvo no puede leerlos: es improbable que la violación entrañe un riesgo,
+así que no se notifica a la autoridad (Directrices 9/2022 del CEPD, y 01/2021, caso 1) ni se comunica a los
+interesados (artículo 34.3.a), <strong>sea cual sea la puntuación</strong>.</p>
+<p>La excepción solo cubre la confidencialidad. Si además se declara una pérdida de integridad o de disponibilidad, el
+cifrado ya no protege lo que importa: protege lo que se leyó, no lo que se perdió o se alteró. En ese caso, la
+evaluación vuelve a seguir la puntuación.</p>
+
+<h3 id="construir-una-evaluacion">Construir una evaluación</h3>
+<p>El builder ofrece dos formas de indicar los campos afectados, y las dos <strong>añaden</strong> a lo ya
+indicado:</p>
+<ul>
+<li><code>affected(Collection&lt;FieldClassification&gt;)</code>, con las clasificaciones de los campos del modelo;</li>
+<li><code>affected(Collection&lt;InventoryField&gt;, Taxonomy)</code>, con campos guardados de un inventario de datos,
+resueltos con la taxonomía; los campos exentos se omiten, y una clave que la taxonomía no tiene lanza
+<code>TaxonomyException</code>.</li>
+</ul>
+<p>Las circunstancias (<code>confidentiality</code>, <code>integrity</code>, <code>availability</code>,
+<code>malicious</code>, <code>individuals</code>, <code>unintelligible</code>) sustituyen el valor anterior; en
+las tres primeras, un argumento <code>null</code> lanza <code>NullPointerException</code>.
+<code>explanation()</code> devuelve la evaluación, sus motivos y qué hacer, en inglés, una afirmación por línea.</p>
+
+<h2 id="brechas-en-la-universidad">Brechas en la universidad</h2>
+
+<h3 id="un-correo-mal-dirigido">Un correo mal dirigido</h3>
+<p>Una secretaria envía a una lista de distribución equivocada la relación de los 37 estudiantes del programa de apoyo
+a la discapacidad, con su nombre, sus apellidos, su correo y su grado de discapacidad. Los destinatarios son personal
+de la universidad, así que son conocidos.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.7. La evaluación de un correo enviado a destinatarios equivocados</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification student = classifier.classify(Student.class);
+List&lt;FieldClassification&gt; affected = Stream.of("firstName", "lastName", "email", "disabilityDegree")
+        .map(path -&gt; student.field(path).orElseThrow())
+        .toList();
+
+BreachAssessment assessment = BreachAssessment.builder()
+        .affected(affected)
+        .confidentiality(BreachAssessment.Exposure.KNOWN_RECIPIENTS)
+        .individuals(37)
+        .build();
+
+System.out.println(assessment);
+System.out.println(assessment.explanation());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">BreachAssessment[VERY_HIGH, 4.25]
+Severity VERY_HIGH (4.25 = 4 x 1 + 0.25), following ENISA's methodology (2013).
+Data processing context 4: sensitive data user.health_and_medical.disability.
+Ease of identification maximum (1): identifier user.name.first.
+Circumstances +0.25: confidentiality KNOWN_RECIPIENTS, integrity NONE, availability NONE.
+Notify the supervisory authority within 72 hours of becoming aware of the breach (GDPR art. 33.1).
+Tell the data subjects without undue delay (GDPR art. 34.1).
+This is an orientation: the controller assesses the risk of each breach.
+</code></pre>
+
+<p>La discapacidad fija el contexto en 4 y el nombre hace la identificación máxima: <code>4 × 1 + 0,25 = 4,25</code>,
+gravedad muy alta. La evaluación sugiere notificar a la autoridad y comunicar a los interesados. Como hay 37 personas,
+no aparece la línea de más de 100 afectados. El delegado puede valorar, por ejemplo, que los destinatarios están
+sujetos a confidencialidad y han borrado el correo; esa valoración es suya, no de la herramienta.</p>
+
+<h3 id="un-portatil-cifrado">Un portátil cifrado</h3>
+<p>Roban del coche de un técnico un portátil con una copia de la tabla de estudiantes completa. El disco está cifrado
+y la clave no estaba en el portátil.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.8. Solo se perdió la confidencialidad de datos ininteligibles</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">BreachAssessment laptop = BreachAssessment.builder()
+        .affected(classifier.classify(Student.class).fields())
+        .confidentiality(BreachAssessment.Exposure.UNKNOWN_RECIPIENTS)
+        .unintelligible(true)
+        .individuals(12_400)
+        .build();
+System.out.println(laptop.explanation());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Severity VERY_HIGH (4.5 = 4 x 1 + 0.5), following ENISA's methodology (2013).
+Data processing context 4: sensitive data user.health_and_medical.disability.
+Ease of identification maximum (1): identifier user.government_id.national_identification_number.
+Circumstances +0.5: confidentiality UNKNOWN_RECIPIENTS, integrity NONE, availability NONE.
+More than 100 people are affected (12400).
+Only the confidentiality of unintelligible data was lost (EDPB Guidelines 9/2022). The breach is unlikely to result in a risk: record it (GDPR art. 33.5); notification is not required (art. 33.1).
+The data was unintelligible to anyone without access to it, so the data subjects need not be told (GDPR art. 34.3.a).
+This is an orientation: the controller assesses the risk of each breach.
+</code></pre>
+
+<p>La puntuación es muy alta, porque los datos lo son, pero <code>notifyAuthority()</code> y
+<code>communicateToSubjects()</code> son <code>false</code>: solo se perdió la confidencialidad de datos que nadie
+puede leer. La brecha se documenta. El motivo de la identificación es ahora el documento de identidad: con todos los
+campos de <code>Student</code>, hay varios identificadores directos y gana la clave menor.</p>
+
+<h3 id="cifrado-pero-perdido">Cifrado, pero perdido</h3>
+<p>Un programa de secuestro de datos cifra el servidor de copias de seguridad, que guardaba la misma tabla cifrada. Los
+datos no se pueden leer, pero durante días tampoco se pueden recuperar, y el ataque es intencionado.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.9. La excepción no cubre la pérdida de disponibilidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">BreachAssessment ransomware = BreachAssessment.builder()
+        .affected(classifier.classify(Student.class).fields())
+        .confidentiality(BreachAssessment.Exposure.UNKNOWN_RECIPIENTS)
+        .availability(BreachAssessment.Unavailability.TEMPORARY)
+        .malicious(true)
+        .unintelligible(true)
+        .individuals(12_400)
+        .build();
+System.out.println(ransomware.explanation());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Severity VERY_HIGH (5.25 = 4 x 1 + 1.25), following ENISA's methodology (2013).
+Data processing context 4: sensitive data user.health_and_medical.disability.
+Ease of identification maximum (1): identifier user.government_id.national_identification_number.
+Circumstances +1.25: confidentiality UNKNOWN_RECIPIENTS, integrity NONE, availability TEMPORARY, malicious intent.
+More than 100 people are affected (12400).
+Notify the supervisory authority within 72 hours of becoming aware of the breach (GDPR art. 33.1).
+Tell the data subjects without undue delay (GDPR art. 34.1).
+This is an orientation: the controller assesses the risk of each breach.
+</code></pre>
+
+<p>Los datos seguían cifrados, pero se perdió su disponibilidad: el cifrado no lo evita, así que vuelve a sugerirse
+notificar y comunicar.</p>
+
+<h3 id="desde-el-inventario">Desde el inventario de datos</h3>
+<p>Una aplicación de administración no siempre tiene las clases del modelo, pero sí el inventario de datos que guarda
+(capítulo 8). Una exportación de la tabla de matrículas aparece publicada en un foro:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 13.10. Una brecha evaluada con campos guardados</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DataInventory inventory = classifier.inventory(List.of(Student.class, Enrollment.class),
+        type -&gt; type == Student.class ? "students" : "enrollments");
+
+BreachAssessment export = BreachAssessment.builder()
+        .affected(inventory.fields("enrollments"), taxonomy)
+        .confidentiality(BreachAssessment.Exposure.UNKNOWN_RECIPIENTS)
+        .individuals(2_150)
+        .build();
+System.out.println(export.explanation());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Severity MEDIUM (2.75 = 3 x 0.75 + 0.5), following ENISA's methodology (2013).
+Data processing context 3: financial data user.financial.fee.
+Ease of identification significant (0.75): identifier user.account.username.
+Circumstances +0.5: confidentiality UNKNOWN_RECIPIENTS, integrity NONE, availability NONE.
+More than 100 people are affected (2150).
+Notify the supervisory authority within 72 hours of becoming aware of the breach (GDPR art. 33.1).
+Telling the data subjects is required only for a high risk (GDPR art. 34.1).
+This is an orientation: the controller assesses the risk of each breach.
+</code></pre>
+
+<p>La tasa de matrícula fija el contexto en 3. La identificación es significativa por
+<code>createdBy</code>, el nombre de usuario del miembro del personal que creó cada fila, que <code>Enrollment</code>
+hereda de <code>AuditedEntity</code>. Esto ilustra un punto importante: la evaluación lee lo que contienen los campos
+que indicas. Si la exportación no incluía <code>createdBy</code>, quítalo de los afectados y la valoración cambia.</p>
+
+<h3 id="mas-casos">Más casos</h3>
+<p>La Tabla 13.10 resume otros casos de la universidad, todos ejecutados con el mismo modelo.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-10">
+<table>
+<caption id="tabla-13-10">Tabla 13.10. Otros casos evaluados</caption>
+<thead>
+<tr><th scope="col">Caso</th><th scope="col">Declarado</th><th scope="col">Resultado</th>
+<th scope="col">Notificar / comunicar</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Grade.enrollmentId</code> y <code>Grade.mark</code>, sin pérdida declarada</th><td>—</td>
+<td><code>LOW</code>, 0,5 (<code>1 × 0,5 + 0</code>)</td><td>no / no: se documenta</td></tr>
+<tr><th scope="row"><code>Staff.workEmail</code> y <code>Staff.iban</code> publicados</th>
+<td><code>UNKNOWN_RECIPIENTS</code></td><td><code>MEDIUM</code>, 2,75 (<code>3 × 0,75 + 0,5</code>)</td>
+<td>sí / no</td></tr>
+<tr><th scope="row">Todos los campos de <code>CourseStatistics</code> publicados</th>
+<td><code>UNKNOWN_RECIPIENTS</code></td><td>contexto 0, <code>NEGLIGIBLE</code>: no es una brecha de datos
+personales</td> <td>no / no</td></tr>
+<tr><th scope="row"><code>Student.analyticsId</code> (seudonimizado) y <code>Student.disabilityDegree</code></th>
+<td><code>UNKNOWN_RECIPIENTS</code></td><td><code>MEDIUM</code>, 2,5 (<code>4 × 0,5 + 0,5</code>)</td>
+<td>sí / no</td></tr>
+<tr><th scope="row"><code>Student.firstName</code> y <code>Student.disabilityDegree</code> cifrados, alterados</th>
+<td><code>UNKNOWN_RECIPIENTS</code>, <code>RECOVERABLE</code>, <code>unintelligible(true)</code></td>
+<td><code>VERY_HIGH</code>, 4,75</td><td>sí / sí</td></tr>
+</tbody>
+</table>
+</div>
+<p>El caso de las estadísticas tiene <code>score()</code> 0,5 y gravedad <code>LOW</code>, pero lo decisivo es el
+contexto 0: <code>explanation()</code> dice
+<code>No affected field holds personal data: this is not a personal data breach (GDPR art. 4.12).</code> y ninguno de
+los dos métodos devuelve <code>true</code>, sea cual sea la puntuación.</p>
+
+<h3 id="ajustes">Ajustar el contexto y la identificación</h3>
+<p>La metodología prevé ajustar las dos puntuaciones cuando el contexto de los datos lo pide, y el builder ofrece dos
+métodos para ello. Ambos exigen un motivo, que aparece en la explicación:</p>
+<ul>
+<li><code>adjustContext(int delta, String reason)</code> suma entre -3 y 3 al contexto (fuera de ese rango lanza
+<code>IllegalArgumentException</code> con el mensaje <code>A context adjustment is between -3 and 3: 4</code> para un
+4). El resultado se mantiene entre 1 y 4, y el ajuste nunca convierte en brecha de datos personales una que no tiene
+datos personales. Sube el contexto cuando el volumen o la vulnerabilidad de las personas hacen los datos más
+críticos; bájalo cuando los datos ya eran públicos.</li>
+<li><code>identification(Identification level, String reason)</code> fija la facilidad de identificación en lugar de
+leerla de los campos, por ejemplo cuando el nombre del fichero filtrado llevaba el nombre del estudiante.</li>
+</ul>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification grade = classifier.classify(Grade.class);
+ClassClassification student = classifier.classify(Student.class);
+
+BreachAssessment summerCourse = BreachAssessment.builder()
+        .affected(List.of(grade.field("mark").orElseThrow(), student.field("firstName").orElseThrow()))
+        .adjustContext(1, "the students of the summer course are minors")
+        .confidentiality(BreachAssessment.Exposure.KNOWN_RECIPIENTS)
+        .build();
+System.out.println(summerCourse + " " + summerCourse.contextReason());
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">BreachAssessment[MEDIUM, 2.25] simple data user.education.grade, adjusted +1 (the students of the summer course are minors)
+</code></pre>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Prepara la herramienta antes de necesitarla. Un procedimiento de gestión de brechas que, dado un objeto del
+inventario y unas circunstancias, imprima la <code>explanation()</code> ahorra tiempo en las primeras horas y deja
+constancia de por qué se decidió notificar o no. Guarda la salida junto al registro del incidente.</p>
+</div>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Tratar el cribado como la evaluación de impacto.</dt>
+<dd><code>ImpactScreening</code> dice qué criterios se cumplen y por qué. La evaluación la hace el responsable con su
+delegado; cítala con <code>impactAssessment(...)</code> cuando exista.</dd>
+<dt>Esperar que Linneo detecte la gran escala o las decisiones automatizadas.</dt>
+<dd>Ningún término lo dice. Declara <code>Factor.LARGE_SCALE</code> o <code>Factor.AUTOMATED_DECISIONS</code>: en el
+alcance si lo sabe el código, en la gobernanza si lo sabe el delegado. Sin ellos, los casos del artículo 35.3 no
+aparecen.</dd>
+<dt>Declarar en la gobernanza un factor que conoce el código.</dt>
+<dd>Una gobernanza guardada se sustituye entera con <code>withGovernance</code>. Si el código decide por sí solo,
+declara <code>AUTOMATED_DECISIONS</code> en el builder de la actividad: así ninguna gobernanza puede retirarlo.</dd>
+<dt>Pensar que un estudiante cuenta como interesado vulnerable.</dt>
+<dd>En la taxonomía estándar, <code>student</code> no tiene el rasgo <code>VULNERABLE</code>. Si hay menores, declara
+<code>Factor.VULNERABLE_SUBJECTS</code>.</dd>
+<dt>Buscar la regla de la AEPD en el cribado o en el registro.</dt>
+<dd>Vive en el comprobador creado con <code>Jurisdiction.SPAIN</code>. El cribado y el registro muestran solo los
+criterios de las directrices.</dd>
+<dt>Indicar como afectados todos los campos de la clase cuando solo se filtraron algunos.</dt>
+<dd>La evaluación puntúa lo que le das. Un campo heredado como <code>createdBy</code> puede subir la identificación;
+indica exactamente los campos comprometidos.</dd>
+<dt>Declarar <code>unintelligible(true)</code> cuando también se perdió o se alteró algo.</dt>
+<dd>La excepción solo cubre la pérdida de confidencialidad. Declara siempre la integridad y la disponibilidad reales;
+el cifrado no protege lo que se perdió.</dd>
+<dt>Leer <code>notifyAuthority()</code> como la decisión.</dt>
+<dd>Es una orientación para las primeras horas. El responsable evalúa el riesgo de cada brecha y decide.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li><code>ImpactScreening</code> criba una actividad contra los nueve criterios de las directrices WP248 y los tres
+casos del artículo 35.3. No es la evaluación de impacto.</li>
+<li>Los criterios que el código puede ver salen de los rasgos de los términos (<code>EVALUATION</code>,
+<code>MONITORING</code>, <code>VULNERABLE</code>, las categorías especiales, los datos penales y los de naturaleza
+muy personal); los demás se declaran
+como <code>Factor</code>, en el alcance o en la gobernanza, y el cribado lee la unión.</li>
+<li>El resultado va de <code>NOT_INDICATED</code> a <code>REQUIRED</code>; la evidencia está ordenada, así que el
+cribado no depende del orden de los términos.</li>
+<li>Sin evaluación citada, <code>REQUIRED</code> es el error <code>IMPACT_ASSESSMENT_REQUIRED</code> y
+<code>LIKELY</code> el aviso <code>IMPACT_ASSESSMENT_RECOMMENDED</code>, ambos en el elemento de gobernanza
+<code>IMPACT_ASSESSMENT</code>. En España, los datos biométricos y genéticos añaden su propio aviso.</li>
+<li><code>BreachAssessment</code> aplica la fórmula de ENISA: contexto × identificación + circunstancias. Las dos
+primeras salen de la clasificación; las circunstancias se declaran.</li>
+<li>Los datos anonimizados y agregados no identifican; un dato personal sin rasgo identificador es identificación
+limitada.</li>
+<li>Una brecha que solo pierde la confidencialidad de datos ininteligibles no se notifica ni se comunica, sea cual sea
+su puntuación.</li>
+<li>Ambas herramientas orientan al delegado; ninguna decide.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Predice el cribado.</strong> La universidad declara la administración del personal:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity staff = ProcessingActivity.builder("staff-administration", "Staff administration")
+        .purposes(DataUses.EMPLOYMENT)
+        .dataSubjects(DataSubjects.STAFF_MEMBER, DataSubjects.EMPLOYEE)
+        .dataCategories(USER_NAME, USER_FINANCIAL_BANK_ACCOUNT, USER_LOCATION)
+        .legalBasis(LegalBasis.CONTRACT)
+        .retention("Four years after the employment ends")
+        .build();
+</code></pre>
+<p>Sin ejecutarla, di qué criterios cumple, con qué evidencia y en qué orden, cuál es el resultado y qué infracción
+emite el comprobador.</p>
+<details><summary>Solución del ejercicio 1</summary>
+<p>Cumple el criterio 4 por la cuenta bancaria (<code>FINANCIAL</code>) y la ubicación (<code>BEHAVIOURAL</code>), y
+el criterio 7 por los dos interesados vulnerables. La evidencia está ordenada alfabéticamente, por eso
+<code>employee</code> aparece antes que <code>staff_member</code> aunque la actividad los declare al revés:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Likely required (2 criteria of WP248): 4. sensitive data: highly personal data user.financial.bank_account; highly personal data user.location; 7. vulnerable subjects: data subjects employee; data subjects staff_member
+</code></pre>
+<p>El resultado es <code>LIKELY</code> y no hay evaluación citada, así que el comprobador emite el aviso
+<code>IMPACT_ASSESSMENT_RECOMMENDED</code>. La actividad sigue siendo válida.</p>
+</details>
+</li>
+<li>
+<p><strong>Videovigilancia.</strong> El campus instala cámaras en sus accesos, que usan estudiantes y visitantes. La
+actividad trata <code>USER_CONTENT_SELF_IMAGE</code> con la base jurídica de interés público y una referencia
+legal. ¿Qué factores debe declarar el delegado para que el cribado reconozca el caso del artículo 35.3.c? ¿Qué
+infracción emite el comprobador si la actividad no cita ninguna evaluación?</p>
+<details><summary>Solución del ejercicio 2</summary>
+<p><code>PUBLICLY_ACCESSIBLE_AREA</code> y <code>LARGE_SCALE</code>, en la gobernanza:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity cctv = ProcessingActivity.builder("campus-cctv", "Campus video surveillance")
+        .purposes(DataUses.ESSENTIAL_SERVICE_SECURITY)
+        .dataSubjects(DataSubjects.STUDENT, DataSubjects.VISITOR)
+        .dataCategories(USER_CONTENT_SELF_IMAGE)
+        .governance(Governance.builder()
+                .legalBasis(LegalBasis.PUBLIC_INTEREST)
+                .legalReference("Private Security Act, art. 42")
+                .retention("One month")
+                .riskFactors(ImpactScreening.Factor.PUBLICLY_ACCESSIBLE_AREA, ImpactScreening.Factor.LARGE_SCALE)
+                .build())
+        .build();
+</code></pre>
+<p>El comprobador emite un error:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR IMPACT_ASSESSMENT_REQUIRED campus-cctv: GDPR article 35.3.c requires an impact assessment; refer to it. Required (GDPR art. 35.3.c): 3. systematic monitoring: declared PUBLICLY_ACCESSIBLE_AREA; 5. large scale: declared LARGE_SCALE
+</code></pre>
+<p>La imagen no es una categoría especial, así que no hay criterio 4: los dos criterios salen de los factores.</p>
+</details>
+</li>
+<li>
+<p><strong>Una memoria <abbr title="Universal Serial Bus">USB</abbr>.</strong> Se pierde una memoria sin cifrar
+con el correo de trabajo y la cuenta bancaria de los 850 miembros del personal; no se sabe quién la tiene. Construye
+la evaluación y di la gravedad y qué sugiere.</p>
+<details><summary>Solución del ejercicio 3</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification staff = classifier.classify(Staff.class);
+BreachAssessment usb = BreachAssessment.builder()
+        .affected(List.of(staff.field("workEmail").orElseThrow(), staff.field("iban").orElseThrow()))
+        .confidentiality(BreachAssessment.Exposure.UNKNOWN_RECIPIENTS)
+        .individuals(850)
+        .build();
+</code></pre>
+<p>El contexto es 3 (datos financieros), la identificación significativa (0,75, por el correo) y las circunstancias
++0,5: <code>3 × 0,75 + 0,5 = 2,75</code>, gravedad <code>MEDIUM</code>. <code>notifyAuthority()</code> es
+<code>true</code> y <code>communicateToSubjects()</code> es <code>false</code>: la comunicación a los interesados solo
+se sugiere para un riesgo alto. <code>manyIndividuals()</code> es <code>true</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Cifrado y alterado.</strong> Un atacante accede a una copia cifrada del nombre y el grado de discapacidad
+de los estudiantes, no puede descifrarla, pero sobrescribe parte del fichero original, que se recupera de una copia.
+Declara <code>UNKNOWN_RECIPIENTS</code>, <code>RECOVERABLE</code> y <code>unintelligible(true)</code>. ¿Se notifica?</p>
+<details><summary>Solución del ejercicio 4</summary>
+<p>Sí. La puntuación es <code>4 × 1 + 0,5 + 0,25 = 4,75</code> (<code>VERY_HIGH</code>) y, como hay una pérdida de
+integridad declarada, la excepción de los datos ininteligibles no se aplica: <code>notifyAuthority()</code> y
+<code>communicateToSubjects()</code> son <code>true</code>. El cifrado protegió lo que se leyó, no lo que se
+alteró.</p>
+</details>
+</li>
+<li>
+<p><strong>España.</strong> La universidad prepara la verificación de antecedentes del personal antes de tener la
+evaluación hecha: retira la referencia <code>DPIA-2026-02</code> y comprueba la actividad con
+<code>Jurisdiction.SPAIN</code>. ¿Qué mensaje recibe y en qué se diferencia del que recibiría con
+<code>Jurisdiction.EU</code>?</p>
+<details><summary>Solución del ejercicio 5</summary>
+<p>El cribado es <code>LIKELY</code> (datos penales y un interesado vulnerable), así que recibe el aviso
+<code>IMPACT_ASSESSMENT_RECOMMENDED</code>. Con <code>Jurisdiction.SPAIN</code> el mensaje cita la lista de la
+AEPD:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING IMPACT_ASSESSMENT_RECOMMENDED staff-screening: GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases that meet two criteria or more). Likely required (2 criteria of WP248): 4. sensitive data: criminal offence data user.criminal_history; 7. vulnerable subjects: data subjects job_applicant
+</code></pre>
+<p>Con <code>Jurisdiction.EU</code> el aviso es el mismo sin el paréntesis. No hay aviso biométrico: no hay
+categorías con <code>BIOMETRIC</code> ni <code>GENETIC</code>, y el cribado ya es <code>LIKELY</code>.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>Una actividad trata datos de salud y el delegado declara <code>Factor.LARGE_SCALE</code>. ¿Cuál es el
+resultado del cribado?</p>
+<ol>
+<li><code>LIKELY</code>, porque se cumplen dos criterios.</li>
+<li><code>REQUIRED</code>, con <code>mandatoryCase()</code> igual a <code>35.3.b</code>.</li>
+<li><code>POSSIBLE</code>, porque la escala no es un criterio que vea el código.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La b. Los datos de salud son una categoría especial y, con <code>LARGE_SCALE</code>, forman el caso 35.3.b, que
+prevalece sobre el recuento de criterios. La a describe el recuento, que solo decide cuando no hay caso obligatorio.
+La c es falsa: los factores declarados cuentan como criterios.</p>
+</details>
+</li>
+<li>
+<p>¿Dónde debe declararse <code>Factor.AUTOMATED_DECISIONS</code> cuando es el código de la aplicación el que
+decide?</p>
+<ol>
+<li>En la gobernanza, porque es un hecho jurídico.</li>
+<li>En el builder de la actividad, porque forma parte del alcance.</li>
+<li>En ningún sitio: Linneo lo detecta por la finalidad.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La b. Lo que el código sabe con certeza es alcance, y los factores del alcance son un suelo que ninguna gobernanza
+guardada puede retirar. La a permitiría que una gobernanza antigua lo perdiera. La c es falsa: ningún término revela
+decisiones automatizadas.</p>
+</details>
+</li>
+<li>
+<p>Una actividad cita <code>impactAssessment("DPIA-7")</code> y su cribado es <code>REQUIRED</code>. ¿Qué emite el
+comprobador?</p>
+<ol>
+<li>Nada sobre la evaluación de impacto.</li>
+<li>Un aviso, para recordar que el caso es obligatorio.</li>
+<li>Un error, porque el resultado es <code>REQUIRED</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La a. Las infracciones de la evaluación de impacto solo se emiten cuando la actividad no cita ninguna. El cribado
+sigue siendo <code>REQUIRED</code> y el registro lo muestra, pero no hay error ni aviso.</p>
+</details>
+</li>
+<li>
+<p>Un campo declarado <code>Identifiability.AGGREGATED</code> de categoría <code>user.education.grade</code> se
+publica. ¿Qué dice <code>BreachAssessment</code>?</p>
+<ol>
+<li>Contexto 1 e identificación limitada: es un dato de alguien.</li>
+<li>Contexto 0: no es una brecha de datos personales.</li>
+<li>Contexto 1 e identificación despreciable.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La b. Un valor agregado no es un dato personal: no cuenta para el contexto ni identifica a nadie, así que la
+explicación dice que no es una brecha de datos personales y ningún método sugiere notificar. La a sería correcta
+para una calificación identificada.</p>
+</details>
+</li>
+<li>
+<p>Se pierde un portátil cifrado con datos de salud y la clave no se vio comprometida. La puntuación es
+<code>VERY_HIGH</code>. ¿Qué sugiere la evaluación?</p>
+<ol>
+<li>Notificar a la autoridad, pero no comunicar a los interesados.</li>
+<li>Notificar y comunicar, porque la gravedad es muy alta.</li>
+<li>Documentar la brecha sin notificarla ni comunicarla.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La c, si se declaró <code>unintelligible(true)</code> y no hubo pérdida de integridad ni de disponibilidad: solo
+se perdió la confidencialidad de datos ininteligibles, lo que es improbable que entrañe un riesgo. La puntuación no
+cambia esa conclusión. La b sería la respuesta sin la declaración de ininteligibilidad.</p>
+</details>
+</li>
+<li>
+<p>¿Qué hace el comprobador con <code>Jurisdiction.SPAIN</code> ante una actividad que trata
+<code>user.biometric.fingerprint</code> sin evaluación citada y con un cribado <code>POSSIBLE</code>?</p>
+<ol>
+<li>Emite un aviso <code>IMPACT_ASSESSMENT_RECOMMENDED</code> que cita la lista de la AEPD.</li>
+<li>Cambia el resultado del cribado a <code>LIKELY</code>.</li>
+<li>Emite un error <code>IMPACT_ASSESSMENT_REQUIRED</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 6</summary>
+<p>La a. La regla de la AEPD vive en el comprobador: el cribado y el registro siguen mostrando <code>POSSIBLE</code>,
+y la infracción es un aviso, no un error.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li>Capítulo anterior: <a href="12-registro.html">El registro de actividades</a>, donde aparece la fila del
+cribado.</li>
+<li>Capítulo siguiente: <a href="14-derechos.html">Derechos de los interesados</a>.</li>
+<li><a href="11-actividades.html">Actividades de tratamiento</a>: alcance, gobernanza y el comprobador.</li>
+<li>Referencia: <a href="../../reference/processing/impact-screening.html">ImpactScreening</a>, con las tablas de
+criterios, factores y casos obligatorios.</li>
+<li>Referencia: <a href="../../reference/processing/breach-assessment.html">BreachAssessment</a>, con todos los
+miembros del builder.</li>
+<li>Referencia: <a href="../../reference/processing/checker.html">ProcessingChecker</a>, con cada código de
+infracción y su elemento.</li>
+<li>Referencia: <a href="../../reference/terms.html">Términos</a>, con los rasgos y su significado.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="12-registro.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 12. El registro de actividades</a></li>
+<li><a href="14-derechos.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 14. Derechos de los interesados</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

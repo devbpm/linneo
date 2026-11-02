@@ -102,7 +102,7 @@ same `Term` model). Sixteen exported packages plus one internal one (not exporte
   the record is a warning. `verify` returns a `ProcessingRecord` (article 30 record, `toMarkdown`/`toJson`, unique
   activity keys). `RecordDiff` compares two records into `ActivityChange`s; it and `ProcessingRecord.fingerprint()`
   both use `ActivityChange.content`, so equal fingerprints always mean an empty diff. `SubjectRights` derives, for
-  one data subject category, the activities, stored fields and the rights of articles 15-21 per lawful basis; its
+  one data subject category, the activities, stored fields and the rights of articles 15-22 per lawful basis; its
   legal rules live in `SubjectRights.entitlements` and cite the articles in their explanations. `ImpactScreening`
   (WP248 criteria from the traits of the activity's terms plus the risk factors of the scope,
   `ProcessingActivity.riskFactors`, and of the governance) drives the checker's impact assessment error and warning; `BreachAssessment` follows ENISA's 2013
@@ -159,10 +159,14 @@ both languages, and stamps the review. The `PreToolUse` hook `.claude/hooks/docs
 that stamp matches the current library diff; afterwards `git add docs/` and retry. The hook's fingerprint uses
 `git diff`, so a new file under `src/main` counts only once it is staged: `git add` it before running the subagent.
 
+`docs/es/course/course-html/` is a Spanish-only edition of the course as static HTML pages (WCAG 2.2 AA, no front
+matter, shared `recursos/curso.css`, no JavaScript); its layout and sample format are described in `CONTRIBUTING.md`.
+
 `DocumentationSamplesTest` compiles every ```` ```java ```` block of `README.md` and `docs/` against the library
 (errors about names a page takes from elsewhere are ignored; errors naming the library, syntax errors and unknown
-key constants fail), compares body-less type signatures with the real types and module declarations with
-`module-info.java`. Mark a deliberately broken sample with `<!-- unchecked: reason -->` on the line before it.
+key constants fail), and the `<pre><code class="language-java">` blocks of the HTML pages too; it compares
+body-less type signatures with the real types and module declarations with `module-info.java`. Mark a deliberately
+broken sample with `<!-- unchecked: reason -->` on the line before it.
 
 Taxonomy rules (from `CONTRIBUTING.md`; applications persist and publish these keys):
 

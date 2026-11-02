@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
+  - src/main/java/io/github/devbpm/linneo/processing/LegalBasis.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 14. Derechos de los interesados · Curso de Linneo</title>
+<meta name="description" content="Empezar la respuesta a quien ejerce sus derechos con SubjectRights: qué actividades tratan sus datos, dónde están y qué derechos da cada base jurídica.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html" aria-current="page"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 14. Derechos de los interesados</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 14</span> Derechos de los interesados</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>60 minutos</dd></div>
+<div><dt>Parte IV:</dt><dd>Cumplimiento normativo</dd></div>
+</dl>
+<p class="entradilla">Cuando una persona pregunta qué haces con sus datos o pide que los borres, el registro de
+actividades de tratamiento ya contiene casi toda la respuesta. En este capítulo aprenderás a leerla con
+<code>SubjectRights</code>: qué actividades tratan los datos de una categoría de interesados, dónde están guardados y
+qué derechos da cada base jurídica, con los artículos que los fundamentan.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#del-registro-a-la-solicitud">Del registro a la solicitud</a></li>
+<li><a href="#el-registro-del-capitulo">El registro de este capítulo</a></li>
+<li><a href="#obtener-los-derechos">Obtener los derechos de una categoría de interesados</a></li>
+<li><a href="#que-se-trata-y-donde">Qué se trata y dónde está</a></li>
+<li><a href="#derechos-segun-la-base">Los derechos según la base jurídica</a></li>
+<li><a href="#disposiciones-especiales">Las disposiciones especiales</a></li>
+<li><a href="#responder-una-solicitud">Responder a una solicitud en la universidad</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>obtener con <code>SubjectRights.of</code> las actividades que tratan los datos de una categoría de interesados, y
+explicar por qué una clave inexistente es un error y no una respuesta vacía;</li>
+<li>localizar los campos guardados que hay que consultar, exportar, rectificar o suprimir con
+<code>storedFields</code>;</li>
+<li>predecir la disponibilidad de cada derecho de los artículos 15 a 22 del
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr> a partir de la base jurídica de una
+actividad;</li>
+<li>reconocer las disposiciones especiales: mercadotecnia directa, investigación, interés público, decisiones
+automatizadas y consentimiento explícito a categorías especiales;</li>
+<li>distinguir lo que añade <code>Jurisdiction.SPAIN</code> a las explicaciones;</li>
+<li>organizar la respuesta a una solicitud real, separando lo que calcula Linneo de lo que decide el delegado y de lo
+que hace la aplicación.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Necesitas las actividades de tratamiento y las bases jurídicas del <a href="11-actividades.html">capítulo 11</a>, el
+registro de actividades de tratamiento (<abbr title="registro de actividades de tratamiento">RAT</abbr>) del
+<a href="12-registro.html">capítulo 12</a> y el inventario de datos del <a href="08-inventario.html">capítulo 8</a>.
+Los rasgos <code>DIRECT_MARKETING</code> y <code>RESEARCH</code> se presentaron en el
+<a href="03-taxonomia.html">capítulo 3</a>, y el factor <code>AUTOMATED_DECISIONS</code>, en el
+<a href="13-impacto-y-brechas.html">capítulo 13</a>.</p>
+
+<h2 id="del-registro-a-la-solicitud">Del registro a la solicitud</h2>
+<p>El Reglamento General de Protección de Datos (RGPD) da a cada persona derechos sobre sus datos:
+acceder a ellos, rectificarlos, suprimirlos, limitar su tratamiento, llevárselos, oponerse y no ser objeto de
+decisiones basadas únicamente en un tratamiento automatizado. Que un derecho se aplique, o en qué condiciones, depende
+de cómo se tratan los datos, y sobre todo de la <strong>base jurídica</strong> de cada actividad.</p>
+<p>Responder bien exige reunir información dispersa: qué actividades tratan los datos de la persona, con qué finalidad
+y base, durante cuánto tiempo, en qué tablas están los datos y qué derecho permite cada base. Si el registro se genera
+a partir de las mismas declaraciones que comprueba la compilación, como en los capítulos anteriores, ya tiene casi
+todo. <code>SubjectRights</code> lo lee para <strong>una categoría de interesados</strong>, como <code>student</code>
+o <code>alumnus</code>, y lo organiza por actividad.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p><code>SubjectRights</code> es el punto de partida de la respuesta, no la respuesta. Trabaja con categorías de
+interesados, no con personas, y no comprueba si una solicitud concreta cumple las condiciones de un artículo. El
+delegado de protección de datos (<abbr title="delegado de protección de datos">DPD</abbr>) decide cada solicitud.
+Localizar, entregar, corregir o suprimir los datos de la persona corresponde a la aplicación.</p>
+</div>
+
+<h2 id="el-registro-del-capitulo">El registro de este capítulo</h2>
+<p>Para que las reglas tengan algo que mostrar, este capítulo amplía las actividades de la universidad con servicios a
+los estudiantes. Usan términos de la extensión universitaria y, en lugar de entidades, nombran objetos de un inventario
+de datos con <code>objects(...)</code>, para que <code>SubjectRights</code> pueda decir dónde están los datos.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.1. Las actividades de los servicios a los estudiantes</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public final class StudentActivities {
+
+    private StudentActivities() {
+    }
+
+    public static final ProcessingActivity ENROLLMENT = ProcessingActivity.builder("enrollment",
+                    "Student enrollment")
+            .purposes(DataUses.EDUCATION_ENROLLMENT)
+            .dataSubjects(DataSubjects.STUDENT)
+            .objects("enrollments")
+            .dataCategories(USER_NAME, USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER, USER_CONTACT_EMAIL)
+            .legalBasis(LegalBasis.PUBLIC_INTEREST)
+            .legalReference("Higher Education Act, art. 12")
+            .retention("Six years after the student leaves")
+            .build();
+
+    public static final ProcessingActivity ACADEMIC_RECORD = ProcessingActivity.builder("academic-record",
+                    "Academic record")
+            .purposes(DataUses.EDUCATION_ASSESSMENT)
+            .dataSubjects(DataSubjects.STUDENT)
+            .objects("students", "grades")
+            .legalBasis(LegalBasis.LEGAL_OBLIGATION)
+            .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+            .legalReference("Royal Decree 822/2021; Higher Education Act, art. 31")
+            .retention("Permanently, as part of the academic record")
+            .impactAssessment("DPIA-2026-04")
+            .build();
+
+    public static final ProcessingActivity LEARNING_SUPPORT = ProcessingActivity.builder("learning-support",
+                    "Learning support")
+            .purposes(DataUses.EDUCATION_TEACHING)
+            .dataSubjects(DataSubjects.STUDENT)
+            .dataCategories(USER_NAME, USER_HEALTH_AND_MEDICAL_DISABILITY)
+            .legalBasis(LegalBasis.PUBLIC_INTEREST)
+            .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
+            .legalReference("Higher Education Act, arts. 12 and 31")
+            .retention("Until the end of the studies")
+            .impactAssessment("DPIA-2026-07")
+            .build();
+
+    public static final ProcessingActivity WELLBEING_STUDY = ProcessingActivity.builder("wellbeing-study",
+                    "Student wellbeing study")
+            .purposes(UniversityDataUses.RESEARCH_PARTICIPATION)
+            .dataSubjects(DataSubjects.STUDENT)
+            .dataCategories(USER_NAME, USER_CONTACT_EMAIL)
+            .legalBasis(LegalBasis.CONSENT)
+            .retention("Five years after the study ends")
+            .build();
+
+    public static final ProcessingActivity STUDENT_PORTAL = ProcessingActivity.builder("student-portal",
+                    "Student portal")
+            .purposes(DataUses.ESSENTIAL_SERVICE, DataUses.MARKETING_COMMUNICATIONS)
+            .dataSubjects(DataSubjects.STUDENT)
+            .dataCategories(USER_NAME, USER_CONTACT_EMAIL)
+            .legalBasis(LegalBasis.CONTRACT)
+            .retention("While the student account exists")
+            .build();
+
+    public static final ProcessingActivity DROPOUT_ALERTS = ProcessingActivity.builder("dropout-alerts",
+                    "Dropout alerts")
+            .purposes(UniversityDataUses.EDUCATION_LEARNING_ANALYTICS)
+            .dataSubjects(DataSubjects.STUDENT)
+            .objects("grades")
+            .riskFactors(ImpactScreening.Factor.AUTOMATED_DECISIONS)
+            .legalBasis(LegalBasis.PUBLIC_INTEREST)
+            .legalReference("Higher Education Act, art. 46")
+            .retention("Until the end of the academic year")
+            .impactAssessment("DPIA-2026-05")
+            .build();
+
+    public static final ProcessingActivity ALUMNI_FUNDRAISING = ProcessingActivity.builder("alumni-fundraising",
+                    "Alumni fundraising")
+            .purposes(UniversityDataUses.ADVANCEMENT_FUNDRAISING)
+            .dataSubjects(DataSubjects.ALUMNUS)
+            .dataCategories(USER_NAME, USER_CONTACT_EMAIL)
+            .legitimateInterest("Raising funds for scholarships")
+            .retention("Five years after the last contact")
+            .build();
+
+    public static List&lt;ProcessingActivity&gt; all() {
+        return List.of(ENROLLMENT, ACADEMIC_RECORD, LEARNING_SUPPORT, WELLBEING_STUDY, STUDENT_PORTAL,
+                DROPOUT_ALERTS, UniversityActivities.ALUMNI_NEWSLETTER, ALUMNI_FUNDRAISING,
+                UniversityActivities.STAFF_SCREENING);
+    }
+}
+</code></pre>
+</figure>
+
+<p>Cada actividad está pensada para mostrar una regla: la matrícula y el expediente descansan en una misión de interés
+público y en una obligación legal; el apoyo al aprendizaje trata datos de discapacidad con consentimiento explícito; el
+estudio de bienestar es investigación con consentimiento; el portal combina el servicio con comunicaciones comerciales;
+las alertas de abandono deciden sin intervención humana; la captación de fondos es mercadotecnia directa. El boletín y
+la verificación de antecedentes vienen de <code>UniversityActivities</code>. La matrícula parte de la de
+<code>UniversityActivities</code>, simplificada, pero nombra el objeto <code>enrollments</code> en lugar de la clase
+<code>Enrollment</code> y declara su plazo de conservación. El apoyo al aprendizaje es el del
+capítulo 11 con otra gobernanza: allí el delegado lo basaba en un interés público esencial
+(<code>SUBSTANTIAL_PUBLIC_INTEREST</code>); aquí ha optado por pedir el consentimiento explícito del estudiante para el
+dato de discapacidad, lo que cambia sus derechos. Las alertas de abandono son las del capítulo 13 con el alcance y
+la gobernanza en una sola declaración: nombran el objeto <code>grades</code> en lugar de la clase <code>Grade</code>,
+como la matrícula, y citan la evaluación de impacto que el capítulo 13 exige.</p>
+
+<p>El comprobador se crea con la taxonomía que incluye la extensión, con <code>Jurisdiction.SPAIN</code> y con el
+inventario de los tres objetos, y <code>verify</code> construye el registro:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.2. El registro y los derechos de los estudiantes</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
+Classifier classifier = new Classifier(taxonomy);
+DataInventory inventory = classifier.inventory(List.of(Student.class, Enrollment.class, Grade.class),
+        type -&gt; type == Student.class ? "students" : type == Enrollment.class ? "enrollments" : "grades");
+
+ProcessingChecker checker = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, inventory);
+ProcessingRecord record = checker.verify(StudentActivities.all());
+
+SubjectRights students = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN);
+System.out.println(students);
+System.out.println(students.objects());
+students.storedFields(inventory, taxonomy).forEach((object, fields) -&gt;
+        System.out.println(object + ": " + fields.stream().map(InventoryField::path).toList()));
+System.out.println("categories: " + students.dataCategories().size());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">SubjectRights[student: [enrollment, academic-record, learning-support, wellbeing-study, student-portal, dropout-alerts]]
+[enrollments, grades, students]
+enrollments: [academicYear, createdBy, id, programCode, scholarshipType, studentId, tuitionFee]
+grades: [courseCode, createdBy, enrollmentId, mark]
+students: [academicStatus, analyticsId, counsellingNotes, createdBy, dateOfBirth, disabilityDegree, email, firstName, id, lastName, nationalId]
+categories: 19
+</code></pre>
+
+<h2 id="obtener-los-derechos">Obtener los derechos de una categoría de interesados</h2>
+<p><code>SubjectRights</code> no tiene constructor público. Se obtiene con uno de dos métodos estáticos:</p>
+<ul>
+<li><code>SubjectRights.of(ProcessingRecord record, Taxonomy taxonomy, String dataSubject)</code>, que aplica solo el
+RGPD (<code>Jurisdiction.EU</code>);</li>
+<li><code>SubjectRights.of(record, taxonomy, dataSubject, Jurisdiction jurisdiction)</code>, que aplica además las
+reglas nacionales; con <code>Jurisdiction.SPAIN</code>, las de la Ley Orgánica 3/2018
+(<abbr title="Ley Orgánica de Protección de Datos Personales y garantía de los derechos digitales">LOPDGDD</abbr>).</li>
+</ul>
+<p>El resultado contiene las actividades del registro cuyos interesados incluyen la categoría, en el orden del
+registro. Varios detalles siguen el principio de fallo seguro (<span lang="en">fail closed</span>) del resto de la
+biblioteca:</p>
+<ul>
+<li><strong>La clave se resuelve con la taxonomía</strong>, la misma con la que se comprobó el registro. Una clave
+obsoleta equivale a su sustituta, y <code>dataSubject()</code> devuelve la clave resuelta.</li>
+<li><strong>Una clave que la taxonomía no tiene es un error.</strong> <code>SubjectRights.of(record, taxonomy,
+"studnet")</code> lanza <code>io.github.devbpm.linneo.TaxonomyException: Unknown data subject 'studnet'</code>. Una
+errata nunca se lee como «no tenemos datos suyos».</li>
+<li><strong>Una categoría que ninguna actividad nombra</strong> da un resultado vacío: <code>isEmpty()</code> es
+<code>true</code>. Con el registro del Ejemplo 14.2, eso ocurre con <code>DataSubjects.VISITOR</code>. Es una
+respuesta legítima: el registro no declara ningún tratamiento de datos de visitantes.</li>
+<li>Si una actividad del registro no tiene base jurídica, <code>of</code> lanza
+<code>IllegalArgumentException</code>. Con un registro construido por <code>ProcessingChecker.verify</code> no puede
+ocurrir, porque la falta de base es un error que impide construirlo.</li>
+</ul>
+<p>Las instancias son inmutables. Usa la misma <code>Jurisdiction</code> con la que creaste el comprobador: el registro
+no la recuerda.</p>
+
+<h2 id="que-se-trata-y-donde">Qué se trata y dónde está</h2>
+<p>Antes de hablar de derechos, la persona quiere saber qué se hace con sus datos. <code>SubjectRights</code> ofrece
+esta información:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-14-1">
+<table>
+<caption id="tabla-14-1">Tabla 14.1. Lo que dice <code>SubjectRights</code> sobre el tratamiento</caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>activities()</code></th><td>Una <code>ActivityRights</code> por actividad que trata datos de
+la categoría, en el orden del registro.</td></tr>
+<tr><th scope="row"><code>activity(String key)</code></th><td>La de una actividad, o un <code>Optional</code> vacío si
+no trata datos de la categoría.</td></tr>
+<tr><th scope="row"><code>dataCategories()</code></th><td>Las categorías de datos personales de todas esas actividades,
+en orden de clave.</td></tr>
+<tr><th scope="row"><code>entities()</code></th><td>Las clases de entidad que nombran las actividades, cada una una
+vez.</td></tr>
+<tr><th scope="row"><code>objects()</code></th><td>Los objetos del inventario que nombran las actividades,
+ordenados.</td></tr>
+<tr><th scope="row"><code>storedFields(DataInventory, Taxonomy)</code></th><td>Los campos personales de esos objetos,
+por objeto: dónde buscar los datos de la persona.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>En el Ejemplo 14.2, <code>storedFields</code> enumera los once campos personales de <code>students</code>, los siete
+de <code>enrollments</code> y los cuatro de <code>grades</code>. Los campos técnicos que <code>AuditedEntity</code>
+clasifica como <code>system.operations</code> (<code>createdAt</code>, <code>updatedAt</code>, <code>version</code>) no
+aparecen, porque no son datos personales; <code>createdBy</code> sí aparece, porque es el nombre de usuario de una
+persona. Un objeto que el inventario no contiene, o sin campos personales, no tiene entrada, y una clave del inventario
+que la taxonomía no conoce lanza <code>TaxonomyException</code>. <code>entities()</code> está vacía porque estas
+actividades nombran objetos, no clases.</p>
+<p>Las categorías (<code>dataCategories()</code>, 19 en el ejemplo) incluyen también las que algunas actividades
+declaran por clave, como el nombre y el correo del estudio de bienestar. Son datos que la persona tiene derecho a
+conocer aunque no estén en ningún objeto del inventario: si tu aplicación los guarda en otro sitio, el inventario es el
+lugar para declararlo.</p>
+
+<h2 id="derechos-segun-la-base">Los derechos según la base jurídica</h2>
+
+<h3 id="right-y-availability">Right y Availability</h3>
+<p>El enumerado <code>SubjectRights.Right</code> contiene los derechos que dependen del tratamiento, y
+<code>article()</code> devuelve su artículo del RGPD:</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-14-2">
+<table>
+<caption id="tabla-14-2">Tabla 14.2. Los valores de <code>SubjectRights.Right</code></caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col"><code>article()</code></th><th scope="col">Derecho</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ACCESS</code></th><td><code>15</code></td><td>Acceso a los datos y a la información sobre su
+tratamiento.</td></tr>
+<tr><th scope="row"><code>RECTIFICATION</code></th><td><code>16</code></td><td>Rectificación de datos
+inexactos.</td></tr>
+<tr><th scope="row"><code>ERASURE</code></th><td><code>17</code></td><td>Supresión.</td></tr>
+<tr><th scope="row"><code>RESTRICTION</code></th><td><code>18</code></td><td>Limitación del tratamiento.</td></tr>
+<tr><th scope="row"><code>PORTABILITY</code></th><td><code>20</code></td><td>Portabilidad de los datos.</td></tr>
+<tr><th scope="row"><code>OBJECTION</code></th><td><code>21</code></td><td>Oposición.</td></tr>
+<tr><th scope="row"><code>AUTOMATED_DECISION</code></th><td><code>22</code></td><td>No ser objeto de una decisión
+basada únicamente en un tratamiento automatizado.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>SubjectRights.Availability</code> dice si un derecho se aplica a una actividad: <code>YES</code> (se aplica),
+<code>CONDITIONAL</code> (se aplica en los casos que enumera el artículo, y la explicación dice cuáles) o
+<code>NO</code> (no se aplica, y la explicación dice por qué).</p>
+<p>Cada <code>ActivityRights</code> une la <code>CheckedActivity</code> del registro (<code>activity()</code>) con una
+lista de <code>Entitlement</code>, uno por derecho y en el orden de <code>Right</code>.
+<code>entitlement(Right)</code> devuelve el de un derecho. Un <code>Entitlement</code> es un record con tres
+componentes: <code>right</code>, <code>availability</code> y <code>explanation</code>, un texto en inglés que cita los
+artículos.</p>
+
+<h3 id="la-regla-de-cada-base">La regla de cada base</h3>
+<p>Sin disposiciones especiales, la disponibilidad depende solo de la base jurídica de la actividad
+(<code>governance().legalBasis()</code>):</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-14-3">
+<table>
+<caption id="tabla-14-3">Tabla 14.3. Disponibilidad por base jurídica</caption>
+<thead>
+<tr><th scope="col">Derecho</th><th scope="col"><code>CONSENT</code></th><th scope="col"><code>CONTRACT</code></th>
+<th scope="col"><code>LEGAL_OBLIGATION</code></th><th scope="col"><code>VITAL_INTERESTS</code></th>
+<th scope="col"><code>PUBLIC_INTEREST</code></th><th scope="col"><code>LEGITIMATE_INTERESTS</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ACCESS</code></th><td><code>YES</code></td><td><code>YES</code></td>
+<td><code>YES</code></td><td><code>YES</code></td><td><code>YES</code></td><td><code>YES</code></td></tr>
+<tr><th scope="row"><code>RECTIFICATION</code></th><td><code>YES</code></td><td><code>YES</code></td>
+<td><code>YES</code></td><td><code>YES</code></td><td><code>YES</code></td><td><code>YES</code></td></tr>
+<tr><th scope="row"><code>ERASURE</code></th><td><code>YES</code> (17.1.b)</td>
+<td><code>CONDITIONAL</code> (17.1.a)</td><td><code>NO</code> (17.3.b)</td><td><code>CONDITIONAL</code> (17.1.a)</td>
+<td><code>NO</code> (17.3.b)</td><td><code>CONDITIONAL</code> (17.1.c)</td></tr>
+<tr><th scope="row"><code>RESTRICTION</code></th><td><code>CONDITIONAL</code></td><td><code>CONDITIONAL</code></td>
+<td><code>CONDITIONAL</code></td><td><code>CONDITIONAL</code></td><td><code>CONDITIONAL</code></td>
+<td><code>CONDITIONAL</code></td></tr>
+<tr><th scope="row"><code>PORTABILITY</code></th><td><code>YES</code></td><td><code>YES</code></td>
+<td><code>NO</code></td><td><code>NO</code></td><td><code>NO</code> (20.3)</td><td><code>NO</code></td></tr>
+<tr><th scope="row"><code>OBJECTION</code></th><td><code>NO</code></td><td><code>NO</code></td><td><code>NO</code></td>
+<td><code>NO</code></td><td><code>CONDITIONAL</code> (21.1)</td><td><code>CONDITIONAL</code> (21.1)</td></tr>
+</tbody>
+</table>
+</div>
+<p>En palabras: la supresión no está disponible mientras una obligación legal o una misión de interés público
+necesitan los datos (artículo 17.3.b), y su explicación incluye entonces el plazo de conservación declarado, o
+<code>not declared</code> si no lo hay; con consentimiento sigue a su retirada (17.1.b), con un contrato o intereses
+vitales a que los datos dejen de ser necesarios (17.1.a), con intereses legítimos a una oposición salvo motivos
+legítimos imperiosos (17.1.c). La portabilidad se aplica al tratamiento basado en el consentimiento o en un contrato
+(20.1). La oposición, al basado en una misión de interés público o en intereses legítimos (21.1). La limitación es
+siempre <code>CONDITIONAL</code>: el artículo 18.1 enumera sus casos. El acceso y la rectificación son siempre
+<code>YES</code>; la explicación del acceso enumera por su nombre las finalidades de la actividad.</p>
+
+<p>La matrícula descansa en una misión de interés público:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.3. Los derechos de un estudiante sobre su matrícula</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">SubjectRights.ActivityRights enrollment = students.activity("enrollment").orElseThrow();
+for (SubjectRights.Entitlement entitlement : enrollment.entitlements()) {
+    System.out.println(entitlement.right() + " " + entitlement.availability() + ": "
+            + entitlement.explanation());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">ACCESS YES: Art. 15: confirmation, a copy of the data and the purposes, categories, recipients, transfers and retention of this activity (Enrollment).
+RECTIFICATION YES: Art. 16: inaccurate data is rectified and incomplete data completed. Under Spanish law the data is blocked, not deleted, while liabilities may arise from the processing, and deleted afterwards (LOPDGDD art. 32).
+ERASURE NO: Art. 17.3.b: the data is kept while the task in the public interest requires it (retention: Six years after the student leaves), and erased afterwards. Under Spanish law the data is blocked, not deleted, while liabilities may arise from the processing, and deleted afterwards (LOPDGDD art. 32).
+RESTRICTION CONDITIONAL: Art. 18.1: while the accuracy of the data or an objection is being verified, when the processing is unlawful and the person prefers restriction, or when the data is no longer needed but the person needs it for legal claims.
+PORTABILITY NO: Art. 20.3: portability does not apply to processing necessary for a task in the public interest.
+OBJECTION CONDITIONAL: Art. 21.1: on grounds relating to the person's particular situation; the processing stops unless the controller shows compelling legitimate grounds or needs the data for legal claims.
+AUTOMATED_DECISION NO: Art. 22: the activity declares no decision based solely on automated processing.
+</code></pre>
+
+<p>Fíjate en la frase que añade <code>Jurisdiction.SPAIN</code> a la rectificación y a la supresión: en España, los
+datos suprimidos o rectificados se <strong>bloquean</strong> antes de borrarse, mientras puedan surgir
+responsabilidades del tratamiento (artículo 32 de la LOPDGDD). Con <code>Jurisdiction.EU</code> la explicación de la
+rectificación termina en <code>incomplete data completed.</code></p>
+
+<h2 id="disposiciones-especiales">Las disposiciones especiales</h2>
+<p>La base jurídica no lo explica todo. Algunas finalidades, factores y condiciones cambian la disponibilidad de un
+derecho, y Linneo las reconoce por los rasgos de los términos y por lo que declara la actividad, no por listas de
+claves.</p>
+
+<h3 id="mercadotecnia-directa">La oposición a la mercadotecnia directa es absoluta</h3>
+<p>Si una finalidad tiene el rasgo <code>DIRECT_MARKETING</code>, la persona puede oponerse en cualquier momento, sea
+cual sea la base, y el tratamiento con esa finalidad cesa (artículos 21.2 y 21.3). Tienen el rasgo los usos estándar
+<code>marketing</code> y <code>sales</code> y todo lo que cuelga de ellos, y en la extensión universitaria
+<code>advancement.alumni_relations</code>, <code>advancement.fundraising</code> y
+<code>advancement.prospect_research</code>. Una finalidad propia cuenta igual si declara el rasgo.</p>
+<p>La supresión acompaña a la oposición, con matices según lo que la actividad necesite conservar:</p>
+<ul>
+<li>si la mercadotecnia es la única finalidad y la base no es una obligación legal ni una misión de interés público,
+<code>ERASURE</code> es <code>YES</code> (17.1.c y 21.2);</li>
+<li>si la actividad tiene otras finalidades, es <code>CONDITIONAL</code>: se suprime lo que solo servía a la
+mercadotecnia, no lo que aún necesitan las demás finalidades (17.1.c y 21.3);</li>
+<li>si la base es una obligación legal o una misión de interés público, también es <code>CONDITIONAL</code>: se
+conserva lo que exige el artículo 17.3.b, y la explicación incluye el plazo de conservación.</li>
+</ul>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.4. Mercadotecnia sola y junto a otras finalidades</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">SubjectRights alumni = SubjectRights.of(record, taxonomy, DataSubjects.ALUMNUS);
+for (SubjectRights.ActivityRights activity : alumni.activities()) {
+    SubjectRights.Entitlement objection = activity.entitlement(SubjectRights.Right.OBJECTION);
+    SubjectRights.Entitlement erasure = activity.entitlement(SubjectRights.Right.ERASURE);
+    System.out.println(activity.activity().activity().key() + ": objection " + objection.availability()
+            + ", erasure " + erasure.availability());
+}
+
+SubjectRights.Entitlement portal = students.activity("student-portal").orElseThrow()
+        .entitlement(SubjectRights.Right.ERASURE);
+System.out.println(portal.availability() + ": " + portal.explanation());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">alumni-newsletter: objection YES, erasure YES
+alumni-fundraising: objection YES, erasure YES
+CONDITIONAL: Art. 17.1.c and 21.3: after an objection to direct marketing the data is no longer processed for it and is erased, except what the activity's other purposes still need. Under Spanish law the data is blocked, not deleted, while liabilities may arise from the processing, and deleted afterwards (LOPDGDD art. 32).
+</code></pre>
+
+<p>El boletín y la captación de fondos descansan en intereses legítimos, cuya oposición general sería
+<code>CONDITIONAL</code> (21.1). Al ser mercadotecnia directa, la oposición es <code>YES</code>: no hay que ponderar
+nada. El portal, en cambio, también presta el servicio para el que el estudiante firmó: oponerse a las comunicaciones
+comerciales no borra la cuenta.</p>
+
+<h3 id="investigacion">La investigación</h3>
+<p>Las finalidades con el rasgo <code>RESEARCH</code> (en la extensión universitaria, <code>research</code> y sus
+hijos) tienen sus propios límites:</p>
+<ul>
+<li>la <strong>oposición</strong> es <code>CONDITIONAL</code> por motivos relacionados con la situación particular de
+la persona (artículo 21.6), y <code>NO</code> cuando la investigación es necesaria para una misión de interés
+público;</li>
+<li>una <strong>supresión</strong> que no sea ya <code>NO</code> pasa a <code>CONDITIONAL</code>, y la explicación
+añade que puede denegarse cuando haría imposible u obstaculizaría gravemente la investigación (artículo 17.3.d).</li>
+</ul>
+<p>Si una actividad es a la vez mercadotecnia directa e investigación, la mercadotecnia va primero para la
+oposición.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.5. Investigación con consentimiento y con interés público</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">SubjectRights.ActivityRights study = students.activity("wellbeing-study").orElseThrow();
+System.out.println(study.entitlement(SubjectRights.Right.ERASURE));
+System.out.println(study.entitlement(SubjectRights.Right.OBJECTION));
+
+ProcessingActivity graduateSurvey = ProcessingActivity.builder("graduate-survey", "Graduate employment survey")
+        .purposes(UniversityDataUses.RESEARCH)
+        .dataSubjects(DataSubjects.ALUMNUS)
+        .dataCategories(USER_NAME, USER_CONTACT_EMAIL)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Universities Act, art. 8")
+        .retention("Ten years")
+        .build();
+
+ProcessingRecord surveys = new ProcessingChecker(taxonomy).verify(graduateSurvey);
+SubjectRights.Entitlement objection = SubjectRights.of(surveys, taxonomy, DataSubjects.ALUMNUS)
+        .activity("graduate-survey").orElseThrow()
+        .entitlement(SubjectRights.Right.OBJECTION);
+System.out.println(objection.availability() + ": " + objection.explanation());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Entitlement[right=ERASURE, availability=CONDITIONAL, explanation=Art. 17.1.b: on withdrawal of consent, unless another lawful basis applies. Under Spanish law the data is blocked, not deleted, while liabilities may arise from the processing, and deleted afterwards (LOPDGDD art. 32). For research, erasure may be refused where it would make the research impossible or seriously impair it (art. 17.3.d).]
+Entitlement[right=OBJECTION, availability=CONDITIONAL, explanation=Art. 21.6: on grounds relating to the person's particular situation, the person may object to processing for research or statistics.]
+NO: Art. 21.6: objection to research does not apply where the research is necessary for a task in the public interest.
+</code></pre>
+
+<p>Con consentimiento, la supresión habría sido <code>YES</code>; la investigación la convierte en
+<code>CONDITIONAL</code>. En la encuesta de inserción laboral, basada en una misión de interés público, la oposición no
+se aplica.</p>
+
+<h3 id="interes-publico-y-portabilidad">La portabilidad excluye el interés público</h3>
+<p>La portabilidad permite a la persona recibir los datos que facilitó, tratados por medios automatizados, en un
+formato estructurado y legible por máquina, o que se transmitan a otro responsable. Se aplica al tratamiento basado en
+el consentimiento o en un contrato (artículo 20.1), y nunca al necesario para una misión de interés público (artículo
+20.3), <strong>ni siquiera con consentimiento explícito</strong> a categorías especiales. Por eso la explicación de la
+matrícula del Ejemplo 14.3 cita el 20.3, mientras que la del expediente, basado en una obligación legal, cita el
+20.1:</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">PORTABILITY NO: Art. 20.1: portability applies to processing based on consent or a contract; this activity rests on legal obligations (art. 6.1.c).
+</code></pre>
+
+<h3 id="decisiones-automatizadas">Las decisiones automatizadas</h3>
+<p>El derecho del artículo 22 no depende de la base jurídica, sino de lo que declara la actividad. Si sus factores de
+riesgo (en el alcance o en la gobernanza) incluyen <code>Factor.AUTOMATED_DECISIONS</code>, el derecho es
+<code>CONDITIONAL</code> y la explicación del acceso añade las decisiones automatizadas, su lógica y sus consecuencias
+(artículo 15.1.h). Sin el factor, el derecho es <code>NO</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.6. Las alertas de abandono deciden sin intervención humana</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">SubjectRights.ActivityRights alerts = students.activity("dropout-alerts").orElseThrow();
+System.out.println(alerts.entitlement(SubjectRights.Right.ACCESS).explanation());
+System.out.println(alerts.entitlement(SubjectRights.Right.AUTOMATED_DECISION));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Art. 15: confirmation, a copy of the data and the purposes, categories, recipients, transfers and retention of this activity (Learning Analytics), and the automated decisions it makes, their logic and consequences (art. 15.1.h).
+Entitlement[right=AUTOMATED_DECISION, availability=CONDITIONAL, explanation=Art. 22: the person is not subject to a decision based solely on automated processing with legal or similarly significant effects, unless it is necessary for a contract, authorised by law or based on explicit consent; then the person may obtain human intervention, express their view and contest the decision (art. 22.3).]
+</code></pre>
+
+<p>Este es otro motivo para declarar el factor en el alcance, como se vio en el capítulo 13: el mismo dato alimenta el
+cribado de la evaluación de impacto y la respuesta a los interesados.</p>
+
+<h3 id="consentimiento-explicito">El consentimiento explícito a categorías especiales</h3>
+<p>Una actividad puede tratar datos de categorías especiales con el consentimiento explícito del artículo 9.2.a como
+condición, aunque su base del artículo 6.1 sea otra. En ese caso:</p>
+<ul>
+<li>si la base no es el consentimiento, un contrato ni una misión de interés público, la <strong>portabilidad</strong>
+pasa de <code>NO</code> a <code>CONDITIONAL</code>: abarca los datos de categoría especial, no el resto (artículo
+20.1.a). Con una misión de interés público sigue siendo <code>NO</code> (20.3);</li>
+<li>si la base no es el consentimiento, la <strong>supresión</strong> pasa a <code>CONDITIONAL</code> salvo que ya sea
+<code>YES</code>, y la explicación añade que los datos de categoría especial se suprimen cuando se retira el
+consentimiento (artículos 17.1.b y 9.2.a). Si la actividad declara otras condiciones del artículo 9.2, añade «salvo
+que otra condición declarada los cubra».</li>
+</ul>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.7. Consentimiento explícito con interés público y con intereses legítimos</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">SubjectRights.ActivityRights support = students.activity("learning-support").orElseThrow();
+System.out.println(support.entitlement(SubjectRights.Right.ERASURE));
+System.out.println(support.entitlement(SubjectRights.Right.PORTABILITY));
+
+ProcessingActivity counselling = ProcessingActivity.builder("counselling", "Counselling service")
+        .purposes(UniversityDataUses.EDUCATION_STUDENT_SUPPORT)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_HEALTH_AND_MEDICAL)
+        .legitimateInterest("Supporting students in difficulty")
+        .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT,
+                SpecialCategoryCondition.VITAL_INTERESTS)
+        .retention("Five years")
+        .impactAssessment("DPIA-2026-09")
+        .build();
+
+SubjectRights.ActivityRights service = SubjectRights.of(new ProcessingChecker(taxonomy).verify(counselling),
+        taxonomy, DataSubjects.STUDENT).activity("counselling").orElseThrow();
+System.out.println(service.entitlement(SubjectRights.Right.PORTABILITY));
+System.out.println(service.entitlement(SubjectRights.Right.ERASURE));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Entitlement[right=ERASURE, availability=CONDITIONAL, explanation=Art. 17.3.b: the data is kept while the task in the public interest requires it (retention: Until the end of the studies), and erased afterwards. Under Spanish law the data is blocked, not deleted, while liabilities may arise from the processing, and deleted afterwards (LOPDGDD art. 32). The special category data, processed with explicit consent, is erased when the consent is withdrawn (art. 17.1.b with 9.2.a).]
+Entitlement[right=PORTABILITY, availability=NO, explanation=Art. 20.3: portability does not apply to processing necessary for a task in the public interest.]
+Entitlement[right=PORTABILITY, availability=CONDITIONAL, explanation=Art. 20.1.a: the special category data is processed with explicit consent (art. 9.2.a); the person may receive the data they provided, processed by automated means, in a structured, machine-readable format, or have it sent to another controller. The rest rests on legitimate interests (art. 6.1.f), to which portability does not apply.]
+Entitlement[right=ERASURE, availability=CONDITIONAL, explanation=Art. 17.1.c: after an objection, unless there are overriding legitimate grounds; and once the data is no longer needed (retention: Five years). The special category data, processed with explicit consent, is erased when the consent is withdrawn, unless another condition of article 9.2 declared for the activity covers it (art. 17.1.b with 9.2.a).]
+</code></pre>
+
+<p>En el apoyo al aprendizaje, la supresión pasa de <code>NO</code> a <code>CONDITIONAL</code>: el grado de
+discapacidad se trata con el consentimiento explícito del estudiante, y si lo retira, ese dato se suprime aunque la
+matrícula siga. La portabilidad sigue siendo <code>NO</code> por el interés público. En el servicio de orientación,
+basado en intereses legítimos, la portabilidad abarca los datos de salud, y la supresión recuerda que la condición de
+intereses vitales también declarada podría cubrirlos.</p>
+
+<div class="recuadro recuadro-nota" role="note">
+<p class="recuadro-titulo">Nota</p>
+<p>Las condiciones del artículo 9.2 se declaran para la actividad, no para cada categoría. Cuando hay varias, Linneo no
+puede saber cuál cubre cada dato, y lo dice en la explicación. Esa lectura corresponde al delegado.</p>
+</div>
+
+<h2 id="responder-una-solicitud">Responder a una solicitud en la universidad</h2>
+<p>Lucía, estudiante de cuarto curso, escribe a la universidad: «Quiero saber qué datos tenéis de mí y que borréis
+todo lo que no sea imprescindible; tampoco quiero recibir más comunicaciones comerciales». La solicitud combina
+acceso, supresión y oposición. Así se prepara la respuesta:</p>
+<ol>
+<li>Comprueba la identidad de quien la presenta y su categoría de interesados. Es trabajo de la aplicación y de la
+oficina del delegado; Linneo no conoce personas. Lucía es <code>student</code>.</li>
+<li>Obtén los derechos de la categoría con la misma taxonomía y la misma jurisdicción con las que se construyó el
+registro: <code>SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN)</code>.</li>
+<li>Localiza los datos con <code>storedFields(inventory, taxonomy)</code> y consulta esos campos en la base de datos
+para la fila de Lucía. La consulta es de la aplicación.</li>
+<li>Prepara el acceso: para cada actividad, sus finalidades, categorías, destinatarios, transferencias y conservación
+salen de la <code>CheckedActivity</code> y de su gobernanza.</li>
+<li>Revisa la supresión y la oposición actividad por actividad, con la disponibilidad y la explicación de cada
+derecho.</li>
+<li>Pasa al delegado los derechos <code>CONDITIONAL</code> con sus explicaciones: él decide si el caso de Lucía cumple
+las condiciones.</li>
+<li>Aplica lo decidido en la aplicación (suprimir, bloquear, dejar de enviar) y documenta la respuesta.</li>
+</ol>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 14.8. Un resumen para preparar la respuesta</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">SubjectRights rights = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN);
+
+for (SubjectRights.ActivityRights activity : rights.activities()) {
+    CheckedActivity checked = activity.activity();
+    Governance governance = checked.activity().governance();
+    System.out.println(checked.activity().name() + " | "
+            + checked.purposes().stream().map(DataUse::name).toList() + " | " + governance.retention());
+}
+for (SubjectRights.ActivityRights activity : rights.activities()) {
+    CheckedActivity checked = activity.activity();
+    SubjectRights.Entitlement erasure = activity.entitlement(SubjectRights.Right.ERASURE);
+    System.out.printf("%-17s %-21s %s%n", checked.activity().key(),
+            checked.activity().governance().legalBasis(), erasure.availability());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Student enrollment | [Enrollment] | Six years after the student leaves
+Academic record | [Assessment] | Permanently, as part of the academic record
+Learning support | [Teaching] | Until the end of the studies
+Student wellbeing study | [Research Participation] | Five years after the study ends
+Student portal | [Essential for Service, Marketing Communications] | While the student account exists
+Dropout alerts | [Learning Analytics] | Until the end of the academic year
+enrollment        PUBLIC_INTEREST       NO
+academic-record   LEGAL_OBLIGATION      NO
+learning-support  PUBLIC_INTEREST       CONDITIONAL
+wellbeing-study   CONSENT               CONDITIONAL
+student-portal    CONTRACT              CONDITIONAL
+dropout-alerts    PUBLIC_INTEREST       NO
+</code></pre>
+
+<p>Con este resumen, el delegado prepara una respuesta razonada:</p>
+<ul>
+<li>La <strong>matrícula</strong>, el <strong>expediente</strong> y las <strong>alertas</strong> no se suprimen:
+la misión de interés público y la obligación legal los necesitan durante el plazo declarado (17.3.b). En España, lo
+que se suprima más adelante se bloquea antes de borrarse.</li>
+<li>Del <strong>apoyo al aprendizaje</strong>, si Lucía retira su consentimiento, se suprime el grado de discapacidad
+(17.1.b con 9.2.a).</li>
+<li>Del <strong>estudio de bienestar</strong>, la supresión sigue a la retirada del consentimiento, pero puede
+denegarse si haría imposible la investigación (17.3.d). Lo valora el delegado con el equipo investigador.</li>
+<li>Del <strong>portal</strong>, la oposición a las comunicaciones comerciales es <code>YES</code>: se dejan de
+enviar y se suprime lo que solo servía para ellas; la cuenta sigue mientras exista el contrato.</li>
+<li>Las <strong>alertas de abandono</strong> deciden sin intervención humana: la respuesta de acceso debe explicar su
+lógica y sus consecuencias (15.1.h). El derecho del artículo 22 es <code>CONDITIONAL</code>: si la decisión descansa
+en una de las excepciones que cita la explicación, Lucía puede obtener intervención humana, expresar su punto de vista
+e impugnarla (22.3). Lo valora el delegado.</li>
+</ul>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>La respuesta es tan buena como el registro. Si una tabla con datos de estudiantes no aparece en ninguna actividad,
+<code>SubjectRights</code> no la verá. Por eso compensa nombrar objetos del inventario en las actividades y mantener el
+inventario al día con la compilación (capítulo 8).</p>
+</div>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Leer <code>SubjectRights</code> como la respuesta a la persona.</dt>
+<dd>Es el punto de partida. <code>CONDITIONAL</code> significa que el artículo enumera casos; si la solicitud los
+cumple lo decide el delegado.</dd>
+<dt>Pasar una clave de interesado escrita a mano.</dt>
+<dd>Una errata lanza <code>TaxonomyException</code>, lo que evita una respuesta vacía falsa, pero rompe el proceso. Usa
+las constantes de <code>DataSubjects</code> o de la extensión.</dd>
+<dt>Usar otra taxonomía u otra jurisdicción que las del registro.</dt>
+<dd>La clave se resuelve con la taxonomía que recibe <code>of</code>, y el bloqueo de la LOPDGDD solo aparece con
+<code>Jurisdiction.SPAIN</code>. Usa las mismas con las que se construyó el registro.</dd>
+<dt>Declarar los datos solo como entidades y esperar <code>storedFields</code>.</dt>
+<dd><code>storedFields</code> lee los objetos del inventario que nombran las actividades. Las entidades aparecen en
+<code>entities()</code>, pero no dicen en qué tabla están los datos.</dd>
+<dt>Olvidar el rasgo en una finalidad propia de mercadotecnia o de investigación.</dt>
+<dd>Las reglas leen <code>DIRECT_MARKETING</code> y <code>RESEARCH</code>. Una finalidad propia sin el rasgo recibe
+las reglas generales de su base, y la oposición dejaría de ser absoluta.</dd>
+<dt>Declarar <code>AUTOMATED_DECISIONS</code> solo en la gobernanza cuando decide el código.</dt>
+<dd>Funciona mientras esa gobernanza exista, pero una gobernanza guardada nueva podría no incluirlo. Declara en el
+alcance lo que sabe el código.</dd>
+<dt>Pensar que el consentimiento explícito da portabilidad en una actividad de interés público.</dt>
+<dd>El artículo 20.3 la excluye. El consentimiento explícito solo la abre, para los datos de categoría especial, cuando
+la base es una obligación legal, intereses vitales o intereses legítimos.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li><code>SubjectRights.of(record, taxonomy, dataSubject[, jurisdiction])</code> reúne, para una categoría de
+interesados, las actividades que tratan sus datos y los derechos sobre cada una.</li>
+<li>Una clave inexistente es una <code>TaxonomyException</code>; una categoría sin actividades da un resultado
+vacío.</li>
+<li><code>dataCategories()</code>, <code>entities()</code>, <code>objects()</code> y <code>storedFields(inventory,
+taxonomy)</code> dicen qué se trata y dónde buscarlo.</li>
+<li>Cada actividad tiene un <code>Entitlement</code> por derecho de los artículos 15 a 22, con una disponibilidad
+(<code>YES</code>, <code>CONDITIONAL</code>, <code>NO</code>) y una explicación que cita los artículos.</li>
+<li>La base jurídica decide la regla general; la mercadotecnia directa, la investigación, el interés público, las
+decisiones automatizadas y el consentimiento explícito la modifican, leídos de los rasgos y de las declaraciones.</li>
+<li><code>Jurisdiction.SPAIN</code> añade el bloqueo de los datos rectificados o suprimidos (LOPDGDD, artículo
+32).</li>
+<li>Linneo lee el registro; el delegado decide y la aplicación ejecuta.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Sin comunicaciones comerciales.</strong> El portal deja de enviar comunicaciones comerciales y su única
+finalidad pasa a ser <code>DataUses.ESSENTIAL_SERVICE</code>, con la misma base de contrato. Predice la disponibilidad
+de la supresión, la portabilidad y la oposición.</p>
+<details><summary>Solución del ejercicio 1</summary>
+<p>Sin mercadotecnia rige la regla del contrato. Estas son las explicaciones con <code>Jurisdiction.EU</code>; con
+<code>Jurisdiction.SPAIN</code>, la de la supresión añade el bloqueo de la LOPDGDD:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERASURE CONDITIONAL: Art. 17.1.a: once the data is no longer needed for the purposes (retention: While the student account exists).
+PORTABILITY YES: Art. 20.1: the processing is based on contract (art. 6.1.b); the person may receive the data they provided, processed by automated means, in a structured, machine-readable format, or have it sent to another controller.
+OBJECTION NO: Art. 21.1: objection applies to processing based on a task in the public interest or legitimate interests; this activity rests on contract (art. 6.1.b).
+</code></pre>
+<p>La oposición deja de ser <code>YES</code>: ya no hay mercadotecnia directa a la que oponerse.</p>
+</details>
+</li>
+<li>
+<p><strong>Portabilidad para todo.</strong> Lucía pide además «todos mis datos en un formato que pueda llevarme».
+Con el registro del Ejemplo 14.2, ¿qué actividades dan portabilidad <code>YES</code>?</p>
+<details><summary>Solución del ejercicio 2</summary>
+<p>Solo dos: el estudio de bienestar (consentimiento) y el portal (contrato). La matrícula, el apoyo al aprendizaje y
+las alertas descansan en una misión de interés público (20.3); el expediente, en una obligación legal (20.1). Recuerda
+que la portabilidad abarca los datos que la persona facilitó, no todo lo que la universidad sabe de ella.</p>
+</details>
+</li>
+<li>
+<p><strong>Investigación de donantes.</strong> La oficina de antiguos alumnos declara
+<code>advancement.prospect_research</code> (<code>UniversityDataUses.ADVANCEMENT_PROSPECT_RESEARCH</code>) con
+intereses legítimos, sobre el nombre y el correo de los antiguos alumnos. La finalidad tiene los rasgos
+<code>DIRECT_MARKETING</code> y <code>EVALUATION</code>. ¿Qué oposición y qué supresión tiene un antiguo alumno? ¿Qué
+dice el cribado de la evaluación de impacto?</p>
+<details><summary>Solución del ejercicio 3</summary>
+<p>Por <code>DIRECT_MARKETING</code>, la oposición es <code>YES</code> (21.2 y 21.3) y la supresión <code>YES</code>
+(17.1.c y 21.2), aunque la base sean intereses legítimos. Por <code>EVALUATION</code>, el cribado cumple el criterio
+1:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Possible (1 criterion of WP248): 1. evaluation: purpose advancement.prospect_research
+</code></pre>
+<p>Un solo criterio no genera ninguna infracción, pero el delegado debe considerar si el tratamiento es a gran escala o
+combina fuentes externas: con <code>Factor.DATASET_MATCHING</code> serían dos criterios.</p>
+</details>
+</li>
+<li>
+<p><strong>Un informe para la oficina del delegado.</strong> Escribe un método que, para una categoría de interesados,
+devuelva las claves de las actividades en las que la supresión no es <code>NO</code>, para que el delegado empiece por
+ellas.</p>
+<details><summary>Solución del ejercicio 4</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">static List&lt;String&gt; erasable(ProcessingRecord record, Taxonomy taxonomy, String dataSubject) {
+    return SubjectRights.of(record, taxonomy, dataSubject, Jurisdiction.SPAIN).activities().stream()
+            .filter(activity -&gt; activity.entitlement(SubjectRights.Right.ERASURE).availability()
+                    != SubjectRights.Availability.NO)
+            .map(activity -&gt; activity.activity().activity().key())
+            .toList();
+}
+</code></pre>
+<p>Con el registro del Ejemplo 14.2 y <code>DataSubjects.STUDENT</code> devuelve
+<code>[learning-support, wellbeing-study, student-portal]</code>, como muestra la tabla del Ejemplo 14.8.</p>
+</details>
+</li>
+<li>
+<p><strong>Intereses vitales.</strong> La universidad guarda el teléfono de emergencia de los estudiantes con base en
+intereses vitales. ¿Qué disponibilidad tienen la supresión, la portabilidad y la oposición?</p>
+<details><summary>Solución del ejercicio 5</summary>
+<p>Supresión <code>CONDITIONAL</code> (17.1.a: cuando los datos dejan de ser necesarios), portabilidad <code>NO</code>
+(20.1: solo consentimiento o contrato) y oposición <code>NO</code> (21.1: solo misión de interés público o intereses
+legítimos).</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué ocurre con <code>SubjectRights.of(record, taxonomy, "alumni")</code> si la clave correcta es
+<code>alumnus</code>?</p>
+<ol>
+<li>Devuelve un resultado vacío.</li>
+<li>Lanza <code>TaxonomyException</code>.</li>
+<li>Devuelve las actividades de <code>alumnus</code> por aproximación.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La b. La clave se resuelve con la taxonomía, y una clave que no existe es un error, para que una errata no se lea
+como «no hay datos». La a es lo que ocurre con una clave que existe pero que ninguna actividad nombra.</p>
+</details>
+</li>
+<li>
+<p>Una actividad con base <code>LEGITIMATE_INTERESTS</code> tiene como única finalidad
+<code>marketing.communications.email</code>. ¿Cuál es la disponibilidad de la oposición?</p>
+<ol>
+<li><code>CONDITIONAL</code>, por el artículo 21.1.</li>
+<li><code>YES</code>, por los artículos 21.2 y 21.3.</li>
+<li><code>NO</code>, porque hay un interés legítimo.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La b. La finalidad tiene el rasgo <code>DIRECT_MARKETING</code> (hereda de <code>marketing</code>), y la oposición
+a la mercadotecnia directa es absoluta. La a es la regla general de los intereses legítimos, que la mercadotecnia
+desplaza.</p>
+</details>
+</li>
+<li>
+<p>¿Por qué la portabilidad del apoyo al aprendizaje es <code>NO</code> aunque declare consentimiento explícito?</p>
+<ol>
+<li>Porque los datos de salud no son portables.</li>
+<li>Porque su base es una misión de interés público (artículo 20.3).</li>
+<li>Porque falta la referencia legal.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La b. El artículo 20.3 excluye la portabilidad en el tratamiento necesario para una misión de interés público, con
+o sin consentimiento explícito. Con intereses legítimos, el consentimiento explícito la habría hecho
+<code>CONDITIONAL</code>.</p>
+</details>
+</li>
+<li>
+<p>¿Qué cambia en las explicaciones con <code>Jurisdiction.SPAIN</code>?</p>
+<ol>
+<li>La rectificación y la supresión añaden el bloqueo de los datos (LOPDGDD, artículo 32).</li>
+<li>Todas las disponibilidades pasan a <code>CONDITIONAL</code>.</li>
+<li>Nada: la jurisdicción solo afecta al comprobador.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La a. Las disponibilidades no cambian; las explicaciones de <code>RECTIFICATION</code> y <code>ERASURE</code>
+añaden que los datos se bloquean, no se borran, mientras puedan surgir responsabilidades.</p>
+</details>
+</li>
+<li>
+<p>Una actividad declara <code>Factor.AUTOMATED_DECISIONS</code> en su gobernanza. ¿Qué derechos cambian?</p>
+<ol>
+<li>Ninguno: los factores de la gobernanza solo afectan al cribado.</li>
+<li><code>AUTOMATED_DECISION</code> pasa a <code>CONDITIONAL</code> y el acceso cita el artículo 15.1.h.</li>
+<li>La oposición pasa a <code>YES</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La b. <code>SubjectRights</code> lee la unión de los factores del alcance y de la gobernanza. La oposición no
+depende de las decisiones automatizadas.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li>Capítulo anterior: <a href="13-impacto-y-brechas.html">Evaluación de impacto y brechas</a>.</li>
+<li>Capítulo siguiente: <a href="15-ens.html">Categoría
+<abbr title="Esquema Nacional de Seguridad">ENS</abbr> del sistema</a>.</li>
+<li><a href="12-registro.html">El registro de actividades</a> y <a href="08-inventario.html">El inventario de
+datos</a>.</li>
+<li>Referencia: <a href="../../reference/processing/subject-rights.html">SubjectRights</a>, con la regla de cada base
+jurídica.</li>
+<li>Referencia: <a href="../../reference/processing/bases.html">Bases jurídicas</a>, con el artículo de cada
+constante.</li>
+<li>Referencia: <a href="../../reference/processing/record.html">ProcessingRecord</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="13-impacto-y-brechas.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 13. Evaluación de impacto y brechas</a></li>
+<li><a href="15-ens.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 15. Categoría ENS del sistema</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

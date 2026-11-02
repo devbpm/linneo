@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/Taxonomy.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyDiff.java
+  - src/main/java/io/github/devbpm/linneo/TermChange.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
+  - src/main/java/io/github/devbpm/linneo/internal/Tsv.java
+  - src/main/java/io/github/devbpm/linneo/internal/StandardTaxonomy.java
+  - tools/fideslang/update.py
+  - pom.xml
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 10. Versiones de la taxonomía · Curso de Linneo</title>
+<meta name="description" content="Guardar la taxonomía como texto, identificarla con su huella, comparar dos versiones y graduar el cambio con las reglas de versionado.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html" aria-current="page"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 10. Versiones de la taxonomía</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 10</span> Versiones de la taxonomía</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>60 minutos</dd></div>
+<div><dt>Parte III:</dt><dd>Gobernar la taxonomía</dd></div>
+</dl>
+<p class="entradilla">Las aplicaciones guardan las claves de la taxonomía en sus tablas, sus catálogos y su registro
+de actividades, y la taxonomía cambia con cada versión de Linneo o de una extensión. Este capítulo enseña a guardar la
+taxonomía que aplicaste, a saber si ha cambiado, a describir qué cambió término a término y a decidir si el cambio es
+aceptable con las mismas reglas de versionado que usa Linneo.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#por-que-versionar">Por qué una taxonomía tiene versiones</a></li>
+<li><a href="#taxonomia-como-dato">Una taxonomía también es un dato</a></li>
+<li><a href="#taxonomy-diff">Comparar dos versiones: <code>TaxonomyDiff</code></a></li>
+<li><a href="#reglas-de-versionado">Las reglas de versionado</a></li>
+<li><a href="#guardar-y-comparar">Guardar la taxonomía aplicada y compararla con la actual</a></li>
+<li><a href="#comparar-con-la-publicada">El test que compara con la versión publicada</a></li>
+<li><a href="#cambio-de-fideslang">Qué hacer cuando cambia la versión de fideslang</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>escribir una taxonomía como texto con <code>toTsv</code>, leerla con <code>fromTsv</code> y explicar por qué la
+lectura pasa por el constructor;</li>
+<li>usar la huella (<code>fingerprint</code>) y la igualdad por valor para saber si una taxonomía cambió;</li>
+<li>comparar dos versiones con <code>TaxonomyDiff</code> e interpretar cada <code>TermChange</code>: sus aspectos, la
+dirección de su protección y el salto de versión que exige;</li>
+<li>aplicar las reglas de versionado de la taxonomía: qué es un cambio mayor, menor o de parche;</li>
+<li>escribir el arranque de una aplicación que guarda la taxonomía aplicada y la compara con la actual;</li>
+<li>escribir en tu aplicación un test que compare la taxonomía con la de la última versión publicada;</li>
+<li>describir qué ocurre cuando Linneo pasa a otra versión de fideslang.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo usa la <abbr title="interfaz de programación de aplicaciones">API</abbr> de <code>Taxonomy</code>
+y las claves obsoletas del <a href="03-taxonomia.html">capítulo 3</a>, y <code>Protection.comparedTo</code> con sus
+direcciones del <a href="02-proteccion.html">capítulo 2</a>. Los ejemplos construyen versiones de la taxonomía con
+<code>Taxonomy.builder()</code>, que el <a href="09-extensiones.html">capítulo 9</a> explica a fondo; aquí basta con
+saber que <code>withStandard()</code> parte de la taxonomía estándar, <code>category(...)</code> añade una categoría y
+<code>refineCategory(...)</code> endurece una existente.</p>
+
+<h2 id="por-que-versionar">Por qué una taxonomía tiene versiones</h2>
+<p>La universidad del curso guarda claves en muchos sitios: una tabla de campos con la categoría de cada columna, las
+etiquetas de un catálogo de datos, las categorías de datos de cada actividad del registro de actividades de
+tratamiento (<abbr title="registro de actividades de tratamiento">RAT</abbr>). Esas claves solo significan algo junto
+con la taxonomía que las resolvió: la protección de <code>user.education.grade</code> es la que esa taxonomía le
+daba.</p>
+<p>La taxonomía cambia por varias vías. Una versión nueva de Linneo puede traer términos nuevos, una versión nueva de
+fideslang o una política más estricta. Una versión nueva de la extensión de la universidad puede dejar obsoleta una
+clave propia. El delegado de protección de datos (<abbr title="delegado de protección de datos">DPD</abbr>) puede
+pedir que una categoría se proteja más. Cada uno de esos cambios llega a datos que ya están guardados.</p>
+<p>Linneo resuelve tres necesidades distintas con tres herramientas:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-10-1">
+<table>
+<caption id="tabla-10-1">Tabla 10.1. Tres preguntas y la herramienta que las responde</caption>
+<thead>
+<tr><th scope="col">Pregunta</th><th scope="col">Herramienta</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">¿Con qué taxonomía clasificamos esto?</th>
+<td><code>toTsv()</code> la guarda y <code>fromTsv(text)</code> la recupera.</td></tr>
+<tr><th scope="row">¿Ha cambiado algo?</th>
+<td><code>fingerprint()</code> y <code>equals</code>.</td></tr>
+<tr><th scope="row">¿Qué cambió, y es aceptable?</th>
+<td><code>TaxonomyDiff</code>, sus <code>TermChange</code> y <code>requiredBump()</code>.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="taxonomia-como-dato">Una taxonomía también es un dato</h2>
+<p>Una <code>Taxonomy</code> es un objeto inmutable en memoria, pero también se puede escribir como texto, guardar y
+volver a leer. Así una aplicación conserva la taxonomía que aplicó, y un auditor puede reproducir años después la
+clasificación del pasado con la taxonomía del pasado.</p>
+
+<h3 id="totsv">Escribir el texto: <code>toTsv</code></h3>
+<p><code>toTsv()</code> escribe todos los términos con su ciclo de vida y, en las categorías, su protección
+<strong>efectiva</strong>, sus atributos y sus rasgos, por orden de clave. El texto es determinista: la misma
+taxonomía da siempre el mismo texto, byte a byte. El formato tiene estas reglas:</p>
+<ul>
+<li>La primera línea es <code>#linneo-taxonomy</code>, un tabulador y la versión del formato, hoy <code>1</code>.</li>
+<li>Las líneas que empiezan por <code>#</code> son comentarios; <code>toTsv</code> escribe cuatro que nombran las
+columnas.</li>
+<li>Cada fila es una línea de celdas separadas por tabuladores, y la primera celda dice qué fila es.</li>
+<li>Una celda vacía es un valor ausente. Una barra invertida, un tabulador, un salto de línea y un retorno de carro se
+escriben <code>\\</code>, <code>\t</code>, <code>\n</code> y <code>\r</code>, de modo que una fila es siempre una
+línea.</li>
+</ul>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-10-2">
+<table>
+<caption id="tabla-10-2">Tabla 10.2. Las filas del texto de una taxonomía</caption>
+<thead>
+<tr><th scope="col">Fila</th><th scope="col">Celdas</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>category</code></th>
+<td>12: tipo, clave, nombre, descripción, origen, versión que la introdujo, versión que la declaró obsoleta,
+sustituta, naturaleza, confidencialidad, integridad y secreto (<code>true</code> o <code>false</code>).</td></tr>
+<tr><th scope="row"><code>use</code>, <code>subject</code></th>
+<td>8: tipo, clave, nombre, descripción, origen, versión que lo introdujo, versión que lo declaró obsoleto y
+sustituto.</td></tr>
+<tr><th scope="row"><code>attribute</code></th>
+<td>4: tipo, clave de la categoría, nombre y valor. Una fila por atributo, también los heredados.</td></tr>
+<tr><th scope="row"><code>trait</code></th>
+<td>4: tipo, jerarquía del término (<code>category</code>, <code>use</code> o <code>subject</code>), clave y rasgo.
+Una fila por rasgo, también los heredados.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>El Ejemplo 10.1 construye una taxonomía mínima para ver todas las filas. Para que se lea mejor, los tabuladores se
+muestran como <code>→</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.1. El texto de una taxonomía mínima</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy campus = Taxonomy.builder()
+        .origin("campus")
+        .category("campus", "Campus Data", "Data the campus app keeps.",
+                c -&gt; c.nature(LegalNature.ORDINARY).confidentiality(Confidentiality.LOW)
+                        .integrity(Integrity.MEDIUM))
+        .category("campus.locker", "Locker", "Locker assigned to a student.",
+                c -&gt; c.attribute("retention", "1y"))
+        .dataSubject("student", "Student", "A student of the campus.", s -&gt; s.traits(Trait.VULNERABLE))
+        .build();
+System.out.print(campus.toTsv().replace("\t", "→"));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">#linneo-taxonomy→1
+# category key name description origin since deprecated_since replaced_by nature confidentiality integrity secret
+# use|subject key name description origin since deprecated_since replaced_by
+# attribute category_key name value
+# trait category|use|subject key trait
+category→campus→Campus Data→Data the campus app keeps.→campus→→→→ORDINARY→LOW→MEDIUM→false
+category→campus.locker→Locker→Locker assigned to a student.→campus→→→→ORDINARY→LOW→MEDIUM→false
+subject→student→Student→A student of the campus.→campus→→→
+attribute→campus.locker→retention→1y
+trait→subject→student→VULNERABLE
+</code></pre>
+
+<p>Observa que <code>campus.locker</code> no declaraba protección y aun así su fila la lleva completa: el texto guarda
+la protección efectiva, no la declarada. Por eso es una fotografía fiel de lo que la aplicación aplicó, aunque la
+política que la produjo cambie después. La taxonomía estándar ocupa unos 36 KB en este formato, y unos 70 KB con las
+cinco extensiones incluidas.</p>
+
+<h3 id="fromtsv">Leer el texto: <code>fromTsv</code></h3>
+<p><code>Taxonomy.fromTsv(text)</code> lee un texto escrito por <code>toTsv</code> y devuelve una taxonomía igual a la
+que lo escribió. Los términos no se cargan sin más: pasan por un <code>TaxonomyBuilder</code>, así que el texto debe
+cumplir las mismas reglas que cualquier taxonomía. Un texto dañado o manipulado no puede producir una taxonomía que el
+código no podría construir: una madre que falta, una naturaleza que no se concilia o una sustituta que protege menos
+se rechazan, y un nivel por debajo del de la madre se eleva, como en cualquier construcción.</p>
+<p><code>fromTsv</code> lanza <code>TaxonomyException</code> si la primera línea no es la de un formato y una versión
+que conoce, si una fila está mal formada o si los términos incumplen una regla del constructor:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.2. Cuatro textos que <code>fromTsv</code> rechaza</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;String&gt; texts = List.of(
+        "#linneo-taxonomy\t2\n",
+        "#linneo-taxonomy\t1\ncategory\tdata\tData\n",
+        "#linneo-taxonomy\t1\ncategory\tdata\tData\t\tapp\t\t\t\tORDINARY\tLOW\tLOW\tmaybe\n",
+        "#linneo-taxonomy\t1\ncategory\tdata.child\tChild\t\tapp\t\t\t\tORDINARY\tLOW\tLOW\tfalse\n");
+for (String text : texts) {
+    try {
+        Taxonomy.fromTsv(text);
+    } catch (TaxonomyException e) {
+        System.out.println(e.getMessage());
+    }
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Not a linneo-taxonomy text of version 1: the first line must be '#linneo-taxonomy&lt;tab&gt;1'
+A 'category' row needs 12 cells, not 3: [category, data, Data]
+'maybe' is not true or false
+The parent 'data' of data category 'data.child' does not exist
+</code></pre>
+
+<p>El primero tiene una versión de formato desconocida, el segundo una fila incompleta, el tercero un secreto que no
+es <code>true</code> ni <code>false</code> y el cuarto una categoría cuya madre no existe: la regla del constructor.
+Las filas pueden venir en cualquier orden; los atributos y los rasgos se aplican después de todos los términos.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>El formato lleva versión precisamente para poder cambiar. Hoy <code>fromTsv</code> solo entiende la versión
+<code>1</code>; si un día existe otra, el texto antiguo seguirá diciendo en su primera línea con qué formato se
+escribió.</p>
+</div>
+
+<h3 id="huella-e-igualdad">La huella y la igualdad</h3>
+<p>La <dfn>huella</dfn> de una taxonomía, <code>fingerprint()</code>, es el SHA-256 de su <code>toTsv()</code>
+codificado en UTF-8, como 64 dígitos hexadecimales en minúscula. Se calcula una vez y se conserva. Como el texto es
+determinista, dos taxonomías iguales tienen la misma huella, y una aplicación puede guardarla para saber en el
+siguiente arranque si algo cambió sin comparar término a término.</p>
+<p>La igualdad es por valor: dos taxonomías son iguales (<code>equals</code>) cuando tienen las mismas categorías,
+usos y sujetos, con las mismas claves, nombres, descripciones, orígenes, ciclos de vida, protección, atributos y
+rasgos. Leer el texto de una taxonomía da otro objeto, pero igual.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.3. La taxonomía estándar ida y vuelta</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import java.nio.charset.StandardCharsets;
+
+Taxonomy standard = Taxonomy.standard();
+String text = standard.toTsv();
+Taxonomy read = Taxonomy.fromTsv(text);
+System.out.println(text.lines().count() + " lines, " + text.getBytes(StandardCharsets.UTF_8).length + " bytes");
+System.out.println(standard.fingerprint());
+System.out.println(read.equals(standard) + " " + read.fingerprint().equals(standard.fingerprint()) + " "
+        + (read == standard));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">319 lines, 36351 bytes
+d850adfcdd931f9753eaafa376d976ceca8048300f665ac8aa5ce6c87f01d62b
+true true false
+</code></pre>
+
+<p>La huella que ves corresponde a la taxonomía estándar de la versión actual de la biblioteca; cambiará en cuanto
+cambie cualquier término. Esa es su virtud y su límite: dice que algo cambió, incluso una sola descripción, pero no
+dice qué. Para eso está <code>TaxonomyDiff</code>.</p>
+
+<h2 id="taxonomy-diff">Comparar dos versiones: <code>TaxonomyDiff</code></h2>
+<p><code>TaxonomyDiff.between(before, after)</code> compara dos versiones de una taxonomía término a término:
+<code>before</code> es la anterior, como la que la aplicación aplicó por última vez, y <code>after</code> la
+posterior, como la que usa ahora. Empareja los términos por clave dentro de cada jerarquía y devuelve un objeto
+inmutable con estos métodos:</p>
+<ul>
+<li><code>changes()</code>: los cambios, primero las categorías, después los usos y los sujetos, cada grupo por clave.
+Un término que no cambió no aparece.</li>
+<li><code>isEmpty()</code>: cierto si las dos versiones tienen los mismos términos.</li>
+<li><code>change(hierarchy, key)</code>: el cambio de un término, o <code>null</code> si no cambió.</li>
+<li><code>breakingChanges()</code>: los cambios incompatibles para quien guarda o publica claves.</li>
+<li><code>requiredBump()</code>: el salto de versión que exigen los cambios, el más estricto de todos.</li>
+<li><code>requireCompatible()</code>: devuelve el mismo objeto si no hay cambios incompatibles y, si los hay, lanza
+<code>TaxonomyException</code> con todos ellos.</li>
+<li><code>before()</code> y <code>after()</code>: las dos taxonomías comparadas.</li>
+</ul>
+<p>Supón que una versión nueva de la taxonomía estándar endurece la confidencialidad de las calificaciones, añade
+dos categorías académicas y marca a los estudiantes como interesados vulnerables:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.4. Los cambios de una versión compatible</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy next = Taxonomy.builder().withStandard()
+        .refineCategory(USER_EDUCATION_GRADE, c -&gt; c.confidentiality(Confidentiality.HIGH))
+        .category("user.education.grade.appeal", "Grade Appeal", "Appeals against a grade.")
+        .category("user.education.thesis", "Thesis", "Theses of the subject.")
+        .refineDataSubject(STUDENT, s -&gt; s.traits(Trait.VULNERABLE))
+        .build();
+TaxonomyDiff diff = TaxonomyDiff.between(Taxonomy.standard(), next);
+System.out.println(diff);
+for (TermChange change : diff.changes()) {
+    System.out.println(change + " -&gt; " + change.bump());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">TaxonomyDiff[4 change(s), MINOR]
+DATA_CATEGORY 'user.education.grade': [PROTECTION] TIGHTENED -&gt; MINOR
+DATA_CATEGORY 'user.education.grade.appeal': [ADDED] -&gt; MINOR
+DATA_CATEGORY 'user.education.thesis': [ADDED] -&gt; MINOR
+DATA_SUBJECT 'student': [TRAITS] -&gt; MINOR
+</code></pre>
+
+<p>Hay cuatro cambios, todos compatibles. La calificación endurece su protección; las dos categorías nuevas se añaden;
+el estudiante gana un rasgo. Ninguna de las otras 125 categorías aparece, porque no cambió.</p>
+
+<h3 id="termchange">Cada cambio: <code>TermChange</code></h3>
+<p>Un <code>TermChange</code> es un record que describe cómo difiere un término entre las dos versiones:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">public record TermChange(Hierarchy hierarchy, String key, Term before, Term after, Set&lt;Aspect&gt; aspects,
+                         Direction direction)
+</code></pre>
+
+<p><code>before</code> es nulo si el término se añadió y <code>after</code> si se eliminó. <code>aspects</code> dice
+qué cambió y nunca está vacío. <code>direction</code> dice cómo cambió la protección de una categoría: es la
+<code>Protection.Direction</code> del capítulo 2, calculada como
+<code>after.protection().comparedTo(before.protection())</code>, y vale <code>SAME</code> para usos y sujetos y para
+términos añadidos o eliminados. Dos métodos lo resumen: <code>bump()</code>, el salto de versión que exige, y
+<code>isBreaking()</code>, cierto si ese salto es mayor.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.5. Leer un cambio y el término antes y después</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">TermChange grade = diff.change(TermChange.Hierarchy.DATA_CATEGORY, USER_EDUCATION_GRADE);
+DataCategory before = (DataCategory) grade.before();
+DataCategory after = (DataCategory) grade.after();
+System.out.println(before.confidentiality() + " -&gt; " + after.confidentiality() + ": " + grade.direction());
+System.out.println(diff.change(TermChange.Hierarchy.DATA_CATEGORY, USER_CONTACT_EMAIL));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">MEDIUM -&gt; HIGH: TIGHTENED
+null
+</code></pre>
+
+<h3 id="aspectos">Los aspectos de un cambio</h3>
+<p>Un cambio puede tener varios aspectos, y su salto de versión es el más estricto de todos ellos.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-10-3">
+<table>
+<caption id="tabla-10-3">Tabla 10.3. Los valores de <code>TermChange.Aspect</code> y su salto de versión</caption>
+<thead>
+<tr><th scope="col">Aspecto</th><th scope="col">Se da cuando</th><th scope="col">Salto</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ADDED</code></th><td>El término solo existe en la versión posterior.</td><td>menor</td></tr>
+<tr><th scope="row"><code>REMOVED</code></th><td>El término solo existe en la anterior; quien guardó su clave ya no
+puede resolverla.</td><td>mayor</td></tr>
+<tr><th scope="row"><code>PROTECTION</code></th><td>Cambia la naturaleza, la confidencialidad, la integridad o el
+secreto de una categoría.</td><td>mayor si la dirección es <code>LOOSENED</code> o <code>MIXED</code>; menor si es
+<code>TIGHTENED</code></td></tr>
+<tr><th scope="row"><code>DEPRECATION</code></th><td>El término pasa a estar obsoleto, o deja de estarlo.</td>
+<td>menor</td></tr>
+<tr><th scope="row"><code>REPLACEMENT</code></th><td>Se fija o cambia la sustituta, de modo que la clave se resuelve a
+otro término.</td><td>mayor si ya tenía sustituta; menor si no tenía</td></tr>
+<tr><th scope="row"><code>TRAITS</code></th><td>Cambian los rasgos, declarados o heredados.</td>
+<td>menor si se conservan todos los anteriores; mayor si se quita alguno</td></tr>
+<tr><th scope="row"><code>NAME</code></th><td>Cambia el nombre.</td><td>parche</td></tr>
+<tr><th scope="row"><code>DESCRIPTION</code></th><td>Cambia la descripción. Es solo texto, pero puede ocultar un
+cambio de significado: revísala.</td><td>parche</td></tr>
+<tr><th scope="row"><code>ATTRIBUTES</code></th><td>Cambian los atributos de una categoría.</td><td>parche</td></tr>
+<tr><th scope="row"><code>ORIGIN</code></th><td>Cambia el origen, por ejemplo cuando un término pasa de una extensión
+a la taxonomía estándar.</td><td>parche</td></tr>
+<tr><th scope="row"><code>VERSIONS</code></th><td>Cambian las versiones del ciclo de vida sin que cambie el estado de
+obsolescencia.</td><td>parche</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>El salto se expresa con el enumerado <code>TaxonomyDiff.Bump</code>, cuyos valores van de menor a mayor:
+<code>NONE</code>, <code>PATCH</code>, <code>MINOR</code> y <code>MAJOR</code>. Como están declarados en ese orden,
+<code>compareTo</code> los ordena, y <code>requiredBump()</code> devuelve <code>NONE</code> cuando no hay cambios.</p>
+
+<h3 id="cambios-incompatibles">Cambios incompatibles</h3>
+<p>Invertir el Ejemplo 10.4, pasar de <code>next</code> a la taxonomía estándar, convierte los cuatro cambios en
+incompatibles: la calificación pierde protección, dos categorías desaparecen y el estudiante pierde un rasgo.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.6. Una versión incompatible y <code>requireCompatible</code></figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">TaxonomyDiff back = TaxonomyDiff.between(next, Taxonomy.standard());
+System.out.println(back.requiredBump() + ", " + back.breakingChanges().size() + " breaking");
+try {
+    back.requireCompatible();
+} catch (TaxonomyException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">MAJOR, 4 breaking
+4 incompatible taxonomy change(s):
+ - DATA_CATEGORY 'user.education.grade': [PROTECTION] LOOSENED
+ - DATA_CATEGORY 'user.education.grade.appeal': [REMOVED]
+ - DATA_CATEGORY 'user.education.thesis': [REMOVED]
+ - DATA_SUBJECT 'student': [TRAITS]
+</code></pre>
+
+<p>La obsolescencia sigue una lógica propia. Declarar obsoleto un término con su primera sustituta es compatible: las
+claves guardadas se resuelven a la sustituta, que protege al menos lo mismo. Cambiar después esa sustituta por otra no
+lo es, porque la misma clave guardada pasaría a significar otra cosa.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.7. Declarar obsoleta una clave y cambiar luego su sustituta</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy v1 = Taxonomy.builder().withStandard()
+        .category("user.education.mark", "Mark", "Marks of the old system.")
+        .build();
+Taxonomy v2 = Taxonomy.builder().withStandard()
+        .category("user.education.mark", "Mark", "Marks of the old system.",
+                c -&gt; c.deprecated("2.0.0", USER_EDUCATION_GRADE))
+        .build();
+Taxonomy v3 = Taxonomy.builder().withStandard()
+        .category("user.education.mark", "Mark", "Marks of the old system.",
+                c -&gt; c.deprecated("2.0.0", USER_EDUCATION_TEST_SCORE))
+        .build();
+for (TermChange change : TaxonomyDiff.between(v1, v2).changes()) {
+    System.out.println("v1 -&gt; v2: " + change + ", " + change.bump());
+}
+for (TermChange change : TaxonomyDiff.between(v2, v3).changes()) {
+    System.out.println("v2 -&gt; v3: " + change + ", " + change.bump());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">v1 -&gt; v2: DATA_CATEGORY 'user.education.mark': [DEPRECATION, REPLACEMENT], MINOR
+v2 -&gt; v3: DATA_CATEGORY 'user.education.mark': [REPLACEMENT], MAJOR
+</code></pre>
+
+<p>Por último, dos casos en los extremos de la escala. Un atributo nuevo es un cambio de parche. Un cambio que sube
+una faceta y baja otra es <code>MIXED</code>, y un cambio mixto exige la misma revisión que un debilitamiento:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.8. Un cambio descriptivo y uno mixto</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy withRetention = Taxonomy.builder().withStandard()
+        .refineCategory(USER_EDUCATION_GRADE, c -&gt; c.attribute("retention", "50y"))
+        .build();
+System.out.println(TaxonomyDiff.between(Taxonomy.standard(), withRetention).changes());
+
+Taxonomy older = Taxonomy.builder().withStandard()
+        .category("user.content.tutor_note", "Tutor Note", "Notes of the tutor.",
+                c -&gt; c.integrity(Integrity.HIGH))
+        .build();
+Taxonomy newer = Taxonomy.builder().withStandard()
+        .category("user.content.tutor_note", "Tutor Note", "Notes of the tutor.",
+                c -&gt; c.confidentiality(Confidentiality.HIGH))
+        .build();
+TermChange note = TaxonomyDiff.between(older, newer)
+        .change(TermChange.Hierarchy.DATA_CATEGORY, "user.content.tutor_note");
+System.out.println(note + ", " + note.bump() + ", weakens=" + note.direction().weakens());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">[DATA_CATEGORY 'user.education.grade': [ATTRIBUTES]]
+DATA_CATEGORY 'user.content.tutor_note': [PROTECTION] MIXED, MAJOR, weakens=true
+</code></pre>
+
+<h2 id="reglas-de-versionado">Las reglas de versionado</h2>
+<p>Las aplicaciones guardan y publican las claves de la taxonomía, así que Linneo la versiona con versionado
+semántico. Las reglas están en el fichero <code>CONTRIBUTING.md</code> del proyecto y <code>TermChange.bump()</code>
+las aplica término a término:</p>
+<ul>
+<li>Nunca se cambia el significado de una clave y nunca se reutiliza una clave eliminada.</li>
+<li>Los términos nuevos se añaden como hijos de términos existentes; una raíz nueva necesita discusión previa.</li>
+<li>La protección solo puede hacerse más estricta al bajar por el árbol.</li>
+<li>Los rasgos forman parte del significado de un término: añadir uno es menor, quitar uno es mayor.</li>
+<li>Un término no se borra: se declara obsoleto con <code>version_deprecated</code> y, si la hay, con
+<code>replaced_by</code>.</li>
+</ul>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-10-4">
+<table>
+<caption id="tabla-10-4">Tabla 10.4. Qué salto de versión exige cada cambio</caption>
+<thead>
+<tr><th scope="col">Salto</th><th scope="col">Cambios</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Mayor (<code>MAJOR</code>)</th>
+<td>Eliminar un término o un rasgo; debilitar la protección de una categoría en cualquier faceta, o cambiarla de forma
+mixta; cambiar a qué se resuelve una clave obsoleta.</td></tr>
+<tr><th scope="row">Menor (<code>MINOR</code>)</th>
+<td>Añadir un término o un rasgo; endurecer la protección; declarar obsoleto un término; dar a un término obsoleto su
+primera sustituta.</td></tr>
+<tr><th scope="row">Parche (<code>PATCH</code>)</th>
+<td>Cambios descriptivos: nombres, descripciones, atributos, orígenes y versiones del ciclo de vida.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Dos reglas no las puede comprobar un programa por completo. Que una clave no cambie de significado depende de lo
+que dice su descripción: por eso <code>DESCRIPTION</code> se informa como aspecto, para que una persona revise que el
+significado se mantiene. Que una clave eliminada no se reutilice lo comprueba la propia compilación de Linneo, como se
+ve más abajo, comparando con todas las versiones publicadas.</p>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Si mantienes una extensión propia (capítulo 9), aplícale las mismas reglas: tus aplicaciones también guardan sus
+claves. <code>TaxonomyDiff</code> te dice qué salto exige cada versión nueva de tu extensión antes de publicarla.</p>
+</div>
+
+<h2 id="guardar-y-comparar">Guardar la taxonomía aplicada y compararla con la actual</h2>
+<p>El patrón que proponen la referencia de Linneo y este curso es sencillo: la aplicación guarda la taxonomía con la
+que clasificó por última vez y, en cada arranque, la compara con la que trae el código. Linneo compara; la aplicación
+decide y persiste. Los pasos son estos:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Construye la taxonomía actual</span> Con <code>Taxonomy.load()</code> o el mismo
+constructor que usa el resto de la aplicación.</li>
+<li><span class="flujo-titulo">Lee la aplicada</span> Recupera el texto guardado y léelo con
+<code>Taxonomy.fromTsv</code>. Si guardas también su huella, compárala antes con <code>fingerprint()</code>: si
+coincide, no hay nada más que hacer.</li>
+<li><span class="flujo-titulo">Compara</span> Calcula <code>TaxonomyDiff.between(aplicada, actual)</code>.</li>
+<li><span class="flujo-titulo">Decide</span> Rechaza los cambios incompatibles con <code>requireCompatible()</code>,
+o envíalos a revisión con <code>breakingChanges()</code>, según la política de tu organización.</li>
+<li><span class="flujo-titulo">Aplica</span> Migra las claves obsoletas que guardas, registra una entrada de
+auditoría por término modificado y busca los campos afectados con <code>DataInventory.affectedBy</code>.</li>
+<li><span class="flujo-titulo">Guarda la nueva</span> Escribe <code>toTsv()</code> y su huella como la taxonomía
+aplicada, en la misma transacción que los cambios del paso anterior.</li>
+</ol>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.9. Un arranque que compara la taxonomía aplicada con la actual</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">static Taxonomy start(Path appliedFile) throws IOException {
+    Taxonomy taxonomy = Taxonomy.load();
+    if (Files.exists(appliedFile)) {
+        Taxonomy applied = Taxonomy.fromTsv(Files.readString(appliedFile));
+        TaxonomyDiff diff = TaxonomyDiff.between(applied, taxonomy);
+        diff.requireCompatible();
+        for (TermChange change : diff.changes()) {
+            System.out.println("Taxonomy change: " + change);
+        }
+    }
+    Files.writeString(appliedFile, taxonomy.toTsv());
+    return taxonomy;
+}
+</code></pre>
+</figure>
+
+<p>El ejemplo usa un fichero para que sea breve; una aplicación real lo guarda donde guarda su configuración, por
+ejemplo en una tabla, y sustituye el <code>println</code> por su registro de auditoría. Si el fichero contenía la
+taxonomía <code>next</code> del Ejemplo 10.4 y la aplicación arranca con la estándar, el arranque se detiene con el
+mismo mensaje del Ejemplo 10.6 y no sobrescribe la taxonomía aplicada.</p>
+
+<h3 id="migrar-claves">Migrar las claves obsoletas</h3>
+<p>Una clave que se declaró obsoleta desde el último arranque aparece como un cambio con el aspecto
+<code>DEPRECATION</code>. Los valores guardados que la contienen se pueden migrar a la categoría a la que ahora se
+resuelve:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.10. Encontrar las claves guardadas que hay que migrar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.TermChange.Aspect;
+import io.github.devbpm.linneo.TermChange.Hierarchy;
+
+for (TermChange change : diff.changes()) {
+    if (change.hierarchy() == Hierarchy.DATA_CATEGORY &amp;&amp; change.aspects().contains(Aspect.DEPRECATION)
+            &amp;&amp; change.after().info().isDeprecated()) {
+        String current = taxonomy.resolveCategory(change.key()).key();
+        if (!current.equals(change.key())) {
+            System.out.println("migrate " + change.key() + " -&gt; " + current);
+        }
+    }
+}
+</code></pre>
+</figure>
+
+<p>Con el paso de <code>v1</code> a <code>v2</code> del Ejemplo 10.7 como <code>diff</code>, y <code>v2</code> como
+<code>taxonomy</code>, imprime:</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">migrate user.education.mark -&gt; user.education.grade
+</code></pre>
+
+<p><code>change.after()</code> nunca es nulo aquí, porque un cambio <code>DEPRECATION</code> solo existe para un
+término que está en las dos versiones. Y migrar nunca baja la protección de los datos: el constructor garantiza que la
+sustituta de una categoría obsoleta protege al menos lo mismo y conserva sus rasgos (capítulo 3).</p>
+
+<h3 id="campos-afectados">Los campos a los que llega un cambio</h3>
+<p>La comparación habla de términos; la aplicación necesita saber qué campos de su modelo toca cada cambio, incluidos
+los que declaran una clave obsoleta cuya sustituta cambió. Esa pregunta la responde
+<code>DataInventory.affectedBy(TaxonomyDiff)</code>, que devuelve los campos de cada categoría modificada. Está
+explicado con ejemplos en la sección <a href="08-inventario.html#cambios-de-la-taxonomia">Los cambios de la
+taxonomía</a> del capítulo 8. Con ella, la entrada de auditoría es una por término modificado con la lista de sus
+campos, en lugar de una por campo.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Conserva cada versión de la taxonomía aplicada con la fecha en que empezó a aplicarse, no solo la última. Con el
+texto de la taxonomía de una fecha y el inventario de ese momento, se puede reproducir qué protección tenía un campo
+ese día, que es justo lo que se pregunta al revisar un incidente o una auditoría. El registro de actividades usa la
+misma idea: el <a href="12-registro.html">capítulo 12</a> reconstruye el registro aprobado con la taxonomía aplicada y
+lo compara con el actual.</p>
+</div>
+
+<h2 id="comparar-con-la-publicada">El test que compara con la versión publicada</h2>
+<p>Linneo se aplica a sí mismo estas reglas en su compilación, y el mecanismo es un patrón que tu aplicación puede
+copiar.</p>
+
+<h3 id="como-lo-hace-linneo">Cómo lo hace Linneo</h3>
+<p>Cada versión publicada de Linneo conserva una copia de la taxonomía que distribuye, la estándar con las cinco
+extensiones incluidas, escrita con <code>toTsv()</code> en
+<code>src/test/resources/io/github/devbpm/linneo/released/&lt;versión&gt;.tsv</code>. El test
+<code>ReleasedTaxonomyTest</code>, que recibe la versión del proyecto de Maven en la propiedad del sistema
+<code>linneo.version</code>, hace dos comprobaciones:</p>
+<ol>
+<li>Compara la taxonomía actual con la copia de la versión publicada más alta que no supera la del proyecto, de modo
+que una rama de mantenimiento se compara con su propia línea. Falla si <code>requiredBump()</code> exige un salto
+mayor del que permite el cambio de versión, que es el del primer número que difiere: por ejemplo, un término eliminado
+en una versión menor o de parche.</li>
+<li>Falla si una clave que cualquier versión anterior eliminó vuelve a aparecer, porque una clave eliminada nunca se
+reutiliza.</li>
+</ol>
+<p>Mientras no hay ninguna copia registrada, como ocurre antes de la primera versión publicada, las dos comprobaciones
+se omiten. Después de publicar una versión, se registra su taxonomía con la clase de test
+<code>ReleasedTaxonomy</code> y se confirma el fichero:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-text">./mvnw -q test-compile
+java -cp "target/classes:target/test-classes" io.github.devbpm.linneo.ReleasedTaxonomy 0.1.0
+</code></pre>
+
+<p>En Windows, el separador de la ruta de clases es <code>;</code>.</p>
+
+<h3 id="el-patron-en-tu-aplicacion">El mismo patrón en tu aplicación</h3>
+<p>Tu aplicación no publica la taxonomía, pero sí guarda y publica claves: en su base de datos, en el catálogo, en las
+especificaciones de su API. Un test que compare la
+taxonomía que carga con la de su última versión publicada detecta en la integración continua, antes del despliegue,
+cualquier actualización de Linneo o de una extensión que rompa esas claves.</p>
+<ol>
+<li>Al publicar una versión de la aplicación, guarda <code>Taxonomy.load().toTsv()</code> en un fichero de los
+recursos de test, por ejemplo <code>src/test/resources/taxonomy/released.tsv</code>, y confírmalo en el control de
+versiones.</li>
+<li>Añade un test que lea ese fichero con <code>fromTsv</code>, lo compare con <code>Taxonomy.load()</code> y falle
+ante cualquier cambio incompatible.</li>
+<li>Cuando el test falle, decide con el DPD: o la actualización se pospone, o la versión siguiente de la aplicación es
+mayor y se planifica la migración de lo guardado.</li>
+</ol>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 10.11. Un test de compatibilidad de la taxonomía para la aplicación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">class TaxonomyCompatibilityTest {
+
+    private static final Path RELEASED = Path.of("src/test/resources/taxonomy/released.tsv");
+
+    @Test
+    void noBreakingChangeSinceTheLastRelease() throws IOException {
+        Taxonomy released = Taxonomy.fromTsv(Files.readString(RELEASED));
+        TaxonomyDiff diff = TaxonomyDiff.between(released, Taxonomy.load());
+        assertEquals(List.of(), diff.breakingChanges(),
+                () -&gt; "The taxonomy needs a " + diff.requiredBump() + " version");
+    }
+}
+</code></pre>
+</figure>
+
+<p>Si la copia publicada tenía una categoría <code>user.education.thesis</code> que la taxonomía actual ya no tiene,
+el test falla con este mensaje:</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">The taxonomy needs a MAJOR version ==&gt; expected: &lt;[]&gt; but was: &lt;[DATA_CATEGORY 'user.education.thesis': [REMOVED]]&gt;
+</code></pre>
+
+<p>El test es deliberadamente más simple que el de Linneo: no permite cambios incompatibles en ninguna versión. Si tu
+aplicación sigue el versionado semántico de forma estricta, puedes compararlo, como hace Linneo, con el salto que
+permite su número de versión. Y si además quieres impedir que vuelva una clave eliminada, conserva una copia por
+versión en lugar de una sola.</p>
+
+<h2 id="cambio-de-fideslang">Qué hacer cuando cambia la versión de fideslang</h2>
+<p>La taxonomía estándar incluye la de fideslang, de la versión que fija
+<code>StandardTaxonomy.FIDESLANG_VERSION</code>. Pasar a otra versión de fideslang es una tarea del proyecto Linneo,
+no de las aplicaciones, pero conviene saber qué implica para entender lo que llega con una actualización.</p>
+
+<h3 id="en-el-proyecto-linneo">En el proyecto Linneo</h3>
+<ol class="flujo">
+<li><span class="flujo-titulo">Regenerar</span> <code>python -I tools/fideslang/update.py &lt;versión&gt;</code>
+descarga esa versión de PyPI, la comprueba con el resumen SHA-256 que publica PyPI, lee las definiciones de términos
+sin ejecutarlas y vuelve a escribir los tres <code>fideslang-*.tsv</code> y las clases <code>Categories</code>,
+<code>DataUses</code> y <code>DataSubjects</code>.</li>
+<li><span class="flujo-titulo">Actualizar las referencias</span> Cambiar
+<code>StandardTaxonomy.FIDESLANG_VERSION</code>, el fichero <code>NOTICE</code> y los recuentos de términos que
+comprueba <code>StandardTaxonomyTest</code>.</li>
+<li><span class="flujo-titulo">Decidir los rasgos</span> <code>TraitCoverageTest</code> falla con cada término nuevo
+sin rasgos hasta que alguien le da rasgos en <code>linneo-traits.tsv</code> o lo anota como revisado.</li>
+<li><span class="flujo-titulo">Revisar la protección</span> Los términos nuevos heredan la protección de su madre; si
+alguno necesita más, se añade a <code>linneo-category-policy.tsv</code>.</li>
+<li><span class="flujo-titulo">Resolver choques</span> Si fideslang añade una clave que ya tenía una extensión
+incluida, la compilación falla por clave duplicada: el término se mueve a la taxonomía estándar y se quita de la
+extensión.</li>
+<li><span class="flujo-titulo">Graduar</span> <code>ReleasedTaxonomyTest</code> compara el resultado con la última
+versión publicada y exige el salto de versión que corresponda.</li>
+</ol>
+
+<h3 id="en-tu-aplicacion">En tu aplicación</h3>
+<p>Para una aplicación, una versión nueva de fideslang es un cambio más de la taxonomía y se trata con las
+herramientas de este capítulo: el arranque compara la taxonomía aplicada con la actual, el test de compatibilidad lo
+detecta en la integración continua y <code>affectedBy</code> dice qué campos toca. fideslang también declara términos
+obsoletos con su sustituto, como hizo con <code>personalize.profiling</code> en su versión 2.1.1, y esos cambios
+llegan como cualquier otra obsolescencia. Revisa en especial los aspectos <code>DESCRIPTION</code>: una descripción
+reescrita en fideslang es la única señal de que el alcance de un término puede haber cambiado.</p>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Guardar solo la huella de la taxonomía aplicada.</dt>
+<dd>La huella dice que algo cambió, pero no permite saber qué. Guarda el texto completo de <code>toTsv()</code>, y la
+huella si quieres un atajo para los arranques sin cambios.</dd>
+<dt>Guardar las claves sin la taxonomía que las resolvió.</dt>
+<dd>Una clave guardada sola no dice qué protección tenía cuando se guardó. Conserva la taxonomía aplicada, y mejor
+cada versión con su fecha.</dd>
+<dt>Construir el texto de una taxonomía a mano.</dt>
+<dd>El formato es determinista y tiene reglas de escape. Escríbelo siempre con <code>toTsv()</code>;
+<code>fromTsv</code> rechazará un texto que no cumpla las reglas del constructor.</dd>
+<dt>Ignorar los cambios <code>MIXED</code> porque «algo sube».</dt>
+<dd>Un cambio mixto baja alguna faceta. <code>weakens()</code> es cierto y el salto es mayor: revísalo como un
+debilitamiento.</dd>
+<dt>Tratar <code>DESCRIPTION</code> como cosmético.</dt>
+<dd>Es un cambio de parche para el versionado, pero una descripción nueva puede cambiar lo que cubre la clave. Alguien
+debe leerla.</dd>
+<dt>Sobrescribir la taxonomía aplicada antes de aplicar los cambios.</dt>
+<dd>Si el arranque falla a mitad, el siguiente ya no ve qué cambió. Guarda la nueva taxonomía en la misma transacción
+que la migración de las claves.</dd>
+<dt>Invertir los argumentos de <code>between</code>.</dt>
+<dd>El primero es la versión anterior y el segundo la posterior. Al revés, un término añadido parece eliminado y un
+endurecimiento parece un debilitamiento.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li><code>toTsv()</code> escribe la taxonomía como texto determinista y versionado con la protección efectiva;
+<code>fromTsv()</code> lo lee pasando por el constructor, así que un texto inválido se rechaza.</li>
+<li><code>fingerprint()</code> es el SHA-256 del texto: dice si algo cambió. La igualdad es por valor.</li>
+<li><code>TaxonomyDiff.between(antes, después)</code> da un <code>TermChange</code> por término modificado, con sus
+aspectos, la dirección de su protección y el salto de versión que exige.</li>
+<li>Eliminar, debilitar o cambiar una sustituta es mayor; añadir, endurecer o declarar obsoleto es menor; lo
+descriptivo es parche. Los rasgos cuentan: añadir es menor y quitar, mayor.</li>
+<li>Una aplicación guarda la taxonomía aplicada, la compara en cada arranque, migra las claves obsoletas y busca los
+campos afectados con <code>affectedBy</code>.</li>
+<li>Un test que compare la taxonomía con la copia de la última versión publicada, como hace
+<code>ReleasedTaxonomyTest</code> en Linneo, detecta las roturas antes del despliegue.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Graduar cambios.</strong> Indica el salto de versión que exige cada cambio entre dos versiones de una
+extensión propia de la universidad, distinta de la que incluye Linneo: (a) se añade <code>user.education.thesis</code>; (b) se cambia el nombre de una categoría
+de «Thesis» a «Doctoral Thesis»; (c) la categoría propia <code>user.education.thesis</code>, que declaraba
+confidencialidad <code>HIGH</code>, deja de declararla y hereda <code>MEDIUM</code> de <code>user.education</code>;
+(d) el uso <code>education.assessment</code> gana el rasgo <code>EVALUATION</code>; (e) una categoría obsoleta cuya
+sustituta era <code>user.education.grade</code> pasa a tener como sustituta
+<code>user.education.course_history</code>.</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>(a) Menor: <code>ADDED</code>. (b) Parche: <code>NAME</code>. (c) Mayor: <code>PROTECTION</code> con dirección
+<code>LOOSENED</code>: quien guardó datos con esa clave los guardó con más protección de la que ahora tendrían. (d)
+Menor: <code>TRAITS</code> conservando los anteriores. (e) Mayor: <code>REPLACEMENT</code> en un término que ya tenía
+sustituta.</p>
+</details>
+</li>
+<li>
+<p><strong>Predice la comparación.</strong> Sin ejecutarlo, escribe lo que imprime este código y después
+compruébalo:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy before = Taxonomy.builder().withStandard()
+        .category("user.education.thesis", "Thesis", "Theses of the subject.")
+        .build();
+Taxonomy after = Taxonomy.builder().withStandard()
+        .category("user.education.thesis", "Doctoral Thesis", "Theses of the subject.",
+                c -&gt; c.confidentiality(Confidentiality.HIGH))
+        .build();
+TaxonomyDiff diff = TaxonomyDiff.between(before, after);
+System.out.println(diff);
+System.out.println(diff.changes());
+</code></pre>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<pre class="codigo salida" tabindex="0"><code class="language-text">TaxonomyDiff[1 change(s), MINOR]
+[DATA_CATEGORY 'user.education.thesis': [PROTECTION, NAME] TIGHTENED]
+</code></pre>
+<p>Un solo término cambia, con dos aspectos. El nombre exige un parche y el endurecimiento un salto menor; el salto
+del cambio es el más estricto de los dos.</p>
+</details>
+</li>
+<li>
+<p><strong>Atajo con la huella.</strong> Modifica el método <code>start</code> del Ejemplo 10.9 para que guarde
+también la huella en un segundo fichero y no lea ni compare la taxonomía aplicada cuando la huella guardada coincide
+con la actual.</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">static Taxonomy start(Path appliedFile, Path fingerprintFile) throws IOException {
+    Taxonomy taxonomy = Taxonomy.load();
+    boolean unchanged = Files.exists(fingerprintFile)
+            &amp;&amp; Files.readString(fingerprintFile).strip().equals(taxonomy.fingerprint());
+    if (unchanged) {
+        return taxonomy;
+    }
+    if (Files.exists(appliedFile)) {
+        Taxonomy applied = Taxonomy.fromTsv(Files.readString(appliedFile));
+        TaxonomyDiff.between(applied, taxonomy).requireCompatible();
+    }
+    Files.writeString(appliedFile, taxonomy.toTsv());
+    Files.writeString(fingerprintFile, taxonomy.fingerprint());
+    return taxonomy;
+}
+</code></pre>
+<p>Dos taxonomías iguales tienen la misma huella, así que un arranque sin cambios termina tras calcularla. El texto
+completo se sigue guardando, porque es lo único que permite saber qué cambió la próxima vez.</p>
+</details>
+</li>
+<li>
+<p><strong>¿Por qué pasa por el constructor?</strong> Un compañero propone leer el texto guardado con un analizador
+propio, más rápido, que cree las <code>DataCategory</code> directamente. Explica qué se perdería.</p>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<p><code>fromTsv</code> pasa los términos por el constructor para que el texto cumpla las mismas reglas que cualquier
+taxonomía: que cada madre exista, que ninguna hija quede con menos protección que su madre, que las naturalezas se
+puedan conciliar, que las sustitutas existan, no formen ciclos, protejan al menos lo mismo y conserven los rasgos. Un
+analizador propio aceptaría un texto dañado o manipulado y la aplicación compararía y migraría contra una taxonomía
+imposible. Además, <code>Taxonomy</code> no tiene constructor público: solo <code>build()</code> crea una taxonomía
+validada.</p>
+</details>
+</li>
+<li>
+<p><strong>El test de tu aplicación.</strong> El test del Ejemplo 10.11 falla tras actualizar Linneo y el mensaje dice
+<code>[PROTECTION] LOOSENED</code> en una categoría que tu aplicación usa. ¿Qué haces?</p>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<p>No actualices el fichero de la copia publicada para que el test pase. Un debilitamiento significa que datos que ya
+guardas recibirían menos protección. Revisa el cambio con el DPD: si la organización necesita mantener el nivel
+anterior, refina la categoría con una extensión propia (capítulo 9), que solo puede endurecer, y el test volverá a
+pasar; si se acepta el cambio, es una versión mayor de la aplicación y la copia publicada se actualiza al
+publicarla.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué guarda <code>toTsv()</code> de cada categoría?</p>
+<ol>
+<li>Solo los niveles que declara.</li>
+<li>Su protección efectiva, declarada o heredada, con su ciclo de vida, atributos y rasgos.</li>
+<li>Solo la clave y el nombre.</li>
+<li>Una referencia a la versión de fideslang.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La b. El texto guarda la protección efectiva, de modo que reproduce lo que se aplicó aunque la política cambie
+después. La a perdería lo heredado, la c no permitiría comparar protecciones y la d no forma parte del formato.</p>
+</details>
+</li>
+<li>
+<p>Dos taxonomías tienen la misma huella. ¿Qué puedes concluir?</p>
+<ol>
+<li>Que tienen los mismos términos: la comparación entre ellas no da ningún cambio.</li>
+<li>Que tienen las mismas claves, aunque las descripciones pueden diferir.</li>
+<li>Que son la misma instancia.</li>
+<li>Nada: la huella solo identifica la versión de Linneo.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La a. La huella es el SHA-256 de un texto determinista que incluye todo, también las descripciones, por eso la b es
+falsa. La c confunde igualdad por valor con identidad: <code>fromTsv</code> devuelve otro objeto igual. La d es falsa:
+la huella depende de los términos, no del número de versión.</p>
+</details>
+</li>
+<li>
+<p>Una versión nueva declara obsoleta una categoría y le da su primera sustituta. ¿Qué salto exige?</p>
+<ol>
+<li>Parche.</li>
+<li>Menor.</li>
+<li>Mayor, porque la clave deja de usarse.</li>
+<li>Ninguno, porque la clave sigue existiendo.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La b. <code>DEPRECATION</code> y un primer <code>REPLACEMENT</code> son compatibles: las claves guardadas se
+resuelven a una sustituta que protege al menos lo mismo. Sería mayor si cambiara una sustituta que ya existía. La d
+olvida que el término sí cambió.</p>
+</details>
+</li>
+<li>
+<p>¿Qué devuelve <code>direction()</code> en el <code>TermChange</code> de un uso de datos que ha ganado un rasgo?</p>
+<ol>
+<li><code>TIGHTENED</code>.</li>
+<li><code>MIXED</code>.</li>
+<li><code>SAME</code>.</li>
+<li><code>null</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La c. La dirección describe la protección de una categoría de datos; para usos y sujetos, y para términos añadidos
+o eliminados, es siempre <code>SAME</code>. El rasgo nuevo aparece como el aspecto <code>TRAITS</code>, con salto
+menor. Nunca es <code>null</code>: el constructor de <code>TermChange</code> lo exige.</p>
+</details>
+</li>
+<li>
+<p>Un texto guardado tiene una fila <code>category</code> con la clave <code>data.child</code>, pero ninguna fila con
+la clave <code>data</code>. ¿Qué hace <code>Taxonomy.fromTsv</code>?</p>
+<ol>
+<li>Crea la madre <code>data</code> vacía.</li>
+<li>Lanza <code>TaxonomyException</code>, porque los términos pasan por el constructor y la madre no existe.</li>
+<li>Ignora la fila huérfana.</li>
+<li>Convierte <code>data.child</code> en una raíz.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La b. El mensaje es <code>The parent 'data' of data category 'data.child' does not exist</code>. El texto no se
+carga sin más: se reconstruye con el constructor, que aplica las mismas reglas que a cualquier taxonomía. La a, la c y
+la d inventarían o perderían datos en silencio, lo contrario del fallo seguro.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="../../reference/taxonomy-diff.html">Referencia: diferencias entre taxonomías</a>, con
+<code>TaxonomyDiff</code>, <code>TermChange</code> y las reglas de versionado.</li>
+<li><a href="../../reference/taxonomy.html">Referencia: taxonomía</a>, con el formato del texto de
+<code>toTsv</code>.</li>
+<li><a href="08-inventario.html#cambios-de-la-taxonomia">Capítulo 8. Los cambios de la taxonomía</a>:
+<code>DataInventory.affectedBy</code>.</li>
+<li><a href="09-extensiones.html">Capítulo 9. Ampliar la taxonomía</a>: mantener una extensión compatible.</li>
+<li><a href="12-registro.html">Capítulo 12. El registro de actividades</a>: comparar el registro aprobado con el
+actual.</li>
+<li><a href="18-ciclo-de-vida.html">Capítulo 18. Linneo en el ciclo de vida</a>: la integración continua.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="09-extensiones.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 9. Ampliar la taxonomía</a></li>
+<li><a href="11-actividades.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 11. Actividades de tratamiento</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

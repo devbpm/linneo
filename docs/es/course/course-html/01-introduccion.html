@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - README.md
+  - pom.xml
+  - src/main/java/module-info.java
+  - src/main/java/io/github/devbpm/linneo/package-info.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 1. Qué es Linneo · Curso de Linneo</title>
+<meta name="description" content="Qué problema resuelve Linneo, qué principios lo guían, cómo se organizan sus paquetes y un primer recorrido completo, de la anotación al registro.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html" aria-current="page"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 1. Qué es Linneo</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 1</span> Qué es Linneo</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>45 minutos</dd></div>
+<div><dt>Parte I:</dt><dd>Fundamentos</dd></div>
+</dl>
+<p class="entradilla">Linneo es una biblioteca Java que lleva una taxonomía de clasificación de datos al código
+fuente. Cada campo del modelo declara qué contiene, la compilación comprueba que esa declaración existe y es coherente,
+y el resultado alimenta el inventario de datos, las decisiones de enmascaramiento, el registro de actividades de
+tratamiento
+y los catálogos de datos. Este capítulo presenta el problema, los principios de diseño, la organización de la
+biblioteca y un primer recorrido completo.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#el-problema">El problema que resuelve</a></li>
+<li><a href="#que-es-linneo">Qué es Linneo y qué no es</a></li>
+<li><a href="#principios">Principios de diseño</a></li>
+<li><a href="#arquitectura">Arquitectura: el módulo y sus paquetes</a></li>
+<li><a href="#flujo-de-trabajo">El flujo de trabajo</a></li>
+<li><a href="#roles">Responsabilidades: desarrollo y protección de datos</a></li>
+<li><a href="#instalacion">Instalación</a></li>
+<li><a href="#primer-recorrido">Un primer recorrido completo</a></li>
+<li><a href="#organizacion-del-curso">Cómo está organizado este curso</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>explicar qué problema resuelve Linneo y qué queda fuera de su alcance;</li>
+<li>enumerar los principios de diseño de la biblioteca y reconocer cómo se manifiestan en su comportamiento;</li>
+<li>situar cada paquete del módulo <code>io.github.devbpm.linneo</code> en el flujo de trabajo;</li>
+<li>añadir Linneo a un proyecto Maven o Gradle, con o sin módulos de Java;</li>
+<li>recorrer de principio a fin el ciclo básico: anotar, verificar, usar la clasificación y documentar el
+tratamiento;</li>
+<li>distinguir las responsabilidades del equipo de desarrollo y del delegado de protección de datos.</li>
+</ul>
+
+<h2 id="el-problema">El problema que resuelve</h2>
+<p>Toda organización que trata datos personales necesita saber, campo a campo, qué contiene su modelo de datos. Esa
+información responde a preguntas que surgen a diario:</p>
+<ul>
+<li>¿Qué tablas contienen datos de salud? Lo pregunta una evaluación de impacto o la notificación de una brecha.</li>
+<li>¿Puede este conjunto de datos salir hacia el equipo de analítica? Es una cuestión de limitación de la finalidad y
+de minimización.</li>
+<li>¿Qué debe decir el registro de actividades de tratamiento sobre el proceso de matrícula? Lo exige el artículo 30
+del <abbr title="Reglamento General de Protección de Datos">RGPD</abbr>.</li>
+<li>¿Qué columnas hay que cifrar, enmascarar en los logs o excluir de la copia que usa el entorno de pruebas? Son las
+medidas de seguridad del artículo 32 del RGPD.</li>
+</ul>
+<p>En muchas organizaciones la respuesta vive en una hoja de cálculo mantenida a mano. La hoja queda desfasada en
+cuanto alguien añade una columna, y nadie se entera hasta que una auditoría, una brecha o una solicitud de un
+interesado obliga a reconstruirla. El modelo de datos y su clasificación evolucionan por caminos separados.</p>
+<p>Linneo coloca la respuesta junto al campo que describe, en el código fuente, y la somete a la misma disciplina que
+el resto del código: si un campo nuevo no declara qué contiene, la compilación falla.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.1. Un campo que declara su contenido</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(USER_HEALTH_AND_MEDICAL_DISABILITY)
+private Integer disabilityDegree;
+</code></pre>
+</figure>
+
+<p>La anotación del Ejemplo 1.1 dice qué contiene el campo: el grado de discapacidad de una persona. Todo lo demás se
+deriva de esa categoría: que es un dato personal de categoría especial (artículo 9 del RGPD), que su confidencialidad
+y su integridad son altas y que no puede aparecer en un log.</p>
+
+<h2 id="que-es-linneo">Qué es Linneo y qué no es</h2>
+<p>Linneo es una biblioteca pequeña, sin dependencias en tiempo de ejecución, para Java 21 o posterior. Se distribuye
+como un único <abbr title="Java ARchive">JAR</abbr> que es a la vez el módulo
+<abbr title="Java Platform Module System">JPMS</abbr> con nombre <code>io.github.devbpm.linneo</code>. Sus piezas
+principales son:</p>
+<dl class="definiciones">
+<dt>Una taxonomía de clasificación</dt>
+<dd>La taxonomía por defecto de fideslang, un vocabulario público de clasificación de datos, completada con los
+términos propios de Linneo: datos no personales, datos educativos y todas las categorías del artículo 9 del RGPD.
+Cada categoría lleva la protección que exige. Se estudia en los capítulos <a href="02-proteccion.html">2</a> y
+<a href="03-taxonomia.html">3</a>.</dd>
+<dt>Anotaciones para el modelo</dt>
+<dd><code>@Category</code>, <code>@DefaultCategory</code>, <code>@CategoryByRow</code>, <code>@DerivedFrom</code>,
+<code>@Composite</code> y <code>@Exempt</code>, con constantes de compilación para cada clave, de modo que una errata
+no compila. Capítulos <a href="04-anotaciones.html">4</a> y <a href="05-estructuras.html">5</a>.</dd>
+<dt>Un clasificador para los tests</dt>
+<dd><code>Classifier</code> lee las anotaciones por reflexión y hace fallar la compilación cuando un campo queda sin
+clasificar, una clave no existe o un nivel se rebaja. Capítulo <a href="06-verificacion.html">6</a>.</dd>
+<dt>Resultados utilizables</dt>
+<dd>La clasificación de cada campo, decisiones de visibilidad para logs y pantallas (<code>DisclosurePolicy</code>) y
+un inventario de datos que se compara con las copias guardadas. Capítulos <a href="07-uso.html">7</a> y
+<a href="08-inventario.html">8</a>.</dd>
+<dt>Herramientas de cumplimiento</dt>
+<dd>Actividades de tratamiento con sus bases jurídicas, el registro del artículo 30, el cribado de la evaluación de
+impacto, la valoración de brechas, los derechos de los interesados y la categoría del sistema según el
+<abbr title="Esquema Nacional de Seguridad">ENS</abbr>. Capítulos <a href="11-actividades.html">11</a> a
+<a href="15-ens.html">15</a>.</dd>
+<dt>Exportadores</dt>
+<dd>Reglas de enmascaramiento para PostgreSQL Anonymizer, la extensión <code>x-linneo</code> de OpenAPI, el esquema
+de un contrato de datos y la publicación en OpenMetadata, DataHub y Apache Atlas. Capítulos
+<a href="16-exportadores.html">16</a> y <a href="17-catalogos.html">17</a>.</dd>
+</dl>
+
+<p>Conviene precisar también lo que Linneo no es, porque de ello dependen las expectativas correctas:</p>
+<ul>
+<li><strong>No es un escáner de datos.</strong> Nunca lee el valor de un campo ni se conecta a una base de datos.
+Trabaja con lo que el código declara. No descubre datos personales escondidos en un texto libre; obliga a declarar
+qué puede contener ese texto.</li>
+<li><strong>No persiste nada.</strong> Calcula y compara. Guardar el inventario, enviar las etiquetas al catálogo o
+archivar el registro firmado corresponde a la aplicación.</li>
+<li><strong>No hace llamadas de red.</strong> Los exportadores devuelven texto o cuerpos
+<abbr title="JavaScript Object Notation">JSON</abbr>; la aplicación los envía con el cliente que ya utiliza.</li>
+<li><strong>No es asesoramiento jurídico ni garantiza el cumplimiento.</strong> Es un clasificador y un conjunto de
+herramientas de ayuda. Sus reglas jurídicas son fijas y citan su fuente, pero no pueden abarcar todo el escenario
+legal de una organización. El criterio final corresponde al responsable del tratamiento y a su delegado de
+protección de datos.</li>
+</ul>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Linneo ayuda a demostrar el cumplimiento y a no olvidar nada: la clasificación está en el código, se verifica en
+cada compilación y deja un rastro en el control de versiones. Pero lo que el código no puede
+ver, como la base jurídica de un tratamiento o el plazo de conservación, lo declaran las personas responsables. La
+biblioteca no lo adivina.</p>
+</div>
+
+<h2 id="principios">Principios de diseño</h2>
+<p>Siete principios explican casi todas las decisiones de la biblioteca. Conocerlos de antemano ayuda a anticipar su
+comportamiento.</p>
+<dl class="definiciones">
+<dt>Fallo seguro (<span lang="en">fail closed</span>)</dt>
+<dd>Lo que no está clasificado, o está clasificado de forma dudosa, es un error, nunca un valor por defecto
+silencioso. Un campo sin anotación, una clave desconocida, un nivel rebajado o dos anotaciones contradictorias
+detienen la compilación. El valor por defecto de una clase tampoco se aplica a un campo cuyo contenido el
+clasificador no puede ver, como uno de tipo <code>Object</code>, ni a una referencia a un registro con datos
+personales.</dd>
+<dt>El código fija el suelo de la protección</dt>
+<dd>Cada faceta declarada es un mínimo. Una anotación puede subir la confidencialidad de un campo, nunca bajarla. Una
+categoría hija puede endurecer la de su padre, nunca relajarla. Una extensión de la taxonomía o la gobernanza que
+mantiene el delegado de protección de datos pueden elevar la protección, pero no reducirla por debajo de lo que el
+código declara.</dd>
+<dt>Un único orden de protección</dt>
+<dd><code>Protection</code> compara naturalezas jurídicas y niveles con un orden parcial: una categoría especial y
+un dato penal no son comparables entre sí. Toda la biblioteca usa esa comparación, de modo que un valor derivado, un
+compuesto guardado entero o una política de visibilidad nunca protegen menos que su origen.</dd>
+<dt>Resultados deterministas</dt>
+<dd>El mismo modelo y la misma taxonomía producen siempre el mismo resultado, en el mismo orden, sea cual sea el
+orden de las clases que se le pasen. Por eso las salidas pueden guardarse, compararse y revisarse en una solicitud
+de cambios.</dd>
+<dt>Calcular y comparar, nunca persistir</dt>
+<dd>Linneo calcula lo que el código declara y en qué se diferencia de una copia guardada. Leer, escribir, bloquear y
+auditar esa copia son tareas de la aplicación.</dd>
+<dt>Sin dependencias e inmutable</dt>
+<dd>La taxonomía viaja dentro del JAR como recursos de texto y se lee con el propio
+<abbr title="Java Development Kit">JDK</abbr>. <code>Taxonomy</code>,
+<code>Classifier</code> y los catálogos son inmutables y pueden compartirse entre hilos.</dd>
+<dt>Una ayuda proporcionada</dt>
+<dd>Las reglas cierran los huecos en los que podría caer un modelo bien escrito, sin exigir anotaciones para casos
+que solo alcanza un mal uso de la biblioteca. Se confía en el buen criterio de los equipos de desarrollo y del
+delegado de protección de datos.</dd>
+</dl>
+
+<h2 id="arquitectura">Arquitectura: el módulo y sus paquetes</h2>
+<p>Los paquetes se organizan por función y por destinatario, no por dimensión de la taxonomía: las categorías, los
+usos y los sujetos de datos comparten el mismo modelo de términos. El módulo exporta dieciséis paquetes y mantiene uno
+interno.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-1-1">
+<table>
+<caption id="tabla-1-1">Tabla 1.1. Los paquetes del módulo y el capítulo que los trata</caption>
+<thead>
+<tr><th scope="col">Paquete</th><th scope="col">Contenido</th><th scope="col">Capítulos</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>io.github.devbpm.linneo</code></th><td>La taxonomía (<code>Taxonomy</code>,
+<code>TaxonomyBuilder</code>, <code>TaxonomyExtension</code>), sus términos, los rasgos, los enumerados de protección
+y <code>Protection</code>, las diferencias entre versiones y las constantes de clave.</td><td>2, 3, 9 y 10</td></tr>
+<tr><th scope="row"><code>….annotation</code></th><td>Las seis anotaciones del modelo.</td><td>4 y 5</td></tr>
+<tr><th scope="row"><code>….classify</code></th><td><code>Classifier</code>, los resultados de la clasificación,
+las infracciones, <code>ModelClasses</code>, <code>DisclosurePolicy</code> y el inventario de datos.</td><td>6, 7 y
+8</td></tr>
+<tr><th scope="row"><code>….processing</code></th><td>Actividades de tratamiento, bases jurídicas, gobernanza,
+<code>ProcessingChecker</code>, el registro y sus diferencias, cribado de impacto, brechas y derechos.</td><td>11 a
+14</td></tr>
+<tr><th scope="row"><code>….ens</code></th><td><code>EnsCategorization</code>, la categoría del sistema según el
+ENS.</td><td>15</td></tr>
+<tr><th scope="row"><code>….export.postgresql</code>, <code>….export.openapi</code>,
+<code>….export.odcs</code></th><td>Reglas de enmascaramiento, extensión de OpenAPI y esquema de contrato de
+datos.</td><td>16</td></tr>
+<tr><th scope="row"><code>….catalog.openmetadata</code>, <code>….catalog.datahub</code>,
+<code>….catalog.atlas</code></th><td>La taxonomía y las etiquetas de cada columna para tres catálogos de
+datos.</td><td>17</td></tr>
+<tr><th scope="row"><code>….extension.university</code> y otras cuatro</th><td>Extensiones opcionales para
+universidades, finanzas, cadena de suministro, operaciones de proyecto y recursos humanos.</td><td>9</td></tr>
+<tr><th scope="row"><code>….internal</code> (no exportado)</th><td>La carga de la taxonomía estándar, el formato de
+texto y el escritor JSON mínimo.</td><td>No se usa directamente</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="flujo-de-trabajo">El flujo de trabajo</h2>
+<p>El uso de Linneo en un proyecto sigue siete pasos. No todos los proyectos necesitan todos: una aplicación sin
+catálogo de datos se detiene antes del último, por ejemplo.</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Elegir la taxonomía</span> La estándar sirve para empezar. Si el dominio lo requiere,
+se amplía con una extensión propia o con una de las incluidas.</li>
+<li><span class="flujo-titulo">Anotar el modelo</span> Cada campo, o cada clase sin datos personales, declara qué
+contiene.</li>
+<li><span class="flujo-titulo">Verificar en un test</span> <code>Classifier.verify</code> hace fallar la compilación
+ante cualquier campo sin clasificar o mal clasificado.</li>
+<li><span class="flujo-titulo">Usar la clasificación</span> La aplicación consulta la protección de cada campo para
+decidir qué mostrar, enmascarar u omitir.</li>
+<li><span class="flujo-titulo">Mantener el inventario</span> El inventario de datos del código se compara con la
+copia guardada para aplicar y revisar los cambios.</li>
+<li><span class="flujo-titulo">Declarar los tratamientos</span> Las actividades de tratamiento vinculan finalidades,
+interesados y datos con sus bases jurídicas y generan el registro del artículo 30.</li>
+<li><span class="flujo-titulo">Publicar</span> Los exportadores llevan la clasificación a la base de datos, a la
+<abbr title="interfaz de programación de aplicaciones">API</abbr>, a los contratos de datos y a los catálogos.</li>
+</ol>
+
+<h2 id="roles">Responsabilidades: desarrollo y protección de datos</h2>
+<p>Linneo separa con claridad lo que declara el código de lo que decide la función de protección de datos. Esa
+separación aparece en toda la biblioteca, y especialmente en las actividades de tratamiento, donde cada problema
+indica si está en el alcance (el código) o en la gobernanza (el delegado).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-1-2">
+<table>
+<caption id="tabla-1-2">Tabla 1.2. Quién declara qué</caption>
+<thead>
+<tr><th scope="col">Equipo de desarrollo</th><th scope="col">Delegado de protección de datos</th></tr>
+</thead>
+<tbody>
+<tr><td>La categoría de cada campo y los niveles que el campo eleva.</td><td>Revisa la clasificación y, si hace
+falta, pide una extensión de la taxonomía más estricta.</td></tr>
+<tr><td>El alcance de cada actividad de tratamiento: finalidades, interesados, datos y factores de riesgo que el
+código conoce.</td><td>La gobernanza de cada actividad: bases jurídicas, referencia legal, conservación,
+destinatarios, transferencias, evaluación de impacto y factores de riesgo que el código no ve.</td></tr>
+<tr><td>Los tests que hacen fallar la compilación ante un error.</td><td>Los avisos del registro, que son puntos
+abiertos para completar.</td></tr>
+<tr><td>Aplicar los cambios del inventario a la copia guardada.</td><td>Revisar los cambios que rebajan la protección
+y aprobar el registro antes de firmarlo.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="instalacion">Instalación</h2>
+<p>Linneo requiere Java 21 o posterior y no arrastra ninguna dependencia. Añade el artefacto a tu proyecto.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.2. Dependencia de Maven</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.github.devbpm&lt;/groupId&gt;
+    &lt;artifactId&gt;linneo&lt;/artifactId&gt;
+    &lt;version&gt;0.1.0&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+</figure>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.3. Dependencia de Gradle (Kotlin)</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-kotlin">implementation("io.github.devbpm:linneo:0.1.0")
+</code></pre>
+</figure>
+
+<p>Si tu aplicación usa módulos de Java, declara la dependencia en su <code>module-info.java</code>. Si además
+registras una extensión propia de la taxonomía mediante <code>ServiceLoader</code>, el módulo la declara con
+<code>provides</code> (capítulo 9).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.4. Declaración en el módulo de la aplicación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">module edu.example.university {
+    requires io.github.devbpm.linneo;
+}
+</code></pre>
+</figure>
+
+<div class="recuadro recuadro-nota" role="note">
+<p class="recuadro-titulo">Nota</p>
+<p>Mientras la versión 0.1.0 no esté publicada en Maven Central, compila la biblioteca desde el código fuente con
+<code>./mvnw install</code> (<code>mvnw.cmd install</code> en Windows) y usa la versión
+<code>0.1.0-SNAPSHOT</code> de tu repositorio local.</p>
+</div>
+
+<p>Los tests del curso usan JUnit 5, pero cualquier marco de tests sirve: la verificación es una llamada que lanza una
+excepción.</p>
+
+<h2 id="primer-recorrido">Un primer recorrido completo</h2>
+<p>Esta sección recorre el ciclo básico con dos clases del ejemplo conductor del curso, el modelo de datos de una
+pequeña universidad. Cada paso se estudia a fondo en su capítulo; aquí solo se trata de ver el conjunto.</p>
+
+<h3 id="paso-anotar">Paso 1. Anotar el modelo</h3>
+<p>Una clase sin datos personales lo declara una sola vez, con el motivo. Una clase con datos personales declara cada
+campo.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.5. Dos clases anotadas</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = SYSTEM_CONFIGURATION, reason = "menu configuration")
+public class MenuGroup {
+    private String code;
+    private String label;
+}
+
+public class Student {
+
+    @Category(USER_UNIQUE_ID)
+    private Long id;
+
+    @Category(USER_NAME_FIRST)
+    private String firstName;
+
+    @Category(USER_NAME_LAST)
+    private String lastName;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    @Category(USER_DEMOGRAPHIC_DATE_OF_BIRTH)
+    private LocalDate dateOfBirth;
+
+    @Category(USER_HEALTH_AND_MEDICAL_DISABILITY)
+    private Integer disabilityDegree;
+
+    @Category(value = USER_UNIQUE_ID_PSEUDONYMOUS, identifiability = Identifiability.PSEUDONYMIZED)
+    private String analyticsId;
+
+    @Category(value = USER_CONTENT_PRIVATE, confidentiality = Confidentiality.HIGH)
+    private String counsellingNotes;
+}
+</code></pre>
+</figure>
+
+<p>Las constantes como <code>USER_CONTACT_EMAIL</code> vienen de
+<code>import static io.github.devbpm.linneo.Categories.*;</code>. Cuando una anotación declara algo más que la clave,
+Java exige escribir la clave como <code>value = …</code>, como en los dos últimos campos.</p>
+
+<h3 id="paso-verificar">Paso 2. Verificar en un test</h3>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.6. El test que protege la clasificación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">class DataClassificationTest {
+
+    @Test
+    void everyEntityIsClassified() {
+        new Classifier(Taxonomy.load()).verify(List.of(MenuGroup.class, Student.class));
+    }
+}
+</code></pre>
+</figure>
+
+<p>Si alguien añade a una clase un campo sin anotar, o usa una clave que no existe, <code>verify</code> lanza una
+<code>ClassificationException</code> que enumera todos los problemas a la vez. Esta es la salida real para una clase
+<code>StudentWithPhone</code> del paquete <code>edu.example.university</code> con un teléfono sin clasificar y una
+clave inventada:</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">2 classification error(s):
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.StudentWithPhone.mobilePhone: no @Category on the field and no @DefaultCategory on StudentWithPhone
+ - ERROR UNKNOWN_CATEGORY edu.example.university.StudentWithPhone.fax: unknown data category 'user.contact.fax'
+</code></pre>
+
+<p>En la práctica, la clave inventada ni siquiera llega al test: escrita con una constante,
+<code>USER_CONTACT_FAX</code> no existe y el código no compila. Los mensajes de la biblioteca están en inglés y se
+muestran tal cual en todo el curso.</p>
+
+<h3 id="paso-usar">Paso 3. Usar la clasificación</h3>
+<p>La clasificación es un dato que la aplicación puede consultar. El Ejemplo 1.7 obtiene la protección de un campo y
+decide qué campos pueden aparecer en un log.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.7. Consultar la clasificación de una clase</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Classifier classifier = new Classifier(Taxonomy.load());
+ClassClassification student = classifier.classify(Student.class);
+
+FieldClassification email = student.field("email").orElseThrow();
+Protection protection = email.protection();
+Map&lt;String, DisclosurePolicy.Treatment&gt; inLogs = DisclosurePolicy.forLogs().treatments(student);
+</code></pre>
+</figure>
+
+<p>Para el correo electrónico, <code>protection</code> vale:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+</code></pre>
+<p>La política predefinida para logs enmascara los datos personales y omite por completo el grado de discapacidad,
+que es una categoría especial:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">id = MASK
+firstName = MASK
+lastName = MASK
+email = MASK
+dateOfBirth = MASK
+disabilityDegree = OMIT
+analyticsId = MASK
+counsellingNotes = MASK
+</code></pre>
+
+<h3 id="paso-tratamiento">Paso 4. Declarar el tratamiento</h3>
+<p>Las anotaciones dicen qué contiene cada campo. Una actividad de tratamiento dice para qué se tratan los datos, de
+quién son y con qué base jurídica. <code>ProcessingChecker</code> la comprueba contra la clasificación y genera el
+registro del artículo 30.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 1.8. La actividad de matrícula y su registro</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity enrollment = ProcessingActivity.builder("enrollment", "Student enrollment")
+        .purposes(DataUses.EDUCATION_ENROLLMENT)
+        .dataSubjects(DataSubjects.STUDENT)
+        .entities(Student.class)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .legalReference("Ley Orgánica 2/2023, del Sistema Universitario")
+        .retention("Cinco años desde que el estudiante deja la universidad")
+        .build();
+
+ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(List.of(enrollment));
+String markdown = record.toMarkdown("Universidad de Ejemplo");
+</code></pre>
+</figure>
+
+<p>Como <code>Student</code> contiene un dato de salud, la actividad necesita una condición del artículo 9.2; sin
+ella, <code>verify</code> lanzaría una <code>ProcessingException</code>. Este es un extracto real del registro
+generado:</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-markdown">| Purposes (art. 30.1.b) | Enrollment (`education.enrollment`) |
+| Lawful basis (art. 6.1) | Art. 6.1.e: Public interest |
+| Special categories (art. 9.2) | Art. 9.2.g: Reasons of substantial public interest (with a basis in law) |
+| Retention (art. 30.1.f) | Cinco años desde que el estudiante deja la universidad |
+| Required protection (art. 30.1.g) | Confidentiality High, integrity High |
+| Impact assessment screening | Possible (1 criterion of WP248): 4. sensitive data: highly personal data user.content.private; special category data user.health_and_medical.disability |
+</code></pre>
+
+<p>Este primer recorrido declara la entidad <code>Student</code> entera para ver el conjunto. Una matrícula real no
+necesita el grado de discapacidad ni las notas de orientación: el <a href="11-actividades.html">capítulo 11</a> la
+declara solo con los datos que usa, y entonces no hace falta la condición del artículo 9.2.</p>
+
+<h3 id="paso-publicar">Paso 5. Publicar</h3>
+<p>Por último, la misma clasificación produce las etiquetas que el campo debe llevar en un catálogo de datos. Para
+OpenMetadata, el correo electrónico recibe estas etiquetas (salida real de
+<code>OpenMetadataCatalog.of(taxonomy).tagsOf(email)</code>):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">[DataCategory.user.contact.email, PersonalData.Personal, PII.NonSensitive, Confidentiality.Low, Integrity.Medium, Identifiability.Identified]
+</code></pre>
+
+<h2 id="organizacion-del-curso">Cómo está organizado este curso</h2>
+<p>El curso tiene dieciocho capítulos agrupados en cinco partes y dos anexos. La parte I presenta los fundamentos; la
+II enseña a clasificar el modelo y a sacar partido del resultado; la III, a gobernar la taxonomía; la IV cubre las
+herramientas de cumplimiento normativo; y la V, la integración con otras herramientas y la práctica diaria. El
+<a href="anexo-a-referencia-rapida.html">anexo A</a> resume la API y el <a href="anexo-b-glosario.html">anexo B</a>
+define los términos.</p>
+<p>Cada capítulo sigue la misma estructura: objetivos, contenido con ejemplos, errores frecuentes, resumen,
+ejercicios con solución y una autoevaluación. Las soluciones están en bloques desplegables: intenta resolver cada
+ejercicio antes de abrirlas.</p>
+
+<h3 id="convenciones">Convenciones</h3>
+<ul>
+<li>Los ejemplos suponen <code>import static io.github.devbpm.linneo.Categories.*;</code> (y lo mismo para
+<code>DataUses</code> y <code>DataSubjects</code>), de modo que las claves se leen como
+<code>USER_CONTACT_EMAIL</code>.</li>
+<li>Las anotaciones de <abbr title="Jakarta Persistence API">JPA</abbr> (<code>@Entity</code>, <code>@Id</code>,
+<code>@Column</code>) se omiten para centrarse en
+Linneo. Tus entidades reales las conservan; Linneo no las mira.</li>
+<li>Los identificadores de código, las claves de la taxonomía y los mensajes de la biblioteca no se traducen.</li>
+<li>Las salidas que se muestran son las salidas reales de la biblioteca para el código mostrado.</li>
+<li>El código Java de estas páginas se compila contra la biblioteca en cada compilación del proyecto, de modo que
+los ejemplos no pueden quedarse desfasados sin que se note.</li>
+</ul>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Esperar que Linneo descubra los datos personales</dt>
+<dd>Linneo no inspecciona valores. Si un campo de texto libre puede contener datos de salud, la anotación debe
+declararlo; el clasificador solo comprueba que la declaración existe y es coherente.</dd>
+<dt>Tratar el registro generado como un documento definitivo</dt>
+<dd>El registro refleja lo declarado. Sus avisos son puntos abiertos que el delegado de protección de datos debe
+completar y aprobar.</dd>
+<dt>Usar <code>Taxonomy.standard()</code> en una aplicación con extensiones</dt>
+<dd>La taxonomía estándar no incluye las extensiones registradas. Usa <code>Taxonomy.load()</code> para que los tests
+vean las mismas extensiones que la aplicación.</dd>
+<dt>Verificar solo algunas clases</dt>
+<dd>Una lista escrita a mano olvida la próxima clase que alguien añada. El capítulo 6 muestra cómo obtener las
+clases del propio modelo con <code>ModelClasses</code> o con el metamodelo de JPA.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Linneo coloca la clasificación de cada campo junto al código y la comprueba en la compilación, para que el modelo
+y su clasificación no se separen.</li>
+<li>Es un clasificador y un conjunto de herramientas de ayuda: no lee valores, no persiste, no hace llamadas de red y
+no sustituye el criterio jurídico.</li>
+<li>Sus principios son el fallo seguro, el suelo de protección fijado por el código, un único orden de protección,
+los resultados deterministas y calcular sin persistir.</li>
+<li>El código declara el alcance; el delegado de protección de datos, la gobernanza.</li>
+<li>El ciclo básico es: anotar, verificar, usar la clasificación, declarar los tratamientos y publicar.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p>Prepara el proyecto del curso: crea un proyecto Maven o Gradle con Java 21, añade Linneo y JUnit 5, crea el
+paquete <code>edu.example.university</code> con las clases <code>MenuGroup</code> y <code>Student</code> del
+Ejemplo 1.5 y el test del Ejemplo 1.6. Ejecuta el test.</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>El test pasa sin salida. Si falla con un error de compilación sobre las constantes, comprueba el
+<code>import static io.github.devbpm.linneo.Categories.*;</code>. Si usas módulos de Java, añade
+<code>requires io.github.devbpm.linneo;</code>. El clasificador solo enumera los campos y lee sus anotaciones; no lee
+valores ni usa <code>setAccessible</code>, así que el test no necesita una base de datos en marcha.</p>
+</details>
+</li>
+<li>
+<p>Añade a <code>Student</code> un campo <code>private String mobilePhone;</code> sin anotar y vuelve a ejecutar el
+test. ¿Qué tipo de infracción aparece? Corrígela con la constante adecuada.</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<p>Aparece <code>UNCLASSIFIED_FIELD</code>: el campo no tiene <code>@Category</code> y la clase no tiene
+<code>@DefaultCategory</code>. La corrección es <code>@Category(USER_CONTACT_PHONE_NUMBER)</code>. Fíjate en que la
+clase no admite un valor por defecto: <code>Student</code> contiene datos personales y una categoría personal no
+puede ser valor por defecto de clase (capítulo 4).</p>
+</details>
+</li>
+<li>
+<p>Clasifica cada afirmación como cierta o falsa: (a) Linneo detecta un número de tarjeta guardado por error en un
+campo de comentarios; (b) un exportador de catálogos envía las etiquetas al servidor; (c) el registro generado puede
+contener avisos que debe completar el delegado de protección de datos.</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<p>(a) Falsa: Linneo no lee valores; el campo de comentarios debe declarar lo que puede contener. (b) Falsa: los
+exportadores devuelven los cuerpos y la aplicación los envía. (c) Cierta: los huecos del registro son avisos, puntos
+abiertos para la gobernanza.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué ocurre si un campo nuevo no declara su categoría y su clase no tiene valor por defecto?</p>
+<ol>
+<li>El clasificador le asigna la categoría más protegida.</li>
+<li>El clasificador lo ignora y emite un aviso.</li>
+<li>La verificación falla con un error.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La c. Es el principio de fallo seguro: lo que no está clasificado es un error. Asignar una categoría por defecto o
+ignorar el campo ocultaría el problema.</p>
+</details>
+</li>
+<li>
+<p>¿Cuál de estas tareas corresponde a Linneo y no a la aplicación?</p>
+<ol>
+<li>Guardar el inventario de datos en una tabla.</li>
+<li>Calcular en qué se diferencia el inventario del código de la copia guardada.</li>
+<li>Enviar las etiquetas a OpenMetadata.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La b. Linneo calcula y compara; guardar la copia y enviarla a otro sistema corresponde a la aplicación.</p>
+</details>
+</li>
+<li>
+<p>Una anotación declara <code>confidentiality = Confidentiality.LOW</code> sobre una categoría cuya
+confidencialidad es <code>HIGH</code>. ¿Qué principio impide que eso rebaje la protección?</p>
+<ol>
+<li>Los resultados deterministas.</li>
+<li>El código fija el suelo de la protección.</li>
+<li>Calcular y comparar, nunca persistir.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La b. Cada faceta declarada es un mínimo: una anotación puede elevar la protección de su categoría, nunca
+rebajarla, y el clasificador lo notifica como error.</p>
+</details>
+</li>
+<li>
+<p>¿Quién declara el plazo de conservación de una actividad de tratamiento?</p>
+<ol>
+<li>El equipo de desarrollo, en el alcance de la actividad.</li>
+<li>La función de protección de datos, en la gobernanza de la actividad.</li>
+<li>Linneo lo deduce de la categoría de los datos.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La b. La conservación forma parte de la gobernanza, junto con las bases jurídicas, los destinatarios, las
+transferencias y la evaluación de impacto. Linneo no deduce lo que el código no puede ver.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="02-proteccion.html">Capítulo 2. Naturaleza jurídica y protección</a>: los conceptos que hay detrás de
+cada categoría.</li>
+<li><a href="18-ciclo-de-vida.html">Capítulo 18. Linneo en el ciclo de vida</a>: cómo encaja la biblioteca en el
+trabajo diario de un equipo.</li>
+<li><a href="../../reference/">Referencia de la API de Linneo</a>, con el contrato exacto de cada tipo.</li>
+<li><a href="https://github.com/devbpm/linneo">Código fuente, incidencias y versiones en GitHub</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="index.html" rel="prev"><span class="rumbo">Anterior</span>Índice del curso</a></li>
+<li><a href="02-proteccion.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 2. Naturaleza jurídica y protección</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

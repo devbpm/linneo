@@ -127,7 +127,7 @@ auditor puede reproducir la clasificación del pasado con la taxonomía del pasa
 por orden de clave. Determinista: la misma taxonomía da siempre el mismo texto. |
 | `static Taxonomy fromTsv(String text)` | `Taxonomy` | Lee un texto escrito por `toTsv()`. Los términos pasan por un `TaxonomyBuilder`, así que el texto debe cumplir las mismas reglas que cualquier otra taxonomía. Lanza `TaxonomyException` si el texto no es una taxonomía de una versión de formato conocida, una fila está mal formada o los términos incumplen una regla del constructor. |
 | `String fingerprint()` | `String` | El SHA-256 de `toTsv()` (UTF-8), como 64 dígitos hexadecimales en minúscula. Las taxonomías iguales tienen la misma huella; se calcula una vez y se conserva. |
-| `boolean equals(Object)`, `int hashCode()` | | Dos taxonomías son iguales cuando tienen las mismas categorías, usos y sujetos de datos: mismas claves, nombres, descripciones, orígenes, ciclos de vida, protección y atributos. |
+| `boolean equals(Object)`, `int hashCode()` | | Dos taxonomías son iguales cuando tienen las mismas categorías, usos y sujetos de datos: mismas claves, nombres, descripciones, orígenes, ciclos de vida, protección, rasgos y atributos. |
 
 La huella dice que algo cambió, no qué: cualquier cambio de texto, incluso una descripción, la modifica. Para saber
 qué cambió usa [`TaxonomyDiff`](taxonomy-diff.md).

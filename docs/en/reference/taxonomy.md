@@ -126,7 +126,7 @@ classification of the past with the taxonomy of the past.
 | `String toTsv()` | `String` | The taxonomy as tab-separated text: every term with its lifecycle and, for data categories, their **effective** protection and attributes, and the [traits](terms.md#trait) of every term, in key order. Deterministic: the same taxonomy always gives the same text. |
 | `static Taxonomy fromTsv(String text)` | `Taxonomy` | Reads a text written by `toTsv()`. The terms go through a `TaxonomyBuilder`, so the text must follow the same rules as any other taxonomy. Throws `TaxonomyException` if the text is not a taxonomy of a known format version, a row is malformed, or the terms break a rule of the builder. |
 | `String fingerprint()` | `String` | The SHA-256 of `toTsv()` (UTF-8), as 64 lower-case hexadecimal digits. Equal taxonomies have the same fingerprint; computed once and kept. |
-| `boolean equals(Object)`, `int hashCode()` | | Two taxonomies are equal when they have the same data categories, data uses and data subjects: same keys, names, descriptions, origins, lifecycles, protection and attributes. |
+| `boolean equals(Object)`, `int hashCode()` | | Two taxonomies are equal when they have the same data categories, data uses and data subjects: same keys, names, descriptions, origins, lifecycles, protection, traits and attributes. |
 
 The fingerprint says that something changed, not what: any change of text, even a description, changes it. Use
 [`TaxonomyDiff`](taxonomy-diff.md) to find out what.

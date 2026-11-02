@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/annotation/Category.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DefaultCategory.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Exempt.java
+  - src/main/java/io/github/devbpm/linneo/annotation/CategoryByRow.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DerivedFrom.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Composite.java
+  - src/main/java/io/github/devbpm/linneo/annotation/package-info.java
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/FieldClassification.java
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-category-policy.tsv
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 4. Anotar campos y clases · Curso de Linneo</title>
+<meta name="description" content="Declara qué contiene cada campo con @Category, @DefaultCategory y @Exempt: niveles, identificabilidad, herencia, records y elección de la clave.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html" aria-current="page"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 4. Anotar campos y clases</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 4</span> Anotar campos y clases</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>90 minutos</dd></div>
+<div><dt>Parte II:</dt><dd>Clasificar el modelo de datos</dd></div>
+</dl>
+<p class="entradilla">Un modelo de datos dice qué contiene cada campo mediante anotaciones: una categoría por campo, un
+valor por defecto para las clases sin datos personales y una exención para los campos técnicos. En este capítulo
+aprendes a escribir esas declaraciones con precisión, a reforzar la protección donde tu contexto lo pide y a evitar los
+atajos que el clasificador rechaza.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#seis-anotaciones">Las seis anotaciones de un vistazo</a></li>
+<li><a href="#category">@Category: la categoría de un campo</a></li>
+<li><a href="#default-category">@DefaultCategory: clases sin datos personales</a></li>
+<li><a href="#herencia">Herencia de clases y de anotaciones</a></li>
+<li><a href="#exempt">@Exempt: campos técnicos</a></li>
+<li><a href="#exclusiones">Campos que el clasificador no examina</a></li>
+<li><a href="#records">Records</a></li>
+<li><a href="#elegir-la-clave">Elegir la clave adecuada</a></li>
+<li><a href="#modelo-universidad">El modelo de la universidad hasta este punto</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>declarar la categoría de un campo con <code>@Category</code>, elevar su confidencialidad o su integridad y declarar
+la identificabilidad del valor almacenado;</li>
+<li>explicar por qué un nivel de protección nunca se rebaja en un campo y de dónde procede el carácter secreto;</li>
+<li>marcar con <code>@DefaultCategory</code> una clase sin datos personales y justificar por qué una categoría personal
+no puede ser su valor por defecto;</li>
+<li>predecir qué valor por defecto recibe cada campo en una jerarquía de clases y qué anotaciones se heredan;</li>
+<li>decidir cuándo un campo admite <code>@Exempt</code> y cuándo no, y reconocer los campos que el clasificador excluye
+por sí solo;</li>
+<li>anotar records y elegir, con un procedimiento, la clave adecuada para un campo.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo da por sabidos el <a href="02-proteccion.html">capítulo 2</a> (naturaleza jurídica, confidencialidad,
+integridad, identificabilidad y secreto) y el <a href="03-taxonomia.html">capítulo 3</a> (categorías de datos, claves
+con puntos y las constantes de <code>Categories</code>). Los ejemplos usan la taxonomía estándar
+(<code>Taxonomy.standard()</code>) y el modelo de datos de la universidad que recorre todo el curso.</p>
+<p>Dos términos aparecen en todo el capítulo. El <dfn>clasificador</dfn> es la clase <code>Classifier</code>: lee las
+anotaciones por reflexión y resuelve cada campo contra la taxonomía; el <a href="06-verificacion.html">capítulo 6</a> lo
+estudia a fondo. Un <dfn>campo</dfn> es un campo Java de una clase o el campo que Java genera para un componente de
+record; el clasificador lo identifica por su <dfn>ruta</dfn>, que en este capítulo es siempre su nombre.</p>
+
+<h2 id="seis-anotaciones">Las seis anotaciones de un vistazo</h2>
+<p>El paquete <code>io.github.devbpm.linneo.annotation</code> contiene seis anotaciones. Todas se conservan en tiempo de
+ejecución (<code>RetentionPolicy.RUNTIME</code>) para que el clasificador pueda leerlas, y ninguna depende de un
+framework: funcionan igual en una entidad <abbr title="Jakarta Persistence API">JPA</abbr>, en un record o en una clase
+sin persistencia.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-4-1">
+<table>
+<caption id="tabla-4-1">Tabla 4.1. Las seis anotaciones de Linneo</caption>
+<thead>
+<tr><th scope="col">Anotación</th><th scope="col">Dónde se pone</th><th scope="col">Qué declara</th>
+<th scope="col">Capítulo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>@Category</code></th><td>campo, componente de record</td><td>La categoría de datos que
+contiene el campo, con niveles más estrictos y su identificabilidad si hace falta.</td><td>4</td></tr>
+<tr><th scope="row"><code>@DefaultCategory</code></th><td>clase</td><td>La categoría no personal de los campos sin
+anotación propia, con el motivo.</td><td>4</td></tr>
+<tr><th scope="row"><code>@Exempt</code></th><td>campo, componente de record</td><td>Que el campo no contiene datos del
+modelo (una caché, un manejador técnico), con el motivo.</td><td>4</td></tr>
+<tr><th scope="row"><code>@CategoryByRow</code></th><td>campo, componente de record</td><td>Que la categoría depende de
+cada fila, qué la decide y la categoría más protectora que puede tener una fila.</td><td>5</td></tr>
+<tr><th scope="row"><code>@DerivedFrom</code></th><td>campo, componente de record</td><td>Que el valor se calcula a
+partir de otros campos, cuya clasificación toma o supera.</td><td>5</td></tr>
+<tr><th scope="row"><code>@Composite</code></th><td>clase</td><td>Que las instancias de la clase forman parte de otro
+registro, como una dirección embebida.</td><td>5</td></tr>
+</tbody>
+</table>
+</div>
+<p>El clasificador lee estas anotaciones; nunca lee los valores de los campos. Por eso no necesita una base de datos ni
+datos de prueba: basta con las clases. Y por eso mismo lo que declaras es lo único que sabe. Una anotación es una
+afirmación sobre todos los valores que el campo puede llegar a contener, no sobre los que contiene hoy.</p>
+
+<h3 id="orden-de-resolucion">Cómo decide el clasificador la categoría de un campo</h3>
+<p>Para cada campo, el clasificador aplica la primera regla que se cumple. Las reglas 4 a 6 se estudian en el
+<a href="05-estructuras.html">capítulo 5</a>; aquí basta con saber que existen y en qué orden actúan.</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Exclusión automática</span> Los campos <code>static</code>, sintéticos,
+<code>transient</code> sin anotación de Linneo y los que añaden herramientas de bytecode no se examinan.</li>
+<li><span class="flujo-titulo"><code>@Exempt</code>.</span> El campo no se clasifica y queda en la lista de
+exenciones.</li>
+<li><span class="flujo-titulo"><code>@Category</code> o <code>@CategoryByRow</code>.</span> La categoría declarada en el
+campo, o el techo de la fila. Si el campo lleva además <code>@DerivedFrom</code>, esa categoría debe proteger al menos
+tanto como sus fuentes.</li>
+<li><span class="flujo-titulo"><code>@DerivedFrom</code> sin <code>@Category</code>.</span> La clasificación de los
+campos de los que se calcula.</li>
+<li><span class="flujo-titulo">Tipo <code>@Composite</code>.</span> Una entrada por cada campo del compuesto.</li>
+<li><span class="flujo-titulo">Contenido que el clasificador no ve</span> Un campo que puede contener datos que el
+clasificador no puede examinar es un error si no está anotado: ningún valor por defecto se le aplica.</li>
+<li><span class="flujo-titulo"><code>@DefaultCategory</code> de la clase que declara el campo.</span> Salvo que el campo
+se refiera a otro registro del modelo con datos personales (<a href="05-estructuras.html">capítulo 5</a>).</li>
+<li><span class="flujo-titulo"><code>@DefaultCategory</code> de la clase que se clasifica.</span></li>
+<li><span class="flujo-titulo">Ninguna de las anteriores</span> Un error <code>UNCLASSIFIED_FIELD</code>.</li>
+</ol>
+<p>Este orden expresa el principio de <dfn>fallo seguro</dfn> (<span lang="en">fail closed</span>): un campo sin
+declaración no recibe una categoría por omisión, sino que hace fallar la verificación. La anotación del propio campo
+manda siempre sobre el valor por defecto de la clase.</p>
+
+<h2 id="category">@Category: la categoría de un campo</h2>
+<p><code>@Category</code> declara que un campo contiene datos de una categoría. Es la anotación que más escribirás: todo
+dato personal se declara así, campo a campo. El campo recibe la protección de la categoría, que fija la taxonomía
+(<a href="03-taxonomia.html">capítulo 3</a>): su naturaleza jurídica, su confidencialidad, su integridad y su carácter
+secreto.</p>
+<p>El Ejemplo 4.1 empieza el modelo de la universidad con la entidad <code>Student</code>. Cada clave es una constante
+de <code>Categories</code>, importada de forma estática.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.1. La entidad Student anotada campo a campo</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.annotation.Category;
+import java.time.LocalDate;
+
+import static io.github.devbpm.linneo.Categories.*;
+
+public class Student {
+
+    @Category(USER_UNIQUE_ID)
+    private Long id;
+
+    @Category(USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER)
+    private String nationalId;
+
+    @Category(USER_NAME_FIRST)
+    private String firstName;
+
+    @Category(USER_NAME_LAST)
+    private String lastName;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    @Category(USER_DEMOGRAPHIC_DATE_OF_BIRTH)
+    private LocalDate dateOfBirth;
+
+    @Category(USER_HEALTH_AND_MEDICAL_DISABILITY)
+    private Integer disabilityDegree;
+
+    @Category(USER_EDUCATION_STATUS)
+    private String academicStatus;
+}
+</code></pre>
+</figure>
+<p>Para ver qué ha resuelto el clasificador, clasifica la clase y recorre sus campos. <code>classify</code> devuelve una
+<code>ClassClassification</code> con una <code>FieldClassification</code> por campo (el <a href="07-uso.html">capítulo
+7</a> explica ambos tipos):</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification student = classifier.classify(Student.class);
+for (FieldClassification field : student.fields()) {
+    System.out.println(field + " " + field.protection());
+}
+</code></pre>
+<p>La salida muestra, para cada campo, la clave resuelta, el origen de la categoría (<code>DECLARED</code>: la declara
+el propio campo) y la protección efectiva. Este es un extracto con algunos campos de <code>Student</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">id = user.unique_id (DECLARED) Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+email = user.contact.email (DECLARED) Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+dateOfBirth = user.demographic.date_of_birth (DECLARED) Protection[natures=[ORDINARY], confidentiality=MEDIUM, integrity=MEDIUM, secret=false]
+disabilityDegree = user.health_and_medical.disability (DECLARED) Protection[natures=[SPECIAL_CATEGORY], confidentiality=HIGH, integrity=HIGH, secret=false]
+academicStatus = user.education.status (DECLARED) Protection[natures=[ORDINARY], confidentiality=MEDIUM, integrity=HIGH, secret=false]
+</code></pre>
+<p>No has escrito ningún nivel y, sin embargo, <code>disabilityDegree</code> es un dato de categoría especial con
+confidencialidad e integridad <code>HIGH</code>, y <code>academicStatus</code> hereda la integridad <code>HIGH</code> de
+<code>user.education</code>. La anotación elige la categoría; la taxonomía aporta la protección.</p>
+
+<h3 id="elementos-category">Los elementos de @Category</h3>
+<p><code>@Category</code> tiene un elemento obligatorio y tres opcionales. La Tabla 4.2 los resume.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-4-2">
+<table>
+<caption id="tabla-4-2">Tabla 4.2. Elementos de @Category</caption>
+<thead>
+<tr><th scope="col">Elemento</th><th scope="col">Tipo</th><th scope="col">Si no se indica</th>
+<th scope="col">Significado</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>value</code></th><td><code>String</code></td><td>obligatorio</td><td>La clave de la categoría,
+preferiblemente una constante de <code>Categories</code>.</td></tr>
+<tr><th scope="row"><code>confidentiality</code></th><td><code>Confidentiality[]</code></td><td>el nivel de la
+categoría</td><td>Una confidencialidad más estricta, solo para este campo.</td></tr>
+<tr><th scope="row"><code>integrity</code></th><td><code>Integrity[]</code></td><td>el nivel de la categoría</td>
+<td>Una integridad más estricta, solo para este campo.</td></tr>
+<tr><th scope="row"><code>identifiability</code></th><td><code>Identifiability[]</code></td><td><code>IDENTIFIED</code>
+</td><td>Hasta qué punto el valor almacenado apunta a la persona. Solo para categorías personales.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Dos detalles de Java condicionan cómo se escriben:</p>
+<ol>
+<li><strong>Con más de un elemento, <code>value =</code> es obligatorio.</strong> Java solo admite la forma abreviada
+<code>@Category(USER_NAME)</code> cuando <code>value</code> es el único elemento. En cuanto añades otro, escribe los dos
+nombres: <code>@Category(value = USER_NAME, integrity = Integrity.HIGH)</code>. La forma <code>@Category(USER_NAME,
+integrity = Integrity.HIGH)</code> no compila.</li>
+<li><strong>Los elementos opcionales son arrays.</strong> Así Linneo distingue «no indicado» (un array vacío, el valor
+por defecto) de un valor concreto. Indica como mucho uno: <code>confidentiality = Confidentiality.HIGH</code>. Con dos
+valores el clasificador informa de un error <code>AMBIGUOUS_VALUE</code>.</li>
+</ol>
+
+<h3 id="elevar-niveles">Elevar la confidencialidad o la integridad</h3>
+<p>Los niveles de una categoría son un mínimo pensado para cualquier organización. Un campo concreto puede necesitar más
+por su contexto. En la universidad, el servicio de orientación guarda notas en texto libre sobre los estudiantes. El
+texto libre escrito por una persona o sobre ella es <code>user.content.private</code>, con confidencialidad
+<code>MEDIUM</code>; pero estas notas suelen recoger circunstancias personales delicadas, así que la universidad eleva
+su confidencialidad a <code>HIGH</code> en ese campo.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.2. Un campo que eleva la confidencialidad de su categoría</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_CONTENT_PRIVATE, confidentiality = Confidentiality.HIGH)
+private String counsellingNotes;
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">counsellingNotes = user.content.private (DECLARED) Protection[natures=[ORDINARY], confidentiality=HIGH, integrity=MEDIUM, secret=false]
+</code></pre>
+<p>La categoría sigue siendo <code>user.content.private</code>; solo cambia el nivel efectivo del campo. La integridad
+se eleva igual. Si la universidad enviara a la dirección de correo del estudiante notificaciones con efectos
+administrativos, una alteración de ese dato desviaría las notificaciones, y tendría sentido exigir más integridad que el
+<code>MEDIUM</code> de la categoría:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_CONTACT_EMAIL, integrity = Integrity.HIGH)
+private String email;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">email = user.contact.email (DECLARED) Protection[natures=[ORDINARY], confidentiality=LOW, integrity=HIGH, secret=false]
+</code></pre>
+<p>Este segundo fragmento es una variante para ilustrar la integridad; el modelo de la universidad conserva el
+<code>email</code> del Ejemplo 4.1.</p>
+
+<h3 id="nunca-rebajar">Por qué un nivel nunca se rebaja</h3>
+<p>Un campo puede declarar el mismo nivel que su categoría o uno más alto, nunca uno más bajo. Supón que alguien
+considera que el grado de discapacidad «no es tan sensible» y escribe:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_HEALTH_AND_MEDICAL_DISABILITY, confidentiality = Confidentiality.MEDIUM)
+private Integer disabilityDegree;
+</code></pre>
+<p>El código compila, pero el clasificador rechaza la declaración y el campo queda sin clasificar:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR LOWERED_LEVEL edu.example.university.Student.disabilityDegree: confidentiality MEDIUM is lower than the HIGH of 'user.health_and_medical.disability'
+</code></pre>
+<p>La regla tiene una razón de fondo. En Linneo, el código fija el suelo de la protección: la categoría dice cuánta
+protección necesita ese tipo de dato, y ninguna decisión local puede dejar un campo por debajo. Las personas
+responsables pueden endurecer la clasificación más tarde (el <a href="07-uso.html">capítulo 7</a> muestra cómo se
+comprueba que una clasificación elevada sigue cubriendo la del código), y una extensión de la taxonomía también solo
+puede subir niveles (<a href="09-extensiones.html">capítulo 9</a>). Si crees que un nivel de la taxonomía estándar es
+excesivo, la solución no está en el campo: plantéalo en la revisión de la taxonomía.</p>
+<p>Declarar el mismo nivel que la categoría está permitido, pero no añade protección. Con dos valores, el clasificador
+compara el primero, así que un campo <code>preferredName</code> anotado con <code>@Category(value = USER_NAME, integrity
+= {Integrity.LOW, Integrity.HIGH})</code> produce dos errores:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR AMBIGUOUS_VALUE edu.example.university.Student.preferredName: integrity must have at most one value
+ERROR LOWERED_LEVEL edu.example.university.Student.preferredName: integrity LOW is lower than the MEDIUM of 'user.name'
+</code></pre>
+
+<h3 id="identificabilidad">Declarar la identificabilidad del valor almacenado</h3>
+<p>La <dfn>identificabilidad</dfn> indica hasta qué punto el valor guardado apunta a una persona. No es una propiedad de
+la categoría sino del campo: la misma categoría puede guardarse identificada en una tabla y agregada en otra. El enum
+<code>Identifiability</code> tiene cuatro valores.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-4-3">
+<table>
+<caption id="tabla-4-3">Tabla 4.3. Valores de Identifiability</caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col">Significado</th><th scope="col">¿Dato personal?</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>IDENTIFIED</code></th><td>El valor identifica a la persona, directamente o con otros datos que
+tiene el responsable del tratamiento. Es el valor por defecto.</td><td>Sí</td></tr>
+<tr><th scope="row"><code>PSEUDONYMIZED</code></th><td>El valor solo se vincula a la persona con información adicional
+guardada aparte (artículo 4.5 del <abbr title="Reglamento General de Protección de Datos">RGPD</abbr>).</td>
+<td>Sí</td></tr>
+<tr><th scope="row"><code>ANONYMIZED</code></th><td>El valor ya no puede vincularse a la persona.</td><td>No</td></tr>
+<tr><th scope="row"><code>AGGREGATED</code></th><td>El valor resume a varias personas y no describe a ninguna.</td>
+<td>No</td></tr>
+</tbody>
+</table>
+</div>
+<p>El identificador que la universidad usa para las analíticas de aprendizaje está seudonimizado: la tabla de
+correspondencia con el estudiante se guarda en otro sistema.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_UNIQUE_ID_PSEUDONYMOUS, identifiability = Identifiability.PSEUDONYMIZED)
+private String analyticsId;
+</code></pre>
+<p>Un campo seudonimizado sigue siendo un dato personal (considerando 26 del RGPD). Uno anonimizado o agregado no lo es:
+así una tabla de estadísticas conserva su categoría real sin contar como datos personales.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.3. Estadísticas de una asignatura con valores agregados</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public record CourseStatistics(
+        @Category(REFERENCE_PUBLIC) String courseCode,
+        @Category(value = USER_EDUCATION_GRADE, identifiability = Identifiability.AGGREGATED) BigDecimal averageMark,
+        @Category(value = USER_EDUCATION_GRADE, identifiability = Identifiability.AGGREGATED) int passed) {
+}
+</code></pre>
+</figure>
+<p>Si imprimes la identificabilidad, <code>isPersonal()</code> y la protección de <code>averageMark</code> y de
+<code>analyticsId</code>, obtienes:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">AGGREGATED false Protection[natures=[NONE], confidentiality=MEDIUM, integrity=HIGH, secret=false]
+PSEUDONYMIZED true Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+</code></pre>
+<p>Fíjate en lo que cambia y en lo que no. El valor agregado pierde la naturaleza personal (<code>NONE</code>), pero
+conserva la confidencialidad <code>MEDIUM</code> y la integridad <code>HIGH</code> de las calificaciones: agregar no
+convierte un dato en público ni hace que su exactitud importe menos.</p>
+<p>La identificabilidad solo tiene sentido en categorías personales. En una clave <code>system.*</code>,
+<code>org.*</code> o <code>reference.*</code> es un error, y el campo queda sin clasificar:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR IDENTIFIABILITY_NOT_APPLICABLE edu.example.university.MenuGroup.theme: 'system.configuration' is not personal data and has no identifiability
+</code></pre>
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Linneo no comprueba que un valor declarado <code>ANONYMIZED</code> o <code>AGGREGATED</code> lo sea de verdad: no lee
+valores. La declaración es una afirmación del equipo que el delegado de protección de datos
+(<abbr title="delegado de protección de datos">DPD</abbr>) puede revisar, porque queda escrita en el código y aparece en
+la clasificación de cada campo. Un valor anonimizado o agregado solo deja de ser un dato personal mientras nadie
+pueda volver a identificar a la persona, y Linneo confía en la declaración: si un resumen se calcula sobre grupos tan
+pequeños que permite reidentificar, no lo declares agregado.</p>
+</div>
+
+<h3 id="secreto">El secreto lo decide la categoría</h3>
+<p>Un <dfn>secreto</dfn> es un dato que da acceso a algo y que nunca debe leerse de vuelta, exportarse ni publicarse,
+como el hash de una contraseña o una clave de <abbr title="interfaz de programación de aplicaciones">API</abbr>.
+<code>@Category</code> no tiene ningún elemento para declararlo: no puedes marcar un campo como secreto ni quitarle ese
+carácter. El secreto es una propiedad de la categoría, y <code>FieldClassification.isSecret()</code> devuelve el
+indicador de la categoría del campo.</p>
+<p>En la taxonomía estándar son secretas <code>user.authorization.credentials</code>,
+<code>user.authorization.password</code>, <code>user.authorization.biometric</code>, <code>user.device.session_id</code>
+y <code>system.authentication.secret</code>. Para que un campo sea secreto, elige una de esas categorías. El personal de
+la universidad inicia sesión con una contraseña local:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(USER_AUTHORIZATION_PASSWORD)
+private String passwordHash;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">passwordHash = user.authorization.password (DECLARED) Protection[natures=[ORDINARY], confidentiality=HIGH, integrity=HIGH, secret=true]
+</code></pre>
+<p>Como el secreto viaja con la categoría, también viaja con todo lo que se calcula a partir de ella: el
+<a href="05-estructuras.html">capítulo 5</a> muestra que ni siquiera un valor declarado anonimizado puede perderlo. El
+<a href="07-uso.html">capítulo 7</a> explica cómo la política de divulgación omite siempre los secretos en registros y
+pantallas.</p>
+
+<h2 id="default-category">@DefaultCategory: clases sin datos personales</h2>
+<p>Muchas clases no contienen ningún dato personal: la configuración del portal, las listas de códigos, las tablas
+técnicas. Anotar cada campo sería ruido. <code>@DefaultCategory</code> hace una sola afirmación positiva sobre la clase:
+«los campos sin anotación propia contienen datos de esta categoría no personal, por este motivo». El motivo queda
+escrito para quien revise la clasificación.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.4. Una clase de configuración con valor por defecto</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = SYSTEM_CONFIGURATION, reason = "configuración de menús del portal del estudiante")
+public class MenuGroup {
+
+    private Long id;
+    private String code;
+    private String label;
+    private int position;
+
+    @Category(SYSTEM_SECURITY)          // un campo puede seguir declarando su propia categoría
+    private String requiredRole;
+
+    @Exempt("caché del menú renderizado, se reconstruye bajo demanda")
+    private String renderedMenu;
+}
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">id = system.configuration (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=MEDIUM, secret=false]
+code = system.configuration (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=MEDIUM, secret=false]
+label = system.configuration (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=MEDIUM, secret=false]
+position = system.configuration (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=MEDIUM, secret=false]
+requiredRole = system.security (DECLARED) Protection[natures=[NONE], confidentiality=LOW, integrity=HIGH, secret=false]
+</code></pre>
+<p>Los cuatro primeros campos tienen el origen <code>CLASS_DEFAULT</code>, y su <code>reason()</code> devuelve el motivo
+de la anotación. <code>requiredRole</code> declara su propia categoría, que prevalece. <code>renderedMenu</code> no
+aparece entre los campos clasificados: está exento, como verás más adelante.</p>
+
+<h3 id="default-reglas">Reglas de @DefaultCategory</h3>
+<ul>
+<li><strong>Dos elementos obligatorios:</strong> <code>value</code>, la clave, y <code>reason</code>, el motivo. Un
+motivo en blanco es un error <code>MISSING_REASON</code>.</li>
+<li><strong>La categoría debe existir</strong> en la taxonomía (si no, <code>UNKNOWN_CATEGORY</code>) y <strong>no puede
+ser personal</strong> (<code>PERSONAL_DEFAULT</code>).</li>
+<li><strong>La anotación del campo prevalece</strong> siempre sobre el valor por defecto.</li>
+<li><strong>No se hereda</strong>: la sección <a href="#herencia">Herencia de clases y de anotaciones</a> explica su
+alcance exacto.</li>
+</ul>
+<p>Los errores de una anotación de clase no tienen ruta: la <code>Violation</code> lleva <code>path()</code> igual a
+<code>null</code> y su texto no añade ningún campo tras el nombre de la clase. Esta clase acumula los dos errores
+posibles:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = USER_CONTACT, reason = "")
+public class ContactPreferences {
+    private String channel;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_REASON edu.example.university.ContactPreferences: @DefaultCategory of ContactPreferences needs a reason
+ERROR PERSONAL_DEFAULT edu.example.university.ContactPreferences: @DefaultCategory of ContactPreferences names 'user.contact', which is personal data: declare personal fields one by one with @Category
+</code></pre>
+<p>Observa que <code>channel</code> no aparece en un error propio. Cuando el valor por defecto es desconocido o
+personal, los campos que cubriría quedan fuera de la clasificación y el problema se informa una sola vez, en la clase.
+Un motivo en blanco, en cambio, no impide clasificar los campos.</p>
+
+<h3 id="default-no-personal">Por qué una categoría personal no puede ser el valor por defecto</h3>
+<p>La prohibición es deliberada y no tiene excepciones. Un valor por defecto cubre en silencio cada campo nuevo que se
+añada a la clase. Si pudiera ser personal, la columna que alguien añada el año que viene, quizá un dato de salud,
+quedaría clasificada como un dato de contacto sin que nadie lo decidiera. Al exigir que los datos personales se declaren
+campo a campo, cada dato personal nuevo obliga a una decisión explícita, visible en la revisión del código. Es el
+principio de fallo seguro aplicado a la evolución del modelo.</p>
+<p>La consecuencia práctica es sencilla: una clase con datos personales no lleva <code>@DefaultCategory</code>, salvo
+para cubrir sus campos técnicos no personales; sus campos personales llevan cada uno su <code>@Category</code>.</p>
+
+<h3 id="default-limites">Lo que el valor por defecto no cubre</h3>
+<p>Incluso en una clase sin datos personales, el valor por defecto no se aplica a todos los campos. El clasificador lo
+rechaza en dos casos, que el <a href="05-estructuras.html">capítulo 5</a> trata en detalle:</p>
+<ul>
+<li>un campo que puede contener datos que el clasificador no ve, como un <code>Object</code>, un
+<code>Serializable</code>, una variable de tipo sin enlazar o un mapa de compuestos;</li>
+<li>un campo cuyo tipo es otro registro del modelo que contiene datos personales, como una relación con
+<code>Staff</code>.</li>
+</ul>
+<p>En ambos casos el campo necesita su propia anotación. Un valor por defecto afirma algo sobre lo que el clasificador
+ve; donde no ve, no afirma nada.</p>
+
+<h2 id="herencia">Herencia de clases y de anotaciones</h2>
+<p>Los modelos <abbr title="Jakarta Persistence API">JPA</abbr> suelen tener una superclase común con las columnas de
+auditoría. En la universidad es <code>AuditedEntity</code>, de la que heredan las entidades.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.5. Una superclase de auditoría con su propio valor por defecto</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = SYSTEM_OPERATIONS, reason = "marcas de tiempo técnicas de auditoría y versión de bloqueo optimista")
+public abstract class AuditedEntity {
+
+    @Category(USER_ACCOUNT_USERNAME)    // quién creó la fila: el nombre de usuario de una persona
+    private String createdBy;
+
+    private Instant createdAt;
+    private Instant updatedAt;
+    private long version;
+}
+
+public class Student extends AuditedEntity {
+    // ... los campos del Ejemplo 4.1
+}
+</code></pre>
+</figure>
+
+<h3 id="herencia-recorrido">Cómo recorre la jerarquía el clasificador</h3>
+<p>Al clasificar <code>Student</code>, el clasificador recorre la clase y sus superclases, desde la más alta hasta la
+propia clase, y se detiene antes de <code>Object</code>, <code>Record</code> y <code>Enum</code>. Las interfaces no se
+visitan. Los campos de la superclase aparecen primero en el resultado:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">createdBy = user.account.username (DECLARED) Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+createdAt = system.operations (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=LOW, secret=false]
+updatedAt = system.operations (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=LOW, secret=false]
+version = system.operations (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=LOW, secret=false]
+id = user.unique_id (DECLARED) Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+</code></pre>
+<p>Es un extracto: siguen los demás campos de <code>Student</code>. Cada <code>FieldClassification</code> recuerda la
+clase que declara el campo (<code>declaringClass()</code>), aquí <code>AuditedEntity</code> para los cuatro primeros.
+Dentro de una clase, el orden es el que informa la máquina virtual, que normalmente coincide con el de declaración pero
+no está garantizado: identifica un campo siempre por su ruta, nunca por su posición.</p>
+
+<h3 id="herencia-valores-defecto">Qué valor por defecto recibe cada campo</h3>
+<p>Para un campo sin anotación propia, el clasificador busca un valor por defecto en este orden:</p>
+<ol>
+<li>la <code>@DefaultCategory</code> de la clase que <strong>declara</strong> el campo (<code>AuditedEntity</code> para
+<code>createdAt</code>);</li>
+<li>la <code>@DefaultCategory</code> de la clase <strong>que se clasifica</strong> (<code>Student</code>);</li>
+<li>ninguna: error <code>UNCLASSIFIED_FIELD</code>.</li>
+</ol>
+<p>De ahí se siguen tres consecuencias. Las columnas técnicas son <code>system.operations</code> en todas las subclases.
+Los campos propios de <code>Student</code> no quedan cubiertos por el valor por defecto de <code>AuditedEntity</code>:
+cada uno necesita su anotación. Y si <code>AuditedEntity</code> no tuviera valor por defecto, sus campos sin anotar se
+informarían en cada subclase, con un mensaje que nombra las dos clases:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Student.createdAt: no @Category on the field and no @DefaultCategory on AuditedEntity or Student
+ERROR UNCLASSIFIED_FIELD edu.example.university.Student.updatedAt: no @Category on the field and no @DefaultCategory on AuditedEntity or Student
+ERROR UNCLASSIFIED_FIELD edu.example.university.Student.version: no @Category on the field and no @DefaultCategory on AuditedEntity or Student
+</code></pre>
+<p>La corrección va en la superclase, no en cada subclase. La segunda regla existe para las jerarquías en las que la
+superclase pertenece a otro equipo o a una biblioteca: una subclase sin datos personales puede cubrir con su propio
+valor por defecto los campos heredados que nadie anotó.</p>
+<p>El caso inverso también conviene conocerlo. Si una subclase de <code>MenuGroup</code> añade un campo y no tiene valor
+por defecto propio, el de <code>MenuGroup</code> no la cubre:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class FeaturedMenuGroup extends MenuGroup {
+    private String icon;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.FeaturedMenuGroup.icon: no @Category on the field and no @DefaultCategory on FeaturedMenuGroup
+</code></pre>
+<p>Los campos heredados de <code>MenuGroup</code> siguen recibiendo su valor por defecto; solo <code>icon</code> queda
+sin clasificar. Así, especializar una clase no extiende en silencio una afirmación que alguien hizo sobre otra.</p>
+
+<h3 id="herencia-anotaciones">Qué anotaciones se heredan</h3>
+<p>En Java, una anotación de clase solo pasa a las subclases si su tipo lleva <code>@Inherited</code>, y las anotaciones
+de campo nunca se heredan: cada campo conserva las suyas en la clase que lo declara, y el clasificador las lee de allí.
+La Tabla 4.4 resume el comportamiento.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-4-4">
+<table>
+<caption id="tabla-4-4">Tabla 4.4. Herencia de las anotaciones de Linneo</caption>
+<thead>
+<tr><th scope="col">Anotación</th><th scope="col">¿Se hereda?</th><th scope="col">Efecto en una subclase</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>@DefaultCategory</code></th><td>No</td><td>Cubre los campos que declara la clase anotada, y
+los heredados sin anotar cuando la clase anotada es la que se clasifica.</td></tr>
+<tr><th scope="row"><code>@Composite</code></th><td>Sí (<code>@Inherited</code>)</td><td>Una subclase de un compuesto es
+un compuesto (<a href="05-estructuras.html">capítulo 5</a>).</td></tr>
+<tr><th scope="row"><code>@Category</code>, <code>@CategoryByRow</code>, <code>@DerivedFrom</code>,
+<code>@Exempt</code></th><td>No aplica: son de campo</td><td>Cada campo heredado se clasifica con las anotaciones que
+tiene en su clase.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Los problemas de un <code>@DefaultCategory</code> se comprueban en la clase clasificada y en cada superclase que lo
+tenga. Un valor por defecto erróneo en <code>AuditedEntity</code> aparecería, por tanto, en el resultado de cada entidad
+que hereda de ella.</p>
+
+<h3 id="campo-duplicado">Un campo que oculta otro: DUPLICATE_FIELD</h3>
+<p>Como el clasificador identifica un campo por su nombre, una subclase no puede reutilizar el nombre de un campo de su
+superclase. Si alguien añade a <code>Grade</code> su propio <code>createdAt</code>, el campo de la subclase se informa
+como duplicado y solo se clasifica el de la superclase:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR DUPLICATE_FIELD edu.example.university.Grade.createdAt: hides the field of the same name declared by AuditedEntity; rename one of them
+</code></pre>
+<p>Renombra uno de los dos: la ruta de un campo debe identificarlo sin ambigüedad.</p>
+
+<h2 id="exempt">@Exempt: campos técnicos</h2>
+<p><code>@Exempt</code> excluye de la clasificación un campo que no contiene datos del modelo, con el motivo:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Exempt("caché del menú renderizado, se reconstruye bajo demanda")
+private String renderedMenu;
+</code></pre>
+<p>Un campo exento no aparece en <code>fields()</code>, pero sí en <code>exempted()</code>, con la clase que lo declara
+y su motivo. Así una revisión puede ver cada exención y detectar cuándo un campo que antes estaba clasificado pasa a
+estar exento:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">[Exemption[declaringClass=class edu.example.university.MenuGroup, path=renderedMenu, reason=caché del menú renderizado, se reconstruye bajo demanda]]
+</code></pre>
+
+<h3 id="exempt-cuando-si">Cuándo sí</h3>
+<p><code>@Exempt</code> es para lo que la clase guarda pero no forma parte de los datos del modelo:</p>
+<ul>
+<li>una caché que se reconstruye a partir de otros datos y no se persiste como tal;</li>
+<li>un manejador técnico: un cliente de un almacén de archivos, una conexión, un monitor de sincronización;</li>
+<li>el estado que mantiene un framework y que no procede de las personas;</li>
+<li>una relación con registros que <strong>no</strong> contienen datos personales, como una lista de
+<code>Building</code> de un catálogo de edificios, que se clasifican por su cuenta.</li>
+</ul>
+
+<h3 id="exempt-cuando-no">Cuándo no</h3>
+<p>Hay tres situaciones en las que la exención es incorrecta. En dos de ellas el clasificador lo detecta.</p>
+<p><strong>Un valor calculado a partir de otros campos.</strong> La edad calculada a partir de la fecha de nacimiento es
+un dato personal: revela la fecha. Un valor calculado es un dato, no una exención; se declara con
+<code>@DerivedFrom</code> (<a href="05-estructuras.html">capítulo 5</a>) o con <code>@Category</code>. El clasificador
+no puede saber que un campo es calculado si nadie lo dice, así que esta regla depende de ti y de la revisión: si te
+encuentras escribiendo «calculado a partir de…» como motivo, cambia de anotación.</p>
+<p><strong>Una relación con registros que contienen datos personales.</strong> Una referencia al registro de una persona
+es en sí misma un dato personal, una clave seudónima. El clasificador rechaza la exención:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Exempt("colección uno a muchos, los adjuntos se clasifican aparte")
+private List&lt;Attachment&gt; attachments;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CONFLICTING_ANNOTATIONS edu.example.university.Document.attachments: @Exempt is for a field that holds no data of the model, and this one refers to Attachment that holds personal data, and a reference to a person's record is personal data: declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Attachment.class, value = "id")
+</code></pre>
+<p>El mensaje propone la corrección, que el modelo de la universidad aplica en el Ejemplo 4.6: declarar lo que guarda el
+campo, las claves de los adjuntos.</p>
+<p><strong>Un campo que contiene un compuesto.</strong> Una dirección embebida contiene datos personales en sus propios
+campos, así que tampoco se exime:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CONFLICTING_ANNOTATIONS edu.example.university.ScholarshipApplication.home: @Exempt is for a field that holds no data of the model, and this one holds [Address]: classify it as one value with @Category or @CategoryByRow
+</code></pre>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.6. Una relación declarada y un manejador técnico exento</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Document extends AuditedEntity {
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long id;
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long studentId;
+
+    @Category(USER_CONTENT_PRIVATE)
+    private String title;
+
+    @Category(USER_CONTENT_PRIVATE)
+    private String documentType;
+
+    @DerivedFrom(type = Attachment.class, value = "id")   // hijos uno a muchos: guarda su clave
+    private List&lt;Attachment&gt; attachments;
+
+    @Exempt("cliente del almacén de archivos, se abre bajo demanda")
+    private Object fileStore;
+}
+</code></pre>
+</figure>
+<p><code>fileStore</code> es justo para lo que sirve <code>@Exempt</code>. <code>Attachment</code> es la entidad de los
+archivos adjuntos que se presenta en el <a href="05-estructuras.html">capítulo 5</a>, junto con
+<code>@DerivedFrom</code>.</p>
+
+<h3 id="exempt-reglas">Reglas que comprueba el clasificador</h3>
+<ul>
+<li>El motivo no puede estar en blanco: <code>@Exempt("")</code> o <code>@Exempt("   ")</code> producen
+<code>MISSING_REASON</code> con el mensaje <code>@Exempt needs a reason</code>.</li>
+<li><code>@Exempt</code> no se combina con <code>@Category</code>, <code>@CategoryByRow</code> ni
+<code>@DerivedFrom</code>: <code>CONFLICTING_ANNOTATIONS</code> con el mensaje <code>@Exempt cannot be combined with
+@Category, @CategoryByRow or @DerivedFrom</code>.</li>
+<li>No se admite en un campo que contiene compuestos ni en uno que se refiere a un registro con datos personales
+(<code>CONFLICTING_ANNOTATIONS</code>, con los mensajes de arriba).</li>
+<li>Un campo exento no puede ser la fuente de un <code>@DerivedFrom</code>, porque no está clasificado.</li>
+</ul>
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p>Añadir <code>@Exempt</code> para que un test vuelva a pasar es la forma más rápida de perder protección. Trata cada
+exención como una decisión que se revisa: el motivo debe explicar por qué el campo no contiene datos, no por qué
+molestaba. La lista de <code>exempted()</code> existe para que esa revisión sea posible.</p>
+</div>
+
+<h2 id="exclusiones">Campos que el clasificador no examina</h2>
+<p>Algunos campos se excluyen sin necesidad de anotación, porque no contienen datos del modelo o porque el código fuente
+no los declara:</p>
+<ul>
+<li>los campos <strong><code>static</code></strong>: pertenecen a la clase, no a cada registro;</li>
+<li>los campos <strong>sintéticos</strong>, que genera el compilador, como la referencia a la instancia contenedora de
+una clase interna;</li>
+<li>los campos cuyo nombre empieza por <strong><code>$$_</code></strong>, que añade la mejora de bytecode de Hibernate
+(por ejemplo, <code>$$_hibernate_interceptor</code>);</li>
+<li>los campos <strong><code>$lock</code></strong> y <strong><code>$LOCK</code></strong> que genera la anotación
+<code>@Synchronized</code> de Lombok;</li>
+<li>los campos con el modificador Java <strong><code>transient</code></strong>, que no se guardan, salvo que lleven una
+de las anotaciones de campo de Linneo (<code>@Category</code>, <code>@CategoryByRow</code>, <code>@DerivedFrom</code> o
+<code>@Exempt</code>). En ese caso la anotación dice que el campo contiene datos que clasificar, y se clasifica como
+cualquier otro.</li>
+</ul>
+<p>Un <code>@Exempt</code> en un campo estático o sintético se ignora por completo, sin comprobar siquiera su motivo.
+Además, una clase de proxy de Hibernate (cuyo nombre contiene <code>$HibernateProxy$</code>) se clasifica como la
+entidad que extiende. El Ejemplo 4.7 reúne los casos en una clase del portal del estudiante.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.7. Campos excluidos y campos transient anotados</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class StudentProfile {
+
+    private static final int MAX_FAVOURITES = 10;            // static: excluido
+
+    @Category(USER_UNIQUE_ID)
+    private Long studentId;
+
+    @Category(USER_NAME)
+    private transient String displayName;                    // transient con anotación de Linneo: se clasifica
+
+    private transient Map&lt;String, Object&gt; renderCache;       // transient: excluido
+
+    @Exempt("contador de visitas en memoria, no se guarda")
+    private transient int visits;                             // transient con @Exempt: se lista como exento
+
+    private final Object $lock = new Object[0];               // @Synchronized de Lombok: excluido
+
+    private Object $$_hibernate_interceptor;                  // mejora de Hibernate: excluido
+}
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">studentId = user.unique_id (DECLARED)
+displayName = user.name (DECLARED)
+exempt visits: contador de visitas en memoria, no se guarda
+</code></pre>
+<p>La clase no tiene valor por defecto y, aun así, es válida: los únicos campos examinados están anotados. Sin la
+anotación, <code>displayName</code> se habría excluido por ser <code>transient</code>; con ella, el nombre que el portal
+muestra queda clasificado aunque no se guarde.</p>
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>La anotación <code>@Transient</code> de JPA (<code>jakarta.persistence.Transient</code>) no es el modificador Java
+<code>transient</code>. Un campo marcado solo con <code>@Transient</code> sigue siendo visible para el clasificador y
+necesita <code>@Exempt</code> o una categoría. Linneo no reconoce anotaciones de frameworks: así no depende de
+ninguno.</p>
+</div>
+
+<h2 id="records">Records</h2>
+<p>Todas las anotaciones de campo admiten como destino un componente de record (<code>RECORD_COMPONENT</code>) además de
+un campo (<code>FIELD</code>). Cuando anotas un componente, Java propaga la anotación al campo privado que genera para
+él, y ese campo es lo que lee el clasificador. No hace falta nada más: <code>CourseStatistics</code> (Ejemplo 4.3) ya
+está completa.</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">courseCode = reference.public (DECLARED) Protection[natures=[NONE], confidentiality=PUBLIC, integrity=MEDIUM, secret=false]
+averageMark = user.education.grade (DECLARED) Protection[natures=[NONE], confidentiality=MEDIUM, integrity=HIGH, secret=false]
+passed = user.education.grade (DECLARED) Protection[natures=[NONE], confidentiality=MEDIUM, integrity=HIGH, secret=false]
+</code></pre>
+<p>Tres detalles completan el cuadro. Un record admite <code>@DefaultCategory</code> como cualquier clase. El recorrido
+de la jerarquía se detiene antes de <code>java.lang.Record</code>. Y el clasificador examina campos, no métodos: un
+método que calcula un valor sin guardarlo en un campo no tiene nada que clasificar.</p>
+
+<h2 id="elegir-la-clave">Elegir la clave adecuada</h2>
+<p>La anotación más precisa no sirve si la clave no describe el dato. Elegir la clave es la decisión que más importa de
+este capítulo, y se toma una vez por campo. Sigue este procedimiento:</p>
+<ol>
+<li>Describe en una frase qué guarda el campo y de quién: «la fecha en que nació el estudiante», «el código de una
+asignatura del catálogo».</li>
+<li>Decide si el valor se refiere a una persona. Si se refiere, la clave estará bajo <code>user</code>; si no, bajo
+<code>system</code>, <code>org</code> o <code>reference</code>.</li>
+<li>Busca en <code>Categories</code> (y en las constantes de la extensión que aplique tu aplicación) la clave más
+específica que sea cierta para todas las filas.</li>
+<li>Comprueba la protección de esa categoría con <code>taxonomy.requireCategory(clave).protection()</code>.</li>
+<li>Si tu contexto exige más, eleva el nivel en el campo; si el valor está seudonimizado, anonimizado o agregado,
+declara su identificabilidad.</li>
+<li>Si ninguna clave encaja, no fuerces una incorrecta: propón un término nuevo en una extensión
+(<a href="09-extensiones.html">capítulo 9</a>).</li>
+<li>Escribe la clave con la constante, no con una cadena.</li>
+</ol>
+<p>Algunas pautas resuelven la mayoría de los casos de la universidad:</p>
+<ul>
+<li><strong>Clasifica lo que es el valor, no dónde está.</strong> El correo de un empleado en <code>Staff</code> es
+<code>USER_CONTACT_EMAIL</code>, igual que el de un estudiante.</li>
+<li><strong>El contexto puede convertir un código en un dato personal.</strong> Un código de titulación aislado es un
+dato público de referencia; en <code>Enrollment</code> dice qué estudia este estudiante, y es
+<code>USER_EDUCATION_PROGRAM</code>.</li>
+<li><strong>Ante la duda entre dos claves, elige la más protectora</strong>, o usa <code>@CategoryByRow</code> si la
+categoría cambia de verdad de una fila a otra (<a href="05-estructuras.html">capítulo 5</a>).</li>
+</ul>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-4-5">
+<table>
+<caption id="tabla-4-5">Tabla 4.5. Claves para situaciones frecuentes</caption>
+<thead>
+<tr><th scope="col">Situación</th><th scope="col">Clave</th><th scope="col">Ejemplo en la universidad</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Clave primaria de una tabla sobre una persona</th><td><code>USER_UNIQUE_ID</code></td>
+<td><code>Student.id</code>, <code>Staff.id</code></td></tr>
+<tr><th scope="row">Identificador de un registro sobre una persona, o clave ajena a él</th>
+<td><code>USER_UNIQUE_ID_RECORD_REFERENCE</code></td><td><code>Enrollment.id</code>,
+<code>Enrollment.studentId</code></td></tr>
+<tr><th scope="row">Identificador seudónimo</th><td><code>USER_UNIQUE_ID_PSEUDONYMOUS</code> con
+<code>PSEUDONYMIZED</code></td><td><code>Student.analyticsId</code></td></tr>
+<tr><th scope="row">Usuario que creó o modificó una fila</th><td><code>USER_ACCOUNT_USERNAME</code></td>
+<td><code>AuditedEntity.createdBy</code></td></tr>
+<tr><th scope="row">Texto libre escrito por una persona o sobre ella</th><td><code>USER_CONTENT_PRIVATE</code></td>
+<td><code>Student.counsellingNotes</code>, <code>Document.title</code></td></tr>
+<tr><th scope="row">Contraseña o su hash</th><td><code>USER_AUTHORIZATION_PASSWORD</code> (secreto)</td>
+<td><code>Staff.passwordHash</code></td></tr>
+<tr><th scope="row">Clave de API o de firma de un sistema</th><td><code>SYSTEM_AUTHENTICATION_SECRET</code> (secreto)
+</td><td>la clave del servicio de firma de actas</td></tr>
+<tr><th scope="row">Resumen criptográfico para detectar manipulaciones</th><td><code>SYSTEM_INTEGRITY</code></td>
+<td><code>Attachment.sha256</code></td></tr>
+<tr><th scope="row">Columnas técnicas sin datos personales</th><td>valor por defecto <code>SYSTEM_OPERATIONS</code>
+</td><td><code>AuditedEntity.createdAt</code></td></tr>
+<tr><th scope="row">Código de un catálogo público</th><td><code>REFERENCE_PUBLIC</code></td>
+<td><code>CourseStatistics.courseCode</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="extension-universitaria">Claves de la extensión universitaria</h3>
+<p>Linneo incluye una extensión opcional para la enseñanza superior, <code>UniversityTaxonomy</code>, con sus constantes
+en <code>UniversityCategories</code>. Añade, por ejemplo, <code>user.education.advising</code> (orientación académica),
+con confidencialidad <code>HIGH</code>: con ella, las notas de orientación tendrían una clave propia y no haría falta
+elevar el nivel en el campo. La extensión no se aplica sola, ni siquiera con <code>Taxonomy.load()</code>: hay que
+añadirla al construir la taxonomía o registrarla en la aplicación (<a href="09-extensiones.html">capítulo 9</a>).</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy university = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
+</code></pre>
+<p>Con esa taxonomía, un campo anotado con <code>UniversityCategories.USER_EDUCATION_ADVISING</code> se clasifica
+así:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">text = user.education.advising (DECLARED) Protection[natures=[ORDINARY], confidentiality=HIGH, integrity=HIGH, secret=false]
+</code></pre>
+<p>Con la taxonomía estándar, la misma clave es desconocida:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNKNOWN_CATEGORY edu.example.university.AdvisingNote.text: unknown data category 'user.education.advising'
+</code></pre>
+<p>El modelo de este curso usa las claves estándar. Si tu aplicación adopta la extensión, el test y la aplicación deben
+construir la taxonomía de la misma forma.</p>
+
+<h3 id="constantes">Constantes, no cadenas</h3>
+<p><code>value</code> es un <code>String</code>, así que el compilador acepta cualquier texto. Una errata en una cadena,
+como <code>@Category("user.contact.mail")</code>, compila y solo se detecta al verificar:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNKNOWN_CATEGORY edu.example.university.Student.personalEmail: unknown data category 'user.contact.mail'
+</code></pre>
+<p>Con la constante, la misma errata (<code>USER_CONTACT_MAIL</code>) no compila, y el entorno de desarrollo te ofrece
+las claves existentes al escribir. Reserva las cadenas para claves de extensiones propias que todavía no tengan
+constantes.</p>
+
+<h2 id="modelo-universidad">El modelo de la universidad hasta este punto</h2>
+<p>Con lo visto en este capítulo, el modelo de la universidad tiene siete clases: <code>AuditedEntity</code> y
+<code>MenuGroup</code> (Ejemplos 4.5 y 4.4), <code>CourseStatistics</code> (Ejemplo 4.3) y las cuatro entidades
+siguientes. El <a href="05-estructuras.html">capítulo 5</a> añade los documentos, los adjuntos y las direcciones.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.8. Student completa</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Student extends AuditedEntity {
+
+    @Category(USER_UNIQUE_ID)
+    private Long id;
+
+    @Category(USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER)
+    private String nationalId;
+
+    @Category(USER_NAME_FIRST)
+    private String firstName;
+
+    @Category(USER_NAME_LAST)
+    private String lastName;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    @Category(USER_DEMOGRAPHIC_DATE_OF_BIRTH)
+    private LocalDate dateOfBirth;
+
+    @Category(USER_HEALTH_AND_MEDICAL_DISABILITY)
+    private Integer disabilityDegree;
+
+    @Category(value = USER_UNIQUE_ID_PSEUDONYMOUS, identifiability = Identifiability.PSEUDONYMIZED)
+    private String analyticsId;
+
+    @Category(USER_EDUCATION_STATUS)
+    private String academicStatus;
+
+    @Category(value = USER_CONTENT_PRIVATE, confidentiality = Confidentiality.HIGH)
+    private String counsellingNotes;
+}
+</code></pre>
+</figure>
+<figure class="ejemplo">
+<figcaption>Ejemplo 4.9. Enrollment, Grade y Staff</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Enrollment extends AuditedEntity {
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)     // identificador de un registro sobre un estudiante
+    private Long id;
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long studentId;
+
+    @Category(USER_EDUCATION_PROGRAM)
+    private String programCode;
+
+    @Category(USER_EDUCATION_ENROLLMENT)
+    private String academicYear;
+
+    @Category(USER_FINANCIAL_FEE)
+    private BigDecimal tuitionFee;
+
+    @Category(USER_FINANCIAL_SCHOLARSHIP)
+    private String scholarshipType;
+}
+
+public class Grade extends AuditedEntity {
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long enrollmentId;
+
+    @Category(USER_EDUCATION_COURSE_HISTORY)
+    private String courseCode;
+
+    @Category(USER_EDUCATION_GRADE)
+    private BigDecimal mark;
+}
+
+public class Staff extends AuditedEntity {
+
+    @Category(USER_UNIQUE_ID)
+    private Long id;
+
+    @Category(USER_NAME)
+    private String fullName;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String workEmail;
+
+    @Category(USER_JOB_TITLE)
+    private String jobTitle;
+
+    @Category(USER_WORKPLACE_UNIT)
+    private String department;
+
+    @Category(USER_GOVERNMENT_ID_SOCIAL_SECURITY_NUMBER)
+    private String socialSecurityNumber;
+
+    @Category(USER_FINANCIAL_BANK_ACCOUNT)
+    private String iban;
+
+    @Category(USER_CRIMINAL_HISTORY)                // certificado negativo de delitos sexuales
+    private Boolean sexOffenceCertificateClear;
+
+    @Category(USER_AUTHORIZATION_PASSWORD)
+    private String passwordHash;
+}
+</code></pre>
+</figure>
+<p>El campo <code>sexOffenceCertificateClear</code> merece un comentario. La universidad necesita confirmar que el
+personal que trabaja con menores no tiene condenas por delitos sexuales; aunque el campo sea un booleano, dice algo
+sobre condenas penales, y por eso es <code>user.criminal_history</code>, de naturaleza <code>CRIMINAL_OFFENCE</code>. Un
+booleano derivado de un dato conserva la naturaleza del dato.</p>
+<p>Las siete clases se verifican sin errores. La Tabla 4.6 resume el resultado real de clasificarlas.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-4-6">
+<table>
+<caption id="tabla-4-6">Tabla 4.6. Clasificación del modelo al final del capítulo 4</caption>
+<thead>
+<tr><th scope="col">Clase</th><th scope="col">Campos clasificados</th><th scope="col">Personales</th>
+<th scope="col">Exentos</th><th scope="col">Protección más exigente</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>MenuGroup</code></th><td>5</td><td>0</td><td>1</td><td>no personal, <code>LOW</code>,
+<code>HIGH</code></td></tr>
+<tr><th scope="row"><code>Student</code></th><td>14</td><td>11</td><td>0</td><td>categoría especial, <code>HIGH</code>,
+<code>HIGH</code></td></tr>
+<tr><th scope="row"><code>Enrollment</code></th><td>10</td><td>7</td><td>0</td><td>ordinaria, <code>MEDIUM</code>,
+<code>HIGH</code></td></tr>
+<tr><th scope="row"><code>Grade</code></th><td>7</td><td>4</td><td>0</td><td>ordinaria, <code>MEDIUM</code>,
+<code>HIGH</code></td></tr>
+<tr><th scope="row"><code>Staff</code></th><td>13</td><td>10</td><td>0</td><td>datos penales, <code>HIGH</code>,
+<code>HIGH</code>, secreto</td></tr>
+<tr><th scope="row"><code>CourseStatistics</code></th><td>3</td><td>0</td><td>0</td><td>no personal,
+<code>MEDIUM</code>, <code>HIGH</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>AuditedEntity</code> no aparece en la tabla porque no se verifica por separado: sus campos se clasifican como
+parte de cada entidad. Los campos de las entidades incluyen los cuatro heredados de ella. La última columna es la
+protección que cubre todos los campos de la clase (<code>ClassClassification.ceiling()</code>, capítulo 7).</p>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Olvidar <code>value =</code> al añadir un nivel</dt>
+<dd><code>@Category(USER_NAME, confidentiality = Confidentiality.HIGH)</code> no compila. Escribe <code>@Category(value
+= USER_NAME, confidentiality = Confidentiality.HIGH)</code>.</dd>
+<dt>Rebajar un nivel porque «nuestros datos no son tan sensibles»</dt>
+<dd>El clasificador informa de <code>LOWERED_LEVEL</code> y deja el campo sin clasificar. Los niveles de la categoría
+son un suelo; plantea la discusión en la revisión de la taxonomía, no en el campo.</dd>
+<dt>Poner una categoría personal en <code>@DefaultCategory</code> para ahorrar anotaciones</dt>
+<dd>Se rechaza con <code>PERSONAL_DEFAULT</code> a propósito. Anota los campos personales uno a uno y deja el valor por
+defecto para los técnicos.</dd>
+<dt>Esperar que el valor por defecto de una superclase cubra los campos de las subclases</dt>
+<dd><code>@DefaultCategory</code> no se hereda. Cada campo propio de la subclase necesita su anotación o un valor por
+defecto en la propia subclase.</dd>
+<dt>Usar <code>identifiability</code> con una clave no personal</dt>
+<dd><code>IDENTIFIABILITY_NOT_APPLICABLE</code>. Quita el elemento o revisa si la clave es la correcta.</dd>
+<dt>Eximir un valor calculado o una relación con registros de personas</dt>
+<dd>Un valor calculado se declara con <code>@DerivedFrom</code> o <code>@Category</code>; una relación con registros que
+contienen datos personales, con <code>@DerivedFrom(type = …, value = "id")</code>. La segunda produce
+<code>CONFLICTING_ANNOTATIONS</code>; la primera solo la detecta la revisión.</dd>
+<dt>Confiar en <code>@Transient</code> de JPA</dt>
+<dd>Solo el modificador Java <code>transient</code> excluye un campo. Añade <code>@Exempt</code> con su motivo.</dd>
+<dt>Reutilizar en una subclase el nombre de un campo heredado</dt>
+<dd><code>DUPLICATE_FIELD</code>. Renombra uno de los dos campos.</dd>
+<dt>Escribir las claves como cadenas</dt>
+<dd>Una errata solo aparece al verificar (<code>UNKNOWN_CATEGORY</code>). Con las constantes de <code>Categories</code>,
+no compila.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>El clasificador lee anotaciones, nunca valores. Lo que declaras es lo único que sabe.</li>
+<li><code>@Category</code> elige la categoría; la taxonomía aporta la protección. Un campo puede elevar la
+confidencialidad o la integridad, nunca rebajarlas (<code>LOWERED_LEVEL</code>).</li>
+<li>Los elementos opcionales son arrays con un valor como mucho; con más de un elemento, <code>value =</code> es
+obligatorio.</li>
+<li>La identificabilidad es del campo: <code>PSEUDONYMIZED</code> sigue siendo personal; <code>ANONYMIZED</code> y
+<code>AGGREGATED</code> pierden la naturaleza personal, pero conservan los niveles y el secreto.</li>
+<li>El secreto lo decide la categoría; <code>@Category</code> no puede ni añadirlo ni quitarlo.</li>
+<li><code>@DefaultCategory</code> es una afirmación positiva con motivo sobre una categoría no personal. No se hereda y
+cubre los campos de la clase que lo declara y, cuando esa clase se clasifica, los heredados sin valor por defecto.</li>
+<li><code>@Exempt</code> es para campos que no contienen datos del modelo, con un motivo que se revisa; nunca para
+valores calculados, relaciones con registros de personas ni compuestos.</li>
+<li>Se excluyen solos los campos <code>static</code>, sintéticos, <code>$$_…</code>, <code>$lock</code> y
+<code>transient</code> sin anotación de Linneo.</li>
+<li>Elige la clave más específica que sea cierta para todas las filas y escríbela con su constante.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Encuentra los fallos.</strong> Cada línea marcada de esta clase tiene un problema. Identifícalo, indica si es
+un error de compilación o de clasificación y corrígelo.</p>
+<!-- unchecked: ejercicio con errores a propósito, uno de ellos de compilación -->
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = USER_CONTACT, reason = "")
+public class ContactPreferences {
+
+    @Category(USER_CONTACT_EMAIL, confidentiality = Confidentiality.HIGH)
+    private String email;
+
+    @Category(value = SYSTEM_CONFIGURATION, identifiability = Identifiability.PSEUDONYMIZED)
+    private String theme;
+
+    @Category(value = USER_NAME, integrity = {Integrity.MEDIUM, Integrity.HIGH})
+    private String name;
+
+    @jakarta.persistence.Transient
+    private String renderCache;
+}
+</code></pre>
+<details><summary>Solución del ejercicio 1</summary>
+<ul>
+<li>La clase: <code>user.contact</code> es personal (<code>PERSONAL_DEFAULT</code>) y el motivo está vacío
+(<code>MISSING_REASON</code>). Quita el valor por defecto y anota los campos personales uno a uno.</li>
+<li><code>email</code>: no compila. Escribe <code>@Category(value = USER_CONTACT_EMAIL, confidentiality =
+Confidentiality.HIGH)</code>.</li>
+<li><code>theme</code>: identificabilidad en una clave no personal (<code>IDENTIFIABILITY_NOT_APPLICABLE</code>). Quita
+<code>identifiability</code>.</li>
+<li><code>name</code>: dos valores (<code>AMBIGUOUS_VALUE</code>). Deja uno, por ejemplo <code>integrity =
+Integrity.HIGH</code>.</li>
+<li><code>renderCache</code>: el <code>@Transient</code> de JPA no lo excluye. Mientras el valor por defecto sea
+personal, el campo queda sin clasificar sin un error propio, porque el problema se informa una vez en la clase; en
+cuanto quites ese valor por defecto, será un <code>UNCLASSIFIED_FIELD</code>. Añade <code>@Exempt("caché de
+renderizado, se reconstruye bajo demanda")</code> o declara el campo <code>transient</code> de Java si no debe
+persistirse.</li>
+</ul>
+</details>
+</li>
+<li>
+<p><strong>Aulas.</strong> Anota la clase <code>Room</code>, que describe las aulas del campus. El campo
+<code>bookedBy</code> guarda el nombre de usuario de la persona que reservó el aula por última vez, y
+<code>layoutCache</code> es una caché en memoria del plano que nunca se guarda.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Room {
+    private Long id;
+    private String code;
+    private int capacity;
+    private String bookedBy;
+    private Map&lt;String, Object&gt; layoutCache;
+}
+</code></pre>
+<details><summary>Solución del ejercicio 2</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = ORG_LOCATION, reason = "aulas y espacios del campus")
+public class Room {
+
+    private Long id;
+    private String code;
+    private int capacity;
+
+    @Category(USER_ACCOUNT_USERNAME)                     // una persona: se declara campo a campo
+    private String bookedBy;
+
+    private transient Map&lt;String, Object&gt; layoutCache;   // no se guarda: transient de Java
+}
+</code></pre>
+<p>Un aula no es un dato personal, así que el valor por defecto de la clase es una categoría de la organización. El
+nombre de usuario de quien reservó sí lo es, y el valor por defecto no puede cubrirlo. La caché puede ser
+<code>transient</code>; si no puedes cambiar el modificador, usa <code>@Exempt</code> con su motivo. Fíjate en que
+<code>Map&lt;String, Object&gt;</code> sin anotar y sin <code>transient</code> sería un error aunque la clase tenga
+valor por defecto, porque puede contener cualquier valor (capítulo 5).</p>
+</details>
+</li>
+<li>
+<p><strong>Niveles.</strong> La categoría <code>user.education.grade</code> tiene confidencialidad <code>MEDIUM</code> e
+integridad <code>HIGH</code>. Para cada declaración de <code>Grade.mark</code>, indica si es válida y qué protección
+efectiva resulta: (a) <code>confidentiality = Confidentiality.HIGH</code>; (b) <code>integrity =
+Integrity.MEDIUM</code>; (c) <code>confidentiality = Confidentiality.MEDIUM</code>; (d) <code>identifiability =
+Identifiability.AGGREGATED</code>.
+</p>
+<details><summary>Solución del ejercicio 3</summary>
+<p>(a) Válida: confidencialidad <code>HIGH</code>, integridad <code>HIGH</code>. (b) Error <code>LOWERED_LEVEL</code>:
+<code>integrity MEDIUM is lower than the HIGH of 'user.education.grade'</code>; el campo queda sin clasificar. (c)
+Válida, pero no añade protección: igual al nivel de la categoría. (d) Válida en una categoría personal, pero cambia el
+significado: el campo dejaría de ser un dato personal (naturaleza <code>NONE</code>, con <code>MEDIUM</code> y
+<code>HIGH</code>). En <code>Grade</code>, donde cada fila es la nota de un estudiante, sería falso.</p>
+</details>
+</li>
+<li>
+<p><strong>¿Exento o no?</strong> Para cada campo, elige entre <code>@Category</code>, <code>@Exempt</code>, un valor
+por defecto de la clase o nada, y justifica: (a) un <code>transient Object lock</code> que sincroniza el acceso; (b) un
+<code>List&lt;Building&gt; buildings</code> en una clase <code>Campus</code> con valor por defecto, donde
+<code>Building</code> es un catálogo sin datos personales; (c) un <code>List&lt;Attachment&gt; attachments</code>; (d)
+un campo <code>String initials</code> calculado a partir del nombre.</p>
+<details><summary>Solución del ejercicio 4</summary>
+<p>(a) Nada: un campo <code>transient</code> sin anotación se excluye solo. (b) Nada: una referencia a registros sin
+datos personales toma el valor por defecto de la clase; también admitiría <code>@Exempt</code>. (c) Ni
+<code>@Exempt</code> ni valor por defecto: <code>Attachment</code> contiene datos personales. Declara
+<code>@DerivedFrom(type = Attachment.class, value = "id")</code>. (d) No es una exención: es un dato personal derivado.
+Usa <code>@DerivedFrom("fullName")</code> o la clave adecuada con <code>@Category</code> (capítulo 5).</p>
+</details>
+</li>
+<li>
+<p><strong>Predice la salida.</strong> <code>AuditedEntity</code> pierde su <code>@DefaultCategory</code>, y
+<code>MenuGroup</code> pasa a extender <code>AuditedEntity</code> manteniendo su propio valor por defecto
+<code>SYSTEM_CONFIGURATION</code>. ¿Qué ocurre al clasificar <code>Student</code>? ¿Y al clasificar
+<code>MenuGroup</code>?</p>
+<details><summary>Solución del ejercicio 5</summary>
+<p><code>Student</code> no tiene valor por defecto propio, así que <code>createdAt</code>, <code>updatedAt</code> y
+<code>version</code> son tres errores <code>UNCLASSIFIED_FIELD</code> con el mensaje <code>no @Category on the field and
+no @DefaultCategory on AuditedEntity or Student</code>. <code>MenuGroup</code> sí tiene valor por defecto y es la clase
+que se clasifica, así que cubre los campos heredados sin anotar: los tres pasan a ser <code>system.configuration</code>,
+con <code>AuditedEntity</code> como clase declarante. <code>createdBy</code> conserva su <code>@Category</code>.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>Un campo declara <code>@Category(value = USER_CONTENT_PRIVATE, confidentiality = Confidentiality.LOW)</code>. ¿Qué
+ocurre?</p>
+<ol>
+<li>El campo se clasifica con confidencialidad <code>LOW</code>.</li>
+<li>El código no compila.</li>
+<li>El clasificador informa de <code>LOWERED_LEVEL</code> y el campo queda sin clasificar.</li>
+<li>El clasificador emite un aviso y usa el nivel de la categoría.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La c. <code>user.content.private</code> tiene confidencialidad <code>MEDIUM</code> y un nivel solo puede subir. No es
+un aviso (d) sino un error, y el código compila (b) porque la anotación es sintácticamente correcta. El nivel nunca se
+aplica (a).</p>
+</details>
+</li>
+<li>
+<p>¿Cómo se marca como secreto un campo que guarda un token de acceso?</p>
+<ol>
+<li>Con un elemento <code>secret = true</code> en <code>@Category</code>.</li>
+<li>Eligiendo una categoría secreta, como <code>user.authorization.credentials</code>.</li>
+<li>Con <code>confidentiality = Confidentiality.HIGH</code>.</li>
+<li>Con <code>@Exempt</code>, para que nunca se exporte.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La b. El secreto es una propiedad de la categoría y <code>@Category</code> no tiene ningún elemento para declararlo
+(a). Elevar la confidencialidad (c) no lo convierte en secreto. Eximirlo (d) lo sacaría de la clasificación, justo lo
+contrario de lo que se busca.</p>
+</details>
+</li>
+<li>
+<p><code>AuditedEntity</code> tiene <code>@DefaultCategory(value = SYSTEM_OPERATIONS, reason = …)</code> y
+<code>Student</code>, que la extiende, no tiene valor por defecto. ¿Qué recibe un campo sin anotar declarado en
+<code>Student</code>?</p>
+<ol>
+<li><code>system.operations</code>, heredado de <code>AuditedEntity</code>.</li>
+<li>Un error <code>UNCLASSIFIED_FIELD</code>.</li>
+<li>Un aviso <code>DEPRECATED_CATEGORY</code>.</li>
+<li>La categoría del primer campo anotado de <code>Student</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La b. <code>@DefaultCategory</code> no se hereda: cubre los campos que declara <code>AuditedEntity</code>, no los de
+sus subclases (a). No existe ninguna regla que tome la categoría de otro campo (d), y un aviso (c) solo se produce con
+claves obsoletas.</p>
+</details>
+</li>
+<li>
+<p>¿Cuál de estos campos se excluye del clasificador sin ninguna anotación?</p>
+<ol>
+<li>Un campo anotado con <code>@jakarta.persistence.Transient</code>.</li>
+<li>Un campo <code>private transient String cache</code>.</li>
+<li>Un campo <code>private transient String displayName</code> con <code>@Category(USER_NAME)</code>.</li>
+<li>Un campo <code>private Object handle</code> en una clase con valor por defecto.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La b. El modificador Java <code>transient</code> excluye el campo si no lleva una anotación de Linneo; con ella (c)
+se clasifica. La anotación de JPA (a) no es el modificador. Un <code>Object</code> (d) no se excluye y tampoco toma el
+valor por defecto: es un error si no se anota.</p>
+</details>
+</li>
+<li>
+<p>¿Por qué <code>CourseStatistics.averageMark</code>, declarado <code>AGGREGATED</code>, no es un dato personal y aun
+así tiene confidencialidad <code>MEDIUM</code>?</p>
+<ol>
+<li>Porque la identificabilidad solo cambia la naturaleza jurídica; los niveles siguen siendo los de la categoría.</li>
+<li>Porque los records siempre tienen confidencialidad <code>MEDIUM</code>.</li>
+<li>Porque <code>AGGREGATED</code> eleva la confidencialidad.</li>
+<li>Por un error del clasificador que conviene corregir con <code>confidentiality</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La a. Un valor agregado deja de apuntar a una persona, así que su naturaleza pasa a <code>NONE</code>, pero conserva
+la confidencialidad y la integridad de <code>user.education.grade</code>. Los records no tienen niveles propios (b),
+<code>AGGREGATED</code> no eleva nada (c) y el comportamiento es el previsto (d).</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li>Capítulo siguiente: <a href="05-estructuras.html">Filas, derivados, compuestos y referencias</a>.</li>
+<li><a href="06-verificacion.html">Capítulo 6. Verificar en los tests</a>: cómo convertir estas anotaciones en un
+control de la compilación.</li>
+<li><a href="07-uso.html">Capítulo 7. Usar la clasificación</a>: <code>ClassClassification</code>,
+<code>FieldClassification</code> y la política de divulgación.</li>
+<li>Referencia: <a href="../../reference/annotations/">visión general de las anotaciones</a>,
+<a href="../../reference/annotations/category.html">@Category</a>,
+<a href="../../reference/annotations/default-category.html">@DefaultCategory</a> y
+<a href="../../reference/annotations/exempt.html">@Exempt</a>.</li>
+<li>Referencia: <a href="../../reference/classify/classifier.html">Classifier</a>, con el detalle de los campos que se
+examinan, y <a href="../../reference/key-constants.html">constantes de claves</a>.</li>
+<li>Referencia: <a href="../../reference/extensions/university.html">extensión universitaria</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="03-taxonomia.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 3. La taxonomía</a></li>
+<li><a href="05-estructuras.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 5. Filas, derivados, compuestos y referencias</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/Taxonomy.java
+  - src/main/java/io/github/devbpm/linneo/Term.java
+  - src/main/java/io/github/devbpm/linneo/TermInfo.java
+  - src/main/java/io/github/devbpm/linneo/DataCategory.java
+  - src/main/java/io/github/devbpm/linneo/DataUse.java
+  - src/main/java/io/github/devbpm/linneo/DataSubject.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyException.java
+  - src/main/java/io/github/devbpm/linneo/Categories.java
+  - src/main/java/io/github/devbpm/linneo/DataUses.java
+  - src/main/java/io/github/devbpm/linneo/DataSubjects.java
+  - src/main/java/io/github/devbpm/linneo/internal/StandardTaxonomy.java
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-category-policy.tsv
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-traits.tsv
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-data-categories.tsv
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-data-uses.tsv
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-data-subjects.tsv
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 3. La taxonomía · Curso de Linneo</title>
+<meta name="description" content="De dónde vienen los términos, cómo se organizan en tres jerarquías, cómo viaja la protección y cómo se consulta la taxonomía.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html" aria-current="page"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 3. La taxonomía</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 3</span> La taxonomía</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>75 minutos</dd></div>
+<div><dt>Parte I:</dt><dd>Fundamentos</dd></div>
+</dl>
+<p class="entradilla">Toda anotación de Linneo nombra una clave de la taxonomía, y toda regla jurídica de la
+biblioteca lee lo que la taxonomía dice de esa clave. Este capítulo explica de dónde salen los términos, cómo se
+organizan, cómo viajan la protección y los rasgos por el árbol, cómo se consulta la taxonomía desde el código y cómo
+elegir la clave adecuada para un campo.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#de-donde-vienen">De dónde vienen los términos</a></li>
+<li><a href="#tres-jerarquias">Las tres jerarquías</a></li>
+<li><a href="#claves-con-puntos">Claves con puntos y padre por prefijo</a></li>
+<li><a href="#constantes-de-clave">Constantes de clave generadas</a></li>
+<li><a href="#proteccion-heredada">La protección viaja con la categoría</a></li>
+<li><a href="#rasgos">Rasgos</a></li>
+<li><a href="#api-taxonomy">La API de <code>Taxonomy</code></a></li>
+<li><a href="#claves-obsoletas">Claves obsoletas y <code>replaced_by</code></a></li>
+<li><a href="#recorrido">Un recorrido por la taxonomía estándar</a></li>
+<li><a href="#elegir-una-clave">Cómo elegir una clave</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>explicar qué aporta fideslang y qué añade Linneo a la taxonomía estándar;</li>
+<li>distinguir las tres jerarquías (categorías, usos y sujetos de datos) y decir cuál describe un campo y cuáles una
+actividad de tratamiento;</li>
+<li>leer una clave con puntos, encontrar su madre y sus antepasadas, y usar las constantes generadas en lugar de
+cadenas;</li>
+<li>calcular la protección efectiva de una categoría a partir de la política y la herencia;</li>
+<li>decir qué rasgo tiene un término, de dónde lo hereda y qué regla jurídica lo lee;</li>
+<li>usar la <abbr title="interfaz de programación de aplicaciones">API</abbr> de <code>Taxonomy</code> para buscar,
+recorrer y resolver términos, incluidos los obsoletos;</li>
+<li>elegir la clave más específica para un campo del modelo de la universidad y justificar la elección.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Necesitas el vocabulario del <a href="02-proteccion.html">capítulo 2</a>: la naturaleza jurídica
+(<code>LegalNature</code>), la confidencialidad, la integridad, el secreto y el tipo <code>Protection</code>. Los
+ejemplos usan las constantes de clave de <code>Categories</code>, <code>DataUses</code> y <code>DataSubjects</code>
+con <code>import static</code>, y una variable <code>taxonomy</code> que contiene
+<code>Taxonomy.standard()</code>.</p>
+
+<h2 id="de-donde-vienen">De dónde vienen los términos</h2>
+<p>Una <dfn>taxonomía</dfn> es un vocabulario controlado: un conjunto de términos con una clave única, un nombre, una
+descripción y un lugar en un árbol. Linneo no inventa el suyo desde cero. Incluye completa la taxonomía por defecto de
+<a href="https://github.com/ethyca/fideslang">fideslang</a>, una taxonomía abierta para la ingeniería de la privacidad
+publicada por Ethyca con licencia CC BY 4.0, y le añade términos propios donde fideslang no llega: los datos
+académicos, los datos no personales de la organización, los datos de referencia y las categorías del artículo 9 del
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr> que fideslang no tiene.</p>
+<p>La versión de fideslang incluida es la que fija la constante <code>StandardTaxonomy.FIDESLANG_VERSION</code>, hoy
+<code>"3.1.4"</code>. <code>StandardTaxonomy</code> está en el paquete <code>internal</code>, que el módulo no
+exporta: la constante documenta la versión, no es una API para tu código.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-3-1">
+<table>
+<caption id="tabla-3-1">Tabla 3.1. Composición de la taxonomía estándar</caption>
+<thead>
+<tr><th scope="col">Jerarquía</th><th scope="col">fideslang 3.1.4</th><th scope="col">Añadidos de Linneo</th>
+<th scope="col">Total</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Categorías de datos</th><td>85</td><td>41</td><td>126</td></tr>
+<tr><th scope="row">Usos de datos</th><td>56</td><td>7</td><td>63</td></tr>
+<tr><th scope="row">Sujetos de datos</th><td>15</td><td>7</td><td>22</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Puedes comprobar las cifras desde el código. Cada término registra su <dfn>origen</dfn> en
+<code>TermInfo.origin()</code>:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.1. El tamaño de la taxonomía estándar y el origen de sus categorías</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.standard();
+System.out.println(taxonomy);
+Map&lt;String, Long&gt; byOrigin = taxonomy.categories().stream()
+        .collect(Collectors.groupingBy(c -&gt; c.info().origin(), TreeMap::new, Collectors.counting()));
+System.out.println(byOrigin);
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Taxonomy[126 data categories, 63 data uses, 22 data subjects]
+{fideslang=85, linneo=41}
+</code></pre>
+
+<p>Los valores posibles del origen son <code>"fideslang"</code> (constante <code>TermInfo.FIDESLANG</code>),
+<code>"linneo"</code> (<code>TermInfo.LINNEO</code>), el nombre de una extensión (capítulo 9) o el origen que fije
+quien construye la taxonomía, por defecto <code>"application"</code>.</p>
+
+<h3 id="los-ficheros">Los ficheros de la taxonomía estándar</h3>
+<p>La taxonomía estándar se carga desde ficheros separados por tabuladores
+(<abbr title="valores separados por tabuladores">TSV</abbr>) incluidos en el
+<abbr title="Java ARchive">JAR</abbr>, bajo
+<code>io/github/devbpm/linneo/internal/</code>:</p>
+<ul>
+<li><code>fideslang-data-categories.tsv</code>, <code>fideslang-data-uses.tsv</code> y
+<code>fideslang-data-subjects.tsv</code>: los términos de fideslang sin cambios en claves, madres, nombres ni
+descripciones. Los regenera un script del repositorio y no se editan a mano.</li>
+<li><code>linneo-data-categories.tsv</code>, <code>linneo-data-uses.tsv</code> y
+<code>linneo-data-subjects.tsv</code>: los términos que añade Linneo. Nunca redefinen una clave de fideslang.</li>
+<li><code>linneo-category-policy.tsv</code>: la protección de las categorías. fideslang no define niveles de
+protección; todos salen de este fichero.</li>
+<li><code>linneo-traits.tsv</code>: los rasgos de los términos estándar, con las fuentes jurídicas de las reglas que
+los leen en su cabecera.</li>
+</ul>
+<p>El cargador comprueba al leer cada término que la madre declarada coincide con la que implica su clave, y falla si
+no. Es la primera muestra de un principio que recorre el capítulo: la taxonomía se valida al construirse, nunca al
+usarse.</p>
+
+<h2 id="tres-jerarquias">Las tres jerarquías</h2>
+<p>Una taxonomía de Linneo tiene tres árboles independientes. Cada nodo es un <dfn>término</dfn>, la interfaz sellada
+<code>Term</code>, que solo admite tres implementaciones:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-3-2">
+<table>
+<caption id="tabla-3-2">Tabla 3.2. Las tres jerarquías de una taxonomía</caption>
+<thead>
+<tr><th scope="col">Tipo</th><th scope="col">Responde a</th><th scope="col">Describe</th>
+<th scope="col">Ejemplo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>DataCategory</code></th><td>¿Qué contiene?</td>
+<td>un campo del modelo; lleva la protección</td><td><code>user.education.grade</code></td></tr>
+<tr><th scope="row"><code>DataUse</code></th><td>¿Para qué se trata?</td>
+<td>la finalidad de una actividad de tratamiento</td><td><code>education.assessment</code></td></tr>
+<tr><th scope="row"><code>DataSubject</code></th><td>¿De quién son los datos?</td>
+<td>la categoría de interesados de una actividad</td><td><code>student</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Solo las categorías de datos describen campos, y por eso solo ellas tienen anotaciones y facetas de protección. Un
+uso de datos (en el lenguaje del RGPD, una finalidad) y un sujeto de datos (una categoría de interesados) pertenecen a
+un proceso, no a una columna: aparecen cuando la universidad declara sus actividades de tratamiento, en el
+<a href="11-actividades.html">capítulo 11</a>.</p>
+<p>Los tres son records. <code>DataCategory</code> tiene la información común, las cuatro facetas de protección, unos
+atributos libres y sus rasgos; <code>DataUse</code> y <code>DataSubject</code> tienen solo la información común y sus
+rasgos. Cuando una API necesita nombrar la jerarquía, usa el enumerado <code>TermChange.Hierarchy</code>, con los
+valores <code>DATA_CATEGORY</code>, <code>DATA_USE</code> y <code>DATA_SUBJECT</code>.</p>
+
+<h3 id="lo-comun">Lo que tienen todos los términos</h3>
+<p>El record <code>TermInfo</code> reúne lo que tiene todo término, sea cual sea su jerarquía:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">public record TermInfo(String key, String parentKey, String name, String description, String origin,
+                       String since, String deprecatedSince, String replacedBy)
+</code></pre>
+
+<p><code>key</code>, <code>name</code> y <code>origin</code> son obligatorios; una descripción nula se guarda como
+cadena vacía. <code>parentKey</code> es nulo en una raíz, y <code>parent()</code> lo devuelve como
+<code>Optional</code>. <code>since</code>, <code>deprecatedSince</code> y <code>replacedBy</code> forman el ciclo de
+vida, que se ve al final del capítulo. La interfaz <code>Term</code> añade atajos: <code>key()</code>,
+<code>name()</code>, <code>traits()</code>, <code>has(trait)</code> e <code>isA(ancestorKey)</code>.</p>
+
+<h2 id="claves-con-puntos">Claves con puntos y padre por prefijo</h2>
+<p>Cada término tiene una <dfn>clave</dfn> en notación de puntos: segmentos en minúsculas que empiezan por una letra y
+contienen letras, dígitos y guiones bajos, separados por puntos. La madre de una clave es la clave sin su último
+segmento, y debe existir en la misma jerarquía:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-text">user                              raíz
+user.contact                      madre: user
+user.contact.address              madre: user.contact
+user.contact.address.city         madre: user.contact.address
+user.education.grade              madre: user.education (añadida por Linneo)
+</code></pre>
+
+<p>Esta regla tiene una consecuencia práctica: la posición de un término en el árbol está escrita en su clave. No hay
+una tabla de relaciones aparte que pueda desincronizarse, y cualquiera que lea <code>user.contact.address.city</code>
+en una columna de un catálogo sabe dónde está en el árbol.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.2. La madre, las antepasadas y la relación «es un»</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DataCategory city = taxonomy.requireCategory(USER_CONTACT_ADDRESS_CITY);
+System.out.println(city.info().parentKey());
+System.out.println(taxonomy.ancestorsOf(city).stream().map(DataCategory::key).toList());
+System.out.println(taxonomy.parentOf(taxonomy.requireCategory(USER)).isPresent());
+System.out.println(city.isA(USER_CONTACT) + " " + city.isA("user.con"));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">user.contact.address
+[user.contact.address, user.contact, user]
+false
+true false
+</code></pre>
+
+<p><code>ancestorsOf</code> devuelve la madre primero y la raíz al final. <code>parentOf</code> de una raíz está
+vacío. <code>isA</code> dice si un término es una clave o una de sus descendientes, y compara segmentos completos:
+<code>user.contact.address.city</code> es un <code>user.contact</code>, pero no un <code>user.con</code>.
+<code>isA</code> trabaja solo con la clave; no consulta la taxonomía.</p>
+
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p>No compares claves con <code>startsWith</code>. <code>"user.contact".startsWith("user.con")</code> es cierto y
+haría que un filtro de «todos los datos de contacto» se llevara categorías que no lo son. Usa <code>isA</code>.</p>
+</div>
+
+<h2 id="constantes-de-clave">Constantes de clave generadas</h2>
+<p>Rara vez escribirás una clave como cadena. Las clases <code>Categories</code>, <code>DataUses</code> y
+<code>DataSubjects</code> tienen una constante <code>public static final String</code> por cada clave de la taxonomía
+estándar: 126, 63 y 22 respectivamente. El nombre de la constante es la clave en mayúsculas con cada punto cambiado
+por un guion bajo.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-3-3">
+<table>
+<caption id="tabla-3-3">Tabla 3.3. De la clave a la constante</caption>
+<thead>
+<tr><th scope="col">Clave</th><th scope="col">Constante</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>user</code></th><td><code>Categories.USER</code></td></tr>
+<tr><th scope="row"><code>user.education.grade</code></th><td><code>Categories.USER_EDUCATION_GRADE</code></td></tr>
+<tr><th scope="row"><code>education.assessment</code></th><td><code>DataUses.EDUCATION_ASSESSMENT</code></td></tr>
+<tr><th scope="row"><code>personalize.profiling</code></th><td><code>DataUses.PERSONALIZE_PROFILING</code> (obsoleta,
+conserva su constante)</td></tr>
+<tr><th scope="row"><code>staff_member</code></th><td><code>DataSubjects.STAFF_MEMBER</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Las constantes existen por tres razones:</p>
+<ul>
+<li>Son constantes de compilación, así que pueden usarse como valor de una anotación:
+<code>@Category(USER_EDUCATION_GRADE)</code>.</li>
+<li>Una errata no compila. Un literal mal escrito solo lo detecta el clasificador al ejecutarse, como un error
+<code>UNKNOWN_CATEGORY</code>.</li>
+<li>El entorno de desarrollo las autocompleta, y el Javadoc de cada una muestra el nombre y la descripción del
+término.</li>
+</ul>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.3. Constantes de las tres jerarquías</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">String email = USER_CONTACT_EMAIL;                    // "user.contact.email"
+String grade = USER_EDUCATION_GRADE;                  // "user.education.grade", añadida por Linneo
+String assessment = DataUses.EDUCATION_ASSESSMENT;    // "education.assessment"
+String student = DataSubjects.STUDENT;                // "student"
+</code></pre>
+</figure>
+
+<p>Las tres clases son <strong>código generado</strong>: las escribe el script <code>tools/fideslang/update.py</code>
+a partir de los ficheros de fideslang y de los <code>linneo-*.tsv</code>, y un test de la biblioteca comprueba que
+toda clave tiene constante y toda constante es una clave. Las extensiones incluidas traen sus propias clases de
+constantes (<code>UniversityCategories</code>, <code>FinanceCategories</code>…). Para las claves que añade tu propia
+aplicación no hay constante: usa un literal o declara tus propias constantes (capítulo 9).</p>
+
+<h2 id="proteccion-heredada">La protección viaja con la categoría</h2>
+<p>Una <code>DataCategory</code> lleva su protección: naturaleza, confidencialidad, integridad y secreto, además de
+atributos y rasgos. Los valores que lees de ella son siempre los <dfn>efectivos</dfn>: los que declara la categoría o,
+donde no declara nada, los que hereda.</p>
+<p>La política de protección (<code>linneo-category-policy.tsv</code>) solo enumera las claves que cambian algo. Las
+raíces declaran las cuatro facetas; las demás filas elevan alguna. Un extracto, con las columnas alineadas:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-text">key                            nature            confidentiality  integrity  secret
+user                           ORDINARY          LOW              MEDIUM     false
+user.authorization                               HIGH             HIGH
+user.authorization.password                                                  true
+user.education                                   MEDIUM           HIGH
+user.financial                                   MEDIUM           HIGH
+user.financial.credit_card                       HIGH
+user.government_id                               MEDIUM
+user.government_id.immigration                   HIGH
+user.health_and_medical        SPECIAL_CATEGORY  HIGH             HIGH
+system                         NONE              LOW              LOW        false
+org                            NONE              PUBLIC           LOW        false
+reference                      NONE              PUBLIC           MEDIUM     false
+</code></pre>
+
+<h3 id="reglas-de-herencia">Las reglas de herencia</h3>
+<p>Cuando se construye la taxonomía, las facetas se resuelven de la raíz hacia las hojas con estas reglas:</p>
+<ol>
+<li>Una raíz declara su naturaleza, su confidencialidad y su integridad; si falta alguna, la construcción falla.</li>
+<li>Una hija hereda toda faceta que no declara.</li>
+<li>Toda faceta declarada es un mínimo: un nivel por debajo del de la madre se eleva al de la madre, y una naturaleza
+ordinaria bajo una madre especial o penal toma la de la madre. Una naturaleza que la madre no admite y que no se
+puede conciliar con la suya hace fallar la construcción (<code>LegalNature.admits</code>, capítulo 2).</li>
+<li>Una categoría especial o penal termina siempre con confidencialidad e integridad <code>HIGH</code>.</li>
+<li>El secreto se combina con un O lógico: una categoría es secreta si lo declara o si su madre lo es.</li>
+<li>Los atributos se heredan, y una hija puede sobrescribir el valor de uno.</li>
+<li>Los rasgos se suman: una hija tiene los de su madre y los suyos.</li>
+</ol>
+<p>Como consecuencia, elevar una categoría eleva todo su subárbol, y ninguna categoría queda nunca menos protegida que
+su madre.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.4. Protección efectiva de seis categorías estándar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">for (String key : List.of(USER_CONTACT_EMAIL, USER_EDUCATION_GRADE, USER_HEALTH_AND_MEDICAL_DISABILITY,
+        USER_AUTHORIZATION_PASSWORD, USER_FINANCIAL_CREDIT_CARD, USER_GOVERNMENT_ID_IMMIGRATION)) {
+    DataCategory c = taxonomy.requireCategory(key);
+    System.out.printf("%-35s %-16s %-6s %-6s secret=%s%n",
+            c.key(), c.nature(), c.confidentiality(), c.integrity(), c.secret());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">user.contact.email                  ORDINARY         LOW    MEDIUM secret=false
+user.education.grade                ORDINARY         MEDIUM HIGH   secret=false
+user.health_and_medical.disability  SPECIAL_CATEGORY HIGH   HIGH   secret=false
+user.authorization.password         ORDINARY         HIGH   HIGH   secret=true
+user.financial.credit_card          ORDINARY         HIGH   HIGH   secret=false
+user.government_id.immigration      ORDINARY         HIGH   MEDIUM secret=false
+</code></pre>
+
+<p>Resuelve cada fila a mano con el extracto de la política:</p>
+<ul>
+<li><code>user.contact.email</code> y <code>user.contact</code> no declaran nada: todo viene de
+<code>user</code>.</li>
+<li><code>user.education.grade</code> no declara nada; <code>user.education</code> sube la confidencialidad a
+<code>MEDIUM</code> y la integridad a <code>HIGH</code>.</li>
+<li><code>user.health_and_medical.disability</code> hereda de <code>user.health_and_medical</code> la naturaleza
+especial y los niveles altos.</li>
+<li><code>user.authorization.password</code> hereda <code>HIGH</code> y <code>HIGH</code> de
+<code>user.authorization</code> y se declara secreta.</li>
+<li><code>user.financial.credit_card</code> sube la confidencialidad a <code>HIGH</code> y hereda la integridad
+<code>HIGH</code> de <code>user.financial</code>.</li>
+<li><code>user.government_id.immigration</code> sube la confidencialidad por tratarse de datos de interesados
+vulnerables, y conserva la integridad <code>MEDIUM</code> de <code>user</code>.</li>
+</ul>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>No deduzcas los niveles de la clave ni supongas que cada hija declara los suyos: la mayoría los hereda, y el nivel
+efectivo puede venir de cualquier antepasada. Léelos siempre de la <code>DataCategory</code>, o con
+<code>protection()</code> si vas a compararlos.</p>
+</div>
+
+<h3 id="atributos">Atributos</h3>
+<p>Además de la protección, una categoría puede llevar <dfn>atributos</dfn>: pares nombre-valor que define la
+aplicación, como una clase de conservación o el grupo del registro de actividades al que pertenece. Se heredan como la
+protección y una hija puede fijar su propio valor. <code>attribute(name)</code> devuelve el valor o <code>null</code>,
+y <code>attributes()</code> el mapa completo. La taxonomía estándar no fija ninguno: los añaden las extensiones y las
+aplicaciones (capítulo 9).</p>
+
+<h2 id="rasgos">Rasgos</h2>
+<p>La protección dice cómo hay que tratar un campo. Algunas reglas jurídicas de Linneo necesitan saber además de qué
+tipo es el término que miran: si un dato es financiero, si una finalidad evalúa a las personas, si unos interesados
+son vulnerables. Un <dfn>rasgo</dfn> (<code>Trait</code>) es una propiedad de un término que esas reglas leen.</p>
+<p>Los rasgos existen para que las reglas sigan a la taxonomía y no a listas de claves. Una regla que comprobara
+«<code>user.financial</code> o sus hijas» no vería la categoría de nóminas que añade una extensión de recursos
+humanos; una regla que comprueba <code>term.has(Trait.FINANCIAL)</code> la ve en cuanto la extensión declara el
+rasgo.</p>
+
+<h3 id="los-rasgos">Los trece rasgos</h3>
+<p>Cada rasgo se aplica a algunas jerarquías y no a otras. La tabla resume su significado y qué regla lo lee.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-3-4">
+<table>
+<caption id="tabla-3-4">Tabla 3.4. Los rasgos, sus jerarquías y quién los lee</caption>
+<thead>
+<tr><th scope="col">Rasgo</th><th scope="col">Se aplica a</th><th scope="col">Marca</th>
+<th scope="col">Lo leen</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>FINANCIAL</code></th><td>categorías</td>
+<td>Datos bancarios y de tarjetas, ingresos, remuneración, deudas, transacciones y solvencia.</td>
+<td><code>ImpactScreening</code>, <code>BreachAssessment</code></td></tr>
+<tr><th scope="row"><code>BEHAVIOURAL</code></th><td>categorías</td>
+<td>Hábitos, preferencias, actividad, ubicación y datos de tráfico.</td>
+<td><code>ImpactScreening</code>, <code>BreachAssessment</code></td></tr>
+<tr><th scope="row"><code>PRIVATE_LIFE</code></th><td>categorías</td>
+<td>Contenido de las comunicaciones, documentos privados y actividades del hogar.</td>
+<td><code>ImpactScreening</code></td></tr>
+<tr><th scope="row"><code>DIRECT_IDENTIFIER</code></th><td>categorías</td>
+<td>Identifica por sí solo: un nombre, un documento de identidad, un rostro, una plantilla biométrica.</td>
+<td><code>BreachAssessment</code></td></tr>
+<tr><th scope="row"><code>CONTACT_IDENTIFIER</code></th><td>categorías</td>
+<td>Permite localizar y así identificar: datos de contacto, una
+cuenta.</td><td><code>BreachAssessment</code></td></tr>
+<tr><th scope="row"><code>INDIRECT_IDENTIFIER</code></th><td>categorías</td>
+<td>Singulariza a una persona dentro de un sistema: un identificador interno o de dispositivo.</td>
+<td><code>BreachAssessment</code></td></tr>
+<tr><th scope="row"><code>BIOMETRIC</code></th><td>categorías</td>
+<td>Datos biométricos (artículo 4.14 del RGPD).</td><td><code>ProcessingChecker</code> con la ley española</td></tr>
+<tr><th scope="row"><code>GENETIC</code></th><td>categorías</td>
+<td>Datos genéticos (artículo 4.13 del RGPD).</td><td><code>ProcessingChecker</code> con la ley española</td></tr>
+<tr><th scope="row"><code>MONITORING</code></th><td>categorías y usos</td>
+<td>Datos obtenidos observando a las personas, o una finalidad que las observa o rastrea sistemáticamente.</td>
+<td><code>ImpactScreening</code></td></tr>
+<tr><th scope="row"><code>VULNERABLE</code></th><td>categorías y sujetos</td>
+<td>Personas en posición más débil que el responsable (menores, empleados, pacientes), o datos que tratan de ellas por
+su naturaleza.</td><td><code>ImpactScreening</code></td></tr>
+<tr><th scope="row"><code>EVALUATION</code></th><td>usos</td>
+<td>Una finalidad que evalúa, puntúa, perfila o predice el comportamiento, el rendimiento o la situación de las
+personas.</td><td><code>ImpactScreening</code></td></tr>
+<tr><th scope="row"><code>DIRECT_MARKETING</code></th><td>usos</td>
+<td>Mercadotecnia directa, incluidas la captación de fondos y la elaboración de perfiles relacionada (artículo 21.2
+del RGPD).</td><td><code>SubjectRights</code></td></tr>
+<tr><th scope="row"><code>RESEARCH</code></th><td>usos</td>
+<td>Investigación científica o histórica o estadística (artículo 89.1 del
+RGPD).</td><td><code>SubjectRights</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Las cuatro reglas que leen rasgos son el cribado de la evaluación de impacto (<code>ImpactScreening</code>, con los
+criterios de las directrices WP248 rev.01), la gravedad de una brecha (<code>BreachAssessment</code>, con la
+metodología de <abbr title="Agencia de la Unión Europea para la Ciberseguridad">ENISA</abbr> de 2013), los derechos de
+los interesados (<code>SubjectRights</code>, artículos 21.2, 21.3 y 21.6 del RGPD) y la comprobación de actividades
+con la ley española (<code>ProcessingChecker</code>, que lee los datos biométricos y genéticos porque la lista de la
+<abbr title="Agencia Española de Protección de Datos">AEPD</abbr> del artículo 35.4 los cuenta como criterios
+propios). Los capítulos <a href="11-actividades.html">11</a>, <a href="13-impacto-y-brechas.html">13</a> y
+<a href="14-derechos.html">14</a> las explican.</p>
+<p>Dos métodos agrupan rasgos: <code>isIdentifier()</code> es cierto para los tres de identificador, e
+<code>isHighlyPersonal()</code> para <code>FINANCIAL</code>, <code>BEHAVIOURAL</code> y <code>PRIVATE_LIFE</code>, los
+datos de naturaleza muy personal de las directrices de evaluación de impacto.</p>
+
+<h3 id="herencia-de-rasgos">Cómo se heredan y dónde se declaran</h3>
+<p>Un rasgo se declara en un término y lo heredan todos sus descendientes: los rasgos de una hija son la unión de los
+de su madre y los suyos. Los términos estándar declaran los suyos en <code>linneo-traits.tsv</code>, cuya cabecera
+cita las fuentes de las reglas, y cada extensión incluida declara los de sus términos.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.5. Rasgos declarados y heredados</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DataCategory email = taxonomy.requireCategory(USER_CONTACT_EMAIL);
+DataCategory fingerprint = taxonomy.requireCategory(USER_BIOMETRIC_FINGERPRINT);
+System.out.println(email.traits() + " " + email.has(Trait.CONTACT_IDENTIFIER));
+System.out.println(fingerprint.traits());
+System.out.println(taxonomy.requireDataUse(MARKETING_COMMUNICATIONS_EMAIL).traits());
+System.out.println(taxonomy.requireDataSubject(STAFF_MEMBER).traits());
+System.out.println(taxonomy.requireDataSubject(STUDENT).traits());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">[CONTACT_IDENTIFIER] true
+[DIRECT_IDENTIFIER, BIOMETRIC]
+[DIRECT_MARKETING]
+[VULNERABLE]
+[]
+</code></pre>
+
+<p>El correo hereda <code>CONTACT_IDENTIFIER</code> de <code>user.contact</code>; la huella dactilar, los dos rasgos
+de <code>user.biometric</code>; el correo comercial, <code>DIRECT_MARKETING</code> de <code>marketing</code>. El
+personal de administración y servicios (<code>staff_member</code>) es <code>VULNERABLE</code>: como los empleados,
+está en una posición más débil que la universidad, uno de los criterios de las directrices WP248 que cita
+<code>linneo-traits.tsv</code>. El estudiante (<code>student</code>) no tiene rasgos en la taxonomía estándar; si la
+universidad trata datos de estudiantes menores de edad, su delegado de protección de datos puede decidir marcarlos con
+una extensión (capítulo 9).</p>
+<p>El Ejemplo 3.6 cuenta cuántos términos de cada jerarquía tienen cada rasgo, declarado o heredado.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.6. Términos con cada rasgo en la taxonomía estándar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">for (Trait trait : Trait.values()) {
+    long categories = taxonomy.categories().stream().filter(c -&gt; c.has(trait)).count();
+    long uses = taxonomy.dataUses().stream().filter(u -&gt; u.has(trait)).count();
+    long subjects = taxonomy.dataSubjects().stream().filter(s -&gt; s.has(trait)).count();
+    System.out.printf("%-19s %3d %3d %3d%n", trait, categories, uses, subjects);
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">FINANCIAL             6   0   0
+BEHAVIOURAL           9   0   0
+PRIVATE_LIFE          1   0   0
+DIRECT_IDENTIFIER    18   0   0
+CONTACT_IDENTIFIER   17   0   0
+INDIRECT_IDENTIFIER  12   0   0
+BIOMETRIC             6   0   0
+GENETIC               1   0   0
+MONITORING            2   0   0
+VULNERABLE            3   0   6
+EVALUATION            0   7   0
+DIRECT_MARKETING      0  15   0
+RESEARCH              0   0   0
+</code></pre>
+
+<p>Ningún término estándar tiene <code>RESEARCH</code>: lo declara la extensión universitaria en sus finalidades de
+investigación. Tampoco hay usos estándar con <code>MONITORING</code>; las dos categorías que lo tienen son
+<code>user.telemetry</code> y <code>user.sensor</code>.</p>
+<p>Declarar un rasgo en una jerarquía a la que no se aplica es un error inmediato. <code>appliesTo(hierarchy)</code>
+dice si un rasgo se puede declarar en una jerarquía:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.7. Un rasgo en la jerarquía equivocada</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">try {
+    Taxonomy.builder().withStandard()
+            .refineDataUse(EDUCATION_ASSESSMENT, u -&gt; u.traits(Trait.FINANCIAL));
+} catch (TaxonomyException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">The trait FINANCIAL does not apply to the DATA_USE 'education.assessment'
+</code></pre>
+
+<h3 id="rasgos-son-significado">Los rasgos forman parte del significado</h3>
+<p>Como las reglas los leen, cambiar los rasgos de un término cambia lo que la biblioteca exige. Añadir uno endurece
+las reglas y es un cambio menor de la taxonomía; quitar uno puede levantar una obligación y es un cambio mayor
+(<a href="10-versiones.html">capítulo 10</a>). Por la misma razón, una sustituta debe conservar todos los rasgos del
+término obsoleto que sustituye, como verás más abajo.</p>
+<p>La biblioteca también vigila que no falte ninguna decisión: el test <code>TraitCoverageTest</code> exige que toda
+categoría personal, todo uso y todo sujeto estándar sin rasgos figure en una lista de términos revisados. Un término
+que añada una versión nueva de fideslang hace fallar la compilación de Linneo hasta que alguien le da rasgos o lo
+revisa, de modo que un rasgo olvidado nunca relaja una regla en silencio.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Los rasgos son una ayuda, no un veredicto. Permiten que las reglas vean lo que una clave no dice, pero el delegado
+de protección de datos sigue revisando cada resultado. Si la realidad de la organización pide un rasgo que la
+taxonomía estándar no da, como marcar a los estudiantes como interesados vulnerables, se declara con una extensión y
+queda escrito y versionado.</p>
+</div>
+
+<h2 id="api-taxonomy">La API de <code>Taxonomy</code></h2>
+<p>Una <code>Taxonomy</code> es inmutable y segura entre hilos. No tiene constructor público; se obtiene con uno de
+tres métodos de fábrica:</p>
+<ul>
+<li><code>Taxonomy.standard()</code> devuelve la taxonomía estándar, sin extensiones de la aplicación. Se crea una vez
+y cada llamada devuelve la misma instancia.</li>
+<li><code>Taxonomy.load()</code> devuelve la estándar más todas las <code>TaxonomyExtension</code> registradas con
+<code>ServiceLoader</code>, aplicadas en orden de nombre. Construye una instancia nueva en cada llamada:
+guárdala.</li>
+<li><code>Taxonomy.builder()</code> devuelve un constructor vacío; llama a <code>withStandard()</code> para partir de
+la estándar (capítulo 9).</li>
+</ul>
+<p>Construye una taxonomía por aplicación y compártela. Todas las listas que devuelve están ordenadas por clave, de
+modo que una madre siempre aparece antes que sus descendientes.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-3-5">
+<table>
+<caption id="tabla-3-5">Tabla 3.5. Métodos de consulta de <code>Taxonomy</code></caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th><th scope="col">Para qué sirve</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>categories()</code></th><td><code>List&lt;DataCategory&gt;</code></td>
+<td>Todas las categorías, por clave.</td></tr>
+<tr><th scope="row"><code>category(key)</code></th><td><code>Optional&lt;DataCategory&gt;</code></td>
+<td>Una categoría, obsoleta o no; vacío si no existe.</td></tr>
+<tr><th scope="row"><code>requireCategory(key)</code></th><td><code>DataCategory</code></td>
+<td>Una categoría, obsoleta o no; <code>TaxonomyException</code> si no existe.</td></tr>
+<tr><th scope="row"><code>resolveCategory(key)</code></th><td><code>DataCategory</code></td>
+<td>La categoría que hay que usar: la propia o, si está obsoleta con sustituta, la vigente.</td></tr>
+<tr><th scope="row"><code>parentOf(category)</code></th><td><code>Optional&lt;DataCategory&gt;</code></td>
+<td>La madre; vacío en una raíz.</td></tr>
+<tr><th scope="row"><code>childrenOf(category)</code></th><td><code>List&lt;DataCategory&gt;</code></td>
+<td>Las hijas directas, por clave.</td></tr>
+<tr><th scope="row"><code>ancestorsOf(category)</code></th><td><code>List&lt;DataCategory&gt;</code></td>
+<td>Las antepasadas, de la madre a la raíz.</td></tr>
+<tr><th scope="row"><code>dataUses()</code>, <code>dataUse(key)</code>, <code>requireDataUse(key)</code>,
+<code>resolveDataUse(key)</code>, <code>childrenOf(use)</code></th><td>usos de datos</td>
+<td>Lo mismo para la jerarquía de usos.</td></tr>
+<tr><th scope="row"><code>dataSubjects()</code>, <code>dataSubject(key)</code>, <code>requireDataSubject(key)</code>,
+<code>resolveDataSubject(key)</code></th><td>sujetos de datos</td>
+<td>Lo mismo para la jerarquía de sujetos.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>parentOf</code> y <code>ancestorsOf</code> solo existen para categorías, y <code>childrenOf</code> para
+categorías y usos; en los usos y los sujetos, la madre está en <code>info().parent()</code>. La clase tiene además los
+métodos que tratan la taxonomía como dato (<code>toTsv</code>, <code>fromTsv</code>, <code>fingerprint</code> y la
+igualdad por valor), que son el tema del <a href="10-versiones.html">capítulo 10</a>.</p>
+<p>Los términos añaden sus propios métodos. En una <code>DataCategory</code>: <code>nature()</code>,
+<code>confidentiality()</code>, <code>integrity()</code>, <code>secret()</code>, <code>attributes()</code> y
+<code>traits()</code>, que son los componentes del record, más <code>isPersonal()</code>, <code>protection()</code> y
+<code>attribute(name)</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.8. Recorrer el subárbol académico</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DataCategory education = taxonomy.requireCategory(USER_EDUCATION);
+for (DataCategory c : taxonomy.childrenOf(education)) {
+    System.out.printf("%-34s %-8s %-6s %-6s %s%n",
+            c.key(), c.nature(), c.confidentiality(), c.integrity(), c.info().origin());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">user.education.accomplishment      ORDINARY MEDIUM HIGH   linneo
+user.education.course_history      ORDINARY MEDIUM HIGH   linneo
+user.education.enrollment          ORDINARY MEDIUM HIGH   linneo
+user.education.grade               ORDINARY MEDIUM HIGH   linneo
+user.education.previous_education  ORDINARY MEDIUM HIGH   linneo
+user.education.program             ORDINARY MEDIUM HIGH   linneo
+user.education.status              ORDINARY MEDIUM HIGH   linneo
+user.education.test_score          ORDINARY MEDIUM HIGH   linneo
+</code></pre>
+
+<h3 id="buscar-sin-adivinar">Buscar sin adivinar</h3>
+<p>Los métodos <code>require*</code> y <code>resolve*</code> siguen el principio de fallo seguro del capítulo 2: ante
+una clave que no existe lanzan <code>TaxonomyException</code>, cuyo mensaje nombra la clave, en lugar de devolver
+<code>null</code>. Si la ausencia es un caso normal de tu código, usa los métodos que devuelven
+<code>Optional</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.9. Una clave con una errata</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">System.out.println(taxonomy.category("user.contact.mail"));
+try {
+    taxonomy.requireCategory("user.contact.mail");
+} catch (TaxonomyException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Optional.empty
+Unknown data category 'user.contact.mail'
+</code></pre>
+
+<p><code>TaxonomyException</code> es una excepción no comprobada (<code>RuntimeException</code>). La lanzan también la
+construcción de una taxonomía que incumple una regla, <code>fromTsv</code> ante un texto mal formado y
+<code>TaxonomyDiff.requireCompatible()</code> ante un cambio incompatible.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>Usa la misma taxonomía en toda la aplicación. Si tu modelo usa claves de una extensión y una parte del código usa
+<code>Taxonomy.standard()</code> mientras otra usa <code>Taxonomy.load()</code>, la primera no conoce esas claves y
+las trata como desconocidas.</p>
+</div>
+
+<h2 id="claves-obsoletas">Claves obsoletas y <code>replaced_by</code></h2>
+<p>Las aplicaciones guardan y publican las claves: en columnas de la base de datos, en catálogos de datos, en el
+registro de actividades. Por eso una clave nunca se borra ni se reutiliza con otro significado. Cuando un término deja
+de servir, se marca como <dfn>obsoleto</dfn>, con la versión que lo declaró obsoleto y, si la hay, la clave que lo
+sustituye. En los ficheros de la taxonomía son las columnas <code>version_deprecated</code> y
+<code>replaced_by</code>.</p>
+<p>En <code>TermInfo</code>, el ciclo de vida son tres componentes y un método:</p>
+<ul>
+<li><code>since()</code>: la versión de su origen que introdujo el término (<code>"2.0.0"</code> en los de fideslang,
+<code>"0.1.0"</code> en los de Linneo);</li>
+<li><code>deprecatedSince()</code> y <code>replacedBy()</code>: presentes en un término obsoleto;</li>
+<li><code>isDeprecated()</code>: cierto si cualquiera de los dos está presente.</li>
+</ul>
+<p>En la taxonomía estándar no hay ninguna categoría de datos obsoleta. El único término obsoleto es un uso de datos
+que fideslang declaró obsoleto en su versión 2.1.1:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.10. El único término obsoleto de la taxonomía estándar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">TermInfo info = taxonomy.requireDataUse(PERSONALIZE_PROFILING).info();
+System.out.println(info.isDeprecated() + " " + info.deprecatedSince() + " " + info.replacedBy());
+System.out.println(taxonomy.resolveDataUse(PERSONALIZE_PROFILING).key());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">true 2.1.1 personalize.content.profiling
+personalize.content.profiling
+</code></pre>
+
+<h3 id="resolver">Resolver una clave obsoleta</h3>
+<p><code>category(key)</code> y <code>requireCategory(key)</code> devuelven el término de esa clave exacta, obsoleto o
+no. <code>resolveCategory(key)</code> sigue <code>replacedBy</code>, aunque haya varios saltos, hasta llegar a un
+término sin sustituta. <code>resolveDataUse</code> y <code>resolveDataSubject</code> hacen lo mismo en sus jerarquías.
+Un término obsoleto sin sustituta se resuelve a sí mismo.</p>
+<p>Las categorías obsoletas aparecen cuando una extensión deja obsoletos sus propios términos o en versiones futuras
+de la taxonomía. Con el constructor puedes ver el efecto:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.11. Una categoría obsoleta y su sustituta</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy campus = Taxonomy.builder().withStandard()
+        .category("user.contact.old_email", "Old Email", "Address used before the migration.",
+                c -&gt; c.deprecated("1.0.0", USER_CONTACT_EMAIL))
+        .build();
+System.out.println(campus.requireCategory("user.contact.old_email").info().isDeprecated());
+System.out.println(campus.resolveCategory("user.contact.old_email").key());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">true
+user.contact.email
+</code></pre>
+
+<p>Las declaraciones que todavía usan una clave obsoleta siguen funcionando: el clasificador clasifica el campo con la
+sustituta y emite un aviso <code>DEPRECATED_CATEGORY</code>, no un error (capítulo 6), y el comprobador de actividades
+emite un aviso <code>DEPRECATED_KEY</code> (capítulo 11).</p>
+
+<h3 id="lo-que-garantiza-el-constructor">Lo que garantiza el constructor</h3>
+<p>Como un campo que nombra una clave obsoleta se comprueba con su sustituta, una sustituta mal elegida bajaría la
+protección de todos esos campos sin que nadie lo notara. Por eso <code>build()</code> exige que:</p>
+<ul>
+<li>toda sustituta exista en la misma jerarquía y que las sustituciones no formen un ciclo;</li>
+<li>la sustituta de una categoría proteja al menos lo mismo: una naturaleza que la obsoleta admita y una protección
+que cubra la suya (<code>Protection.covers</code>);</li>
+<li>la sustituta de cualquier término, en las tres jerarquías, conserve todos sus rasgos.</li>
+</ul>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.12. Dos sustituciones que el constructor rechaza</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">try {
+    Taxonomy.builder().withStandard()
+            .category("user.health_and_medical.old_record", "Old Record", "Medical record of the old system.",
+                    c -&gt; c.deprecated("1.0.0", USER_CONTACT_EMAIL))
+            .build();
+} catch (TaxonomyException e) {
+    System.out.println(e.getMessage());
+}
+try {
+    Taxonomy.builder().withStandard()
+            .dataUse("marketing.newsletter", "Newsletter", "Sends the alumni newsletter.",
+                    u -&gt; u.deprecated("1.0.0", ANALYTICS))
+            .build();
+} catch (TaxonomyException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">The replacement 'user.contact.email' of data category 'user.health_and_medical.old_record' has weaker protection: ORDINARY, LOW, MEDIUM instead of SPECIAL_CATEGORY, HIGH, HIGH
+The replacement 'analytics' of data use 'marketing.newsletter' lacks its traits [DIRECT_MARKETING]
+</code></pre>
+
+<p>El primer caso sustituiría un historial médico por un correo; el segundo haría que un boletín, que hereda
+<code>DIRECT_MARKETING</code> de <code>marketing</code>, dejara de dar al antiguo alumno el derecho de oposición
+absoluto a la mercadotecnia directa.</p>
+
+<h2 id="recorrido">Un recorrido por la taxonomía estándar</h2>
+<p>Conocer la forma general del árbol ahorra mucho tiempo al elegir claves. Esta sección recorre las raíces de las
+tres jerarquías y las ramas que más usa una universidad.</p>
+
+<h3 id="raices-de-categorias">Las cuatro raíces de las categorías</h3>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.13. Las raíces de las categorías de datos</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">taxonomy.categories().stream()
+        .filter(c -&gt; c.info().parent().isEmpty())
+        .forEach(c -&gt; System.out.println(c.key() + " " + c.info().origin() + " " + c.protection()));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">org linneo Protection[natures=[NONE], confidentiality=PUBLIC, integrity=LOW, secret=false]
+reference linneo Protection[natures=[NONE], confidentiality=PUBLIC, integrity=MEDIUM, secret=false]
+system fideslang Protection[natures=[NONE], confidentiality=LOW, integrity=LOW, secret=false]
+user fideslang Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+</code></pre>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-3-6">
+<table>
+<caption id="tabla-3-6">Tabla 3.6. Qué abarca cada raíz</caption>
+<thead>
+<tr><th scope="col">Raíz</th><th scope="col">Abarca</th><th scope="col">Hijas directas</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>user</code></th><td>Datos sobre una persona física. Es la única raíz personal.</td>
+<td>27, de <code>user.account</code> a <code>user.workplace</code></td></tr>
+<tr><th scope="row"><code>system</code></th><td>Datos del sistema que no son personales.</td>
+<td><code>system.authentication</code>, <code>system.operations</code> y las añadidas por Linneo
+<code>system.security</code>, <code>system.integrity</code> y <code>system.configuration</code></td></tr>
+<tr><th scope="row"><code>org</code></th><td>La organización y los terceros que no son personas físicas.</td>
+<td><code>org.structure</code>, <code>org.legal_entity</code>, <code>org.location</code>, <code>org.process</code>,
+<code>org.business_records</code></td></tr>
+<tr><th scope="row"><code>reference</code></th><td>Datos maestros de fuentes públicas o estándar.</td>
+<td><code>reference.public</code> (países, monedas, idiomas, códigos territoriales, festivos)</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="la-rama-user">La rama <code>user</code></h3>
+<p>Casi todos los campos personales de la universidad cuelgan de una de las 27 hijas de <code>user</code>. El Ejemplo
+3.14 las lista con su protección efectiva.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.14. Las hijas directas de <code>user</code></figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">for (DataCategory c : taxonomy.childrenOf(taxonomy.requireCategory(USER))) {
+    System.out.printf("%-29s %-16s %-6s %s%n", c.key(), c.nature(), c.confidentiality(), c.integrity());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">user.account                  ORDINARY         LOW    MEDIUM
+user.administrative_sanction  ORDINARY         HIGH   HIGH
+user.authorization            ORDINARY         HIGH   HIGH
+user.behavior                 ORDINARY         MEDIUM MEDIUM
+user.biometric                SPECIAL_CATEGORY HIGH   HIGH
+user.childrens                ORDINARY         HIGH   MEDIUM
+user.contact                  ORDINARY         LOW    MEDIUM
+user.content                  ORDINARY         LOW    MEDIUM
+user.criminal_history         CRIMINAL_OFFENCE HIGH   HIGH
+user.demographic              ORDINARY         LOW    MEDIUM
+user.device                   ORDINARY         LOW    MEDIUM
+user.education                ORDINARY         MEDIUM HIGH
+user.financial                ORDINARY         MEDIUM HIGH
+user.government_id            ORDINARY         MEDIUM MEDIUM
+user.health_and_medical       SPECIAL_CATEGORY HIGH   HIGH
+user.job_title                ORDINARY         LOW    MEDIUM
+user.location                 ORDINARY         LOW    MEDIUM
+user.name                     ORDINARY         LOW    MEDIUM
+user.payment                  ORDINARY         MEDIUM HIGH
+user.privacy_preferences      ORDINARY         LOW    MEDIUM
+user.sensor                   ORDINARY         LOW    MEDIUM
+user.social                   ORDINARY         LOW    MEDIUM
+user.telemetry                ORDINARY         LOW    MEDIUM
+user.unique_id                ORDINARY         LOW    MEDIUM
+user.user_sensor              ORDINARY         LOW    MEDIUM
+user.victim_status            ORDINARY         HIGH   HIGH
+user.workplace                ORDINARY         LOW    MEDIUM
+</code></pre>
+
+<p>Para la universidad son especialmente útiles estas ramas:</p>
+<ul>
+<li><code>user.education.*</code>, añadida por Linneo: programa, matrícula, historial de asignaturas, calificación,
+pruebas de acceso, estudios previos, situación académica y méritos.</li>
+<li><code>user.workplace.*</code>: Linneo añade a la de fideslang el equipo, la unidad, el puesto y el periodo de
+adscripción del personal.</li>
+<li><code>user.government_id.*</code>: el documento nacional de identidad, el pasaporte, la situación migratoria y el
+número de la Seguridad Social, este último añadido por Linneo.</li>
+<li><code>user.unique_id.*</code>: los identificadores internos, incluidos el seudónimo
+(<code>user.unique_id.pseudonymous</code>) y la referencia a un registro sobre la persona en este u otro sistema
+(<code>user.unique_id.record_reference</code>, de Linneo).</li>
+<li><code>user.demographic.*</code>: quince categorías, siete de ellas especiales; Linneo añade la nacionalidad, la
+relación familiar y las tres categorías del artículo 9 que faltaban en fideslang (convicciones filosóficas, afiliación
+sindical y vida sexual).</li>
+<li><code>user.financial.*</code> y <code>user.payment</code>: cuentas, tarjetas y, de Linneo, becas y tasas.</li>
+</ul>
+
+<h3 id="usos-y-sujetos">Usos y sujetos de datos</h3>
+<p>La jerarquía de usos tiene trece raíces. Doce vienen de fideslang; Linneo añade <code>education</code>, con seis
+hijas que cubren la actividad académica de una universidad.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 3.15. Las raíces de los usos de datos</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">for (DataUse use : taxonomy.dataUses()) {
+    if (use.info().parent().isEmpty()) {
+        System.out.printf("%-20s %-20s %s%n", use.key(), use.name(), use.info().origin());
+    }
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">analytics            Analytics            fideslang
+collect              Collect              fideslang
+education            Education            linneo
+employment           Employment           fideslang
+essential            Essential            fideslang
+finance              Finance              fideslang
+functional           Functional           fideslang
+marketing            Marketing            fideslang
+operations           Operations           fideslang
+personalize          Personalize          fideslang
+sales                Sales                fideslang
+third_party_sharing  Third Party Sharing  fideslang
+train_ai_system      Train AI System      fideslang
+</code></pre>
+
+<p>Las hijas de <code>education</code> son <code>education.admission</code>, <code>education.enrollment</code>,
+<code>education.teaching</code>, <code>education.assessment</code>, <code>education.academic_records</code> y
+<code>education.financial_aid</code>. La actividad de matrícula del curso, por ejemplo, tiene como finalidad
+<code>education.enrollment</code>.</p>
+<p>La jerarquía de sujetos es plana: sus 22 términos son raíces. Quince vienen de fideslang (<code>employee</code>,
+<code>customer</code>, <code>patient</code>, <code>job_applicant</code>…) y siete de Linneo: <code>student</code>,
+<code>applicant</code>, <code>alumnus</code>, <code>faculty_member</code>, <code>staff_member</code>,
+<code>legal_representative</code> y <code>emergency_contact</code>. Seis llevan el rasgo <code>VULNERABLE</code>:
+<code>employee</code>, <code>faculty_member</code>, <code>job_applicant</code>, <code>patient</code>,
+<code>staff_member</code> y <code>trainee</code>.</p>
+
+<h2 id="elegir-una-clave">Cómo elegir una clave</h2>
+<p>Elegir la clave de un campo es la decisión que más influye en su protección, y se revisa junto con el código. Sigue
+estos pasos:</p>
+<ol>
+<li>Describe qué contiene el campo, no dónde se usa. Un correo es <code>user.contact.email</code> tanto en la ficha
+del estudiante como en la del personal.</li>
+<li>Busca la clave más específica: empieza por la raíz (<code>user</code> si el dato es de una persona física) y baja
+por el árbol con el autocompletado de <code>Categories</code> o con la
+<a href="../../reference/key-constants.html">referencia de constantes</a>.</li>
+<li>Lee la descripción del término (<code>info().description()</code> o el Javadoc de la constante) y comprueba que
+dice lo mismo que tú.</li>
+<li>Comprueba su protección efectiva. Si un campo concreto necesita más, elévala en el campo (capítulo 4); si la
+necesita toda una categoría en tu organización, refínala con una extensión (capítulo 9).</li>
+<li>Si ningún término encaja, añade una hija con una extensión. Nunca cuelgues un dato personal de <code>system</code>
+u <code>org</code> para «salir del paso».</li>
+<li>Evita las claves obsoletas en declaraciones nuevas.</li>
+</ol>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-3-7">
+<table>
+<caption id="tabla-3-7">Tabla 3.7. Claves para campos de la universidad</caption>
+<thead>
+<tr><th scope="col">Campo</th><th scope="col">Constante</th><th scope="col">Por qué</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><abbr title="documento nacional de identidad">DNI</abbr> del
+estudiante</th><td><code>USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER</code></td>
+<td>Número de identificación emitido por el Estado.</td></tr>
+<tr><th scope="row">Número de la Seguridad Social de un empleado</th>
+<td><code>USER_GOVERNMENT_ID_SOCIAL_SECURITY_NUMBER</code></td><td>Término añadido por Linneo.</td></tr>
+<tr><th scope="row">Titulación en la que está matriculado</th><td><code>USER_EDUCATION_PROGRAM</code></td>
+<td>Programa o titulación que cursa o cursó.</td></tr>
+<tr><th scope="row">Departamento de un profesor</th><td><code>USER_WORKPLACE_UNIT</code></td>
+<td>Unidad a la que pertenece la persona.</td></tr>
+<tr><th scope="row">Beca concedida</th><td><code>USER_FINANCIAL_SCHOLARSHIP</code></td>
+<td>Hereda <code>FINANCIAL</code> de <code>user.financial</code>.</td></tr>
+<tr><th scope="row">Lista de países de los desplegables</th><td><code>REFERENCE_PUBLIC</code></td>
+<td>Código público, no personal.</td></tr>
+<tr><th scope="row">Edificio de un aula</th><td><code>ORG_LOCATION</code></td>
+<td>Lugar de la organización.</td></tr>
+<tr><th scope="row">Grupo de menús del portal</th><td><code>SYSTEM_CONFIGURATION</code></td>
+<td>Configuración que gobierna el sistema.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Usar <code>Taxonomy.standard()</code> en un sitio y <code>Taxonomy.load()</code> en otro.</dt>
+<dd><code>standard()</code> ignora tus extensiones. Si tu modelo usa claves de una extensión, toda la aplicación debe
+usar la misma taxonomía, obtenida una vez con <code>load()</code> o con el mismo constructor.</dd>
+<dt>Llamar a <code>Taxonomy.load()</code> en cada petición.</dt>
+<dd>Construye y valida una taxonomía nueva en cada llamada. Constrúyela una vez al arrancar y compártela.</dd>
+<dt>Comparar claves con <code>startsWith</code>.</dt>
+<dd>Coincide con segmentos parciales. Usa <code>Term.isA</code>, que compara segmentos completos.</dd>
+<dt>Deducir los niveles de la clave.</dt>
+<dd>La clave no dice nada de la confidencialidad; los niveles salen de la política y la herencia. Léelos de la
+<code>DataCategory</code>.</dd>
+<dt>Escribir reglas con listas de claves.</dt>
+<dd>Una lista de prefijos no ve los términos de las extensiones. Si una regla de tu aplicación depende de un tipo de
+dato, léelo con <code>has(Trait.X)</code>.</dd>
+<dt>Borrar o renombrar una clave propia.</dt>
+<dd>Las aplicaciones guardan claves. Declárala obsoleta con su sustituta; el constructor comprobará que la sustituta
+protege al menos lo mismo y conserva sus rasgos.</dd>
+<dt>Usar <code>requireCategory</code> con una clave guardada hace tiempo.</dt>
+<dd>Devuelve el término obsoleto tal cual. Para saber qué categoría aplicar hoy, usa
+<code>resolveCategory</code>.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>La taxonomía estándar es la de fideslang (versión en <code>StandardTaxonomy.FIDESLANG_VERSION</code>, hoy 3.1.4)
+más 41 categorías, 7 usos y 7 sujetos de Linneo; cada término registra su origen.</li>
+<li>Hay tres jerarquías: las categorías describen campos y llevan la protección; los usos y los sujetos describen
+actividades de tratamiento.</li>
+<li>Una clave es una ruta con puntos y su madre es la clave sin el último segmento; <code>isA</code> compara segmentos
+completos.</li>
+<li><code>Categories</code>, <code>DataUses</code> y <code>DataSubjects</code> son constantes de compilación generadas
+para cada clave estándar.</li>
+<li>La protección se resuelve de la raíz a las hojas: lo declarado es un mínimo, lo no declarado se hereda, el secreto
+se combina con O y nada queda por debajo de su madre.</li>
+<li>Los rasgos son propiedades que leen las reglas jurídicas; se heredan sumándose, cada uno se aplica a ciertas
+jerarquías y una sustituta los conserva todos.</li>
+<li><code>require*</code> falla ante una clave desconocida; <code>resolve*</code> sigue las sustituciones de las
+claves obsoletas hasta el término vigente.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Protección efectiva.</strong> Sin ejecutar código y con el extracto de la política de este capítulo, indica
+naturaleza, confidencialidad, integridad y secreto de: (a) <code>user.contact.address.city</code>; (b)
+<code>user.authorization.biometric</code>; (c) <code>reference.public</code>; (d)
+<code>system.authentication.secret</code>. Después compruébalo con <code>requireCategory</code>.</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>(a) Nada declarado hasta <code>user</code>: <code>ORDINARY</code>, <code>LOW</code>, <code>MEDIUM</code>, no
+secreta. (b) Declara <code>SPECIAL_CATEGORY</code> y el secreto, y hereda <code>HIGH</code> y <code>HIGH</code> de
+<code>user.authorization</code>: <code>SPECIAL_CATEGORY</code>, <code>HIGH</code>, <code>HIGH</code>, secreta. (c)
+Hereda de <code>reference</code>: <code>NONE</code>, <code>PUBLIC</code>, <code>MEDIUM</code>, no secreta. (d) Hereda
+<code>HIGH</code> y <code>HIGH</code> de <code>system.authentication</code> y se declara secreta: <code>NONE</code>,
+<code>HIGH</code>, <code>HIGH</code>, secreta.</p>
+</details>
+</li>
+<li>
+<p><strong>Elegir claves.</strong> Elige la clave más específica para estos campos y di qué rasgo tiene cada una: (a)
+el nombre de pila del estudiante; (b) la nota de la prueba de acceso a la universidad; (c) la dirección postal de un
+antiguo alumno; (d) el identificador de sesión del portal; (e) el nombre de usuario del campus virtual.</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<p>(a) <code>USER_NAME_FIRST</code>, con <code>DIRECT_IDENTIFIER</code> heredado de <code>user.name</code>. (b)
+<code>USER_EDUCATION_TEST_SCORE</code>, sin rasgos. (c) <code>USER_CONTACT_ADDRESS</code>, o sus hijas si la dirección
+se guarda por partes, con <code>CONTACT_IDENTIFIER</code>. (d) <code>USER_DEVICE_SESSION_ID</code>, con
+<code>INDIRECT_IDENTIFIER</code> heredado de <code>user.device</code>, y además secreta. (e)
+<code>USER_ACCOUNT_USERNAME</code>, con <code>CONTACT_IDENTIFIER</code> heredado de <code>user.account</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Protección reforzada.</strong> Escribe el código que imprime todas las categorías que exigen la máxima
+protección, con su naturaleza y su origen. ¿Cuántas hay y cuáles añadió Linneo?</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">taxonomy.categories().stream()
+        .filter(c -&gt; c.protection().requiresMaximumProtection())
+        .forEach(c -&gt; System.out.println(c.key() + " " + c.nature() + " " + c.info().origin()));
+</code></pre>
+<p>Hay 19. Solo <code>user.criminal_history</code> es <code>CRIMINAL_OFFENCE</code>; las demás son
+<code>SPECIAL_CATEGORY</code>: <code>user.authorization.biometric</code>, <code>user.biometric</code> y sus cuatro
+hijas, siete categorías de <code>user.demographic</code> y <code>user.health_and_medical</code> con sus cuatro hijas.
+Linneo añadió cuatro: <code>user.demographic.philosophical_belief</code>, <code>.sex_life</code> y
+<code>.trade_union_membership</code>, que completan el artículo 9 del RGPD, y
+<code>user.health_and_medical.disability</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Rasgos de sujetos.</strong> Escribe el código que lista los sujetos de datos con el rasgo
+<code>VULNERABLE</code>. ¿Aparece <code>student</code>? ¿Qué harías si la universidad matricula a menores en sus
+cursos de verano?</p>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">taxonomy.dataSubjects().stream()
+        .filter(s -&gt; s.has(Trait.VULNERABLE))
+        .map(DataSubject::key)
+        .forEach(System.out::println);
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">employee
+faculty_member
+job_applicant
+patient
+staff_member
+trainee
+</code></pre>
+<p><code>student</code> no aparece. Si la universidad trata datos de menores, su delegado de protección de datos puede
+decidir declararlo con una extensión: añadir un sujeto propio con el rasgo o refinar <code>student</code> con
+<code>refineDataSubject</code> (capítulo 9). Añadir un rasgo es un cambio menor de la taxonomía.</p>
+</details>
+</li>
+<li>
+<p><strong>Encuentra el error.</strong> Este filtro pretende seleccionar los campos con datos de contacto. ¿Qué falla
+y cómo lo corriges?</p>
+<pre class="codigo" tabindex="0"><code class="language-java">static boolean isContact(DataCategory category) {
+    return category.key().startsWith("user.contact");
+}
+</code></pre>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<p>Tiene dos problemas. <code>startsWith</code> también acepta una clave futura como
+<code>user.contactless_card</code>, que no es una hija de <code>user.contact</code>. Y una lista de prefijos no ve los
+datos de contacto que una extensión cuelgue de otra rama. Si lo que te interesa es la relación en el árbol, usa
+<code>isA</code>; si lo que te interesa es que el dato permita localizar a la persona, usa el rasgo:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">static boolean isContact(DataCategory category) {
+    return category.isA(USER_CONTACT);
+}
+
+static boolean reachesThePerson(DataCategory category) {
+    return category.has(Trait.CONTACT_IDENTIFIER);
+}
+</code></pre>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Cuál es la madre de <code>user.contact.address.city</code>?</p>
+<ol>
+<li><code>user</code>.</li>
+<li><code>user.contact</code>.</li>
+<li><code>user.contact.address</code>.</li>
+<li>La que declare la política de protección.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La c. La madre de una clave es la clave sin su último segmento. La a y la b son antepasadas, no la madre. La d
+confunde el árbol con la protección: la política no cambia la posición de un término.</p>
+</details>
+</li>
+<li>
+<p>¿Qué jerarquía describe los campos de un modelo de datos?</p>
+<ol>
+<li>Las categorías de datos.</li>
+<li>Los usos de datos.</li>
+<li>Los sujetos de datos.</li>
+<li>Las tres, según la anotación.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La a. Solo las categorías llevan protección y anotaciones. Los usos (finalidades) y los sujetos (interesados)
+describen actividades de tratamiento, no columnas, por eso ninguna anotación los nombra.</p>
+</details>
+</li>
+<li>
+<p>Una categoría declara confidencialidad <code>LOW</code> y su madre tiene <code>MEDIUM</code>. ¿Qué confidencialidad
+efectiva tiene?</p>
+<ol>
+<li><code>LOW</code>, porque lo declarado prevalece.</li>
+<li><code>MEDIUM</code>, porque lo declarado es un mínimo y se eleva al de la madre.</li>
+<li>Ninguna: <code>build()</code> lanza una excepción.</li>
+<li>Depende del orden en que se añadieron.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La b. Toda faceta declarada es un mínimo y ninguna categoría queda por debajo de su madre. La a contradice esa
+regla. La c es lo que ocurre con una naturaleza que no se puede conciliar, no con un nivel. La d es falsa: el
+resultado no depende del orden.</p>
+</details>
+</li>
+<li>
+<p>¿Qué diferencia hay entre <code>requireCategory</code> y <code>resolveCategory</code>?</p>
+<ol>
+<li>Ninguna; son sinónimos.</li>
+<li><code>requireCategory</code> devuelve el término de esa clave exacta; <code>resolveCategory</code> sigue las
+sustituciones hasta el término vigente.</li>
+<li><code>resolveCategory</code> devuelve <code>Optional</code> y <code>requireCategory</code> no.</li>
+<li><code>requireCategory</code> rechaza las claves obsoletas.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La b. Los dos lanzan <code>TaxonomyException</code> ante una clave desconocida, por eso la c es falsa; el que
+devuelve <code>Optional</code> es <code>category</code>. La d también es falsa: <code>requireCategory</code> devuelve
+el término obsoleto tal cual.</p>
+</details>
+</li>
+<li>
+<p>¿Por qué puede usarse <code>Categories.USER_NAME</code> dentro de una anotación?</p>
+<ol>
+<li>Porque es una constante de compilación (<code>public static final String</code> inicializada con un literal).</li>
+<li>Porque las anotaciones de Linneo aceptan cualquier expresión.</li>
+<li>Porque el clasificador la resuelve al ejecutarse.</li>
+<li>Porque <code>Categories</code> es un enumerado.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La a. Java solo admite constantes de compilación como valores de una anotación. La b es falsa por la misma razón.
+La c describe lo que pasa con un literal mal escrito, que solo se detecta al ejecutar. La d es falsa:
+<code>Categories</code> es una clase final con constantes <code>String</code>.</p>
+</details>
+</li>
+<li>
+<p>Una aplicación declara obsoleta su categoría <code>user.health_and_medical.old_record</code> con la sustituta
+<code>user.contact.email</code>. ¿Qué ocurre?</p>
+<ol>
+<li>Funciona y los campos antiguos pasan a ser datos de contacto.</li>
+<li><code>build()</code> lanza <code>TaxonomyException</code> porque la sustituta protege menos.</li>
+<li>El clasificador emite un aviso <code>DEPRECATED_CATEGORY</code> y nada más.</li>
+<li>Se borra la clave antigua.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 6</summary>
+<p>La b. Una sustituta debe proteger al menos lo mismo que la categoría obsoleta, y un correo ordinario no cubre un
+historial médico. La a y la c describirían una sustitución válida, que aquí no lo es. La d es falsa: las claves nunca
+se borran.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="../../reference/taxonomy.html">Referencia: taxonomía</a> y
+<a href="../../reference/terms.html">términos</a>, con todos los métodos y los rasgos.</li>
+<li><a href="../../reference/standard-taxonomy.html">Referencia: taxonomía estándar</a>, con la política completa, su
+base legal y los rasgos de cada término.</li>
+<li><a href="../../reference/key-constants.html">Referencia: constantes de clave</a>.</li>
+<li><a href="04-anotaciones.html">Capítulo 4. Anotar campos y clases</a>: usar las claves en el modelo.</li>
+<li><a href="09-extensiones.html">Capítulo 9. Ampliar la taxonomía</a>: añadir términos, refinar la protección y
+declarar rasgos.</li>
+<li><a href="10-versiones.html">Capítulo 10. Versiones de la taxonomía</a>: guardar, comparar y versionar la
+taxonomía.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="02-proteccion.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 2. Naturaleza jurídica y protección</a></li>
+<li><a href="04-anotaciones.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 4. Anotar campos y clases</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

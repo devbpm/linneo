@@ -28,6 +28,9 @@ enrollment, admissions, staff screening and the alumni newsletter.
 > Looking for the exact contract of a type or annotation? That lives in the
 > [reference](../reference/README.md). The course explains *why* and *how*; the reference states *what*.
 
+> A [Spanish HTML edition of this course](../../es/course/course-html/index.html), in eighteen chapters and two
+> appendices, covers every tool of the library and is designed to meet WCAG 2.2 level AA.
+
 ## Who this course is for
 
 - **Java developers** who maintain an application with a persistent data model (JPA entities, records, plain

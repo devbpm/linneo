@@ -522,7 +522,7 @@ y la sección de la verificación de antecedentes:
 | Retention (art. 30.1.f) | Until the hiring decision; afterwards only whether the certificate was clear |
 | Required protection (art. 30.1.g) | Confidentiality High, integrity High |
 | Impact assessment (art. 35) | DPIA-2026-02 |
-| Impact assessment screening | Possible (1 criterion of WP248): 4. sensitive data: criminal offence data user.criminal_history |
+| Impact assessment screening | Likely required (2 criteria of WP248): 4. sensitive data: criminal offence data user.criminal_history; 7. vulnerable subjects: data subjects job_applicant |
 ```
 
 La fila «Lawful basis» muestra el nombre fideslang de la base (`Legal obligations`), la fila «Required protection»

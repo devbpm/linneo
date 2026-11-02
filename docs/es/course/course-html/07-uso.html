@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/classify/ClassClassification.java
+  - src/main/java/io/github/devbpm/linneo/classify/FieldClassification.java
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/DisclosurePolicy.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
+  - tools/bench/InventoryBench.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 7. Usar la clasificación · Curso de Linneo</title>
+<meta name="description" content="Lee el resultado del clasificador, calcula la protección de campos y clases, prepara informes y decide qué mostrar, enmascarar u omitir.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html" aria-current="page"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 7. Usar la clasificación</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 7</span> Usar la clasificación</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>75 minutos</dd></div>
+<div><dt>Parte II:</dt><dd>Clasificar el modelo de datos</dd></div>
+</dl>
+<p class="entradilla">El test del capítulo 6 comprueba que cada campo del modelo tiene una clasificación completa y
+coherente con la taxonomía. Este
+capítulo enseña a usar esa clasificación en el código de la aplicación: leer qué devuelve el clasificador, calcular la
+protección que necesita un campo o un registro completo, preparar informes de datos personales y decidir, con una
+política de divulgación, qué valores pueden aparecer en un log, en una pantalla o en una exportación.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#de-las-anotaciones-a-los-datos">De las anotaciones a los datos</a></li>
+<li><a href="#la-clasificacion-de-una-clase">La clasificación de una clase</a></li>
+<li><a href="#la-clasificacion-de-un-campo">La clasificación de un campo</a></li>
+<li><a href="#proteccion-de-campo-y-de-clase">La protección de un campo y la de una clase</a></li>
+<li><a href="#informes-de-datos-personales">Listar los campos personales y preparar informes</a></li>
+<li><a href="#politica-de-divulgacion">Mostrar, enmascarar u omitir: <code>DisclosurePolicy</code></a></li>
+<li><a href="#rendimiento">Rendimiento</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>obtener la clasificación de una o varias clases con <code>classify</code>, <code>classifyAll</code> y
+<code>verify</code>, y saber cuándo usar cada método;</li>
+<li>leer una <code>ClassClassification</code> y una <code>FieldClassification</code>: ruta, clave, base, niveles
+efectivos, identificabilidad, campos derivados y compuestos;</li>
+<li>calcular la <code>Protection</code> de un campo y la de una clase entera con <code>ceiling()</code> y
+<code>ceilingOf(path)</code>;</li>
+<li>listar los campos personales de un modelo y agruparlos por categoría de datos en un informe;</li>
+<li>decidir con una <code>DisclosurePolicy</code> qué valores se muestran, se enmascaran o se omiten en un canal, y
+explicar por qué una política nunca trata con más laxitud un campo más protegido;</li>
+<li>organizar el uso de la clasificación en ejecución para que su coste sea despreciable.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo da por sabidos el orden parcial de la protección del <a href="02-proteccion.html">capítulo 2</a>
+(<code>Protection</code>, <code>covers</code> y <code>join</code>), las anotaciones de los
+<a href="04-anotaciones.html">capítulos 4</a> y <a href="05-estructuras.html">5</a> y el test de clasificación del
+<a href="06-verificacion.html">capítulo 6</a>. Los ejemplos usan el modelo de la universidad: <code>Student</code>,
+<code>MenuGroup</code>, <code>Enrollment</code>, <code>Grade</code>, <code>Staff</code>, <code>Document</code>,
+<code>Attachment</code>, <code>CourseStatistics</code>, la superclase <code>AuditedEntity</code> y el compuesto
+<code>Address</code>. Las salidas que se muestran son las reales de ese modelo con la taxonomía estándar.</p>
+
+<h2 id="de-las-anotaciones-a-los-datos">De las anotaciones a los datos</h2>
+<p>El <code>Classifier</code> no solo comprueba el modelo: también devuelve el resultado de la clasificación como
+datos. Cada campo de cada clase se convierte en un objeto con su categoría de datos y la protección que necesita. Con
+esos objetos la aplicación construye informes, decide qué escribir en un log o prepara reglas para otras
+herramientas, sin volver a leer anotaciones.</p>
+<p>El clasificador ofrece tres métodos, que se diferencian en el número de clases y en lo que hacen cuando encuentran
+un error:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-7-1">
+<table>
+<caption id="tabla-7-1">Tabla 7.1. Los tres métodos de clasificación</caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th><th scope="col">Si hay errores</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>classify(Class&lt;?&gt; type)</code></th><td>Una <code>ClassClassification</code>.</td>
+<td>Los incluye en <code>violations()</code>; no lanza excepciones.</td></tr>
+<tr><th scope="row"><code>classifyAll(Collection&lt;? extends Class&lt;?&gt;&gt; types)</code></th>
+<td>Una <code>ClassClassification</code> por clase, en el orden recibido.</td>
+<td>Igual que <code>classify</code>.</td></tr>
+<tr><th scope="row"><code>verify(Collection&lt;? extends Class&lt;?&gt;&gt; types)</code></th>
+<td>Las mismas clasificaciones, cuando no hay errores.</td>
+<td>Lanza <code>ClassificationException</code> con todos los errores de todas las clases.</td></tr>
+</tbody>
+</table>
+</div>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 7.1. Obtener la clasificación del modelo de la universidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Classifier classifier = new Classifier(Taxonomy.load());
+List&lt;Class&lt;?&gt;&gt; entities = List.of(MenuGroup.class, Student.class, Enrollment.class, Grade.class,
+        Staff.class, Document.class, Attachment.class, CourseStatistics.class);
+
+ClassClassification student = classifier.classify(Student.class);       // una clase
+List&lt;ClassClassification&gt; all = classifier.classifyAll(entities);        // varias, sin excepciones
+List&lt;ClassClassification&gt; model = classifier.verify(entities);          // varias; lanza si hay errores
+</code></pre>
+</figure>
+
+<p>La diferencia importa más de lo que parece. Linneo aplica el principio de fallo seguro
+(<span lang="en">fail closed</span>): un campo con un error, por ejemplo sin clasificar o con una clave desconocida,
+no recibe una clasificación por defecto, sino que <strong>falta</strong> en <code>fields()</code>. Un informe construido
+con <code>classify</code> sobre una clase con errores omitiría esos campos sin avisar. En el código de la aplicación,
+usa <code>verify</code> o comprueba <code>isValid()</code> antes de usar el resultado.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>El clasificador lee anotaciones, nunca valores. Nada de este capítulo necesita una base de datos ni una instancia
+de las entidades: todo se calcula a partir de las clases. Cuando una decisión afecta a valores concretos, como
+enmascarar un correo en un log, Linneo dice qué hacer y la aplicación lo hace.</p>
+</div>
+
+<h2 id="la-clasificacion-de-una-clase">La clasificación de una clase</h2>
+<p>Una <code>ClassClassification</code> es un <code>record</code> con cuatro componentes: la clase clasificada
+(<code>type</code>), sus campos clasificados (<code>fields</code>), los campos excluidos con <code>@Exempt</code>
+(<code>exempted</code>) y los problemas encontrados (<code>violations</code>). Las listas son inmutables. Además de
+los componentes, ofrece los métodos de la Tabla 7.2.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-7-2">
+<table>
+<caption id="tabla-7-2">Tabla 7.2. Métodos de <code>ClassClassification</code></caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>isValid()</code></th><td><code>true</code> si no hay errores; los avisos se
+permiten.</td></tr>
+<tr><th scope="row"><code>errors()</code></th><td>Solo las infracciones de gravedad <code>ERROR</code>.</td></tr>
+<tr><th scope="row"><code>personalFields()</code></th><td>Los campos cuyo <code>isPersonal()</code> es
+<code>true</code>.</td></tr>
+<tr><th scope="row"><code>holdsPersonalData()</code></th><td><code>true</code> si algún campo es personal.</td></tr>
+<tr><th scope="row"><code>field(String path)</code></th><td>Un <code>Optional</code> con la clasificación del campo;
+vacío si el campo no existe, está exento o excluido, o tiene un error.</td></tr>
+<tr><th scope="row"><code>ceiling()</code></th><td>La protección que necesita un registro completo de la
+clase.</td></tr>
+<tr><th scope="row"><code>ceilingOf(String path)</code></th><td>La protección que necesita un campo junto con lo que
+cuelga de él.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="orden-y-rutas">El orden de los campos y las rutas</h3>
+<p><code>fields()</code> lista primero los campos de las superclases y, dentro de cada clase, en el orden en que los
+informa la <abbr title="máquina virtual de Java">JVM</abbr>, que normalmente coincide con el de declaración pero no
+está garantizado. Por eso un campo se identifica siempre por su <strong>ruta</strong>, nunca por su posición. La ruta
+es el nombre del campo o, para una parte de un compuesto, <code>campo.parte</code>.</p>
+<p>El <code>toString()</code> de cada campo da una línea compacta con la ruta, la clave de la categoría y la base:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">student.fields().forEach(System.out::println);
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">createdBy = user.account.username (DECLARED)
+createdAt = system.operations (CLASS_DEFAULT)
+updatedAt = system.operations (CLASS_DEFAULT)
+version = system.operations (CLASS_DEFAULT)
+id = user.unique_id (DECLARED)
+nationalId = user.government_id.national_identification_number (DECLARED)
+firstName = user.name.first (DECLARED)
+lastName = user.name.last (DECLARED)
+email = user.contact.email (DECLARED)
+dateOfBirth = user.demographic.date_of_birth (DECLARED)
+disabilityDegree = user.health_and_medical.disability (DECLARED)
+analyticsId = user.unique_id.pseudonymous (DECLARED)
+academicStatus = user.education.status (DECLARED)
+counsellingNotes = user.content.private (DECLARED)
+</code></pre>
+<p>Los cuatro primeros campos vienen de <code>AuditedEntity</code>. De los catorce, once son personales:
+<code>student.personalFields().size()</code> devuelve <code>11</code>, porque <code>createdAt</code>,
+<code>updatedAt</code> y <code>version</code> toman el valor por defecto de clase <code>system.operations</code>.</p>
+
+<h3 id="campos-exentos-y-ausentes">Campos exentos y campos ausentes</h3>
+<p>Un campo con <code>@Exempt</code> no está en <code>fields()</code>, pero tampoco desaparece: figura en
+<code>exempted()</code> con su clase declarante, su ruta y su motivo, para que un revisor vea qué se dejó fuera y
+para que excluir un campo que antes estaba clasificado sea un cambio visible.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification document = classifier.classify(Document.class);
+document.field("fileStore");                  // Optional.empty: está exento
+document.exempted().getFirst().path();        // "fileStore"
+document.exempted().getFirst().reason();      // "cliente del almacén de archivos, se abre bajo demanda"
+</code></pre>
+<p>Los campos <code>static</code>, los sintéticos y los <code>transient</code> sin anotaciones de Linneo no aparecen en
+ninguna de las dos listas: el clasificador no los considera datos del modelo (capítulo 4).</p>
+
+<h2 id="la-clasificacion-de-un-campo">La clasificación de un campo</h2>
+<p>Una <code>FieldClassification</code> es la clasificación de un campo: su categoría de datos y la protección
+efectiva que necesitan sus valores almacenados. Es un <code>record</code> con nueve componentes.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-7-3">
+<table>
+<caption id="tabla-7-3">Tabla 7.3. Componentes de <code>FieldClassification</code></caption>
+<thead>
+<tr><th scope="col">Componente</th><th scope="col">Significado</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>declaringClass</code></th><td>La clase que declara el campo: una superclase en los
+heredados, el compuesto en una parte de un <code>@Composite</code>.</td></tr>
+<tr><th scope="row"><code>path</code></th><td>La ruta del campo dentro de la clase clasificada.
+<code>fieldName()</code> devuelve su último segmento.</td></tr>
+<tr><th scope="row"><code>category</code></th><td>La <code>DataCategory</code> vigente: una clave obsoleta ya está
+resuelta a su sustituta.</td></tr>
+<tr><th scope="row"><code>basis</code></th><td>De dónde viene la categoría (Tabla 7.4).</td></tr>
+<tr><th scope="row"><code>reason</code></th><td>El motivo de un valor por defecto de clase o el
+<code>declaredBy</code> de una categoría por fila; <code>null</code> en los demás casos.</td></tr>
+<tr><th scope="row"><code>confidentiality</code>, <code>integrity</code></th><td>Los niveles
+<strong>efectivos</strong>: los de la categoría o los más estrictos que declare el campo.</td></tr>
+<tr><th scope="row"><code>identifiability</code></th><td>Cómo apunta el valor a la persona; <code>null</code> si la
+categoría no es personal.</td></tr>
+<tr><th scope="row"><code>derivedFrom</code></th><td>En un campo derivado, sus fuentes; vacía en cualquier
+otro.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="la-base">La base: de dónde viene la categoría</h3>
+<p>La base (<code>FieldClassification.Basis</code>) dice qué anotación decidió la categoría. Permite, por ejemplo,
+revisar por separado los campos cubiertos por un valor por defecto de clase, que no tienen una anotación propia.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-7-4">
+<table>
+<caption id="tabla-7-4">Tabla 7.4. Valores de <code>Basis</code></caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col">Origen</th><th scope="col"><code>reason()</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>DECLARED</code></th><td>Un <code>@Category</code> en el campo.</td>
+<td><code>null</code></td></tr>
+<tr><th scope="row"><code>CLASS_DEFAULT</code></th><td>El <code>@DefaultCategory</code> de una clase.</td>
+<td>El motivo del valor por defecto.</td></tr>
+<tr><th scope="row"><code>BY_ROW</code></th><td>El techo de un <code>@CategoryByRow</code>.</td>
+<td>El <code>declaredBy</code>.</td></tr>
+<tr><th scope="row"><code>DERIVED</code></th><td>Un campo <code>@DerivedFrom</code>: la clasificación de su fuente o
+la categoría que declara.</td><td><code>null</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>En el modelo de la universidad, <code>Student.createdAt</code> tiene la base <code>CLASS_DEFAULT</code> y el motivo
+<code>"marcas de tiempo técnicas de auditoría y versión de bloqueo optimista"</code>, y
+<code>Attachment.content</code> tiene la base <code>BY_ROW</code>, el motivo
+<code>"el documentType del Document al que pertenece"</code> y la categoría <code>user.health_and_medical</code>, que
+es su techo.</p>
+
+<h3 id="niveles-efectivos">Niveles efectivos y niveles de la categoría</h3>
+<p>Un campo puede elevar la confidencialidad o la integridad de su categoría, nunca rebajarlas (capítulo 4). Los
+componentes <code>confidentiality</code> e <code>integrity</code> de la clasificación ya incluyen esa elevación; los
+de la categoría no.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">FieldClassification notes = student.field("counsellingNotes").orElseThrow();
+notes.confidentiality();               // HIGH: elevada en el campo
+notes.category().confidentiality();    // MEDIUM: la de user.content.private
+</code></pre>
+<p>Para decidir sobre un campo usa siempre los niveles del campo. Los de la categoría solo sirven para describir la
+taxonomía.</p>
+
+<h3 id="identificabilidad-y-dato-personal">Identificabilidad y dato personal</h3>
+<p>La identificabilidad dice cómo apunta el valor almacenado a la persona: <code>IDENTIFIED</code>,
+<code>PSEUDONYMIZED</code>, <code>ANONYMIZED</code> o <code>AGGREGATED</code>. Es <code>null</code> cuando la
+categoría no es personal, lo que incluye todos los valores por defecto de clase. <code>isPersonal()</code> combina
+ambas cosas: es <code>true</code> cuando la categoría es personal y el valor está identificado o seudonimizado.</p>
+<ul>
+<li><code>Student.analyticsId</code> es <code>PSEUDONYMIZED</code> y sigue siendo un dato personal:
+<code>isPersonal()</code> es <code>true</code>.</li>
+<li><code>CourseStatistics.averageMark</code> tiene la categoría personal <code>user.education.grade</code>, pero es
+<code>AGGREGATED</code>: <code>isPersonal()</code> es <code>false</code> y el campo no está en
+<code>personalFields()</code>.</li>
+</ul>
+<p><code>isSecret()</code> devuelve la marca de secreto de la categoría. En el modelo, <code>Staff.passwordHash</code>
+(<code>user.authorization.password</code>) es un secreto: un valor que nunca se lee de vuelta, ni se exporta ni se
+publica.</p>
+
+<h3 id="derivados-y-compuestos">Campos derivados y compuestos</h3>
+<p>Un campo <code>@DerivedFrom</code> tiene la base <code>DERIVED</code> y <code>derivedFrom()</code> lista sus fuentes.
+Una fuente de la misma clase aparece como ruta; una de otra clase, como <code>NombreBinario#ruta</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">FieldClassification age = classifier.classify(StudentCard.class).field("age").orElseThrow();
+age.basis();                 // DERIVED
+age.category().key();        // "user.demographic.date_of_birth", la de su fuente
+age.derivedFrom();           // [dateOfBirth]
+
+classifier.classify(Document.class).field("attachments").orElseThrow().derivedFrom();
+// [edu.example.university.Attachment#id]
+</code></pre>
+<p>Un campo cuyo tipo es un compuesto se expande en una entrada por cada campo del compuesto, con la ruta
+<code>campo.parte</code> y el compuesto como clase declarante. El campo contenedor no tiene entrada propia:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification application = classifier.classify(ScholarshipApplication.class);
+FieldClassification city = application.field("home.city").orElseThrow();
+city.fieldName();              // "city"
+city.declaringClass();         // class edu.example.university.Address
+application.field("home");     // Optional.empty: home se expande en home.street, home.city y home.postalCode
+</code></pre>
+
+<h2 id="proteccion-de-campo-y-de-clase">La protección de un campo y la de una clase</h2>
+<p>Las decisiones que dependen de la clasificación casi nunca miran un solo nivel. Enmascarar un valor depende de su
+naturaleza jurídica, de su confidencialidad y de si es un secreto. Por eso Linneo resume todo en un único valor,
+<code>Protection</code>, con un orden parcial que permite compararlo (capítulo 2).</p>
+
+<h3 id="la-proteccion-de-un-campo">La protección de un campo</h3>
+<p><code>FieldClassification.protection()</code> devuelve la protección que necesitan los valores almacenados: la
+naturaleza de la categoría cuando son datos personales y <code>NONE</code> cuando están anonimizados o agregados, los
+niveles efectivos del campo y la marca de secreto de la categoría.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">student.field("email").orElseThrow().protection();
+classifier.classify(CourseStatistics.class).field("averageMark").orElseThrow().protection();
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+Protection[natures=[NONE], confidentiality=MEDIUM, integrity=HIGH, secret=false]
+</code></pre>
+<p>Observa el segundo resultado: la media agregada deja de ser un dato personal, pero conserva la confidencialidad y la
+integridad de su categoría. Agregar elimina la naturaleza jurídica, no los niveles.</p>
+
+<h3 id="la-proteccion-de-una-clase">La protección de una clase: el <code>join</code></h3>
+<p>Algunas decisiones afectan a un registro entero: una exportación de registros completos, una columna que guarda el
+registro serializado o una copia de seguridad de una tabla. Lo que necesitan es la protección mínima que cubre la de
+todos los campos a la vez. Esa operación es el <code>join</code> del orden parcial: la naturaleza más estricta, los
+niveles más altos y el secreto si algún campo lo es. <code>ClassClassification.ceiling()</code> la calcula sobre todos
+los campos de la clase, y devuelve <code>Protection.LOWEST</code> si no hay ninguno.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 7.2. El techo de protección de dos clases</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Protection studentCeiling = classifier.classify(Student.class).ceiling();
+Protection staffCeiling = classifier.classify(Staff.class).ceiling();
+Protection both = studentCeiling.join(staffCeiling);
+
+staffCeiling.covers(studentCeiling);       // false
+staffCeiling.comparedTo(studentCeiling);   // MIXED
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Protection[natures=[SPECIAL_CATEGORY], confidentiality=HIGH, integrity=HIGH, secret=false]
+Protection[natures=[CRIMINAL_OFFENCE], confidentiality=HIGH, integrity=HIGH, secret=true]
+Protection[natures=[SPECIAL_CATEGORY, CRIMINAL_OFFENCE], confidentiality=HIGH, integrity=HIGH, secret=true]
+</code></pre>
+<p>Tres detalles del resultado:</p>
+<ul>
+<li>El techo de <code>Staff</code> tiene la naturaleza <code>CRIMINAL_OFFENCE</code> (por
+<code>sexOffenceCertificateClear</code>) y es secreto (por <code>passwordHash</code>). Sus campos ordinarios no
+aparecen en <code>natures</code> porque una protección conserva solo sus naturalezas más estrictas.</li>
+<li>Las categorías especiales y los datos penales no son comparables entre sí. Por eso ninguno de los dos techos cubre
+al otro, <code>comparedTo</code> devuelve <code>MIXED</code> y el <code>join</code> conserva las dos naturalezas.</li>
+<li>El techo de <code>Student</code> lo fija un solo campo, <code>disabilityDegree</code>: una exportación de registros
+completos de estudiantes necesita la protección de los datos de salud aunque la mayoría de los campos sean
+ordinarios.</li>
+</ul>
+
+<h3 id="la-proteccion-de-un-subarbol">La protección de un campo y lo que cuelga de él</h3>
+<p><code>ceilingOf(path)</code> hace el mismo cálculo para un campo y para todos los campos cuya ruta empieza por la
+suya seguida de un punto. Es lo que necesita un campo compuesto guardado como un único valor, como una columna
+<abbr title="JavaScript Object Notation">JSON</abbr>: <code>application.ceilingOf("home")</code> combina
+<code>home.street</code>, <code>home.city</code> y <code>home.postalCode</code>. En el modelo devuelve
+<code>Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]</code>.</p>
+
+<h3 id="comprobar-una-categoria">Comprobar una categoría frente a un campo</h3>
+<p><code>covers(category)</code> responde si un campo protege datos de una categoría al menos tanto como esa categoría
+requiere. Su uso típico está en un campo <code>@CategoryByRow</code>: cuando la aplicación escribe una fila, comprueba
+que la categoría elegida para ella queda por debajo del techo.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">FieldClassification content = classifier.classify(Attachment.class).field("content").orElseThrow();
+content.covers(taxonomy.requireCategory(USER_HEALTH_AND_MEDICAL_DISABILITY));   // true: por debajo del techo
+content.covers(taxonomy.requireCategory(USER_CONTACT_EMAIL));                   // true: dato ordinario
+content.covers(taxonomy.requireCategory(USER_CRIMINAL_HISTORY));                // false: no comparable
+</code></pre>
+<p>La misma comparación, con los papeles cambiados, sirve para el segundo uso que cita la documentación de
+<code>covers</code>: comprobar que la clasificación que el delegado de protección de datos eleva para un campo sigue
+cubriendo lo que declara el código. Si la categoría elevada es <code>raised</code>, la condición es
+<code>raised.protection().covers(field.protection())</code>; si es falsa, la elevación rebajaría alguna faceta.</p>
+
+<h2 id="informes-de-datos-personales">Listar los campos personales y preparar informes</h2>
+<p>Una pregunta frecuente del delegado de protección de datos
+(<abbr title="delegado de protección de datos">DPD</abbr>) es «dónde tenemos datos personales, de qué tipo y con qué
+protección». Con la clasificación, la respuesta es un recorrido por <code>personalFields()</code>.</p>
+
+<h3 id="un-listado-por-campo">Un listado por campo</h3>
+<figure class="ejemplo">
+<figcaption>Ejemplo 7.3. Los campos personales del modelo en formato
+<abbr title="valores separados por comas">CSV</abbr></figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">System.out.println("entity;field;category;nature;confidentiality;integrity;identifiability;secret");
+for (ClassClassification entity : classifier.verify(entities)) {
+    for (FieldClassification field : entity.personalFields()) {
+        Protection protection = field.protection();
+        System.out.println(String.join(";", entity.type().getSimpleName(), field.path(),
+                field.category().key(), protection.natures().toString(), protection.confidentiality().name(),
+                protection.integrity().name(), field.identifiability().name(),
+                Boolean.toString(protection.secret())));
+    }
+}
+</code></pre>
+</figure>
+<p>Un extracto de la salida:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">entity;field;category;nature;confidentiality;integrity;identifiability;secret
+Student;createdBy;user.account.username;[ORDINARY];LOW;MEDIUM;IDENTIFIED;false
+Student;id;user.unique_id;[ORDINARY];LOW;MEDIUM;IDENTIFIED;false
+Student;nationalId;user.government_id.national_identification_number;[ORDINARY];MEDIUM;MEDIUM;IDENTIFIED;false
+Student;disabilityDegree;user.health_and_medical.disability;[SPECIAL_CATEGORY];HIGH;HIGH;IDENTIFIED;false
+Student;analyticsId;user.unique_id.pseudonymous;[ORDINARY];LOW;MEDIUM;PSEUDONYMIZED;false
+Student;counsellingNotes;user.content.private;[ORDINARY];HIGH;MEDIUM;IDENTIFIED;false
+Staff;iban;user.financial.bank_account;[ORDINARY];MEDIUM;HIGH;IDENTIFIED;false
+Staff;sexOffenceCertificateClear;user.criminal_history;[CRIMINAL_OFFENCE];HIGH;HIGH;IDENTIFIED;false
+Staff;passwordHash;user.authorization.password;[ORDINARY];HIGH;HIGH;IDENTIFIED;true
+Attachment;content;user.health_and_medical;[SPECIAL_CATEGORY];HIGH;HIGH;IDENTIFIED;false
+</code></pre>
+<p>En este bucle <code>identifiability()</code> nunca es <code>null</code>, porque <code>personalFields()</code> solo
+contiene campos de categorías personales. <code>CourseStatistics</code> y <code>MenuGroup</code> no aportan ninguna
+línea. La columna de confidencialidad muestra el nivel efectivo: <code>counsellingNotes</code> es <code>HIGH</code>
+por la elevación declarada en el campo.</p>
+
+<h3 id="un-informe-por-categoria">Un informe por categoría</h3>
+<p>El mismo recorrido, agrupado por clave de categoría, responde a la pregunta inversa: dónde se guarda cada tipo de
+dato. Un <code>TreeMap</code> ordena las claves, de modo que el informe sale siempre igual.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 7.4. Los campos personales agrupados por categoría</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Map&lt;String, List&lt;String&gt;&gt; byCategory = new TreeMap&lt;&gt;();
+for (ClassClassification entity : classifier.verify(entities)) {
+    for (FieldClassification field : entity.personalFields()) {
+        byCategory.computeIfAbsent(field.category().key(), key -&gt; new ArrayList&lt;&gt;())
+                .add(entity.type().getSimpleName() + "." + field.path());
+    }
+}
+byCategory.forEach((key, fields) -&gt; System.out.println(key + " " + fields));
+</code></pre>
+</figure>
+<p>Un extracto de la salida:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">user.account.username [Student.createdBy, Enrollment.createdBy, Grade.createdBy, Staff.createdBy, Document.createdBy, Attachment.createdBy]
+user.authorization.password [Staff.passwordHash]
+user.contact.email [Student.email, Staff.workEmail]
+user.content.private [Student.counsellingNotes, Document.title, Document.documentType, Attachment.fileName]
+user.criminal_history [Staff.sexOffenceCertificateClear]
+user.health_and_medical [Attachment.content]
+user.health_and_medical.disability [Student.disabilityDegree]
+user.unique_id.record_reference [Enrollment.id, Enrollment.studentId, Grade.enrollmentId, Document.id, Document.studentId, Document.attachments, Attachment.id]
+</code></pre>
+<p><code>user.account.username</code> aparece una vez por entidad que extiende <code>AuditedEntity</code>: los campos
+heredados pertenecen a cada clase concreta. Si quieres detectar las clases que necesitan protección reforzada,
+<code>ceiling().requiresMaximumProtection()</code> lo dice en una línea: en el modelo son <code>Student</code>,
+<code>Staff</code> y <code>Attachment</code>.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Estos informes describen <strong>dónde</strong> están los datos personales, no <strong>para qué</strong> se tratan.
+Son materia prima para el registro de actividades de tratamiento
+(<abbr title="registro de actividades de tratamiento">RAT</abbr>) del art. 30
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr>, no el registro. Las finalidades, las categorías
+de interesados y las bases jurídicas se declaran en las actividades de tratamiento del
+<a href="11-actividades.html">capítulo 11</a>, y el registro se genera en el <a href="12-registro.html">capítulo
+12</a>.</p>
+</div>
+
+<p>Estos bucles imprimen un informe, pero no lo conservan. Cuando la aplicación necesita guardar la clasificación,
+compararla con una copia anterior o publicarla en un catálogo, la herramienta adecuada es el inventario de datos del
+<a href="08-inventario.html">capítulo 8</a>.</p>
+
+<h2 id="politica-de-divulgacion">Mostrar, enmascarar u omitir: <code>DisclosurePolicy</code></h2>
+<p>Los logs, las pantallas y las exportaciones son las vías habituales por las que un dato sale del sistema sin que
+nadie lo haya decidido. El <code>toString()</code> de una entidad acaba en una traza de error con el grado de
+discapacidad de un estudiante; una pantalla de soporte muestra el número de la Seguridad Social a quien no lo
+necesita. La clasificación permite decidir, campo a campo, qué puede salir por cada canal.</p>
+
+<h3 id="tres-tratamientos">Tres tratamientos</h3>
+<p>Una <code>DisclosurePolicy</code> describe cómo pueden salir los valores de los campos clasificados por un canal.
+Para cada campo da uno de tres tratamientos, del más abierto al más estricto:</p>
+<dl class="definiciones">
+<dt><code>CLEAR</code></dt>
+<dd>El valor se muestra tal cual.</dd>
+<dt><code>MASK</code></dt>
+<dd>El valor se muestra de una forma que no lo revela: asteriscos, truncado, con un hash o sustituido por un
+seudónimo. Cómo se enmascara lo decide la aplicación.</dd>
+<dt><code>OMIT</code></dt>
+<dd>El valor se omite.</dd>
+</dl>
+<p>Linneo decide el tratamiento; la aplicación enmascara u omite los valores, porque Linneo nunca los lee.</p>
+
+<h3 id="umbrales">Cómo decide una política: umbrales</h3>
+<p>Una política es un conjunto de <strong>umbrales</strong>, cada uno una <code>Protection</code>, agrupados en dos
+listas: los umbrales de enmascaramiento (<code>masked()</code>) y los de omisión (<code>omitted()</code>). Para decidir
+el tratamiento de un campo, la política compara su protección con los umbrales en el orden parcial:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Secreto</span> Si el campo es un secreto, el tratamiento es <code>OMIT</code>, en
+cualquier política.</li>
+<li><span class="flujo-titulo">Omisión</span> Si la protección del campo cubre algún umbral de omisión, el tratamiento
+es <code>OMIT</code>.</li>
+<li><span class="flujo-titulo">Enmascaramiento</span> Si cubre algún umbral de enmascaramiento, el tratamiento es
+<code>MASK</code>.</li>
+<li><span class="flujo-titulo">Resto</span> En cualquier otro caso, el tratamiento es <code>CLEAR</code>.</li>
+</ol>
+<p>Como cada naturaleza cubre a <code>NONE</code> y todo nivel cubre al más bajo, un umbral se lee como una condición
+mínima. <code>Protection.of(LegalNature.ORDINARY, Confidentiality.PUBLIC, Integrity.LOW, false)</code> significa
+«cualquier dato personal»; <code>Protection.of(LegalNature.NONE, Confidentiality.HIGH, Integrity.LOW, false)</code>
+significa «cualquier dato de confidencialidad <code>HIGH</code>, personal o no».</p>
+
+<h3 id="monotona">Una política es monótona por construcción</h3>
+<p>La propiedad más importante de una política es que <strong>un campo que necesita más protección nunca recibe un
+tratamiento más laxo</strong> que uno que necesita menos, sean cuales sean sus umbrales. La razón es la transitividad
+del orden: si la protección de un campo A cubre la de un campo B, y la de B cubre un umbral, la de A también lo
+cubre. Todo umbral que se aplica a B se aplica a A. Y si B es un secreto, A también lo es, porque una protección que
+cubre un secreto es secreta. <code>DisclosurePolicyTest</code> comprueba esta propiedad sobre todas las protecciones
+posibles.</p>
+<p>Una regla escrita a mano con unos pocos indicadores no tiene esa garantía. Compárala con la política para logs en
+dos campos del modelo: <code>Exam.questions</code>, el enunciado de un examen guardado antes de la prueba, y
+<code>Student.disabilityDegree</code>.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 7.5. Un dato no personal de confidencialidad alta</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = SYSTEM_OPERATIONS, reason = "planificación técnica del examen")
+public class Exam {
+
+    private Long id;
+    private LocalDateTime startsAt;
+
+    @Category(value = ORG_BUSINESS_RECORDS, confidentiality = Confidentiality.HIGH)
+    private String questions;
+}
+</code></pre>
+</figure>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-7-5">
+<table>
+<caption id="tabla-7-5">Tabla 7.5. Una regla a mano frente a <code>forLogs()</code></caption>
+<thead>
+<tr><th scope="col">Campo</th><th scope="col">Protección</th>
+<th scope="col">«secreto: OMIT; personal: MASK; resto: CLEAR»</th><th scope="col"><code>forLogs()</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Exam.questions</code></th><td><code>NONE</code>, <code>HIGH</code>, <code>MEDIUM</code></td>
+<td><code>CLEAR</code></td><td><code>MASK</code></td></tr>
+<tr><th scope="row"><code>Student.disabilityDegree</code></th>
+<td><code>SPECIAL_CATEGORY</code>, <code>HIGH</code>, <code>HIGH</code></td>
+<td><code>MASK</code></td><td><code>OMIT</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>La regla a mano deja en claro el enunciado del examen y trata el grado de discapacidad como cualquier otro dato
+personal. Ninguno de los dos fallos es evidente al leer el código de la regla.</p>
+
+<h3 id="la-politica-para-logs">La política para logs</h3>
+<p>Linneo trae una sola política predefinida, <code>DisclosurePolicy.forLogs()</code>, para logs, trazas e informes de
+error. Las demás las construyes tú con el <code>Builder</code>.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-7-6">
+<table>
+<caption id="tabla-7-6">Tabla 7.6. Los umbrales de <code>forLogs()</code></caption>
+<thead>
+<tr><th scope="col">El campo contiene</th><th scope="col">Tratamiento</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">datos personales (umbral <code>ORDINARY</code>)</th><td><code>MASK</code></td></tr>
+<tr><th scope="row">datos de confidencialidad <code>HIGH</code>, personales o no</th><td><code>MASK</code></td></tr>
+<tr><th scope="row">datos de categoría especial</th><td><code>OMIT</code></td></tr>
+<tr><th scope="row">datos de condenas e infracciones penales</th><td><code>OMIT</code></td></tr>
+<tr><th scope="row">un secreto</th><td><code>OMIT</code></td></tr>
+<tr><th scope="row">cualquier otra cosa</th><td><code>CLEAR</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>treatments(ClassClassification)</code> calcula el tratamiento de todos los campos de una clase y lo devuelve
+como un mapa inmutable por ruta: primero los campos clasificados, en orden, y después los exentos, que no contienen
+datos y son <code>CLEAR</code>.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">DisclosurePolicy logs = DisclosurePolicy.forLogs();
+Map&lt;String, DisclosurePolicy.Treatment&gt; inLogs = logs.treatments(classifier.classify(Staff.class));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">{createdBy=MASK, createdAt=CLEAR, updatedAt=CLEAR, version=CLEAR, id=MASK, fullName=MASK, workEmail=MASK, jobTitle=MASK, department=MASK, socialSecurityNumber=MASK, iban=MASK, sexOffenceCertificateClear=OMIT, passwordHash=OMIT}
+</code></pre>
+<p>Para otras clases del modelo: en <code>Student</code>, <code>disabilityDegree</code> es <code>OMIT</code> y el resto
+de campos personales, incluido el seudónimo <code>analyticsId</code>, <code>MASK</code>; en <code>Attachment</code>,
+<code>content</code> es <code>OMIT</code> y el resumen <code>sha256</code>, <code>CLEAR</code>; en
+<code>CourseStatistics</code> los tres campos son <code>CLEAR</code>, porque los valores agregados no son datos
+personales y su confidencialidad no llega a <code>HIGH</code>; en <code>Document</code>, el campo exento
+<code>fileStore</code> es <code>CLEAR</code>.</p>
+
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p><code>treatments</code> lanza <code>IllegalArgumentException</code> si la clase tiene errores de clasificación. Un
+campo con un error no está en <code>fields()</code> y no tendría tratamiento: dejarlo fuera del mapa lo dejaría pasar.
+El test del capítulo 6 evita que una clase así llegue a producción.</p>
+</div>
+
+<h3 id="politicas-propias">Construir políticas propias</h3>
+<p><code>DisclosurePolicy.builder()</code> empieza una política sin umbrales, en la que solo se omiten los secretos.
+<code>mask(Protection)</code> y <code>omit(Protection)</code> añaden umbrales y <code>build()</code> crea la política,
+inmutable y segura entre hilos. Una política vacía ya es útil para comprobar el suelo: aplicada a <code>Staff</code>
+devuelve <code>CLEAR</code> para todos los campos excepto <code>passwordHash</code>, que es <code>OMIT</code>.</p>
+<p>La secretaría de la universidad tiene una pantalla de atención en ventanilla. El personal necesita ver el nombre y
+el correo del estudiante, pero no su documento de identidad ni su fecha de nacimiento completos, y nunca los datos de
+salud ni los penales:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 7.6. Una política para la pantalla de ventanilla</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DisclosurePolicy frontDesk = DisclosurePolicy.builder()
+        .mask(Protection.of(LegalNature.ORDINARY, Confidentiality.MEDIUM, Integrity.LOW, false))
+        .omit(Protection.of(LegalNature.SPECIAL_CATEGORY, Confidentiality.PUBLIC, Integrity.LOW, false))
+        .omit(Protection.of(LegalNature.CRIMINAL_OFFENCE, Confidentiality.PUBLIC, Integrity.LOW, false))
+        .build();
+Map&lt;String, DisclosurePolicy.Treatment&gt; onScreen = frontDesk.treatments(classifier.classify(Student.class));
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">{createdBy=CLEAR, createdAt=CLEAR, updatedAt=CLEAR, version=CLEAR, id=CLEAR, nationalId=MASK, firstName=CLEAR, lastName=CLEAR, email=CLEAR, dateOfBirth=MASK, disabilityDegree=OMIT, analyticsId=CLEAR, academicStatus=MASK, counsellingNotes=MASK}
+</code></pre>
+<p>Los datos ordinarios de confidencialidad <code>LOW</code> se muestran; los de <code>MEDIUM</code> o más, como
+<code>nationalId</code>, <code>dateOfBirth</code> o <code>academicStatus</code>, se enmascaran; las notas de
+orientación, elevadas a <code>HIGH</code>, también. La pantalla oculta el campo <code>disabilityDegree</code> por
+completo.</p>
+<p>Una exportación para un grupo de investigación externo es el caso contrario: no debe salir ningún dato personal, y
+los datos no personales de confidencialidad media o superior deben llegar enmascarados:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">DisclosurePolicy research = DisclosurePolicy.builder()
+        .omit(Protection.of(LegalNature.ORDINARY, Confidentiality.PUBLIC, Integrity.LOW, false))
+        .mask(Protection.of(LegalNature.NONE, Confidentiality.MEDIUM, Integrity.LOW, false))
+        .build();
+</code></pre>
+<p>Con esta política, <code>CourseStatistics</code> da <code>{courseCode=CLEAR, averageMark=MASK, passed=MASK}</code> y
+<code>Student</code> solo deja salir <code>createdAt</code>, <code>updatedAt</code> y <code>version</code>.</p>
+
+<h3 id="usarla-en-la-aplicacion">Usarla en logs, pantallas y exportaciones</h3>
+<p>El patrón es siempre el mismo: calcula una vez el mapa de tratamientos de cada clase, consérvalo y aplícalo a los
+valores que la aplicación lee. Para los logs, una clase de utilidad puede describir un registro a partir de los
+valores que le pasa el código, por ruta:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 7.7. Describir un registro para un log</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import java.util.concurrent.ConcurrentHashMap;
+
+public final class SafeLog {
+
+    private final Map&lt;Class&lt;?&gt;, Map&lt;String, DisclosurePolicy.Treatment&gt;&gt; treatments = new ConcurrentHashMap&lt;&gt;();
+    private final Classifier classifier;
+    private final DisclosurePolicy policy;
+
+    public SafeLog(Classifier classifier, DisclosurePolicy policy) {
+        this.classifier = classifier;
+        this.policy = policy;
+    }
+
+    /** Describe un registro con los valores que la aplicación lee de él, por ruta. */
+    public String describe(Class&lt;?&gt; type, Map&lt;String, ?&gt; values) {
+        Map&lt;String, DisclosurePolicy.Treatment&gt; byPath = treatments.computeIfAbsent(type,
+                t -&gt; policy.treatments(classifier.classify(t)));
+        StringJoiner text = new StringJoiner(", ", type.getSimpleName() + "{", "}");
+        values.forEach((path, value) -&gt; {
+            DisclosurePolicy.Treatment treatment = byPath.getOrDefault(path, DisclosurePolicy.Treatment.OMIT);
+            switch (treatment) {
+                case CLEAR -&gt; text.add(path + "=" + value);
+                case MASK -&gt; text.add(path + "=***");
+                case OMIT -&gt; { }
+            }
+        });
+        return text.toString();
+    }
+}
+</code></pre>
+</figure>
+<p>Con <code>forLogs()</code> y los valores <code>id=1042</code>, <code>version=7</code>, <code>firstName=Ana</code>,
+<code>email=ana.garcia@example.org</code>, <code>disabilityDegree=33</code>, <code>analyticsId=a8f3e1</code>,
+<code>academicStatus=ACTIVE</code> y un valor con una ruta que la clase no tiene, <code>nickname=Anita</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Student{id=***, version=7, firstName=***, email=***, analyticsId=***, academicStatus=***}
+</code></pre>
+<p>El grado de discapacidad no aparece, y tampoco <code>nickname</code>: una ruta desconocida se trata como
+<code>OMIT</code>. Ese valor por defecto es la clave del diseño. Un mapa construido antes de añadir un campo, o un
+valor que no corresponde a ningún campo clasificado, nunca sale en claro.</p>
+<p>En una pantalla, el mismo mapa decide qué columnas pinta una tabla, cuáles se enmascaran y cuáles no se envían al
+navegador. En una exportación, decide qué columnas lleva el fichero. Cuando la exportación lleva registros completos
+sin filtrar campos, como una copia cifrada para un proveedor, la decisión es otra: la protección que necesita el
+fichero es <code>ceiling()</code>. Para la base de datos de un entorno de pruebas, <code>PostgresAnonymizer</code>
+convierte una política en reglas de enmascaramiento de PostgreSQL (capítulo 16).</p>
+<p>La política también decide sobre campos guardados: <code>treatment(InventoryField, Taxonomy)</code> trata un campo de
+un inventario de datos, resuelto con una taxonomía, sin necesidad de las clases del modelo (capítulo 8).</p>
+
+<h2 id="rendimiento">Rendimiento</h2>
+<p>Cada llamada a <code>classify</code>, <code>classifyAll</code>, <code>verify</code> o <code>inventory</code> lee cada
+clase una sola vez. Una clase que usan varias, como compuesto o como fuente de campos derivados, se lee una vez por
+llamada aunque aparezca en muchas. El <code>Classifier</code> es inmutable y seguro entre hilos, y no guarda nada entre
+llamadas: dos llamadas leen dos veces. Si la aplicación necesita la clasificación en cada petición, calcula lo que
+necesite una vez, como el mapa de tratamientos de <code>SafeLog</code>, y consérvalo.</p>
+<p>El repositorio incluye una herramienta de medida, <code>tools/bench/InventoryBench.java</code>, que no forma parte
+de la compilación. Genera y compila un modelo sintético de 800 entidades (40 de ellas con 400 campos y el resto con
+25, todas con una superclase auditada) y mide cada paso. Se ejecuta con el lanzador de un solo fichero de Java,
+después de compilar la biblioteca:</p>
+<pre class="codigo" tabindex="0"><code class="language-text">java -cp target/classes tools/bench/InventoryBench.java [entidades] [entidades grandes]
+</code></pre>
+<p>Una ejecución con los valores por defecto, en el equipo en el que se escribió este capítulo (los decimales salen con
+coma por la configuración regional):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">taxonomy                           40,1 ms
+verify (first)                    348,3 ms
+verify (again)                     76,1 ms
+inventory                         200,3 ms
+fingerprint                        52,8 ms
+toTsv                              15,4 ms
+fromTsv                           118,5 ms
+diff (1% changed)                  80,9 ms
+affectedBy (email tightened)       25,0 ms
+
+800 entities, 39000 classified fields, 2119 KB of text, fingerprint 8796d969e95c...
+366 field changes, 230 weakening; 5922 fields reached by the taxonomy change
+</code></pre>
+<p>Clasificar 39 000 campos cuesta unas décimas de segundo la primera vez, cuando la JVM aún carga y optimiza el
+código, y bastante menos después. Para un test o un arranque es despreciable.
+Los tiempos dependen de la máquina; ejecuta la herramienta en la tuya. Las líneas del inventario se explican en el
+<a href="08-inventario.html">capítulo 8</a>.</p>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Construir un informe con <code>classify</code> sin comprobar <code>isValid()</code>.</dt>
+<dd>Los campos con errores faltan en <code>fields()</code> y el informe los omite sin avisar. Usa <code>verify</code>
+o comprueba <code>isValid()</code> antes de usar el resultado.</dd>
+<dt>Usar <code>category().isPersonal()</code> para saber si un valor es un dato personal.</dt>
+<dd>Ignora la identificabilidad: una media agregada contaría como dato personal. Usa
+<code>FieldClassification.isPersonal()</code>.</dd>
+<dt>Usar los niveles de la categoría en lugar de los del campo.</dt>
+<dd><code>field.category().confidentiality()</code> no incluye la elevación declarada en el campo;
+<code>field.confidentiality()</code> y <code>field.protection()</code> sí.</dd>
+<dt>Identificar un campo por su posición en <code>fields()</code>.</dt>
+<dd>El orden dentro de una clase depende de la JVM. Busca los campos con <code>field(path)</code> o recorre la lista
+por rutas.</dd>
+<dt>Escribir la regla de enmascaramiento con unos pocos indicadores.</dt>
+<dd>Una regla como «personal: enmascarar» deja en claro datos no personales de confidencialidad alta y no distingue las
+categorías especiales. Usa una <code>DisclosurePolicy</code>, que es monótona por construcción.</dd>
+<dt>Tratar como <code>CLEAR</code> una ruta que no está en el mapa de tratamientos.</dt>
+<dd>Un campo añadido después de calcular el mapa, o un valor sin campo clasificado, saldría en claro. El valor por
+defecto debe ser <code>OMIT</code> o, como mínimo, <code>MASK</code>.</dd>
+<dt>Clasificar en cada petición.</dt>
+<dd>El clasificador no guarda nada entre llamadas. Calcula una vez lo que necesitas, por clase, y consérvalo.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li><code>classify</code> y <code>classifyAll</code> devuelven el resultado con sus problemas; <code>verify</code> lanza
+una excepción si hay errores. Un campo con error falta en el resultado, así que los usos en la aplicación parten de
+una clasificación válida.</li>
+<li><code>ClassClassification</code> lista los campos clasificados, los exentos y los problemas. Los campos se
+identifican por su ruta, nunca por su posición.</li>
+<li><code>FieldClassification</code> da la categoría vigente, la base, los niveles efectivos, la identificabilidad y,
+en un campo derivado, sus fuentes. <code>isPersonal()</code> combina la categoría con la identificabilidad.</li>
+<li><code>protection()</code> resume la protección de un campo; <code>ceiling()</code> y <code>ceilingOf(path)</code>
+calculan el <code>join</code> de varios campos, lo que necesita un registro completo o un compuesto guardado como un
+valor.</li>
+<li>Una <code>DisclosurePolicy</code> decide por umbrales si un valor se muestra, se enmascara o se omite. Es monótona
+por construcción y omite siempre los secretos. Linneo trae <code>forLogs()</code>; las demás políticas se construyen
+con el <code>Builder</code>.</li>
+<li>Linneo decide y la aplicación aplica: lee los valores, los enmascara u omite, y trata como <code>OMIT</code> lo que
+no conoce.</li>
+<li>El clasificador lee cada clase una vez por llamada y no guarda nada entre llamadas: conserva lo que calcules.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Protección reforzada.</strong> Imprime, con el formato <code>Clase.campo (clave)</code>, todos los campos
+personales del modelo cuya protección incluye una categoría especial o datos penales.</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">for (ClassClassification entity : classifier.verify(entities)) {
+    entity.personalFields().stream()
+            .filter(field -&gt; field.protection().requiresMaximumProtection())
+            .forEach(field -&gt; System.out.println(entity.type().getSimpleName() + "." + field.path()
+                    + " (" + field.category().key() + ")"));
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Student.disabilityDegree (user.health_and_medical.disability)
+Staff.sexOffenceCertificateClear (user.criminal_history)
+Attachment.content (user.health_and_medical)
+</code></pre>
+<p><code>requiresMaximumProtection()</code> es <code>true</code> cuando alguna naturaleza de la protección es
+<code>SPECIAL_CATEGORY</code> o <code>CRIMINAL_OFFENCE</code>. Usar <code>protection()</code> en lugar de
+<code>category().nature()</code> deja fuera, además, los valores agregados de esas categorías.</p>
+</details>
+</li>
+<li>
+<p><strong>Predice los tratamientos.</strong> Con la política <code>research</code> de la sección
+<a href="#politicas-propias">Construir políticas propias</a>, ¿qué tratamiento recibe cada campo de
+<code>Exam</code> (Ejemplo 7.5)?</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<p><code>{id=CLEAR, startsAt=CLEAR, questions=MASK}</code>. Ninguno es personal, así que el umbral de omisión no se
+aplica. <code>id</code> y <code>startsAt</code> toman <code>system.operations</code>, de confidencialidad
+<code>LOW</code>, y salen en claro. <code>questions</code> tiene confidencialidad <code>HIGH</code>, que cubre el umbral
+de enmascaramiento <code>MEDIUM</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>El valor por defecto.</strong> Un compañero propone cambiar en <code>SafeLog</code> el valor por defecto de
+<code>getOrDefault</code> a <code>CLEAR</code>, «para no perder información de depuración». ¿Qué riesgo introduce?</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<p>Cualquier valor cuya ruta no esté en el mapa saldría en claro: un campo añadido a la clase después de calcular el
+mapa, una ruta mal escrita en el código que lee los valores o un valor que no corresponde a ningún campo. El diseño
+dejaría de fallar de forma segura. Si se necesita depurar, que el valor desconocido aparezca como
+<code>MASK</code>, con su ruta, pero nunca en claro.</p>
+</details>
+</li>
+<li>
+<p><strong>Un compuesto como JSON.</strong> <code>ScholarshipApplication.home</code> se guarda en una única columna
+JSON. ¿Qué protección necesita esa columna y con qué método la calculas? ¿Por qué no sirve
+<code>application.field("home")</code>?</p>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<p>La de <code>application.ceilingOf("home")</code>, que combina <code>home.street</code>, <code>home.city</code> y
+<code>home.postalCode</code>: <code>Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM,
+secret=false]</code>. <code>field("home")</code> devuelve un <code>Optional</code> vacío, porque un campo compuesto
+sin <code>@Category</code> se expande en sus partes y no tiene entrada propia.</p>
+</details>
+</li>
+<li>
+<p><strong>Las naturalezas de un techo.</strong> <code>Staff</code> tiene campos ordinarios y un campo de datos
+penales. ¿Por qué <code>classifier.classify(Staff.class).ceiling().natures()</code> es
+<code>[CRIMINAL_OFFENCE]</code> y no <code>[ORDINARY, CRIMINAL_OFFENCE]</code>? ¿Cuándo tendría dos naturalezas?</p>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<p>Una protección conserva solo sus naturalezas más estrictas, y <code>CRIMINAL_OFFENCE</code> cubre a
+<code>ORDINARY</code>. Tendría dos naturalezas si la clase contuviera además datos de categoría especial, que no son
+comparables con los penales: es lo que ocurre en el <code>join</code> de los techos de <code>Student</code> y
+<code>Staff</code> del Ejemplo 7.2.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>Una clase tiene un campo sin clasificar. ¿Qué devuelve <code>classify</code> para ese campo?</p>
+<ol>
+<li>Una <code>FieldClassification</code> con la categoría por defecto <code>system.operations</code>.</li>
+<li>Nada en <code>fields()</code>; el problema está en <code>violations()</code>.</li>
+<li>Lanza una <code>ClassificationException</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La respuesta correcta es la b. Linneo falla de forma segura: el campo con un error no recibe ninguna categoría y
+falta en <code>fields()</code>, y el error queda en <code>violations()</code>. No hay categoría por defecto implícita
+(a), y <code>classify</code> no lanza excepciones (c); es <code>verify</code> el que lanza.</p>
+</details>
+</li>
+<li>
+<p>¿Cuál de estos campos devuelve <code>false</code> en <code>isPersonal()</code>?</p>
+<ol>
+<li><code>Student.analyticsId</code>, seudonimizado.</li>
+<li><code>CourseStatistics.averageMark</code>, agregado.</li>
+<li><code>Student.counsellingNotes</code>, con la confidencialidad elevada a <code>HIGH</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La respuesta correcta es la b. Un valor agregado de una categoría personal no es un dato personal. Un valor
+seudonimizado (a) sigue siéndolo, y elevar un nivel (c) no cambia la naturaleza del dato.</p>
+</details>
+</li>
+<li>
+<p>¿Qué calcula <code>ClassClassification.ceiling()</code>?</p>
+<ol>
+<li>La protección del campo más protegido de la clase.</li>
+<li>El <code>join</code> de la protección de todos sus campos: la menor protección que los cubre a todos.</li>
+<li>La protección de la categoría por defecto de la clase.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La respuesta correcta es la b. No siempre hay un campo «más protegido» (a): una clase con datos de salud y datos
+penales necesita las dos naturalezas, que no son comparables, y el <code>join</code> las conserva. La categoría por
+defecto (c) solo cubre algunos campos.</p>
+</details>
+</li>
+<li>
+<p>Una política tiene un único umbral de enmascaramiento: datos personales de confidencialidad <code>MEDIUM</code>.
+¿Qué tratamiento recibe <code>Staff.passwordHash</code>?</p>
+<ol>
+<li><code>MASK</code>, porque es un dato personal de confidencialidad <code>HIGH</code>.</li>
+<li><code>OMIT</code>, porque es un secreto.</li>
+<li><code>CLEAR</code>, porque la política no tiene umbrales de omisión.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La respuesta correcta es la b. Toda política omite los secretos, aunque no tenga ningún umbral de omisión. Por eso
+ni a ni c son posibles.</p>
+</details>
+</li>
+<li>
+<p>¿Por qué una <code>DisclosurePolicy</code> nunca trata con más laxitud un campo más protegido?</p>
+<ol>
+<li>Porque comprueba los campos en orden de confidencialidad.</li>
+<li>Porque si la protección de un campo cubre la de otro, cubre también todos los umbrales que cubre el otro.</li>
+<li>Porque Linneo prohíbe definir umbrales de enmascaramiento por encima de los de omisión.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La respuesta correcta es la b: la garantía viene de la transitividad del orden parcial de la protección. La
+política no ordena los campos (a) y el <code>Builder</code> acepta cualquier umbral (c); aun así, la propiedad se
+cumple.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="08-inventario.html">Capítulo 8. El inventario de datos</a>: la clasificación como datos que se guardan y
+se comparan.</li>
+<li><a href="16-exportadores.html">Capítulo 16. Exportar a PostgreSQL, OpenAPI y
+<abbr title="Open Data Contract Standard">ODCS</abbr></a>: una política convertida en reglas de la base de datos.</li>
+<li><a href="../../reference/classify/results.html">Referencia: resultados de la clasificación</a>.</li>
+<li><a href="../../reference/classify/disclosure.html">Referencia: política de divulgación</a>.</li>
+<li><a href="../../reference/classify/classifier.html">Referencia: el clasificador</a>.</li>
+<li><a href="../../reference/protection-levels.html">Referencia: niveles de protección</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="06-verificacion.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 6. Verificar en los tests</a></li>
+<li><a href="08-inventario.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 8. El inventario de datos</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

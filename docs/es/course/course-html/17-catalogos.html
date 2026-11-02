@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OpenMetadataCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OpenMetadataMapping.java
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OmClassification.java
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OmTag.java
+  - src/main/java/io/github/devbpm/linneo/catalog/datahub/DataHubCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/datahub/DataHubMapping.java
+  - src/main/java/io/github/devbpm/linneo/catalog/datahub/DhProposal.java
+  - src/main/java/io/github/devbpm/linneo/catalog/atlas/AtlasCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/atlas/AtlasMapping.java
+  - src/main/java/io/github/devbpm/linneo/catalog/atlas/AtlasClassificationDef.java
+  - src/main/java/io/github/devbpm/linneo/internal/Json.java
+  - src/main/java/io/github/devbpm/linneo/classify/InventoryField.java
+  - src/main/java/io/github/devbpm/linneo/classify/DataInventory.java
+  - src/main/java/io/github/devbpm/linneo/classify/InventoryDiff.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 17. Catálogos de datos · Curso de Linneo</title>
+<meta name="description" content="Publicar la taxonomía y la clasificación de cada columna en OpenMetadata, DataHub y Apache Atlas, y mantener las etiquetas al día.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html" aria-current="page"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 17. Catálogos de datos</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 17</span> Catálogos de datos</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>100 minutos</dd></div>
+<div><dt>Parte V:</dt><dd>Integración y práctica</dd></div>
+</dl>
+<p class="entradilla">La clasificación vive en el código, pero los analistas buscan los datos en un catálogo. Linneo
+traduce la taxonomía y la clasificación de cada campo a los formatos de tres catálogos de código abierto: OpenMetadata,
+DataHub y Apache Atlas. Este capítulo explica qué crea cada exportador, cómo calcula las etiquetas de cada columna, cómo
+envía tu aplicación los cuerpos que produce y cómo mantener las etiquetas al día cuando cambian el modelo o la
+taxonomía.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#por-que-un-catalogo">Por qué publicar en un catálogo</a></li>
+<li><a href="#openmetadata">OpenMetadata</a></li>
+<li><a href="#datahub">DataHub</a></li>
+<li><a href="#atlas">Apache Atlas</a></li>
+<li><a href="#enviar-los-cuerpos">Enviar los cuerpos con <code>HttpClient</code></a></li>
+<li><a href="#campos-guardados">Publicar desde el inventario: las sobrecargas con <code>InventoryField</code></a></li>
+<li><a href="#mantener-al-dia">Mantener las etiquetas al día, columna a columna</a></li>
+<li><a href="#comparativa">Comparativa de los tres catálogos</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>explicar cómo se convierte la taxonomía en clasificaciones y etiquetas de OpenMetadata, en un glosario de negocio de
+DataHub y en tipos de clasificación de Apache Atlas;</li>
+<li>generar los cuerpos de las peticiones en el orden correcto y enviarlos con
+<code>java.net.http.HttpClient</code>;</li>
+<li>calcular las etiquetas, los términos o las clasificaciones de una columna a partir de su
+<code>FieldClassification</code> o de un <code>InventoryField</code> guardado;</li>
+<li>renombrar las raíces y ajustar el umbral de sensibilidad con <code>OpenMetadataMapping</code>,
+<code>DataHubMapping</code> y <code>AtlasMapping</code>;</li>
+<li>calcular qué etiquetas quitar y cuáles añadir a una columna cuando cambia su campo o la taxonomía;</li>
+<li>elegir entre los tres catálogos según lo que representa cada uno.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo usa la clasificación de un campo, <code>FieldClassification</code>, con sus niveles efectivos y su
+identificabilidad (<a href="07-uso.html">capítulo 7</a>), el inventario de datos y sus diferencias
+(<a href="08-inventario.html">capítulo 8</a>), las extensiones (<a href="09-extensiones.html">capítulo 9</a>) y la
+comparación de taxonomías con <code>TaxonomyDiff</code> (<a href="10-versiones.html">capítulo 10</a>). Los ejemplos
+clasifican las clases <code>Student</code>, <code>Staff</code>, <code>Attachment</code>, <code>CourseStatistics</code> y
+<code>MenuGroup</code> del modelo de la universidad con la taxonomía estándar.</p>
+
+<h2 id="por-que-un-catalogo">Por qué publicar en un catálogo</h2>
+<p>Un <dfn>catálogo de datos</dfn> es la herramienta en la que una organización documenta sus bases de datos, tablas,
+columnas, informes y flujos, y en la que los analistas buscan los datos antes de usarlos. Publicar en él la
+clasificación de Linneo tiene tres ventajas:</p>
+<ul>
+<li>quien encuentra la tabla <code>students</code> en el catálogo ve que la columna <code>disability_degree</code> es un
+dato de categoría especial con confidencialidad alta, la misma respuesta que da el código;</li>
+<li>el delegado de protección de datos (<abbr title="delegado de protección de datos">DPD</abbr>) puede buscar en el
+catálogo todas las columnas con datos de salud o con datos secretos, en todas las aplicaciones que lo publican;</li>
+<li>las políticas de acceso basadas en etiquetas, como las de Apache Ranger sobre Atlas, pueden actuar sobre los niveles
+de protección que fija la clasificación.</li>
+</ul>
+
+<h3>Una taxonomía, tres catálogos</h3>
+<p>Linneo tiene un exportador para cada catálogo, en paquetes separados. Los tres siguen el mismo patrón: un objeto de
+catálogo inmutable y seguro entre hilos, construido a partir de una <code>Taxonomy</code> (y opcionalmente de una
+correspondencia de nombres); una lista de lo que hay que crear en el catálogo, en orden de creación; y un método que
+calcula las etiquetas de una columna. La Tabla 17.1 muestra en qué se convierte una categoría en cada uno.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-17-1">
+<table>
+<caption id="tabla-17-1">Tabla 17.1. Los tres exportadores</caption>
+<thead>
+<tr><th scope="col">Catálogo</th><th scope="col">Clase</th><th scope="col">Una categoría se convierte en</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">OpenMetadata</th><td><code>catalog.openmetadata.OpenMetadataCatalog</code></td><td>una etiqueta
+anidada dentro de una clasificación</td></tr>
+<tr><th scope="row">DataHub</th><td><code>catalog.datahub.DataHubCatalog</code></td><td>un término del glosario de
+negocio dentro de un árbol de nodos</td></tr>
+<tr><th scope="row">Apache Atlas</th><td><code>catalog.atlas.AtlasCatalog</code></td><td>un tipo de clasificación que
+hereda del de su madre</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>El trabajo de publicación tiene siempre los mismos pasos:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Construir el catálogo</span> Con la misma taxonomía que usa el resto de la aplicación,
+extensiones incluidas.</li>
+<li><span class="flujo-titulo">Crear las definiciones</span> Enviar las clasificaciones, etiquetas, nodos, términos o
+tipos en el orden en que el exportador los devuelve: los padres siempre antes que sus hijos.</li>
+<li><span class="flujo-titulo">Calcular las etiquetas de cada columna</span> A partir de la clasificación del campo que
+se guarda en esa columna.</li>
+<li><span class="flujo-titulo">Aplicarlas</span> Localizar la columna en el catálogo y añadirle las etiquetas, con la
+<abbr title="interfaz de programación de aplicaciones">API</abbr> del catálogo.</li>
+</ol>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>Ningún exportador hace llamadas <abbr title="Hypertext Transfer Protocol">HTTP</abbr> ni se conecta a nada. Linneo
+calcula y devuelve cuerpos <abbr title="JavaScript Object Notation">JSON</abbr> y nombres de etiqueta; tu aplicación los
+envía con el cliente que ya use, y localiza en el catálogo la columna de cada campo. Así la biblioteca sigue sin
+dependencias en tiempo de ejecución: los cuerpos los escribe un pequeño escritor JSON interno,
+<code>io.github.devbpm.linneo.internal.Json</code>, que no forma parte de la API pública.</p>
+</div>
+
+<p>Los nombres de los niveles son los mismos en los tres catálogos: <code>Confidentiality.High</code>,
+<code>Integrity.Medium</code>, <code>Identifiability.Aggregated</code>, <code>DataHandling.Secret</code>. Las
+diferencias están en cómo cada catálogo representa la naturaleza jurídica y la jerarquía, y se resumen en la
+<a href="#comparativa">comparativa</a> al final del capítulo.</p>
+
+<h2 id="openmetadata">OpenMetadata</h2>
+<p>OpenMetadata organiza las etiquetas en <dfn>clasificaciones</dfn>: grupos de etiquetas que pueden ser mutuamente
+excluyentes (una columna solo lleva una de sus etiquetas). Las etiquetas pueden anidarse: una etiqueta tiene un nombre
+de un solo segmento y, opcionalmente, una etiqueta madre, y su nombre completo encadena los de sus ancestros.</p>
+
+<h3>Las clasificaciones predefinidas que Linneo reutiliza</h3>
+<p>OpenMetadata incluye dos clasificaciones predefinidas que Linneo <strong>reutiliza y nunca crea</strong>:</p>
+<ul>
+<li><code>PersonalData</code>, con las etiquetas <code>Personal</code> y <code>SpecialCategory</code>;</li>
+<li><code>PII</code>, con las etiquetas <code>None</code>, <code>NonSensitive</code> y <code>Sensitive</code>.</li>
+</ul>
+<p><code>PersonalData.SpecialCategory</code> es la única etiqueta de OpenMetadata para datos con protección reforzada,
+así que Linneo la asigna tanto a las categorías especiales (artículo 9 del
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr>) como a los datos penales (artículo 10). La etiqueta
+de categoría de la columna distingue los dos casos.</p>
+
+<h3>La correspondencia</h3>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-17-2">
+<table>
+<caption id="tabla-17-2">Tabla 17.2. De Linneo a OpenMetadata</caption>
+<thead>
+<tr><th scope="col">Linneo</th><th scope="col">OpenMetadata</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Categoría <code>user.contact.email</code></th><td>Etiqueta anidada
+<code>DataCategory.user.contact.email</code> de la clasificación <code>DataCategory</code>, mutuamente
+excluyente</td></tr>
+<tr><th scope="row">Naturaleza <code>ORDINARY</code></th><td><code>PersonalData.Personal</code></td></tr>
+<tr><th scope="row">Naturaleza <code>SPECIAL_CATEGORY</code> o <code>CRIMINAL_OFFENCE</code></th>
+<td><code>PersonalData.SpecialCategory</code></td></tr>
+<tr><th scope="row">Dato personal con confidencialidad inferior a <code>MEDIUM</code></th>
+<td><code>PII.NonSensitive</code></td></tr>
+<tr><th scope="row">Dato personal con confidencialidad <code>MEDIUM</code> o superior</th><td><code>PII.Sensitive</code>
+(umbral configurable)</td></tr>
+<tr><th scope="row">Dato no personal, anonimizado o agregado</th><td><code>PII.None</code>, sin etiqueta
+<code>PersonalData</code></td></tr>
+<tr><th scope="row">Confidencialidad, integridad, identificabilidad</th><td><code>Confidentiality.*</code>,
+<code>Integrity.*</code>, <code>Identifiability.*</code></td></tr>
+<tr><th scope="row">Secreto</th><td><code>DataHandling.Secret</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Las clasificaciones: <code>OmClassification</code></h3>
+<p>El catálogo se construye con <code>OpenMetadataCatalog.of(taxonomy)</code>. Su método <code>classifications()</code>
+devuelve las cinco clasificaciones que crea Linneo, en orden de creación, como <code>OmClassification</code>: un
+<code>record</code> con <code>name</code>, <code>description</code> y <code>mutuallyExclusive</code>. Su
+<code>toJson()</code> es el cuerpo de una petición <code>CreateClassification</code> (<code>PUT
+/api/v1/classifications</code>):</p>
+<pre class="codigo" tabindex="0"><code class="language-java">OpenMetadataCatalog catalog = OpenMetadataCatalog.of(taxonomy);
+catalog.classifications().forEach(classification -&gt; System.out.println(classification.toJson()));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"name":"DataCategory","description":"What a column holds, from the Linneo data category taxonomy (fideslang default taxonomy plus extensions).","mutuallyExclusive":true}
+{"name":"Confidentiality","description":"Harm that disclosing the data would cause.","mutuallyExclusive":true}
+{"name":"Integrity","description":"Harm that an unwanted change to the data would cause.","mutuallyExclusive":true}
+{"name":"Identifiability","description":"How directly a personal data value points to the person.","mutuallyExclusive":true}
+{"name":"DataHandling","description":"Handling rules that apply to the data.","mutuallyExclusive":false}
+</code></pre>
+<p>Las descripciones las genera Linneo en inglés. <code>DataHandling</code> es la única clasificación no excluyente; hoy
+solo contiene la etiqueta <code>Secret</code>.</p>
+
+<h3>Las etiquetas: <code>OmTag</code>, los padres primero</h3>
+<p><code>tags()</code> devuelve las etiquetas que hay que crear en un orden que puedes enviar tal cual: primero las de
+nivel (cuatro de confidencialidad, tres de integridad y cuatro de identificabilidad), después
+<code>DataHandling.Secret</code> y por último una etiqueta por categoría, con <strong>cada madre antes que sus
+hijas</strong>. Con la taxonomía estándar son 4 + 3 + 4 + 1 + 126 = 138 etiquetas.</p>
+<p>Cada <code>OmTag</code> es un <code>record</code> con cinco componentes: <code>classification</code>,
+<code>parent</code> (el nombre completo de la etiqueta madre, o <code>null</code> en la raíz de la clasificación),
+<code>name</code> (un único segmento, el último de la clave), <code>displayName</code> (el nombre de la categoría) y
+<code>description</code>. <code>fullyQualifiedName()</code> da el nombre con el que se aplica la etiqueta, y
+<code>toJson()</code> el cuerpo de una petición <code>CreateTag</code> (<code>PUT /api/v1/tags</code>). La etiqueta de
+<code>user.education.grade</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"classification":"DataCategory","parent":"DataCategory.user.education","name":"grade","displayName":"Grade","description":"Marks, grades or assessment results obtained by the subject."}
+</code></pre>
+<p>En una etiqueta raíz, como <code>DataCategory.user</code>, el campo <code>parent</code> se omite. En una categoría
+obsoleta, la descripción termina con <code>Deprecated: use &lt;sustituta&gt;.</code>, o solo con
+<code>Deprecated.</code> si no tiene sustituta. Con la extensión <code>CampusTaxonomy</code> del capítulo 9:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"classification":"DataCategory","parent":"DataCategory.user.education","name":"lab_journal","displayName":"Diario de laboratorio","description":"Nombre anterior de la clave del cuaderno de laboratorio. Deprecated: use user.education.lab_notebook."}
+</code></pre>
+<p>La etiqueta de categoría no lleva <code>associatedTags</code>: OpenMetadata acepta ese campo pero no guarda vínculos
+entre etiquetas, así que la protección que implica una categoría no viaja con su etiqueta. Va en cada columna, junto a
+la etiqueta de la categoría.</p>
+
+<h3>Las etiquetas de cada columna</h3>
+<p><code>tagsOf(FieldClassification)</code> calcula las etiquetas, con su nombre completo, de la columna que guarda un
+campo. Parte de la clasificación efectiva <strong>del campo</strong>: su categoría, si el valor guardado es personal,
+sus niveles (que el campo puede haber elevado) y su identificabilidad. El orden es fijo: categoría,
+<code>PersonalData</code> (solo si es personal), <code>PII</code>, confidencialidad, integridad, identificabilidad (solo
+si la categoría es personal) y <code>DataHandling.Secret</code> (solo si la categoría es secreta).</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 17.1. Las etiquetas de OpenMetadata de cada campo de <code>Student</code></figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.standard();
+OpenMetadataCatalog catalog = OpenMetadataCatalog.of(taxonomy);
+ClassClassification student = new Classifier(taxonomy).classify(Student.class);
+
+Map&lt;String, List&lt;String&gt;&gt; tagsByField = student.fields().stream()
+        .collect(Collectors.toMap(FieldClassification::path, catalog::tagsOf));
+</code></pre>
+</figure>
+<p>La Tabla 17.3 muestra el resultado para campos representativos del modelo.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-17-3">
+<table>
+<caption id="tabla-17-3">Tabla 17.3. Etiquetas de OpenMetadata de algunas columnas</caption>
+<thead>
+<tr><th scope="col">Campo</th><th scope="col">Etiquetas</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Student.email</code></th><td><code>DataCategory.user.contact.email</code>,
+<code>PersonalData.Personal</code>, <code>PII.NonSensitive</code>, <code>Confidentiality.Low</code>,
+<code>Integrity.Medium</code>, <code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>Student.disabilityDegree</code></th>
+<td><code>DataCategory.user.health_and_medical.disability</code>, <code>PersonalData.SpecialCategory</code>,
+<code>PII.Sensitive</code>, <code>Confidentiality.High</code>, <code>Integrity.High</code>,
+<code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>Student.analyticsId</code></th><td><code>DataCategory.user.unique_id.pseudonymous</code>,
+<code>PersonalData.Personal</code>, <code>PII.NonSensitive</code>, <code>Confidentiality.Low</code>,
+<code>Integrity.Medium</code>, <code>Identifiability.Pseudonymized</code></td></tr>
+<tr><th scope="row"><code>Student.counsellingNotes</code></th><td><code>DataCategory.user.content.private</code>,
+<code>PersonalData.Personal</code>, <code>PII.Sensitive</code>, <code>Confidentiality.High</code>,
+<code>Integrity.Medium</code>, <code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>Staff.passwordHash</code></th><td><code>DataCategory.user.authorization.password</code>,
+<code>PersonalData.Personal</code>, <code>PII.Sensitive</code>, <code>Confidentiality.High</code>,
+<code>Integrity.High</code>, <code>Identifiability.Identified</code>, <code>DataHandling.Secret</code></td></tr>
+<tr><th scope="row"><code>Staff.sexOffenceCertificateClear</code></th>
+<td><code>DataCategory.user.criminal_history</code>,
+<code>PersonalData.SpecialCategory</code>, <code>PII.Sensitive</code>, <code>Confidentiality.High</code>,
+<code>Integrity.High</code>, <code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>Attachment.content</code></th><td><code>DataCategory.user.health_and_medical</code>,
+<code>PersonalData.SpecialCategory</code>, <code>PII.Sensitive</code>, <code>Confidentiality.High</code>,
+<code>Integrity.High</code>, <code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>CourseStatistics.averageMark</code></th><td><code>DataCategory.user.education.grade</code>,
+<code>PII.None</code>, <code>Confidentiality.Medium</code>, <code>Integrity.High</code>,
+<code>Identifiability.Aggregated</code></td></tr>
+<tr><th scope="row"><code>MenuGroup.code</code></th><td><code>DataCategory.system.configuration</code>,
+<code>PII.None</code>, <code>Confidentiality.Low</code>, <code>Integrity.Medium</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Observa tres efectos de partir del campo y no de la categoría:</p>
+<ul>
+<li><code>counsellingNotes</code> es <code>PII.Sensitive</code> y <code>Confidentiality.High</code> porque el campo
+eleva la confidencialidad; la categoría <code>user.content.private</code> por sí sola daría <code>Medium</code>.</li>
+<li><code>averageMark</code> conserva la etiqueta de su categoría, pero es <code>PII.None</code> y no recibe etiqueta
+<code>PersonalData</code>: los valores agregados no son datos personales.</li>
+<li><code>Attachment.content</code>, clasificado por fila, recibe las etiquetas de su techo,
+<code>user.health_and_medical</code>.</li>
+</ul>
+<p>Existen además <code>tagOf(DataCategory)</code>, que da solo el nombre de la etiqueta de una categoría, y
+<code>tagsOf(DataCategory)</code>, que da esa etiqueta seguida de la protección que implica, sin identificabilidad. Para
+<code>user.authorization.password</code> devuelve <code>[DataCategory.user.authorization.password,
+PersonalData.Personal, PII.Sensitive, Confidentiality.High, Integrity.High, DataHandling.Secret]</code>. Úsalas cuando
+solo conozcas la categoría; para una columna, usa siempre la sobrecarga con el campo.</p>
+
+<h3>Personalizar los nombres: <code>OpenMetadataMapping</code></h3>
+<p><code>OpenMetadataMapping</code> es un <code>record</code> con los siete nombres de clasificación y el umbral de
+sensibilidad <code>sensitiveFrom</code>. <code>OpenMetadataMapping.defaults()</code> usa <code>DataCategory</code>,
+<code>PersonalData</code>, <code>PII</code>, <code>Confidentiality</code>, <code>Integrity</code>,
+<code>Identifiability</code> y <code>DataHandling</code>, y considera sensibles los datos personales a partir de
+<code>MEDIUM</code>. Tres métodos <code>with...</code> cubren los cambios habituales:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">OpenMetadataMapping spanish = OpenMetadataMapping.defaults()
+        .withCategories("CategoriaDato")
+        .withConfidentiality("Confidencialidad")
+        .withSensitiveFrom(Confidentiality.LOW);
+OpenMetadataCatalog custom = OpenMetadataCatalog.of(taxonomy, spanish);
+custom.tagsOf(student.field("email").orElseThrow());
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">[CategoriaDato.user.contact.email, PersonalData.Personal, PII.Sensitive, Confidencialidad.Low, Integrity.Medium, Identifiability.Identified]
+</code></pre>
+<p>Con el umbral bajado a <code>LOW</code>, el correo pasa a ser <code>PII.Sensitive</code>. Para los demás nombres, usa
+el constructor del <code>record</code>. <code>personalData</code> y <code>pii</code> nombran las clasificaciones
+<strong>predefinidas</strong> de OpenMetadata: cámbialos solo si tu instalación usa otros nombres, porque Linneo nunca
+las crea. Los nombres no pueden estar en blanco, contener puntos ni repetirse; si no, el constructor lanza
+<code>IllegalArgumentException</code>, por ejemplo <code>Invalid OpenMetadata classification name 'Data.Category'</code>
+o <code>Duplicate OpenMetadata classification name 'PII'</code>. Un nombre nulo lanza
+<code>NullPointerException</code>.</p>
+
+<h2 id="datahub">DataHub</h2>
+<p>DataHub organiza su <dfn>glosario de negocio</dfn> en <dfn>nodos</dfn>, que hacen de carpetas, y <dfn>términos</dfn>,
+que se asignan a los campos de los conjuntos de datos (<span lang="en">datasets</span>). Cada entidad se identifica con
+un <abbr title="Uniform Resource Name">URN</abbr>, como
+<code>urn:li:glossaryTerm:DataCategory.user.education.grade</code>.</p>
+
+<h3>Nodos y términos del glosario</h3>
+<p>Linneo crea seis nodos raíz: <code>PersonalData</code>, <code>Confidentiality</code>, <code>Integrity</code>,
+<code>Identifiability</code>, <code>DataHandling</code> y <code>DataCategory</code>, con los términos de nivel en los
+cinco primeros y el árbol de categorías en el último. DataHub no tiene clasificaciones predefinidas que reutilizar, así
+que Linneo crea su propia raíz <code>PersonalData</code> y mantiene separadas las tres naturalezas personales:
+<code>Personal</code>, <code>SpecialCategory</code> y <code>CriminalOffence</code>. No hay etiquetas de sensibilidad
+<code>PII.*</code>.</p>
+<p>Cada categoría es un término. Una categoría <strong>con hijas</strong> recibe además un nodo con el mismo
+identificador, y ese nodo contiene el término propio de la categoría junto a sus hijas, de modo que el glosario se
+recorre como la taxonomía:</p>
+<pre class="codigo" tabindex="0"><code class="language-text">DataCategory                                   (nodo)
+└── DataCategory.user                          (nodo "User Data")
+    ├── DataCategory.user                      (término "User Data")
+    ├── DataCategory.user.education            (nodo "Education Data")
+    │   ├── DataCategory.user.education        (término "Education Data")
+    │   ├── DataCategory.user.education.grade  (término "Grade")
+    │   └── …
+    └── …
+</code></pre>
+
+<h3>Relaciones y propiedades personalizadas</h3>
+<p>Cada término de categoría está relacionado con otros dos tipos de término:</p>
+<ul>
+<li><code>isRelatedTerms</code>, la relación «es un» de DataHub, apunta al término de su categoría madre:
+<code>Grade</code> es un <code>Education Data</code>;</li>
+<li><code>relatedTerms</code> apunta a los términos de la protección que implica la categoría: <code>Grade</code> está
+relacionado con <code>PersonalData.Personal</code>, <code>Confidentiality.Medium</code> e
+<code>Integrity.High</code>.</li>
+</ul>
+<p>Además, cada término de categoría guarda su clave, su origen y su protección como <dfn>propiedades
+personalizadas</dfn> (<code>linneo.key</code>, <code>linneo.origin</code>, <code>linneo.nature</code>,
+<code>linneo.confidentiality</code>, <code>linneo.integrity</code>, <code>linneo.secret</code>), seguidas de los
+atributos de la categoría en orden de clave; un atributo nunca sustituye a una propiedad <code>linneo.*</code>. Los
+términos que vienen de fideslang se marcan como externos (<code>termSource</code> <code>EXTERNAL</code>, con fideslang
+como fuente); los de Linneo y los de tus extensiones son internos.</p>
+
+<h3>Las propuestas: <code>DhProposal</code></h3>
+<p>En DataHub se escribe <strong>aspecto a aspecto</strong>. Una <code>DhProposal</code> es un <code>record</code> que
+inserta o actualiza un aspecto de una entidad: <code>entityType</code> (<code>glossaryNode</code> o
+<code>glossaryTerm</code>), <code>entityUrn</code>, <code>aspectName</code> y el <code>aspect</code> como objeto JSON.
+<code>DataHubCatalog.of(taxonomy).proposals()</code> devuelve, con la taxonomía estándar, 295 propuestas en un orden que
+puedes enviar tal cual:</p>
+<ol>
+<li>28 <code>glossaryNodeInfo</code>: los seis nodos raíz y después los 22 de las categorías con hijas, cada nodo detrás
+de su padre;</li>
+<li>141 <code>glossaryTermInfo</code>: los 15 términos de nivel (tres naturalezas, cuatro confidencialidades, tres
+integridades, cuatro identificabilidades y el secreto) y después las 126 categorías;</li>
+<li>126 <code>glossaryRelatedTerms</code>: las relaciones de cada término de categoría.</li>
+</ol>
+<p>Los dos aspectos del término <code>Grade</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"customProperties":{"linneo.key":"user.education.grade","linneo.origin":"linneo","linneo.nature":"ORDINARY","linneo.confidentiality":"MEDIUM","linneo.integrity":"HIGH","linneo.secret":"false"},"name":"Grade","definition":"Marks, grades or assessment results obtained by the subject.","parentNode":"urn:li:glossaryNode:DataCategory.user.education","termSource":"INTERNAL"}
+{"isRelatedTerms":["urn:li:glossaryTerm:DataCategory.user.education"],"relatedTerms":["urn:li:glossaryTerm:PersonalData.Personal","urn:li:glossaryTerm:Confidentiality.Medium","urn:li:glossaryTerm:Integrity.High"]}
+</code></pre>
+<p><code>toJson()</code> envuelve el aspecto en el cuerpo de la acción <code>ingestProposal</code> de DataHub
+(<code>POST /aspects?action=ingestProposal</code>). Fíjate en que el aspecto viaja como una <strong>cadena codificada en
+JSON</strong> dentro de <code>aspect.value</code>, que es lo que espera la API, y en que cada propuesta es un
+<code>UPSERT</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"proposal":{"entityType":"glossaryTerm","entityUrn":"urn:li:glossaryTerm:Confidentiality.High","changeType":"UPSERT","aspectName":"glossaryTermInfo","aspect":{"value":"{\"customProperties\":{},\"name\":\"High\",\"definition\":\"Confidentiality level High.\",\"parentNode\":\"urn:li:glossaryNode:Confidentiality\",\"termSource\":\"INTERNAL\"}","contentType":"application/json"}}}
+</code></pre>
+
+<h3>Los términos de cada campo</h3>
+<p><code>termsOf(FieldClassification)</code> da los URN de los términos de un campo, con las mismas reglas que
+<code>tagsOf</code> de OpenMetadata salvo dos diferencias: no hay términos <code>PII.*</code>, y los datos penales
+reciben <code>PersonalData.CriminalOffence</code>. En la Tabla 17.4 cada URN aparece sin el prefijo
+<code>urn:li:glossaryTerm:</code>, común a todos.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-17-4">
+<table>
+<caption id="tabla-17-4">Tabla 17.4. Términos de DataHub de algunos campos</caption>
+<thead>
+<tr><th scope="col">Campo</th><th scope="col">Términos</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Student.email</code></th><td><code>DataCategory.user.contact.email</code>,
+<code>PersonalData.Personal</code>, <code>Confidentiality.Low</code>, <code>Integrity.Medium</code>,
+<code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>Student.disabilityDegree</code></th>
+<td><code>DataCategory.user.health_and_medical.disability</code>, <code>PersonalData.SpecialCategory</code>,
+<code>Confidentiality.High</code>, <code>Integrity.High</code>, <code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>Staff.sexOffenceCertificateClear</code></th>
+<td><code>DataCategory.user.criminal_history</code>,
+<code>PersonalData.CriminalOffence</code>, <code>Confidentiality.High</code>, <code>Integrity.High</code>,
+<code>Identifiability.Identified</code></td></tr>
+<tr><th scope="row"><code>Staff.passwordHash</code></th><td><code>DataCategory.user.authorization.password</code>,
+<code>PersonalData.Personal</code>, <code>Confidentiality.High</code>, <code>Integrity.High</code>,
+<code>Identifiability.Identified</code>, <code>DataHandling.Secret</code></td></tr>
+<tr><th scope="row"><code>CourseStatistics.averageMark</code></th><td><code>DataCategory.user.education.grade</code>,
+<code>Confidentiality.Medium</code>, <code>Integrity.High</code>, <code>Identifiability.Aggregated</code></td></tr>
+<tr><th scope="row"><code>MenuGroup.code</code></th><td><code>DataCategory.system.configuration</code>,
+<code>Confidentiality.Low</code>, <code>Integrity.Medium</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Asignar los términos a los campos de los conjuntos de datos es tarea de tu integración: relaciona cada campo con su
+conjunto de datos y su ruta de campo, y usa la API de DataHub que ya utilices; por ejemplo, la mutación GraphQL
+<code>addTerms</code> con la ruta del campo como <code>subResource</code>. Existen también
+<code>termOf(DataCategory)</code> y <code>termsOf(DataCategory)</code>, equivalentes a los de OpenMetadata.</p>
+
+<h3>Personalizar los nombres: <code>DataHubMapping</code></h3>
+<p><code>DataHubMapping</code> guarda los seis nombres de nodo raíz y tiene un método <code>with...</code> para cada uno
+(<code>withCategories</code>, <code>withPersonalData</code>, <code>withConfidentiality</code>,
+<code>withIntegrity</code>, <code>withIdentifiability</code> y <code>withHandling</code>). Cada nombre es el primer
+segmento de los URN que cuelgan de él, así que debe empezar por una letra y contener solo letras, dígitos y guiones
+bajos:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">DataHubMapping spanish = DataHubMapping.defaults()
+        .withCategories("CategoriaDato")
+        .withConfidentiality("Confidencialidad");
+DataHubCatalog.of(taxonomy, spanish).termsOf(student.field("email").orElseThrow());
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">[urn:li:glossaryTerm:CategoriaDato.user.contact.email, urn:li:glossaryTerm:PersonalData.Personal, urn:li:glossaryTerm:Confidencialidad.Low, urn:li:glossaryTerm:Integrity.Medium, urn:li:glossaryTerm:Identifiability.Identified]
+</code></pre>
+<p>Un nombre no válido o repetido lanza <code>IllegalArgumentException</code>: <code>Invalid DataHub glossary node name
+'Data Handling'</code> o <code>Duplicate DataHub glossary node name 'Integrity'</code>. A diferencia de OpenMetadata,
+Linneo crea todas las raíces, así que puedes renombrarlas todas libremente.</p>
+
+<h2 id="atlas">Apache Atlas</h2>
+<p>Atlas tiene <dfn>clasificaciones</dfn>: tipos que se definen una vez y después se asignan a entidades, como las
+columnas. Un tipo de clasificación puede tener <dfn>supertipos</dfn>, y una entidad con una clasificación también
+coincide con sus supertipos en las búsquedas.</p>
+
+<h3>El árbol como <code>superTypes</code></h3>
+<p>Linneo convierte el árbol de categorías en esa herencia: <code>DataCategory.user.education.grade</code> tiene como
+supertipo <code>DataCategory.user.education</code>, que tiene <code>DataCategory.user</code>, que tiene la raíz
+<code>DataCategory</code>. Por eso una búsqueda de <code>DataCategory.user.education</code> encuentra todas las columnas
+con cualquier dato educativo.</p>
+<p>Los niveles de protección, en cambio, son <strong>clasificaciones separadas</strong>
+(<code>PersonalData.SpecialCategory</code>, <code>Confidentiality.High</code>, <code>DataHandling.Secret</code>…) que
+una columna lleva junto a su categoría. No son supertipos de las categorías porque una hija puede elevar un nivel que
+implica su madre (<code>user</code> es <code>Low</code>, <code>user.health_and_medical</code> es <code>High</code>), y
+la herencia de Atlas no se puede retirar más abajo en el árbol. Mantenerlos aparte permite también que las políticas
+basadas en etiquetas, como las de Apache Ranger, actúen directamente sobre <code>Confidentiality.High</code> o
+<code>PersonalData.SpecialCategory</code>, sea cual sea la categoría. Como en DataHub, las tres naturalezas personales
+están separadas.</p>
+
+<h3>Las definiciones: <code>AtlasClassificationDef</code></h3>
+<p><code>AtlasCatalog.of(taxonomy).classificationDefs()</code> devuelve los tipos que hay que crear como
+<code>AtlasClassificationDef</code>, un <code>record</code> con <code>name</code>, <code>description</code> y
+<code>superTypes</code>. Con la taxonomía estándar son 147: seis raíces, 15 niveles y 126 categorías, cada supertipo
+antes que sus subtipos. Las clasificaciones de Atlas no tienen nombre visible, así que la descripción de una categoría
+empieza por su nombre:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"name":"DataCategory.user.education.grade","description":"Grade: Marks, grades or assessment results obtained by the subject.","superTypes":["DataCategory.user.education"],"attributeDefs":[]}
+{"name":"PersonalData.CriminalOffence","description":"Personal data relating to criminal convictions and offences (GDPR article 10).","superTypes":["PersonalData"],"attributeDefs":[]}
+</code></pre>
+
+<h3>Crear y actualizar: <code>typeDefsJson</code>, <code>createJson</code> y <code>updateJson</code></h3>
+<p><code>typeDefsJson()</code> reúne todas las definiciones en un único cuerpo, <code>{"classificationDefs":[…]}</code>,
+para la primera petición <code>POST /api/atlas/v2/types/typedefs</code>. Esa petición es de todo o nada: Atlas crea
+todos los tipos o ninguno, y responde 409 si alguno ya existe. <code>PUT</code>, por su parte, solo actualiza tipos que
+existen. Para volver a publicar después de que la taxonomía gane términos, lee los nombres que Atlas ya tiene (<code>GET
+/api/atlas/v2/types/typedefs/headers</code>) y reparte los tipos:</p>
+<ul>
+<li><code>createJson(existingNames)</code> da el cuerpo de <code>POST</code> con los tipos que Atlas no tiene, los
+padres primero;</li>
+<li><code>updateJson(existingNames)</code> da el cuerpo de <code>PUT</code> con los que ya tiene.</li>
+</ul>
+<p>Ambos devuelven <code>{"classificationDefs":[]}</code> cuando no hay nada que enviar. Si Atlas tiene los 147 tipos
+estándar y la universidad aplica ahora <code>CampusTaxonomy</code>, <code>createJson</code> devuelve solo las dos
+categorías nuevas:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"classificationDefs":[{"name":"DataCategory.user.education.lab_journal","description":"Diario de laboratorio: Nombre anterior de la clave del cuaderno de laboratorio. Deprecated: use user.education.lab_notebook.","superTypes":["DataCategory.user.education"],"attributeDefs":[]},{"name":"DataCategory.user.education.lab_notebook","description":"Cuaderno de laboratorio: Cuadernos de laboratorio del interesado: experimentos, mediciones y resultados.","superTypes":["DataCategory.user.education"],"attributeDefs":[]}]}
+</code></pre>
+<p>y <code>updateJson</code> devuelve los 147 que ya existen.</p>
+
+<h3>Las clasificaciones de cada columna</h3>
+<p><code>classificationsOf(FieldClassification)</code> da las mismas etiquetas que DataHub, como nombres simples: los
+identificadores de los términos de DataHub sin <code>urn:li:glossaryTerm:</code>.
+<code>classificationsJson(field)</code> las escribe como el cuerpo que las asigna a la entidad de una columna
+(<code>POST /api/atlas/v2/entity/guid/{guid}/classifications</code>):</p>
+<pre class="codigo" tabindex="0"><code class="language-java">AtlasCatalog atlas = AtlasCatalog.of(taxonomy);
+String body = atlas.classificationsJson(student.field("disabilityDegree").orElseThrow());
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-json">[{"typeName":"DataCategory.user.health_and_medical.disability"},{"typeName":"PersonalData.SpecialCategory"},{"typeName":"Confidentiality.High"},{"typeName":"Integrity.High"},{"typeName":"Identifiability.Identified"}]
+</code></pre>
+<p>El cuerpo no indica <code>propagate</code>, así que Atlas aplica su propagación por defecto. Existen también
+<code>classificationOf(DataCategory)</code> y <code>classificationsOf(DataCategory)</code>.</p>
+
+<h3>Personalizar los nombres: <code>AtlasMapping</code></h3>
+<p><code>AtlasMapping</code> funciona como <code>DataHubMapping</code>: seis nombres de raíz, un método
+<code>with...</code> para cada uno y las mismas reglas de formato. Con <code>withCategories("CategoriaDato")</code> y
+<code>withConfidentiality("Confidencialidad")</code>, el correo del estudiante da
+<code>[CategoriaDato.user.contact.email, PersonalData.Personal, Confidencialidad.Low, Integrity.Medium,
+Identifiability.Identified]</code>. Un nombre no válido lanza <code>IllegalArgumentException</code>, por ejemplo
+<code>Invalid Atlas classification name 'Data-Category'</code>.</p>
+
+<h2 id="enviar-los-cuerpos">Enviar los cuerpos con <code>HttpClient</code></h2>
+<p>Linneo produce los cuerpos y tu aplicación los envía. Los ejemplos de esta sección usan el
+<code>java.net.http.HttpClient</code> del <abbr title="Java Development Kit">JDK</abbr>, sin dependencias. Los
+cuerpos se comprobaron con OpenMetadata 2.0.6 (solo usan campos presentes desde la 0.13.2), con DataHub v1.7.0.1
+(desde la v0.9.2) y con Apache Atlas 2.3.0 (los nombres de clasificación con puntos son válidos desde Atlas 1.0 y la
+API no cambia hasta la 2.5.0).</p>
+
+<h3>OpenMetadata</h3>
+<figure class="ejemplo">
+<figcaption>Ejemplo 17.2. Crear las clasificaciones y las etiquetas en OpenMetadata</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.Taxonomy;
+import io.github.devbpm.linneo.catalog.openmetadata.OmClassification;
+import io.github.devbpm.linneo.catalog.openmetadata.OmTag;
+import io.github.devbpm.linneo.catalog.openmetadata.OpenMetadataCatalog;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+public final class PublishToOpenMetadata {
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        URI api = URI.create("https://openmetadata.example.edu/api/v1/");
+        String token = System.getenv("OPENMETADATA_TOKEN");
+        HttpClient http = HttpClient.newHttpClient();
+        OpenMetadataCatalog catalog = OpenMetadataCatalog.of(Taxonomy.load());
+
+        for (OmClassification classification : catalog.classifications()) {
+            put(http, api.resolve("classifications"), token, classification.toJson());
+        }
+        for (OmTag tag : catalog.tags()) {              // las madres siempre van antes que sus hijas
+            put(http, api.resolve("tags"), token, tag.toJson());
+        }
+    }
+
+    private static void put(HttpClient http, URI uri, String token, String json)
+            throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                .header("Authorization", "Bearer " + token)
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+        HttpResponse&lt;String&gt; response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() &gt;= 300) {
+            throw new IOException("PUT " + uri + " falló: " + response.statusCode() + " " + response.body());
+        }
+    }
+}
+</code></pre>
+</figure>
+<p>Las clasificaciones deben existir antes que sus etiquetas, y las etiquetas madre antes que sus hijas: el orden de
+<code>classifications()</code> y <code>tags()</code> garantiza ambas cosas. <code>PUT</code> crea o actualiza, así que
+el programa puede volver a ejecutarse. Aplicar las etiquetas a las columnas de tus tablas queda para tu integración:
+relaciona cada campo con su tabla y su columna, según las reglas de nombres de tu persistencia, y usa la API de
+OpenMetadata que ya utilices para los metadatos de tablas.</p>
+
+<h3>DataHub</h3>
+<figure class="ejemplo">
+<figcaption>Ejemplo 17.3. Enviar las propuestas del glosario a DataHub</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.Taxonomy;
+import io.github.devbpm.linneo.catalog.datahub.DataHubCatalog;
+import io.github.devbpm.linneo.catalog.datahub.DhProposal;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+public final class PublishToDataHub {
+
+    public static void main(String[] args) throws IOException, InterruptedException {
+        URI ingest = URI.create("https://datahub.example.edu:8080/aspects?action=ingestProposal");
+        String token = System.getenv("DATAHUB_TOKEN");
+        HttpClient http = HttpClient.newHttpClient();
+        DataHubCatalog catalog = DataHubCatalog.of(Taxonomy.load());
+
+        for (DhProposal proposal : catalog.proposals()) {   // nodos, luego términos, luego relaciones
+            HttpRequest request = HttpRequest.newBuilder(ingest)
+                    .header("Authorization", "Bearer " + token)
+                    .header("Content-Type", "application/json")
+                    .header("X-RestLi-Protocol-Version", "2.0.0")
+                    .POST(HttpRequest.BodyPublishers.ofString(proposal.toJson()))
+                    .build();
+            HttpResponse&lt;String&gt; response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() &gt;= 300) {
+                throw new IOException(proposal.entityUrn() + " " + proposal.aspectName() + " falló: "
+                        + response.statusCode() + " " + response.body());
+            }
+        }
+    }
+}
+</code></pre>
+</figure>
+<p>La dirección es la del servicio de metadatos de DataHub (<abbr title="Generalized Metadata Service">GMS</abbr>);
+detrás de la interfaz web de DataHub suele ser <code>/api/gms/aspects?action=ingestProposal</code>. No omitas la
+cabecera <code>X-RestLi-Protocol-Version: 2.0.0</code>: el GMS la necesita para leer la propuesta. Cada propuesta es un
+<code>UPSERT</code>, así que puedes volver a ejecutar el programa tras cambiar la taxonomía; pero cada vez sustituye el
+aspecto completo, de modo que los cambios hechos a mano en la interfaz de DataHub sobre los términos de Linneo se
+pierden.</p>
+
+<h3>Apache Atlas</h3>
+<figure class="ejemplo">
+<figcaption>Ejemplo 17.4. Crear o actualizar los tipos y clasificar una columna en Atlas</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.Taxonomy;
+import io.github.devbpm.linneo.catalog.atlas.AtlasCatalog;
+import io.github.devbpm.linneo.classify.FieldClassification;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public final class PublishToAtlas {
+
+    private static final URI API = URI.create("https://atlas.example.edu:21000/api/atlas/v2/");
+
+    private final HttpClient http = HttpClient.newHttpClient();
+    private final String authorization = "Basic " + Base64.getEncoder().encodeToString(
+            (System.getenv("ATLAS_USER") + ":" + System.getenv("ATLAS_PASSWORD")).getBytes(StandardCharsets.UTF_8));
+    private final AtlasCatalog catalog = AtlasCatalog.of(Taxonomy.load());
+
+    /** Crea los tipos que Atlas no tiene y actualiza los que tiene: un POST es todo o nada. */
+    void publishTypes() throws IOException, InterruptedException {
+        Set&lt;String&gt; existing = existingTypes();
+        sendTypes("POST", catalog.createJson(existing));
+        sendTypes("PUT", catalog.updateJson(existing));
+    }
+
+    /** Los nombres de los tipos que tiene Atlas, leídos de las cabeceras con una expresión regular. */
+    private Set&lt;String&gt; existingTypes() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(API.resolve("types/typedefs/headers"))
+                .header("Authorization", authorization).GET().build();
+        String body = http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        Set&lt;String&gt; names = new HashSet&lt;&gt;();
+        Matcher name = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
+        while (name.find()) {
+            names.add(name.group(1));
+        }
+        return names;
+    }
+
+    private void sendTypes(String method, String json) throws IOException, InterruptedException {
+        if (!json.equals("{\"classificationDefs\":[]}")) {   // nada que enviar con este verbo
+            send(method, API.resolve("types/typedefs"), json);
+        }
+    }
+
+    /** Añade las clasificaciones de un campo a la entidad de columna con el guid indicado. */
+    void classify(String columnGuid, FieldClassification field) throws IOException, InterruptedException {
+        send("POST", API.resolve("entity/guid/" + columnGuid + "/classifications"),
+                catalog.classificationsJson(field));
+    }
+
+    private void send(String method, URI uri, String json) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                .header("Authorization", authorization)
+                .header("Content-Type", "application/json")
+                .method(method, HttpRequest.BodyPublishers.ofString(json))
+                .build();
+        HttpResponse&lt;String&gt; response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() &gt;= 300) {
+            throw new IOException(method + " " + uri + " falló: " + response.statusCode() + " " + response.body());
+        }
+    }
+}
+</code></pre>
+</figure>
+<p>Tres cosas quedan para tu integración:</p>
+<ul>
+<li><strong>Encontrar la columna.</strong> Linneo no conoce el <code>guid</code> de la entidad de la columna; búscalo en
+Atlas a partir del nombre cualificado de la columna.</li>
+<li><strong>Volver a ejecutar.</strong> Por eso <code>publishTypes()</code> reparte los tipos entre <code>POST</code> y
+<code>PUT</code>. Atlas también rechaza añadir a una columna una clasificación que ya tiene, así que en las ejecuciones
+siguientes envía solo las que faltan (véase <a href="#mantener-al-dia">Mantener las etiquetas al día</a>).</li>
+<li><strong>La propagación.</strong> En una instalación estándar, las clasificaciones fluyen por el linaje hacia las
+columnas derivadas. Una columna de estadísticas calculada a partir de <code>Grade.mark</code> llevaría entonces
+<code>PersonalData.Personal</code> e <code>Identifiability.Identified</code> junto a su propia
+<code>Identifiability.Aggregated</code>. Decide qué necesita tu linaje y añade <code>"propagate": false</code> a los
+objetos si la propagación no te conviene.</li>
+</ul>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Antes de enviar nada, escribe los cuerpos en ficheros (un objeto JSON por línea) y súbelos al repositorio. El
+delegado de protección de datos puede revisar en una solicitud de cambios qué se va a publicar, y la siguiente
+publicación mostrará en el historial qué cambió.</p>
+</div>
+
+<h2 id="campos-guardados">Publicar desde el inventario: las sobrecargas con <code>InventoryField</code></h2>
+<p>Los tres catálogos aceptan, además de un <code>FieldClassification</code>, un <code>InventoryField</code>: un campo
+guardado del inventario de datos (<a href="08-inventario.html">capítulo 8</a>). Las sobrecargas son
+<code>OpenMetadataCatalog.tagsOf(InventoryField)</code>, <code>DataHubCatalog.termsOf(InventoryField)</code>,
+<code>AtlasCatalog.classificationsOf(InventoryField)</code> y
+<code>AtlasCatalog.classificationsJson(InventoryField)</code>.</p>
+<p>Existen para que una aplicación pueda publicar desde el inventario que guarda, sin cargar las clases del modelo. El
+campo guardado contiene lo que declara el código (clave, base, niveles elevados, identificabilidad), no los niveles de
+la taxonomía; el catálogo lo resuelve con <strong>su propia taxonomía</strong>. El resultado es exactamente el que da la
+sobrecarga con <code>FieldClassification</code> para el mismo campo: el test <code>InventoryPublishingTest</code> de
+Linneo lo comprueba con todas las formas de clasificar un campo.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Classifier classifier = new Classifier(taxonomy);
+DataInventory declared = classifier.inventory(List.of(Student.class), type -&gt; "students");
+InventoryField stored = declared.field("students", "email").orElseThrow();
+
+OpenMetadataCatalog catalog = OpenMetadataCatalog.of(taxonomy);
+System.out.println(stored);
+System.out.println(catalog.tagsOf(stored));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">students.email = user.contact.email (DECLARED)
+[DataCategory.user.contact.email, PersonalData.Personal, PII.NonSensitive, Confidentiality.Low, Integrity.Medium, Identifiability.Identified]
+</code></pre>
+<p>Tres comportamientos completan la regla:</p>
+<ul>
+<li>un campo exento (<code>@Exempt</code>) no tiene etiquetas: las sobrecargas devuelven una lista vacía, y
+<code>classificationsJson</code> devuelve <code>[]</code>;</li>
+<li>un campo guardado con una clave obsoleta se publica como su sustituta, igual que lo clasificaría el código;</li>
+<li>si la taxonomía del catálogo no contiene la clave del campo, la sobrecarga lanza <code>TaxonomyException</code>
+(<code>Unknown data category '&lt;key&gt;'</code>): el fallo seguro impide publicar una columna sin saber qué
+contiene.</li>
+</ul>
+
+<h2 id="mantener-al-dia">Mantener las etiquetas al día, columna a columna</h2>
+<p>Un catálogo de datos es una copia más de la clasificación, y como toda copia puede quedar desfasada. Las etiquetas de
+una columna dependen de dos cosas, el campo y la taxonomía, así que una columna necesita etiquetas nuevas en dos
+casos:</p>
+<ul>
+<li><strong>cambió su campo</strong>: lo dice <code>InventoryDiff</code> al comparar el inventario guardado con el que
+declara el código;</li>
+<li><strong>cambió una categoría que usa</strong>: lo dice <code>DataInventory.affectedBy(TaxonomyDiff)</code> al
+comparar la taxonomía aplicada con la actual.</li>
+</ul>
+<p>En ambos casos el cálculo es el mismo: las etiquetas que tenía la columna son las del campo anterior con un catálogo
+de la taxonomía anterior; las que necesita son las del campo actual con un catálogo de la taxonomía actual. Se quitan
+las que solo están en la primera lista y se añaden las que solo están en la segunda.</p>
+
+<h3>Cuando cambia el campo</h3>
+<p>Supón que la universidad descubre que las notas del servicio de orientación (<code>counsellingNotes</code>) contienen
+datos de salud, cambia su anotación a <code>@Category(USER_HEALTH_AND_MEDICAL)</code> y, de paso, añade un campo exento
+<code>renderedCard</code>. El Ejemplo 17.5 calcula las diferencias.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 17.5. Quitar y añadir etiquetas según las diferencias del inventario</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">InventoryDiff diff = InventoryDiff.between(stored, declared, taxonomy);
+OpenMetadataCatalog was = OpenMetadataCatalog.of(Taxonomy.fromTsv(applied));   // la taxonomía del último arranque
+OpenMetadataCatalog now = OpenMetadataCatalog.of(taxonomy);
+for (FieldChange change : diff.changes()) {
+    List&lt;String&gt; before = change.before() == null ? List.of() : was.tagsOf(change.before());
+    List&lt;String&gt; after = change.after() == null ? List.of() : now.tagsOf(change.after());
+    List&lt;String&gt; remove = new ArrayList&lt;&gt;(before);
+    remove.removeAll(after);
+    List&lt;String&gt; add = new ArrayList&lt;&gt;(after);
+    add.removeAll(before);
+    catalogClient.patchColumnTags(change.object(), change.path(), remove, add);   // una petición por columna
+}
+</code></pre>
+</figure>
+<p>En el ejemplo, <code>stored</code> es el inventario guardado, <code>declared</code> el que declara hoy el código,
+<code>applied</code> el texto de la taxonomía guardada con <code>toTsv()</code> y <code>catalogClient</code> tu cliente
+del catálogo. Si, para el cambio de la universidad, imprimes cada <code>FieldChange</code> y las dos listas en lugar de
+enviarlas, obtienes:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">CHANGED students.counsellingNotes TIGHTENED: students.counsellingNotes = user.health_and_medical (DECLARED)
+  remove [DataCategory.user.content.private, PersonalData.Personal, Integrity.Medium]
+  add [DataCategory.user.health_and_medical, PersonalData.SpecialCategory, Integrity.High]
+ADDED students.renderedCard: students.renderedCard exempt: caché de la ficha renderizada, se reconstruye bajo demanda
+  remove []
+  add []
+</code></pre>
+<p><code>PII.Sensitive</code>, <code>Confidentiality.High</code> e <code>Identifiability.Identified</code> no aparecen:
+estaban y siguen estando. El campo exento añadido no tiene etiquetas, así que no hay nada que enviar.</p>
+
+<h3>Cuando cambia la taxonomía</h3>
+<p>Ahora la universidad aplica <code>CampusTaxonomy</code>, que eleva <code>user.government_id</code> a
+<code>HIGH</code>. Ningún campo ha cambiado, pero <code>Student.nationalId</code> necesita otra etiqueta de
+confidencialidad. Con el mismo campo antes y después:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">TaxonomyDiff changes = TaxonomyDiff.between(Taxonomy.fromTsv(applied), taxonomy);
+OpenMetadataCatalog was = OpenMetadataCatalog.of(changes.before());
+OpenMetadataCatalog now = OpenMetadataCatalog.of(changes.after());
+for (Map.Entry&lt;TermChange, List&lt;InventoryField&gt;&gt; entry : declared.affectedBy(changes).entrySet()) {
+    for (InventoryField field : entry.getValue()) {
+        List&lt;String&gt; remove = new ArrayList&lt;&gt;(was.tagsOf(field));
+        remove.removeAll(now.tagsOf(field));
+        List&lt;String&gt; add = new ArrayList&lt;&gt;(now.tagsOf(field));
+        add.removeAll(was.tagsOf(field));
+        catalogClient.patchColumnTags(field.object(), field.path(), remove, add);
+    }
+}
+</code></pre>
+<p>Si imprimes cada <code>TermChange</code> y, debajo, cada campo con las dos listas en lugar de enviarlas:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">DATA_CATEGORY 'user.government_id.national_identification_number': [PROTECTION] TIGHTENED
+  students.nationalId remove [Confidentiality.Medium] add [Confidentiality.High]
+</code></pre>
+<p>Con DataHub el cálculo es idéntico con <code>termsOf</code>: se quita
+<code>urn:li:glossaryTerm:Confidentiality.Medium</code> y se añade
+<code>urn:li:glossaryTerm:Confidentiality.High</code>. Con Atlas, con <code>classificationsOf</code>.</p>
+
+<h3>Tres reglas para actualizar una columna</h3>
+<ol>
+<li>Envía de nuevo las definiciones del catálogo antes que las columnas: con la taxonomía nueva puede haber etiquetas,
+términos o tipos que la columna va a necesitar. Las peticiones de definiciones pueden repetirse: <code>PUT</code> en
+OpenMetadata, <code>UPSERT</code> en DataHub y el reparto de <code>createJson</code> y <code>updateJson</code> en
+Atlas.</li>
+<li>Quita y añade en una sola petición por columna. La mayoría de las clasificaciones de OpenMetadata son mutuamente
+excluyentes (<code>Confidentiality.Medium</code> y <code>Confidentiality.High</code> no pueden convivir), así que añadir
+primero se rechaza.</li>
+<li>No toques las demás etiquetas. Solo se quita la diferencia entre las dos listas de Linneo; las etiquetas que alguien
+añadió a mano no están en ninguna de las dos y se quedan en la columna. Un campo retirado (<code>after</code> nulo) o
+que pasa a exento pierde todas las de Linneo.</li>
+</ol>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Un catálogo desfasado puede mostrar como ordinaria una columna que ya guarda datos de salud. Ejecutar la
+actualización de etiquetas en cada despliegue, a partir de <code>InventoryDiff</code> y de <code>affectedBy</code>,
+mantiene el catálogo alineado con el código. Linneo calcula qué cambiar; guardar el inventario y la taxonomía aplicada,
+enviar las peticiones y registrar la auditoría son responsabilidades de la aplicación.</p>
+</div>
+
+<h2 id="comparativa">Comparativa de los tres catálogos</h2>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-17-5">
+<table>
+<caption id="tabla-17-5">Tabla 17.5. OpenMetadata, DataHub y Apache Atlas frente a frente</caption>
+<thead>
+<tr><th scope="col">Aspecto</th><th scope="col">OpenMetadata</th><th scope="col">DataHub</th>
+<th scope="col">Apache Atlas</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Una categoría es</th><td>una etiqueta anidada <code>DataCategory.&lt;key&gt;</code></td><td>un
+término
+<code>urn:li:glossaryTerm:DataCategory.&lt;key&gt;</code>, más un nodo si tiene hijas</td><td>un tipo de clasificación
+<code>DataCategory.&lt;key&gt;</code></td></tr>
+<tr><th scope="row">El árbol se representa con</th><td>el <code>parent</code> de la etiqueta</td><td>nodos e
+<code>isRelatedTerms</code> hacia la madre</td><td><code>superTypes</code></td></tr>
+<tr><th scope="row">Protección implícita</th><td>no se guarda: va en cada columna</td><td><code>relatedTerms</code> del
+término</td><td>no se guarda: va en cada columna</td></tr>
+<tr><th scope="row">Naturaleza jurídica</th><td><code>PersonalData.Personal</code> y <code>SpecialCategory</code>,
+predefinidas; los datos penales son <code>SpecialCategory</code></td><td><code>Personal</code>,
+<code>SpecialCategory</code> y <code>CriminalOffence</code></td><td><code>Personal</code>, <code>SpecialCategory</code>
+y
+<code>CriminalOffence</code></td></tr>
+<tr><th scope="row">Sensibilidad</th><td><code>PII.None</code>, <code>NonSensitive</code>, <code>Sensitive</code>,
+predefinidas, con umbral</td><td>No</td><td>No</td></tr>
+<tr><th scope="row">Definiciones con la taxonomía estándar</th><td>5 clasificaciones y 138 etiquetas</td><td>295
+propuestas</td><td>147 tipos</td></tr>
+<tr><th scope="row">Volver a enviar</th><td><code>PUT</code> crea o actualiza</td><td><code>UPSERT</code> sustituye cada
+aspecto</td><td><code>createJson</code> con <code>POST</code> y <code>updateJson</code> con <code>PUT</code></td></tr>
+<tr><th scope="row">Etiquetas de un campo</th><td><code>tagsOf(field)</code></td><td><code>termsOf(field)</code></td>
+<td><code>classificationsOf(field)</code>, <code>classificationsJson(field)</code></td></tr>
+<tr><th scope="row">Nombres configurables</th><td><code>OpenMetadataMapping</code>: siete nombres y un umbral</td>
+<td><code>DataHubMapping</code>: seis nombres</td><td><code>AtlasMapping</code>: seis nombres</td></tr>
+</tbody>
+</table>
+</div>
+<p>Elige el catálogo que ya usa tu organización: los tres exportadores publican la misma taxonomía y calculan las
+etiquetas de cada campo a partir de la misma clasificación. Las diferencias vienen de cada catálogo. OpenMetadata añade
+la sensibilidad <code>PII</code>, pero reúne datos penales y categorías especiales en la misma etiqueta. DataHub guarda
+la protección implícita como relaciones entre términos. En Atlas, una búsqueda por una categoría encuentra también sus
+subcategorías, y las políticas basadas en etiquetas pueden actuar sobre los niveles.</p>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Esperar que Linneo llame al catálogo o asigne las etiquetas a las columnas</dt>
+<dd>Linneo construye cuerpos y nombres. Tu integración los envía y localiza la columna, el campo del conjunto de datos o
+la entidad que corresponde a cada campo.</dd>
+<dt>Reordenar las definiciones antes de enviarlas</dt>
+<dd>Ordenar las etiquetas, las propuestas o los tipos por nombre puede enviar una hija antes que su madre, o una
+relación antes que el término al que apunta, y la petición falla. Envía las listas en el orden en que las devuelve el
+exportador.</dd>
+<dt>Publicar <code>Taxonomy.standard()</code> cuando la aplicación usa extensiones</dt>
+<dd>Al catálogo le faltarán los términos de la extensión y los niveles endurecidos. Construye el catálogo con la misma
+taxonomía que el clasificador.</dd>
+<dt>Calcular las etiquetas de una columna a partir de la categoría</dt>
+<dd><code>tagsOf(field.category())</code> pierde los niveles elevados en el campo, su identificabilidad y la distinción
+entre datos agregados o anonimizados y datos personales. Usa la sobrecarga con el campo.</dd>
+<dt>Construir a mano el cuerpo de <code>ingestProposal</code> con el aspecto como objeto</dt>
+<dd>DataHub lo quiere como cadena JSON en <code>aspect.value</code>. Usa <code>DhProposal.toJson()</code>.</dd>
+<dt>Asignar en Atlas solo la clasificación de la categoría</dt>
+<dd>Los niveles no son supertipos de las categorías, así que la categoría sola no lleva
+<code>Confidentiality.High</code>. Envía <code>classificationsJson(field)</code>, que enumera todas.</dd>
+<dt>Repetir sin más el <code>POST</code> de los tipos de Atlas</dt>
+<dd>Responde 409 si un tipo existe y no crea ninguno. Reparte los tipos con <code>createJson</code> y
+<code>updateJson</code>.</dd>
+<dt>Leer <code>PersonalData.SpecialCategory</code> de OpenMetadata como «solo artículo 9»</dt>
+<dd>Los datos penales también la reciben. La etiqueta <code>DataCategory</code> los distingue.</dd>
+<dt>Renombrar <code>PersonalData</code> o <code>PII</code> en OpenMetadata sin tenerlas</dt>
+<dd>Linneo nunca crea esas dos clasificaciones: deben existir en tu instalación con el nombre que indique la
+correspondencia.</dd>
+<dt>Sustituir todas las etiquetas de una columna al actualizarla</dt>
+<dd>Borra las que la gente añadió a mano. Quita solo la diferencia entre las dos listas de Linneo.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Los tres exportadores siguen el mismo patrón: un catálogo inmutable construido con la taxonomía, las definiciones en
+orden de creación y un método que calcula las etiquetas de un campo.</li>
+<li>Ninguno hace llamadas HTTP: la aplicación envía los cuerpos y aplica las etiquetas a las columnas.</li>
+<li>OpenMetadata reutiliza <code>PersonalData</code> y <code>PII</code>, y la protección implícita va en cada
+columna.</li>
+<li>DataHub recibe un glosario de nodos y términos mediante propuestas <code>ingestProposal</code>, con relaciones y
+propiedades personalizadas.</li>
+<li>Atlas recibe tipos de clasificación con el árbol como <code>superTypes</code> y los niveles como clasificaciones
+aparte; <code>createJson</code> y <code>updateJson</code> permiten volver a publicar.</li>
+<li>Las etiquetas de una columna se calculan siempre a partir del campo, con <code>FieldClassification</code> o con un
+<code>InventoryField</code> guardado, que da exactamente el mismo resultado.</li>
+<li>Para mantener el catálogo al día, compara las etiquetas antes y después de cada cambio del campo o de la taxonomía y
+envía solo la diferencia, en una petición por columna.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li><p><strong>Predice.</strong> Sin ejecutar código, escribe las etiquetas de OpenMetadata y los términos de DataHub de
+<code>Staff.iban</code>, cuya categoría es <code>user.financial.bank_account</code> (<code>ORDINARY</code>,
+<code>MEDIUM</code>, <code>HIGH</code>). Después compruébalo con <code>tagsOf</code> y <code>termsOf</code>.</p>
+<details><summary>Solución del ejercicio 1</summary>
+<p>OpenMetadata: <code>DataCategory.user.financial.bank_account</code>, <code>PersonalData.Personal</code>,
+<code>PII.Sensitive</code>, <code>Confidentiality.Medium</code>, <code>Integrity.High</code>,
+<code>Identifiability.Identified</code>. DataHub: los mismos sin <code>PII.Sensitive</code>, cada uno con el prefijo
+<code>urn:li:glossaryTerm:</code>. Es <code>PII.Sensitive</code> porque la confidencialidad <code>MEDIUM</code> alcanza
+el umbral por defecto.</p>
+</details></li>
+<li><p><strong>Revisar antes de publicar.</strong> Escribe las clasificaciones y las etiquetas de OpenMetadata en
+<code>classifications.jsonl</code> y <code>tags.jsonl</code>, y las propuestas de DataHub en
+<code>datahub-proposals.jsonl</code>, un objeto JSON por línea. ¿Cuántas líneas tiene cada fichero con la taxonomía
+estándar?</p>
+<details><summary>Solución del ejercicio 2</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">OpenMetadataCatalog openMetadata = OpenMetadataCatalog.of(taxonomy);
+Files.write(Path.of("classifications.jsonl"),
+        openMetadata.classifications().stream().map(OmClassification::toJson).toList());
+Files.write(Path.of("tags.jsonl"), openMetadata.tags().stream().map(OmTag::toJson).toList());
+Files.write(Path.of("datahub-proposals.jsonl"),
+        DataHubCatalog.of(taxonomy).proposals().stream().map(DhProposal::toJson).toList());
+</code></pre>
+<p>5, 138 y 295 líneas.</p>
+</details></li>
+<li><p><strong>La extensión en los catálogos.</strong> Con la <code>CampusTaxonomy</code> del capítulo 9, ¿cuántas
+etiquetas de OpenMetadata, propuestas de DataHub y tipos de Atlas hay? ¿Aparece algún nodo nuevo en el glosario?
+¿Qué propiedades personalizadas lleva el término de <code>user.education.lab_notebook</code>?</p>
+<details><summary>Solución del ejercicio 3</summary>
+<p>140 etiquetas, 299 propuestas y 149 tipos: la extensión añade dos categorías, que aportan una etiqueta, dos
+propuestas (<code>glossaryTermInfo</code> y <code>glossaryRelatedTerms</code>) y un tipo cada una. No aparece ningún
+nodo, porque las dos son hojas y <code>user.education</code> ya tenía nodo. El término lleva <code>linneo.key</code>
+<code>user.education.lab_notebook</code>, <code>linneo.origin</code> <code>campus</code>, <code>linneo.nature</code>
+<code>ORDINARY</code>, <code>linneo.confidentiality</code> <code>MEDIUM</code>, <code>linneo.integrity</code>
+<code>HIGH</code>, <code>linneo.secret</code> <code>false</code> y el atributo <code>retention</code>
+<code>permanent</code>. Los usos y los sujetos de datos no se publican en los catálogos.</p>
+</details></li>
+<li><p><strong>Umbral de sensibilidad.</strong> Con la correspondencia por defecto, ¿qué campos personales de
+<code>Student</code> son <code>PII.Sensitive</code>? ¿Y con <code>withSensitiveFrom(Confidentiality.HIGH)</code>?</p>
+<details><summary>Solución del ejercicio 4</summary>
+<p>Por defecto (<code>MEDIUM</code>): <code>nationalId</code>, <code>dateOfBirth</code>, <code>disabilityDegree</code>,
+<code>academicStatus</code> y <code>counsellingNotes</code>. Los demás campos personales (<code>createdBy</code>,
+<code>id</code>, <code>firstName</code>, <code>lastName</code>, <code>email</code> y <code>analyticsId</code>) tienen
+confidencialidad <code>LOW</code> y son <code>PII.NonSensitive</code>. Con <code>HIGH</code>, solo
+<code>disabilityDegree</code> y <code>counsellingNotes</code> son <code>PII.Sensitive</code>.</p>
+</details></li>
+<li><p><strong>Buscar en Atlas.</strong> El DPD busca en Atlas la clasificación
+<code>DataCategory.user.health_and_medical</code>. ¿Qué columnas del modelo de la universidad encuentra, y por qué?</p>
+<details><summary>Solución del ejercicio 5</summary>
+<p><code>Student.disabilityDegree</code> y <code>Attachment.content</code>. <code>Attachment.content</code> lleva
+directamente <code>DataCategory.user.health_and_medical</code>, su techo. <code>disabilityDegree</code> lleva
+<code>DataCategory.user.health_and_medical.disability</code>, cuyo supertipo es
+<code>DataCategory.user.health_and_medical</code>, así que la búsqueda también la encuentra.</p>
+</details></li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li><p>¿Qué etiqueta <code>PersonalData</code> recibe en OpenMetadata la columna
+<code>Staff.sexOffenceCertificateClear</code>, de categoría <code>user.criminal_history</code>?</p>
+<ol>
+<li><code>PersonalData.CriminalOffence</code>.</li>
+<li><code>PersonalData.SpecialCategory</code>.</li>
+<li>Ninguna, porque los datos penales no son datos personales.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La b. La clasificación predefinida <code>PersonalData</code> de OpenMetadata no tiene etiqueta para datos penales, y
+Linneo usa <code>SpecialCategory</code>, su única etiqueta de protección reforzada. <code>CriminalOffence</code> (la a)
+existe en DataHub y en Atlas. Los datos penales sí son personales (la c).</p>
+</details></li>
+<li><p>¿Por qué el aspecto es una cadena dentro del cuerpo que escribe <code>DhProposal.toJson()</code>?</p>
+<ol>
+<li>Porque así lo exige la acción <code>ingestProposal</code>: el aspecto viaja codificado en JSON en
+<code>aspect.value</code>.</li>
+<li>Porque el escritor JSON interno no sabe anidar objetos.</li>
+<li>Para que DataHub no valide el aspecto.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La a. Es el formato de la API de DataHub. El escritor interno sí anida objetos, como muestra el propio
+<code>proposal</code> (la b), y DataHub valida el aspecto igualmente (la c).</p>
+</details></li>
+<li><p>¿Por qué los niveles de protección no son supertipos de las clasificaciones de categoría en Atlas?</p>
+<ol>
+<li>Porque Atlas no admite supertipos en las clasificaciones.</li>
+<li>Porque una hija puede elevar un nivel que implica su madre, y la herencia de Atlas no se puede retirar más
+abajo.</li>
+<li>Porque así ocupan menos tipos.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La b. Si <code>DataCategory.user</code> heredara de <code>Confidentiality.Low</code>,
+<code>DataCategory.user.health_and_medical</code> no podría dejar de serlo. Atlas sí admite supertipos (la a): Linneo
+los usa para el árbol. El número de tipos (la c) no es el motivo.</p>
+</details></li>
+<li><p>Un campo guardado en el inventario está marcado como exento. ¿Qué devuelve
+<code>AtlasCatalog.classificationsJson</code> para él?</p>
+<ol>
+<li><code>[]</code>.</li>
+<li>Las clasificaciones de <code>system.operations</code>.</li>
+<li>Lanza <code>TaxonomyException</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La a. Un campo exento no contiene datos del modelo y no tiene etiquetas. No toma ninguna categoría por defecto (la
+b). <code>TaxonomyException</code> (la c) se lanza cuando la clave de un campo clasificado no está en la taxonomía del
+catálogo.</p>
+</details></li>
+<li><p>La taxonomía eleva <code>user.government_id</code> de <code>MEDIUM</code> a <code>HIGH</code>. ¿Qué cambio de
+etiquetas de OpenMetadata necesita la columna de <code>Student.nationalId</code>?</p>
+<ol>
+<li>Ninguno, porque el campo no ha cambiado.</li>
+<li>Quitar <code>Confidentiality.Medium</code> y añadir <code>Confidentiality.High</code>.</li>
+<li>Quitar todas sus etiquetas y volver a añadirlas.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La b. Las etiquetas dependen del campo y de la taxonomía; <code>affectedBy</code> encuentra el campo y la diferencia
+entre las dos listas es solo la confidencialidad (<code>PII.Sensitive</code> se mantiene). No basta con que el campo no
+cambie (la a), y reemplazarlas todas (la c) borraría las etiquetas añadidas a mano.</p>
+</details></li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="../../reference/openmetadata/catalog.html">Referencia: catálogo de OpenMetadata</a> y
+<a href="../../reference/openmetadata/mapping.html">su correspondencia de nombres</a>.</li>
+<li><a href="../../reference/datahub/catalog.html">Referencia: catálogo de DataHub</a> y
+<a href="../../reference/datahub/mapping.html">su correspondencia de nombres</a>.</li>
+<li><a href="../../reference/atlas/catalog.html">Referencia: catálogo de Apache Atlas</a> y
+<a href="../../reference/atlas/mapping.html">su correspondencia de nombres</a>.</li>
+<li><a href="../../reference/classify/inventory.html">Referencia: el inventario de datos</a>.</li>
+<li><a href="08-inventario.html">Capítulo 8. El inventario de datos</a> y <a href="10-versiones.html">capítulo 10.
+Versiones de la taxonomía</a>.</li>
+<li><a href="16-exportadores.html">Capítulo 16. Exportar a PostgreSQL, OpenAPI y ODCS</a>, los otros exportadores de
+texto.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="16-exportadores.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 16. Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="18-ciclo-de-vida.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 18. Linneo en el ciclo de vida</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -84,8 +84,9 @@ The documentation in `docs/` is published with GitHub Pages at <https://devbpm.g
 and the [Just the Docs](https://just-the-docs.com/) theme. The `Pages` workflow builds it on every pull request that
 touches `docs/` and deploys it from `main`.
 
-- **Two languages, one structure.** `docs/es/` mirrors `docs/en/` file by file. A change to a page goes into both
-  languages in the same pull request; code, identifiers and keys stay the same in both.
+- **Two languages, one structure.** `docs/es/` mirrors `docs/en/` file by file, except the HTML edition of the
+  course (below), which is in Spanish only. A change to a page goes into both languages in the same pull request;
+  code, identifiers and keys stay the same in both.
 - **Front matter.** Every page starts with Just the Docs front matter: `title`, `parent` (and `grand_parent` for
   the annotation pages) and `nav_order`; section index pages (`README.md`) also set `permalink`. Spanish pages use
   the Spanish titles of their parents (`Referencia`, `Anotaciones`, `Curso`).
@@ -114,5 +115,15 @@ touches `docs/` and deploys it from `main`.
   Type signatures without a body (`public record Protection(...)`) are compared with the real types, and module
   declarations with `module-info.java`. An exercise with deliberate mistakes is preceded by
   `<!-- unchecked: the reason -->`. Run it on its own with `./mvnw test -Dtest=DocumentationSamplesTest`.
+- **HTML course.** `docs/es/course/course-html/` is a Spanish edition of the course as static HTML pages, written
+  for WCAG 2.2 level AA: no front matter (Jekyll copies them as they are), one shared stylesheet
+  (`recursos/curso.css`, with light and dark colour tokens whose contrast is at least 4.5:1) and no JavaScript.
+  Each page has the `doc-sources` comment right after its doctype. Every page repeats the same header, chapter
+  list, footer and pager, so adding or renaming a chapter changes all of them. A Java sample is a
+  `<pre class="codigo" tabindex="0"><code class="language-java">` block whose code starts on the line of the tags
+  and ends at `</code></pre>`, with `<`, `>` and `&` escaped; `DocumentationSamplesTest` compiles it like a
+  Markdown fence, and `<!-- unchecked: the reason -->` on the line before works the same way. Tables sit in a
+  focusable `<div class="tabla" role="region">` named by their `<caption>`, and callouts are
+  `<div class="recuadro …" role="note">` with a visible title.
 
 By contributing, you agree that your contributions are licensed under the Apache License, Version 2.0.

@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/ClassificationException.java
+  - src/main/java/io/github/devbpm/linneo/classify/Violation.java
+  - src/main/java/io/github/devbpm/linneo/classify/ModelClasses.java
+  - src/main/java/io/github/devbpm/linneo/classify/ClassClassification.java
+  - src/main/java/io/github/devbpm/linneo/internal/Messages.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 6. Verificar en los tests · Curso de Linneo</title>
+<meta name="description" content="Convierte las anotaciones en un control de la compilación: Classifier, classify y verify, cada infracción con su mensaje real, avisos y ModelClasses.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html" aria-current="page"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 6. Verificar en los tests</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 6</span> Verificar en los tests</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>75 minutos</dd></div>
+<div><dt>Parte II:</dt><dd>Clasificar el modelo de datos</dd></div>
+</dl>
+<p class="entradilla">Las anotaciones de los capítulos 4 y 5 son documentación hasta que algo las comprueba. Este
+capítulo explica cómo un test de JUnit las convierte en un control que hace fallar la compilación cuando el modelo no
+está clasificado por completo y correctamente, cómo leer el informe de errores y cómo asegurarte de que ninguna clase se
+queda sin verificar.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#por-que-un-test">Por qué un test</a></li>
+<li><a href="#classifier">El clasificador</a></li>
+<li><a href="#classify-y-verify">classify frente a verify</a></li>
+<li><a href="#leer-la-excepcion">Leer una ClassificationException</a></li>
+<li><a href="#tipos-de-infraccion">Cada tipo de infracción</a></li>
+<li><a href="#avisos">Avisos: claves obsoletas</a></li>
+<li><a href="#determinismo">Resultados deterministas</a></li>
+<li><a href="#no-olvidar">No olvidar ninguna clase</a></li>
+<li><a href="#todas-a-la-vez">Verificar todas las clases a la vez</a></li>
+<li><a href="#test-completo">Un test JUnit 5 completo</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>crear un <code>Classifier</code> con la taxonomía adecuada y explicar por qué puede compartirse entre tests;</li>
+<li>elegir entre <code>classify</code>, <code>classifyAll</code> y <code>verify</code> según quieras inspeccionar o
+hacer fallar la compilación;</li>
+<li>leer una <code>ClassificationException</code> y localizar cada problema por clase, ruta y código;</li>
+<li>reconocer cada tipo de <code>Violation</code>, provocarlo con un ejemplo y corregirlo;</li>
+<li>tratar los avisos de claves obsoletas y, si lo decides, convertirlos en errores;</li>
+<li>obtener las clases del modelo con <code>ModelClasses</code> o con el metamodelo de
+<abbr title="Jakarta Persistence API">JPA</abbr>, y verificarlas todas a la vez;</li>
+<li>escribir un test JUnit 5 completo para el modelo de la universidad.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo usa el modelo de la universidad de los capítulos <a href="04-anotaciones.html">4</a> y
+<a href="05-estructuras.html">5</a> y las infracciones que allí aparecen. Se supone que tu proyecto ya ejecuta tests con
+JUnit 5 en cada compilación; Linneo no necesita nada más que su propio <abbr title="Java ARchive">JAR</abbr>, ni base
+de datos ni contenedor.</p>
+<p>Tres términos se usan a lo largo del capítulo. Una <dfn>infracción</dfn> (<code>Violation</code>) es un problema
+encontrado al clasificar una clase. Su <dfn>gravedad</dfn> es <code>ERROR</code> (la clasificación es incorrecta o
+falta) o <code>WARNING</code> (funciona, pero conviene actualizarla). Un <dfn>aviso</dfn> es una infracción de gravedad
+<code>WARNING</code>.</p>
+
+<h2 id="por-que-un-test">Por qué un test</h2>
+<p>Una anotación no impide nada por sí misma. Si alguien añade un campo <code>mobilePhone</code> a <code>Student</code>
+y olvida clasificarlo, el código compila, la aplicación funciona y el dato queda fuera de todo lo que se construye sobre
+la clasificación: el inventario, los catálogos, la política de divulgación, el registro de actividades. Lo que convierte
+las anotaciones en un control es un test que se ejecuta en cada compilación y falla cuando falta o sobra algo.</p>
+<p>Ese test es la aplicación práctica del principio de fallo seguro: lo que no está clasificado, o está clasificado de
+forma dudosa, no pasa. Si la integración continua ejecuta los tests, el cambio no se fusiona hasta que la clasificación
+es correcta, y la petición de cambios muestra la corrección, normalmente una línea, a quien revisa. El
+<a href="18-ciclo-de-vida.html">capítulo 18</a> sitúa este test en el ciclo de vida del proyecto.</p>
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Un test que pasa demuestra que cada campo del modelo tiene una declaración coherente con la taxonomía; no demuestra
+que la declaración sea cierta. Lo que el código no puede ver (si un campo exento de verdad no contiene datos, si un
+valor declarado agregado no permite reidentificar) lo revisan las personas responsables. Para el delegado de protección
+de datos (<abbr title="delegado de protección de datos">DPD</abbr>), el test es la garantía de que ningún dato nuevo
+entra en el modelo sin una decisión escrita.</p>
+</div>
+
+<h2 id="classifier">El clasificador</h2>
+<p><code>Classifier</code> lee las anotaciones de las clases y las comprueba contra una taxonomía. Se construye con la
+taxonomía a la que deben pertenecer las claves:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Classifier classifier = new Classifier(Taxonomy.load());
+</code></pre>
+<p>Pasar <code>null</code> lanza una <code>NullPointerException</code> con el mensaje <code>taxonomy</code>. La elección
+de la taxonomía importa:</p>
+<ul>
+<li><strong><code>Taxonomy.load()</code></strong> construye la taxonomía estándar más las extensiones registradas con
+<code>ServiceLoader</code>. Es la que debe usar el test, para ver las mismas claves que la aplicación. Cada llamada
+construye una instancia nueva: guárdala.</li>
+<li><strong><code>Taxonomy.standard()</code></strong> es solo la taxonomía estándar. Si tu modelo usa claves de una
+extensión, con ella se informarían como desconocidas (<code>UNKNOWN_CATEGORY</code>).</li>
+<li><strong>Una taxonomía construida a mano</strong>, como <code>Taxonomy.builder().withStandard().extend(new
+UniversityTaxonomy()).build()</code>, cuando la aplicación aplica una extensión que no está registrada como servicio,
+como la universitaria (<a href="09-extensiones.html">capítulo 9</a>). El test debe construirla exactamente igual que la
+aplicación.</li>
+</ul>
+
+<h3 id="inmutable">Inmutable y una ejecución por llamada</h3>
+<p>Un <code>Classifier</code> es inmutable y seguro entre hilos: solo guarda la taxonomía. Puedes crearlo una vez y
+guardarlo en un campo estático de la clase de test.</p>
+<p>Cada llamada a <code>classify</code>, <code>classifyAll</code>, <code>verify</code> o <code>inventory</code> es una
+<dfn>ejecución</dfn> independiente. Dentro de ella, cada clase que hace falta se lee una sola vez: la clase pedida, los
+compuestos que contiene y las clases cuyos campos nombran sus campos derivados. Al terminar, la ejecución no conserva
+nada. Por eso dos llamadas sobre las mismas clases devuelven resultados iguales, y por eso conviene pasar todas las
+clases en una sola llamada: una clase que usan varias se lee una vez.</p>
+<p>El clasificador solo lee anotaciones mediante <code>Class.getDeclaredFields()</code>; nunca lee valores de campos. No
+necesita instancias, ni <code>setAccessible</code>, ni una base de datos en marcha.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-6-1">
+<table>
+<caption id="tabla-6-1">Tabla 6.1. Métodos de Classifier</caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th><th scope="col">Uso</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>classify(Class&lt;?&gt;
+type)</code></th><td><code>ClassClassification</code></td><td>Inspeccionar una clase: campos, exenciones y infracciones.
+No lanza excepciones por problemas de clasificación.</td></tr>
+<tr><th scope="row"><code>classifyAll(Collection&lt;? extends Class&lt;?&gt;&gt; types)</code></th>
+<td><code>List&lt;ClassClassification&gt;</code></td><td>Lo mismo para varias clases, una por clase y en el orden
+recibido, en una sola ejecución.</td></tr>
+<tr><th scope="row"><code>verify(Collection&lt;? extends Class&lt;?&gt;&gt; types)</code></th>
+<td><code>List&lt;ClassClassification&gt;</code></td><td>Hacer fallar el test: lanza
+<code>ClassificationException</code> con todos los errores de todas las clases.</td></tr>
+<tr><th scope="row"><code>inventory(types, objectKey)</code></th><td><code>DataInventory</code></td><td>El inventario de
+datos del modelo (<a href="08-inventario.html">capítulo 8</a>); verifica antes las clases.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="classify-y-verify">classify frente a verify</h2>
+<p><code>classify</code> sirve para mirar. Devuelve la <code>ClassClassification</code> de la clase aunque tenga
+errores, y sus métodos te dicen en qué estado está: <code>isValid()</code> es <code>false</code> si hay algún error,
+<code>errors()</code> devuelve solo los errores y <code>violations()</code> devuelve errores y avisos. Un campo con un
+error no aparece en <code>fields()</code>, salvo en los casos que la Tabla 6.2 indica. Con el <code>Student</code> del
+modelo más los dos campos erróneos de la sección siguiente:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification student = classifier.classify(Student.class);
+System.out.println("isValid=" + student.isValid() + " errors=" + student.errors().size()
+        + " violations=" + student.violations().size() + " fields=" + student.fields().size());
+System.out.println(student.field("mobilePhone"));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">isValid=false errors=2 violations=2 fields=14
+Optional.empty
+</code></pre>
+<p>Los catorce campos correctos (diez propios y cuatro heredados) siguen clasificados; <code>mobilePhone</code>, no.</p>
+<p><code>verify</code> sirve para exigir. Clasifica una colección de clases en una sola ejecución y, si cualquiera de
+ellas tiene cualquier error, lanza una <code>ClassificationException</code> con todos los errores de todas las clases,
+no solo los de la primera. Si no hay errores, devuelve la <code>ClassClassification</code> de cada clase en el orden
+recibido. Los avisos nunca hacen fallar <code>verify</code>; siguen en las clasificaciones devueltas.</p>
+<p><code>classifyAll</code> y <code>verify</code> devuelven una clasificación por cada elemento de la colección, también
+si una clase aparece dos veces: sus errores se informarían dos veces. Cuando juntes clases de varias fuentes, usa un
+<code>Set</code>.</p>
+
+<h2 id="leer-la-excepcion">Leer una ClassificationException</h2>
+<p>Supón que alguien añade dos campos a <code>Student</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category("user.contact.mail")          // errata
+private String personalEmail;
+
+private String mobilePhone;             // olvidado
+</code></pre>
+<p>El test que verifica <code>MenuGroup</code> y <code>Student</code> falla con esta excepción:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">io.github.devbpm.linneo.classify.ClassificationException: 2 classification error(s):
+ - ERROR UNKNOWN_CATEGORY edu.example.university.Student.personalEmail: unknown data category 'user.contact.mail'
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.Student.mobilePhone: no @Category on the field and no @DefaultCategory on Student
+</code></pre>
+<p>La primera línea cuenta los errores. Cada línea siguiente es una <code>Violation</code> impresa con su
+<code>toString()</code>, que sigue este formato:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">&lt;GRAVEDAD&gt; &lt;CÓDIGO&gt; &lt;nombre binario de la clase&gt;[.&lt;ruta&gt;]: &lt;mensaje&gt;
+</code></pre>
+<ul>
+<li><strong>La clase</strong> es la que se está clasificando, aunque el campo esté declarado en una superclase o en un
+compuesto. Con clases anidadas, el nombre binario lleva <code>$</code> (<code>Outer$Inner</code>).</li>
+<li><strong>La ruta</strong> es el nombre del campo, o <code>campo.parte</code> para un campo de un compuesto. Falta
+cuando el problema está en una anotación de clase, como <code>@DefaultCategory</code>.</li>
+<li><strong>El mensaje</strong> nombra la clave o la anotación implicada y, en muchos casos, la corrección.</li>
+</ul>
+<p>Desde el código, <code>ClassificationException.errors()</code> devuelve las mismas infracciones, cada una con
+<code>type()</code>, <code>path()</code>, <code>severity()</code>, <code>code()</code> y <code>message()</code>. Para la
+segunda infracción:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Violation v = e.errors().get(1);
+System.out.println(v.type() + " | " + v.path() + " | " + v.severity() + " | " + v.code() + " | " + v.message());
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">class edu.example.university.Student | mobilePhone | ERROR | UNCLASSIFIED_FIELD | no @Category on the field and no @DefaultCategory on Student
+</code></pre>
+<p>Con <code>errors()</code> puedes agruparlas, por ejemplo para contar cuántas hay de cada código antes de volver a
+lanzar la excepción:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">try {
+    classifier.verify(entities);
+} catch (ClassificationException e) {
+    Map&lt;Violation.Code, Long&gt; byCode = e.errors().stream()
+            .collect(Collectors.groupingBy(Violation::code, TreeMap::new, Collectors.counting()));
+    System.out.println(byCode);
+    throw e;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">{UNCLASSIFIED_FIELD=1, UNKNOWN_CATEGORY=1}
+</code></pre>
+
+<h3 id="modelos-grandes">Modelos grandes: los 50 primeros errores</h3>
+<p>Para que un modelo grande no entierre el registro de la compilación, el mensaje lista como mucho los 50 primeros
+errores. Si hay más, una última línea dice cuántos quedan fuera y cuenta todos los errores por código, en orden
+alfabético. Una clase heredada de una importación antigua, con 55 columnas sin anotar y 5 que rebajan un nivel, produce
+este mensaje (extracto):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">60 classification error(s):
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.LegacyImport.column01: no @Category on the field and no @DefaultCategory on LegacyImport
+...
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.LegacyImport.column50: no @Category on the field and no @DefaultCategory on LegacyImport
+ ... and 10 more; all of them by code: LOWERED_LEVEL 5, UNCLASSIFIED_FIELD 55
+</code></pre>
+<p>Con 50 errores o menos no hay línea de recuento. <code>errors()</code> contiene siempre todos. La lista se guarda en
+un campo <code>transient</code>, así que no se conserva si la excepción se serializa.</p>
+
+<h2 id="tipos-de-infraccion">Cada tipo de infracción</h2>
+<p><code>Violation.Code</code> tiene quince valores. Catorce son errores y uno es un aviso. La Tabla 6.2 los resume, y
+las secciones siguientes muestran, para cada uno, un ejemplo que lo provoca, el mensaje real y la corrección. Todos los
+mensajes de esta sección proceden de una sola ejecución de <code>verify</code> sobre clases rotas a propósito, salvo los
+que se indican.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-6-2">
+<table>
+<caption id="tabla-6-2">Tabla 6.2. Los códigos de Violation</caption>
+<thead>
+<tr><th scope="col">Código</th><th scope="col">Gravedad</th><th scope="col">¿El campo se clasifica?</th>
+<th scope="col">Se explica en</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>UNCLASSIFIED_FIELD</code></th><td>error</td><td>no</td><td>capítulos 4 y 5</td></tr>
+<tr><th scope="row"><code>UNKNOWN_CATEGORY</code></th><td>error</td><td>no; en un valor por defecto, faltan los campos
+que cubriría</td><td>capítulo 4</td></tr>
+<tr><th scope="row"><code>DEPRECATED_CATEGORY</code></th><td>aviso</td><td>sí, con la clave sustituta</td><td>este
+capítulo</td></tr>
+<tr><th scope="row"><code>PERSONAL_DEFAULT</code></th><td>error</td><td>no; faltan los campos que cubriría</td>
+<td>capítulo 4</td></tr>
+<tr><th scope="row"><code>MISSING_REASON</code></th><td>error</td><td>un exento, nunca; uno por fila o por defecto,
+sí</td><td>capítulos 4 y 5</td></tr>
+<tr><th scope="row"><code>CONFLICTING_ANNOTATIONS</code></th><td>error</td><td>no</td><td>capítulos 4 y 5</td></tr>
+<tr><th scope="row"><code>LOWERED_LEVEL</code></th><td>error</td><td>no</td><td>capítulo 4</td></tr>
+<tr><th scope="row"><code>AMBIGUOUS_VALUE</code></th><td>error</td><td>no</td><td>capítulo 4</td></tr>
+<tr><th scope="row"><code>IDENTIFIABILITY_NOT_APPLICABLE</code></th><td>error</td><td>no</td><td>capítulo 4</td></tr>
+<tr><th scope="row"><code>DUPLICATE_FIELD</code></th><td>error</td><td>no; el de la superclase, sí</td><td>capítulo
+4</td>
+</tr>
+<tr><th scope="row"><code>UNKNOWN_SOURCE</code></th><td>error</td><td>no</td><td>capítulo 5</td></tr>
+<tr><th scope="row"><code>AMBIGUOUS_DERIVATION</code></th><td>error</td><td>no</td><td>capítulo 5</td></tr>
+<tr><th scope="row"><code>WEAKER_THAN_SOURCE</code></th><td>error</td><td>no</td><td>capítulo 5</td></tr>
+<tr><th scope="row"><code>WEAKER_THAN_PARTS</code></th><td>error</td><td>sí, con la categoría declarada</td><td>capítulo
+5 </td></tr>
+<tr><th scope="row"><code>CYCLE</code></th><td>error</td><td>no; en un compuesto, el campo que cierra el bucle</td>
+<td>capítulo 5</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="infracciones-clasificacion">Campos sin clasificar y claves desconocidas</h3>
+
+<h4 id="unclassified-field">UNCLASSIFIED_FIELD</h4>
+<p>Un campo no tiene categoría. Es el error más frecuente y tiene tres variantes, cada una con su mensaje. La primera es
+un campo sin anotación en una clase sin valor por defecto:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Student.mobilePhone: no @Category on the field and no @DefaultCategory on Student
+</code></pre>
+<p>Para un campo heredado, el mensaje nombra la clase que lo declara y la que se clasifica (<code>no @DefaultCategory on
+AuditedEntity or Student</code>). La segunda variante es un campo que puede contener datos que el clasificador no ve, al
+que ningún valor por defecto se aplica:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.payload: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
+</code></pre>
+<p>La tercera es una referencia a un registro con datos personales en una clase con valor por defecto:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Room.responsible: the class default 'org.location' does not apply: the field refers to Staff that holds personal data, and a reference to a person's record is personal data: declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Staff.class, value = "id")
+</code></pre>
+<p><strong>Corrección.</strong> Para la primera, añade <code>@Category</code> (o la anotación que corresponda), o un
+valor por defecto no personal si la clase no contiene datos personales; si el campo es un objeto embebido, marca su
+clase con <code>@Composite</code>. Para la segunda, estrecha el tipo o declara la categoría. Para la tercera, declara lo
+que guarda el campo, normalmente con <code>@DerivedFrom(type = Staff.class, value = "id")</code>.</p>
+
+<h4 id="unknown-category">UNKNOWN_CATEGORY</h4>
+<p>Una clave de <code>@Category</code>, el techo de <code>@CategoryByRow</code> o el valor de
+<code>@DefaultCategory</code> no está en la taxonomía. En un campo, la ruta identifica el campo; en un valor por
+defecto, no hay ruta:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = "system.config", reason = "preferencias técnicas del portal")
+public class PortalSettings {
+    private String theme;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNKNOWN_CATEGORY edu.example.university.Student.personalEmail: unknown data category 'user.contact.mail'
+ERROR UNKNOWN_CATEGORY edu.example.university.PortalSettings: unknown data category 'system.config'
+</code></pre>
+<p><strong>Corrección.</strong> Usa las constantes de <code>Categories</code>, que convierten la errata en un error de
+compilación. Si la clave es de una extensión, comprueba que el test construye la taxonomía igual que la aplicación.</p>
+
+<h3 id="infracciones-clase">Valores por defecto de clase</h3>
+
+<h4 id="personal-default">PERSONAL_DEFAULT</h4>
+<p>Un <code>@DefaultCategory</code> nombra una categoría personal. No tiene ruta, y los campos que cubriría no se
+clasifican ni se informan por separado:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = USER_CONTACT, reason = "")
+public class ContactPreferences {
+    private String channel;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR PERSONAL_DEFAULT edu.example.university.ContactPreferences: @DefaultCategory of ContactPreferences names 'user.contact', which is personal data: declare personal fields one by one with @Category
+</code></pre>
+<p><strong>Corrección.</strong> Quita el valor por defecto y anota los campos personales uno a uno; si la clase tiene
+campos técnicos, puede llevar un valor por defecto no personal para ellos.</p>
+
+<h4 id="missing-reason">MISSING_REASON</h4>
+<p>El motivo de <code>@DefaultCategory</code> o de <code>@Exempt</code>, o el <code>declaredBy</code> de
+<code>@CategoryByRow</code>, está en blanco. Hay un mensaje para cada anotación:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_REASON edu.example.university.ContactPreferences: @DefaultCategory of ContactPreferences needs a reason
+ERROR MISSING_REASON edu.example.university.Attachment.fileName: @Exempt needs a reason
+ERROR MISSING_REASON edu.example.university.Attachment.content: @CategoryByRow needs declaredBy
+</code></pre>
+<p><strong>Corrección.</strong> Escribe el motivo para quien revise: por qué la clase no contiene datos personales, por
+qué el campo no contiene datos del modelo o qué decide la categoría de cada fila.</p>
+
+<h3 id="infracciones-campo">Anotaciones de un campo</h3>
+
+<h4 id="conflicting-annotations">CONFLICTING_ANNOTATIONS</h4>
+<p>Un campo lleva anotaciones que se excluyen, o un <code>@Exempt</code> donde no cabe. <code>@Exempt</code> no se
+combina con ninguna otra anotación de campo, y <code>@CategoryByRow</code> no se combina con <code>@Category</code> ni
+con <code>@DerivedFrom</code>; <code>@Category</code> con <code>@DerivedFrom</code> sí está permitido:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Exempt("")
+@Category(USER_CONTENT_PRIVATE)
+private String fileName;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CONFLICTING_ANNOTATIONS edu.example.university.Attachment.fileName: @Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom
+ERROR CONFLICTING_ANNOTATIONS edu.example.university.ScholarshipApplication.home: @Exempt is for a field that holds no data of the model, and this one holds [Address]: classify it as one value with @Category or @CategoryByRow
+</code></pre>
+<p>La segunda línea es un <code>@Exempt</code> en un campo que contiene un compuesto. La tercera forma, un
+<code>@Exempt</code> en una referencia a un registro con datos personales, se mostró en el
+<a href="04-anotaciones.html#exempt-cuando-no">capítulo 4</a>. <strong>Corrección.</strong> Deja una sola anotación; un
+compuesto se clasifica por sus campos o como un valor, y una referencia se declara con <code>@DerivedFrom</code>.</p>
+
+<h4 id="lowered-level">LOWERED_LEVEL</h4>
+<p>Un campo declara una confidencialidad o una integridad inferior a la de su categoría. Se informa una infracción por
+faceta:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR LOWERED_LEVEL edu.example.university.Student.disabilityDegree: confidentiality MEDIUM is lower than the HIGH of 'user.health_and_medical.disability'
+</code></pre>
+<p><strong>Corrección.</strong> Quita el elemento o súbelo. Los niveles de un campo solo suben.</p>
+
+<h4 id="ambiguous-value">AMBIGUOUS_VALUE</h4>
+<p>Un elemento opcional de <code>@Category</code> tiene más de un valor:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_NAME, integrity = {Integrity.MEDIUM, Integrity.HIGH})
+private String preferredName;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR AMBIGUOUS_VALUE edu.example.university.Student.preferredName: integrity must have at most one value
+</code></pre>
+<p><strong>Corrección.</strong> Indica un solo valor. Si el primero es inferior al de la categoría, se informa además un
+<code>LOWERED_LEVEL</code>.</p>
+
+<h4 id="identifiability-not-applicable">IDENTIFIABILITY_NOT_APPLICABLE</h4>
+<p>Un campo declara una identificabilidad para una categoría no personal:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR IDENTIFIABILITY_NOT_APPLICABLE edu.example.university.MenuGroup.theme: 'system.configuration' is not personal data and has no identifiability
+</code></pre>
+<p><strong>Corrección.</strong> Quita <code>identifiability</code>, o revisa la clave si el dato sí es personal.</p>
+
+<h4 id="duplicate-field">DUPLICATE_FIELD</h4>
+<p>Un campo tiene el nombre de un campo de una superclase, así que su ruta no lo identificaría. Se informa en el campo
+que oculta; el de la superclase se clasifica:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR DUPLICATE_FIELD edu.example.university.Grade.createdAt: hides the field of the same name declared by AuditedEntity; rename one of them
+</code></pre>
+<p><strong>Corrección.</strong> Renombra uno de los dos campos.</p>
+
+<h3 id="infracciones-derivacion">Derivaciones</h3>
+
+<h4 id="unknown-source">UNKNOWN_SOURCE</h4>
+<p>Un campo <code>@DerivedFrom</code> no nombra ninguna fuente, o nombra una que no es un campo clasificado: no existe,
+está exenta, su anotación tiene un error o es un campo derivado con un error, incluido uno que está en un ciclo:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNKNOWN_SOURCE edu.example.university.StudentCard.greeting: the source 'nickname' is not a classified field of StudentCard
+ERROR UNKNOWN_SOURCE edu.example.university.Nicknames.initials: the source 'displayName' has an error
+</code></pre>
+<p>Sin ninguna fuente, el mensaje es <code>@DerivedFrom needs at least one source</code>. <strong>Corrección.</strong>
+Nombra un campo clasificado, o corrige antes el error de la fuente.</p>
+
+<h4 id="ambiguous-derivation">AMBIGUOUS_DERIVATION</h4>
+<p>Un campo derivado sin <code>@Category</code> tiene fuentes con clasificaciones distintas:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR AMBIGUOUS_DERIVATION edu.example.university.StudentCard.fullName: its sources [firstName, lastName] have different classifications; declare the category of the derived value with @Category
+</code></pre>
+<p><strong>Corrección.</strong> Declara con <code>@Category</code> una categoría que cubra todas las fuentes, aquí
+<code>USER_NAME</code>.</p>
+
+<h4 id="weaker-than-source">WEAKER_THAN_SOURCE</h4>
+<p>Un campo derivado declara una categoría que protege menos que una de sus fuentes, o se declara anonimizado o agregado
+y pierde algo más que la naturaleza personal:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR WEAKER_THAN_SOURCE edu.example.university.StudentCard.emailDomain: 'system.operations' protects less than its source(s) [email]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature
+</code></pre>
+<p><strong>Corrección.</strong> Quita <code>@Category</code> para heredar la clasificación de la fuente, o elige una que
+la cubra.</p>
+
+<h3 id="infracciones-compuestos">Compuestos</h3>
+
+<h4 id="weaker-than-parts">WEAKER_THAN_PARTS</h4>
+<p>Un campo que guarda compuestos como un solo valor protege menos que sus campos, o los campos del compuesto tienen
+errores y no hay con qué comparar. En este código el campo se sigue clasificando:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR WEAKER_THAN_PARTS edu.example.university.ScholarshipApplication.billing: 'system.operations' protects less than the fields of [Address] need ([ORDINARY], LOW, MEDIUM)
+ERROR WEAKER_THAN_PARTS edu.example.university.StudentFile.backup: the fields of [EmergencyContact] have errors, so what 'user.contact.emergency_contact' must protect is unknown
+</code></pre>
+<p><strong>Corrección.</strong> Declara una categoría que cubra lo que indica el paréntesis; en el segundo caso, corrige
+antes los errores del compuesto.</p>
+
+<h4 id="cycle">CYCLE</h4>
+<p>Un compuesto se contiene a sí mismo, o unos campos derivados dependen unos de otros, en una clase o entre clases:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CYCLE edu.example.university.Document.comments.replies: the composite CommentThread contains itself; classify the field as one value with @Category or @CategoryByRow
+ERROR CYCLE edu.example.university.Nicknames.displayName: is derived from itself through other derived fields
+ERROR CYCLE edu.example.university.Nicknames.shortName: is derived from itself through other derived fields
+</code></pre>
+<p><strong>Corrección.</strong> Clasifica como un solo valor el campo que cierra el bucle del compuesto, o rompe la
+derivación circular declarando la categoría de uno de los campos.</p>
+
+<h2 id="avisos">Avisos: claves obsoletas</h2>
+<p>Una taxonomía evoluciona: un término puede quedar <dfn>obsoleto</dfn> y, normalmente, tener un sustituto
+(<a href="10-versiones.html">capítulo 10</a>). Una clave obsoleta sigue funcionando: el campo se clasifica con la clave
+sustituta y se registra un aviso <code>DEPRECATED_CATEGORY</code>. Los avisos no hacen fallar <code>verify</code>.</p>
+<p>La taxonomía estándar actual no tiene categorías obsoletas (contar las de <code>Taxonomy.standard()</code> con
+<code>c.info().isDeprecated()</code> da 0), así que verás este aviso cuando una extensión, propia o incluida, declare
+obsoleto un término. Para reproducirlo, este ejemplo construye una taxonomía con un cuaderno de laboratorio cuyo nombre
+antiguo, <code>lab_journal</code>, pasa a ser <code>lab_notebook</code>, y una credencial de laboratorio obsoleta sin
+sustituto:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder().withStandard()
+        .category("user.education.lab_notebook", "Lab notebook", "The student's laboratory notebook")
+        .category("user.education.lab_journal", "Lab journal", "Former name of the laboratory notebook",
+                c -&gt; c.deprecated("1.1.0", "user.education.lab_notebook"))
+        .category("user.education.lab_badge", "Lab badge", "Badge of the laboratory",
+                c -&gt; c.deprecated("1.1.0", null))
+        .build();
+</code></pre>
+<pre class="codigo" tabindex="0"><code class="language-java">public class LabNotebook {
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE) private Long studentId;
+    @Category("user.education.lab_journal") private byte[] file;
+    @Category("user.education.lab_badge") private String badge;
+}
+</code></pre>
+<p><code>verify</code> no lanza ninguna excepción. Las infracciones de las clasificaciones devueltas son dos avisos, y
+el campo <code>file</code> queda clasificado con la clave sustituta:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING DEPRECATED_CATEGORY edu.example.university.LabNotebook.file: data category 'user.education.lab_journal' is deprecated; use 'user.education.lab_notebook'
+WARNING DEPRECATED_CATEGORY edu.example.university.LabNotebook.badge: data category 'user.education.lab_badge' is deprecated
+file = user.education.lab_notebook (DECLARED)
+</code></pre>
+<p>Sin sustituto, el mensaje omite la parte <code>; use</code>. Un aviso no es un problema de hoy, pero la clave
+sustituta es la que usarán el inventario, los catálogos y los informes. Para que no pase desapercibido, imprímelo en el
+test o conviértelo en un error de tu compilación:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;Violation&gt; warnings = classifications.stream().flatMap(c -&gt; c.violations().stream()).toList();
+assertTrue(warnings.isEmpty(), () -&gt; "Sustituye las claves obsoletas: " + warnings);
+</code></pre>
+<p>Cuando <code>verify</code> devuelve el resultado, todas las infracciones que quedan son avisos, así que no hace falta
+filtrar por gravedad.</p>
+
+<h2 id="determinismo">Resultados deterministas</h2>
+<p>Con el mismo modelo y la misma taxonomía, el clasificador da siempre el mismo resultado, en el mismo orden. Esto
+importa para comparar resultados entre compilaciones y para que un fallo sea reproducible:</p>
+<ul>
+<li>los campos de una clase aparecen primero los de las superclases y, dentro de una clase, en el orden que informa la
+máquina virtual;</li>
+<li>las infracciones de una clase se ordenan por la posición de sus campos; las que no tienen ruta, como las de
+<code>@DefaultCategory</code>, van primero, y las de un compuesto, en la posición del campo que lo contiene;</li>
+<li>los problemas encontrados no dependen del orden en que se clasifican las clases. Las derivaciones de una ejecución
+forman una sola búsqueda en profundidad en la que el algoritmo de Tarjan marca exactamente los campos de cada ciclo. Lo
+único que puede variar es el campo en el que se informa un ciclo de contención de compuestos.</li>
+</ul>
+<p>Puedes comprobarlo con las clases rotas de la sección anterior: clasificarlas en un orden y en el inverso da las
+mismas clasificaciones para cada clase.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">System.out.println(classifier.classifyAll(classes).equals(classifier.classifyAll(classes.reversed()).reversed()));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">true
+</code></pre>
+<p><code>ModelClasses</code>, en la sección siguiente, completa la garantía: devuelve las clases ordenadas por nombre,
+de modo que el informe de errores tiene el mismo orden en cada compilación.</p>
+
+<h2 id="no-olvidar">No olvidar ninguna clase</h2>
+<p>Una lista de clases escrita a mano tiene un punto débil: la clase que alguien añada el mes que viene no está en ella,
+y es justo la que nadie verifica. Hay dos formas de tomar las clases del propio modelo.</p>
+
+<h3 id="modelclasses">ModelClasses</h3>
+<p><code>ModelClasses</code> lista las clases de un paquete, leídas desde donde se cargó una clase <dfn>ancla</dfn>:</p>
+<ul>
+<li><code>ModelClasses.inPackage(Student.class)</code> devuelve las clases del paquete de <code>Student</code>;</li>
+<li><code>ModelClasses.inPackageTree(Student.class)</code> añade las de los paquetes que cuelgan de él.</li>
+</ul>
+<p>Devuelve clases y records, incluidos los anidados y los abstractos, cargados sin inicializarlos y ordenados por
+nombre. Deja fuera las interfaces, las anotaciones, los enumerados, las clases anónimas, las locales y las sintéticas.
+Lee el directorio o el JAR del que se cargó el ancla, en el class path o en el module path, así que las clases del mismo
+paquete que estén en otra ubicación no se incluyen: con Maven o Gradle, las clases de test no se mezclan con las del
+modelo. Para el modelo de la universidad:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ModelClasses.inPackage(Student.class).forEach(type -&gt; System.out.println(type.getName()));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">edu.example.university.Address
+edu.example.university.Attachment
+edu.example.university.AuditedEntity
+edu.example.university.Building
+edu.example.university.CourseStatistics
+edu.example.university.CourseSummary
+edu.example.university.Document
+edu.example.university.Enrollment
+edu.example.university.Grade
+edu.example.university.MenuGroup
+edu.example.university.Room
+edu.example.university.ScholarshipApplication
+edu.example.university.Staff
+edu.example.university.Student
+edu.example.university.StudentCard
+</code></pre>
+<p>La lista incluye <code>AuditedEntity</code> y <code>Address</code>. Verificarlas directamente funciona: la superclase
+tiene su valor por defecto y el compuesto sus anotaciones, así que las quince clases pasan. Ahora alguien añade al
+paquete una clase de préstamos de la biblioteca, <code>LibraryLoan</code>, con un campo <code>dueDate</code> sin anotar.
+Nadie la ha añadido a ninguna lista, pero la verificación la encuentra:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">1 classification error(s):
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.LibraryLoan.dueDate: no @Category on the field and no @DefaultCategory on LibraryLoan
+</code></pre>
+<p>Si el paquete contiene además clases que no son datos, como servicios con campos, filtra la lista antes de
+verificarla, por ejemplo por nombre:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;Class&lt;?&gt;&gt; model = ModelClasses.inPackageTree(Student.class).stream()
+        .filter(type -&gt; !type.getSimpleName().endsWith("Service"))
+        .toList();
+</code></pre>
+
+<h3 id="modelclasses-falla">Falla en lugar de saltarse clases</h3>
+<p><code>ModelClasses</code> sigue el mismo principio de fallo seguro que el clasificador. Si no puede listar o cargar
+algo, lanza una <code>IllegalArgumentException</code> en lugar de omitirlo en silencio, porque una clase omitida sería
+una clase sin verificar. Este programa, una clase <code>Main</code> en el paquete sin nombre, prueba tres anclas
+problemáticas:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Main {
+    public static void main(String[] args) {
+        for (Class&lt;?&gt; anchor : List.of(Main.class, String.class, Student.class)) {
+            try {
+                ModelClasses.inPackage(anchor);
+            } catch (IllegalArgumentException e) {
+                System.out.println("IAE: " + e.getMessage() + (e.getCause() == null ? "" : " / causa: " + e.getCause()));
+            }
+        }
+    }
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">IAE: Main is in the unnamed package, which cannot be listed
+IAE: java.lang.String has no location to list classes from; pass the classes explicitly
+IAE: Cannot load edu.example.university.NewsletterSender from C:\...\out-broken / causa: java.lang.NoClassDefFoundError: com/example/mail/MailClient
+</code></pre>
+<p>El primero aparece porque <code>Main</code> está en el paquete sin nombre; el segundo, porque las clases del
+<abbr title="Java Development Kit">JDK</abbr> no tienen una ubicación que listar; el tercero, porque el paquete de
+<code>Student</code> contiene una clase, <code>NewsletterSender</code>, que extiende una clase de una biblioteca de
+correo ausente en tiempo de ejecución (la ruta del directorio se ha abreviado). Una ubicación que existe pero no se
+puede leer produce una <code>UncheckedIOException</code>. En todos los casos, pasa las clases de forma explícita.</p>
+
+<h3 id="jpa">Obtener las clases de JPA</h3>
+<p>Si el modelo es JPA, el metamodelo conoce todas las entidades. Toma de él las clases, por ejemplo en un test de
+integración que ya tenga un <code>EntityManagerFactory</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.Taxonomy;
+import io.github.devbpm.linneo.classify.Classifier;
+import io.github.devbpm.linneo.classify.ModelClasses;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.metamodel.EntityType;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+static void verifyAllEntities(EntityManagerFactory entityManagerFactory) {
+    List&lt;Class&lt;?&gt;&gt; entities = entityManagerFactory.getMetamodel().getEntities().stream()
+            .&lt;Class&lt;?&gt;&gt;map(EntityType::getJavaType)
+            .toList();
+    Set&lt;Class&lt;?&gt;&gt; classes = new LinkedHashSet&lt;&gt;(entities);
+    classes.addAll(ModelClasses.inPackage(CourseSummary.class));   // vistas y resúmenes, que no son entidades
+    new Classifier(Taxonomy.load()).verify(classes);
+}
+</code></pre>
+<p>Tres observaciones sobre esta fuente:</p>
+<ul>
+<li>No hace falta añadir las superclases mapeadas, como <code>AuditedEntity</code>: sus campos se clasifican como parte
+de cada entidad. Tampoco los embebibles, siempre que estén marcados con <code>@Composite</code>: el clasificador entra
+en ellos desde cada entidad que los contiene.</li>
+<li>Un proxy de Hibernate (<code>Entidad$HibernateProxy$…</code>) se clasifica como la entidad que extiende, así que
+puedes pasar las clases que te dé el entorno de ejecución.</li>
+<li>El metamodelo solo contiene entidades. Las vistas, los objetos de transferencia y los records de informes, como
+<code>CourseSummary</code>, no están en él; añádelos con <code>ModelClasses</code> o explícitamente, y usa un
+<code>Set</code> para no repetir clases.</li>
+</ul>
+
+<h2 id="todas-a-la-vez">Verificar todas las clases a la vez</h2>
+<p>Muchas comprobaciones relacionan dos clases: un resumen deriva de una entidad, un campo guarda un compuesto como un
+valor, una relación apunta al registro de una persona. Cada clase informa solo de sus propios problemas, es decir, de
+los de los campos que declara. La consecuencia es directa: si una clase no está en la lista, sus problemas no aparecen,
+aunque se deban a otra clase que sí lo está.</p>
+<p>Con las clases <code>Grade</code> y <code>Address</code> correctas, verificar solo esas dos devuelve sus dos
+clasificaciones sin errores. Añadir a la lista una clasificación de asignaturas que publica la nota máxima como dato
+público y una solicitud de beca que guarda la dirección de facturación con una categoría técnica hace aflorar dos
+errores que dependen de <code>Grade</code> y de <code>Address</code>, pero que se informan en las clases que los
+cometen:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public record CourseRanking(@Category(REFERENCE_PUBLIC) String courseCode,
+                            @Category(REFERENCE_PUBLIC) @DerivedFrom(type = Grade.class, value = "mark") BigDecimal topMark) {
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">2 classification error(s):
+ - ERROR WEAKER_THAN_SOURCE edu.example.university.CourseRanking.topMark: 'reference.public' protects less than its source(s) [edu.example.university.Grade#mark]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature
+ - ERROR WEAKER_THAN_PARTS edu.example.university.ScholarshipApplication.billing: 'system.operations' protects less than the fields of [Address] need ([ORDINARY], LOW, MEDIUM)
+</code></pre>
+<p>Hay un caso más sutil. Cuando el registro al que apunta una referencia tiene errores en sus campos, el clasificador
+no puede saber si contiene datos personales, y la comprobación de la referencia queda pendiente. Si un
+<code>Attachment</code> tiene un campo sin anotar y <code>Document.attachments</code> lleva un <code>@Exempt</code>
+indebido, verificar solo <code>Document</code> pasa sin errores. Verificar las dos clases falla por el error de
+<code>Attachment</code>, y al corregirlo aparece el de <code>Document</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">1 classification error(s):
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.Attachment.mimeType: no @Category on the field and no @DefaultCategory on Attachment
+</code></pre>
+<p>Por eso la recomendación es doble: verifica todas las clases del modelo, con <code>ModelClasses</code> o con el
+metamodelo, y hazlo en una sola llamada. El resultado de cada clase no depende de qué otras clases acompañen a la
+llamada (la clasificación de <code>CourseRanking</code> es la misma sola que acompañada), pero una sola llamada lee cada
+clase compartida una vez y da un único informe con todos los errores.</p>
+
+<h2 id="test-completo">Un test JUnit 5 completo</h2>
+<p>El Ejemplo 6.1 reúne todo lo anterior en la clase de test del modelo de la universidad. Va en el mismo paquete que el
+modelo, pero en el directorio de tests, de modo que <code>ModelClasses</code> no la incluye.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 6.1. El test de clasificación del modelo de la universidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.LegalNature;
+import io.github.devbpm.linneo.Taxonomy;
+import io.github.devbpm.linneo.classify.ClassClassification;
+import io.github.devbpm.linneo.classify.ClassificationException;
+import io.github.devbpm.linneo.classify.Classifier;
+import io.github.devbpm.linneo.classify.FieldClassification;
+import io.github.devbpm.linneo.classify.ModelClasses;
+import io.github.devbpm.linneo.classify.Violation;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class DataClassificationTest {
+
+    // Inmutable y seguro entre hilos: uno basta para toda la clase de test.
+    private static final Classifier CLASSIFIER = new Classifier(Taxonomy.load());
+
+    // Todas las clases del paquete de Student y de sus subpaquetes, salvo las que no son datos.
+    private static List&lt;Class&lt;?&gt;&gt; model() {
+        return ModelClasses.inPackageTree(Student.class).stream()
+                .filter(type -&gt; !type.getSimpleName().endsWith("Service"))
+                .toList();
+    }
+
+    @Test
+    void everyClassOfTheModelIsClassified() {
+        List&lt;ClassClassification&gt; classifications;
+        try {
+            classifications = CLASSIFIER.verify(model());
+        } catch (ClassificationException e) {
+            Map&lt;Violation.Code, Long&gt; byCode = e.errors().stream()
+                    .collect(Collectors.groupingBy(Violation::code, TreeMap::new, Collectors.counting()));
+            System.err.println("Errores de clasificación por código: " + byCode);
+            throw e;
+        }
+        // verify() solo falla por errores; los avisos (claves obsoletas) siguen en el resultado.
+        List&lt;Violation&gt; warnings = classifications.stream().flatMap(c -&gt; c.violations().stream()).toList();
+        assertTrue(warnings.isEmpty(), () -&gt; "Sustituye las claves obsoletas: " + warnings);
+    }
+
+    @Test
+    void reviewedDecisionsStay() {
+        ClassClassification staff = CLASSIFIER.classify(Staff.class);
+        FieldClassification certificate = staff.field("sexOffenceCertificateClear").orElseThrow();
+        assertEquals(Set.of(LegalNature.CRIMINAL_OFFENCE), certificate.protection().natures());
+        assertTrue(staff.field("passwordHash").orElseThrow().isSecret());
+    }
+}
+</code></pre>
+</figure>
+<p>El primer test es el control: verifica todo el modelo, resume los errores por código si los hay y falla también ante
+un aviso. El segundo fija dos decisiones que el equipo revisó con el delegado de protección de datos: que el certificado
+de antecedentes es un dato penal y que el hash de la contraseña es un secreto. Si alguien cambia esas anotaciones, el
+cambio no pasará sin que se vea.</p>
+<p>Ejecutado sobre el modelo de la universidad, los dos tests pasan. Con la clase <code>LibraryLoan</code> sin anotar en
+el paquete, el primero falla. Esta salida procede de un lanzador mínimo de JUnit Platform que imprime el nombre de cada
+test fallido y su excepción; la primera línea la escribe el propio test en la salida de errores:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Errores de clasificación por código: {UNCLASSIFIED_FIELD=1}
+everyClassOfTheModelIsClassified() -&gt; io.github.devbpm.linneo.classify.ClassificationException: 1 classification error(s):
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.LibraryLoan.dueDate: no @Category on the field and no @DefaultCategory on LibraryLoan
+</code></pre>
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Si tu modelo usa la extensión universitaria sin registrarla como servicio, sustituye <code>Taxonomy.load()</code> por
+la misma construcción que use la aplicación, por ejemplo
+<code>Taxonomy.builder().withStandard().withExtensions().extend(new UniversityTaxonomy()).build()</code>. Lo importante
+es que el test y la aplicación vean la misma taxonomía.</p>
+</div>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Usar <code>Taxonomy.standard()</code> cuando la aplicación usa claves de una extensión</dt>
+<dd>Todas las claves de la extensión se informan como <code>UNKNOWN_CATEGORY</code>. Usa <code>Taxonomy.load()</code> o
+la misma construcción que la aplicación.</dd>
+<dt>Capturar la excepción y limitarse a registrarla</dt>
+<dd>El objetivo es que falle la compilación. Si capturas la excepción para resumirla, vuelve a lanzarla.</dd>
+<dt>Verificar solo algunas clases</dt>
+<dd>Cada clase informa de sus propios problemas, y algunas comprobaciones dependen de otras clases. Toma las clases con
+<code>ModelClasses</code> o del metamodelo y verifícalas en una sola llamada.</dd>
+<dt>Usar <code>classify</code> en el test de control</dt>
+<dd><code>classify</code> nunca lanza por problemas de clasificación. Si no compruebas <code>isValid()</code>, el test
+pasa con errores. Usa <code>verify</code>.</dd>
+<dt>Corregir un error añadiendo <code>@Exempt</code></dt>
+<dd>Una exención es una decisión que se revisa, no una forma de silenciar el test. Corrige la clasificación.</dd>
+<dt>Repetir clases al juntar varias fuentes</dt>
+<dd>Una clase repetida se clasifica dos veces y sus errores aparecen dos veces. Junta las clases en un
+<code>Set</code>.</dd>
+<dt>Ignorar los avisos indefinidamente</dt>
+<dd>Una clave obsoleta funciona, pero la sustituta es la que usan el inventario y los catálogos. Imprime los avisos o
+conviértelos en errores.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Un test que llama a <code>verify</code> convierte las anotaciones en un control de la compilación, aplicando el
+principio de fallo seguro.</li>
+<li><code>Classifier</code> es inmutable y seguro entre hilos; cada llamada es una ejecución que lee cada clase una vez
+y no conserva nada.</li>
+<li><code>classify</code> inspecciona sin lanzar; <code>verify</code> lanza <code>ClassificationException</code> con
+todos los errores de todas las clases, y los avisos no hacen fallar.</li>
+<li>Cada infracción se lee como <code>GRAVEDAD CÓDIGO clase[.ruta]: mensaje</code>; la clase es la que se clasifica. El
+mensaje lista hasta 50 errores y, si hay más, los cuenta por código; <code>errors()</code> los tiene todos.</li>
+<li>Hay quince códigos: catorce errores y un aviso, <code>DEPRECATED_CATEGORY</code>, que clasifica el campo con la
+clave sustituta.</li>
+<li>El resultado es determinista y no depende del orden de las clases.</li>
+<li><code>ModelClasses</code> o el metamodelo de JPA evitan olvidar clases; <code>ModelClasses</code> falla en lugar de
+saltarse una clase.</li>
+<li>Verifica todas las clases a la vez: algunas comprobaciones relacionan clases y cada clase informa de lo suyo.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>El test.</strong> Escribe <code>DataClassificationTest</code> para el modelo de la universidad, tomando las
+clases con <code>ModelClasses</code>. Ejecútalo y comprueba que pasa. Después añade al paquete una clase con un campo
+sin anotar y comprueba que falla sin que la hayas añadido a ninguna lista.</p>
+<details><summary>Solución del ejercicio 1</summary>
+<p>El primer test del Ejemplo 6.1 es suficiente. Con el modelo de los capítulos 4 y 5 pasa; con una clase como
+<code>LibraryLoan</code> y su campo <code>dueDate</code> sin anotar, falla con <code>UNCLASSIFIED_FIELD</code>. La clase
+de test no aparece en la lista porque está en otra ubicación (el directorio de clases de test).</p>
+</details>
+</li>
+<li>
+<p><strong>Leer y corregir.</strong> La rama de un compañero produce esta salida. Para cada línea, explica qué está mal
+y escribe la corrección.</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">4 classification error(s):
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.Staff.officePhone: no @Category on the field and no @DefaultCategory on Staff
+ - ERROR LOWERED_LEVEL edu.example.university.Grade.mark: integrity MEDIUM is lower than the HIGH of 'user.education.grade'
+ - ERROR PERSONAL_DEFAULT edu.example.university.Building: @DefaultCategory of Building names 'user.workplace', which is personal data: declare personal fields one by one with @Category
+ - ERROR CONFLICTING_ANNOTATIONS edu.example.university.Document.attachments: @Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom
+</code></pre>
+<details><summary>Solución del ejercicio 2</summary>
+<ul>
+<li><code>Staff.officePhone</code>: sin anotar. Añade <code>@Category(USER_CONTACT_PHONE_NUMBER)</code>.</li>
+<li><code>Grade.mark</code>: declara <code>integrity = Integrity.MEDIUM</code>, inferior al <code>HIGH</code> de la
+categoría. Quita el elemento.</li>
+<li><code>Building</code>: <code>user.workplace</code> es personal. Un edificio es un dato de la organización: usa
+<code>@DefaultCategory(value = ORG_LOCATION, reason = "catálogo de edificios del campus")</code> y anota con su propia
+<code>@Category</code> cualquier campo personal.</li>
+<li><code>Document.attachments</code>: combina <code>@Exempt</code> con otra anotación, probablemente
+<code>@DerivedFrom</code>. Deja solo <code>@DerivedFrom(type = Attachment.class, value = "id")</code>; un
+<code>@Exempt</code> solo también sería un error, porque <code>Attachment</code> contiene datos personales.</li>
+</ul>
+</details>
+</li>
+<li>
+<p><strong>Modo estricto.</strong> Amplía tu test para que falle también si hay algún aviso, con un mensaje que los
+enumere. ¿Por qué no hace falta filtrar por gravedad?</p>
+<details><summary>Solución del ejercicio 3</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;Violation&gt; warnings = classifications.stream().flatMap(c -&gt; c.violations().stream()).toList();
+assertTrue(warnings.isEmpty(), () -&gt; "Sustituye las claves obsoletas: " + warnings);
+</code></pre>
+<p>Si <code>verify</code> devuelve un resultado, no hay errores: todas las infracciones que quedan son avisos.</p>
+</details>
+</li>
+<li>
+<p><strong>Entidades y vistas.</strong> Tu aplicación es JPA y, además de las entidades, tiene el record
+<code>CourseSummary</code> y la vista <code>StudentView</code> en el paquete <code>edu.example.university.views</code>.
+Escribe la lista de clases que debe verificar el test y explica por qué no basta el metamodelo.</p>
+<details><summary>Solución del ejercicio 4</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">Set&lt;Class&lt;?&gt;&gt; classes = new LinkedHashSet&lt;&gt;(entities);
+classes.addAll(ModelClasses.inPackage(StudentView.class));
+new Classifier(Taxonomy.load()).verify(classes);
+</code></pre>
+<p>El metamodelo solo lista entidades; las vistas y los resúmenes no lo son, pero derivan de entidades y pueden proteger
+menos que ellas (<code>WEAKER_THAN_SOURCE</code>). Ese error se informa en la vista, así que la vista tiene que estar en
+la lista. El <code>Set</code> evita repetir una clase que llegue por las dos vías.</p>
+</details>
+</li>
+<li>
+<p><strong>Resumen por código.</strong> Explica qué diferencia hay entre el recuento de la última línea del mensaje de
+una <code>ClassificationException</code> y el mapa <code>byCode</code> del Ejemplo 6.1.</p>
+<details><summary>Solución del ejercicio 5</summary>
+<p>La línea de recuento solo aparece cuando hay más de 50 errores y ordena los códigos alfabéticamente. El mapa
+<code>byCode</code> se calcula siempre a partir de <code>errors()</code>; al ser un <code>TreeMap</code> con claves de
+un enumerado, ordena los códigos en el orden en que <code>Violation.Code</code> los declara.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Se detiene <code>verify</code> en la primera clase con errores?</p>
+<ol>
+<li>Sí, lanza la excepción en cuanto encuentra el primer error.</li>
+<li>No: clasifica todas las clases y lanza una excepción con todos los errores.</li>
+<li>Sí, pero solo si la clase tiene más de 50 errores.</li>
+<li>No: devuelve los errores en el resultado y nunca lanza.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La b. Una sola ejecución da la lista completa de errores de todas las clases. El límite de 50 (c) solo afecta al
+texto del mensaje. Lo que
+nunca lanza es <code>classify</code> (d).</p>
+</details>
+</li>
+<li>
+<p>¿Hace fallar <code>verify</code> una infracción <code>DEPRECATED_CATEGORY</code>?</p>
+<ol>
+<li>Sí, como cualquier infracción.</li>
+<li>No: es un aviso y el campo se clasifica con la clave sustituta.</li>
+<li>No: el campo se excluye de la clasificación.</li>
+<li>Solo con <code>Taxonomy.standard()</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La b. Los avisos no hacen fallar la verificación (a), y el campo sí se clasifica (c). La taxonomía usada no cambia la
+gravedad (d).</p>
+</details>
+</li>
+<li>
+<p>En <code>ERROR UNCLASSIFIED_FIELD edu.example.university.Student.createdAt: …</code>, ¿qué clase declara
+<code>createdAt</code>?</p>
+<ol>
+<li>Siempre <code>Student</code>.</li>
+<li>La línea no lo dice: nombra la clase que se clasifica, y el campo puede estar declarado en una superclase.</li>
+<li>Siempre una superclase.</li>
+<li><code>edu.example.university</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La b. La infracción nombra la clase clasificada; el mensaje completo, <code>no @DefaultCategory on AuditedEntity or
+Student</code>, indica que el campo es heredado. Las opciones a y c generalizan sin motivo, y d es el paquete.</p>
+</details>
+</li>
+<li>
+<p>¿Qué hace <code>ModelClasses.inPackage</code> si una clase del paquete no puede cargarse porque falta una
+dependencia?</p>
+<ol>
+<li>La omite y continúa.</li>
+<li>Devuelve una lista vacía.</li>
+<li>Lanza una <code>IllegalArgumentException</code>, para que ninguna clase quede sin verificar.</li>
+<li>La clasifica como <code>UNCLASSIFIED_FIELD</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La c: falla en lugar de saltarse clases. Omitirla (a) o devolver una lista vacía (b) dejaría clases sin verificar.
+<code>ModelClasses</code> no clasifica nada (d).</p>
+</details>
+</li>
+<li>
+<p>Un resumen de notas declara una categoría pública y deriva de <code>Grade.mark</code>. El test verifica solo las
+entidades del metamodelo. ¿Qué ocurre?</p>
+<ol>
+<li>El test falla con <code>WEAKER_THAN_SOURCE</code> en <code>Grade</code>.</li>
+<li>El test pasa, porque el error se informa en el resumen, que no está en la lista.</li>
+<li>El test falla con <code>UNKNOWN_SOURCE</code>.</li>
+<li>El clasificador añade el resumen a la lista automáticamente.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La b. Cada clase informa de sus propios problemas, y el error pertenece al campo del resumen. Por eso hay que añadir
+al test las clases que no son entidades. <code>Grade</code> no tiene ningún error (a), la fuente existe (c) y el
+clasificador solo clasifica las clases que recibe (d).</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li>Capítulo anterior: <a href="05-estructuras.html">Filas, derivados, compuestos y referencias</a>.</li>
+<li>Capítulo siguiente: <a href="07-uso.html">Usar la clasificación</a>, con <code>ClassClassification</code> y
+<code>FieldClassification</code> en detalle.</li>
+<li><a href="08-inventario.html">Capítulo 8. El inventario de datos</a>: <code>Classifier.inventory</code>.</li>
+<li><a href="18-ciclo-de-vida.html">Capítulo 18. Linneo en el ciclo de vida</a>: el test en la integración
+continua.</li>
+<li>Referencia: <a href="../../reference/classify/classifier.html">Classifier, ModelClasses y
+ClassificationException</a>, <a href="../../reference/classify/violations.html">infracciones</a> y
+<a href="../../reference/classify/results.html">resultados</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="05-estructuras.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 5. Filas, derivados, compuestos y referencias</a></li>
+<li><a href="07-uso.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 7. Usar la clasificación</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

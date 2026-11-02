@@ -47,9 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Checks the Java samples of the documentation ({@code README.md} and every page under {@code docs/}) against the
- * library, so that a sample using a type, method, constant or annotation element the library does not have fails
- * the build.
+ * Checks the Java samples of the documentation ({@code README.md} and every page under {@code docs/}: the
+ * {@code ```java} blocks of Markdown pages and the {@code <pre><code class="language-java">} blocks of HTML pages)
+ * against the library, so that a sample using a type, method, constant or annotation element the library does not
+ * have fails the build.
  * <p>
  * Samples are rarely complete programs: they use variables, entities and helpers their page introduces elsewhere.
  * Each sample is therefore wrapped by its shape (a compilation unit, class members, statements, or the continuation
@@ -67,6 +68,9 @@ class DocumentationSamplesTest {
             + "|strictfp)\\s+)*";
     private static final Pattern FENCE = Pattern.compile("^(\\s*)```java\\s*$");
     private static final Pattern UNCHECKED = Pattern.compile("^\\s*<!--\\s*unchecked:\\s*\\S.*-->\\s*$");
+    /** A Java block of an HTML page; the code starts right after the tags, as a blank first line would show. */
+    private static final Pattern HTML_BLOCK = Pattern.compile("^\\s*<pre\\b[^>]*><code class=\"language-java\">(.*)$");
+    private static final String HTML_BLOCK_END = "</code></pre>";
     private static final Pattern IMPORT = Pattern.compile("^(import\\s+(static\\s+)?[\\w.]+(\\.\\*)?\\s*;).*$");
     private static final Pattern PACKAGE = Pattern.compile("^package\\s+[\\w.]+\\s*;.*$");
     private static final Pattern MODULE = Pattern.compile("^(open\\s+)?module\\s+([\\w.]+)\\s*\\{");
@@ -220,11 +224,30 @@ class DocumentationSamplesTest {
                 + checked + " checked, " + unchecked + " marked unchecked):\n" + String.join("\n", failures));
     }
 
+    @Test
+    @DisplayName("the Java blocks of an HTML page are read without their tags and character references")
+    void htmlBlocks() {
+        List<Sample> samples = new ArrayList<>();
+        int unchecked = readHtml("page.html", List.of("<p>Text</p>",
+                "<pre class=\"codigo\" tabindex=\"0\"><code class=\"language-java\">"
+                        + "List&lt;String&gt; a = List.of(&quot;&amp;&quot;);",
+                "a.size();",
+                "</code></pre>",
+                "<!-- unchecked: an exercise -->",
+                "<pre class=\"codigo\" tabindex=\"0\"><code class=\"language-java\">broken(</code></pre>",
+                "<pre class=\"codigo\" tabindex=\"0\"><code class=\"language-text\">not Java</code></pre>",
+                "<pre class=\"codigo\" tabindex=\"0\"><code class=\"language-java\">int b = 1;</code></pre>"), samples);
+        assertEquals(1, unchecked);
+        assertEquals(List.of(new Sample("page.html", 2, List.of("List<String> a = List.of(\"&\");", "a.size();", "")),
+                new Sample("page.html", 8, List.of("int b = 1;"))), samples);
+    }
+
     private static List<Path> pages() throws IOException {
         Path docs = Path.of("docs");
         assertTrue(Files.isDirectory(docs), "run from the project directory, which holds docs/");
         try (Stream<Path> walk = Files.walk(docs)) {
-            List<Path> pages = new ArrayList<>(walk.filter(p -> p.toString().endsWith(".md")).sorted().toList());
+            List<Path> pages = new ArrayList<>(walk
+                    .filter(p -> p.toString().endsWith(".md") || p.toString().endsWith(".html")).sorted().toList());
             pages.addFirst(Path.of("README.md"));
             return pages;
         }
@@ -234,6 +257,9 @@ class DocumentationSamplesTest {
     private static int read(Path page, List<Sample> samples) throws IOException {
         List<String> lines = Files.readAllLines(page);
         String name = page.toString().replace('\\', '/');
+        if (name.endsWith(".html")) {
+            return readHtml(name, lines, samples);
+        }
         int unchecked = 0;
         String previous = "";
         for (int i = 0; i < lines.size(); i++) {
@@ -260,6 +286,46 @@ class DocumentationSamplesTest {
             i = end;
         }
         return unchecked;
+    }
+
+    /**
+     * Adds the samples of an HTML page, the {@code <pre><code class="language-java">} blocks whose code starts on the
+     * line of the tags, and returns how many it marks unchecked.
+     */
+    private static int readHtml(String name, List<String> lines, List<Sample> samples) {
+        int unchecked = 0;
+        String previous = "";
+        for (int i = 0; i < lines.size(); i++) {
+            Matcher block = HTML_BLOCK.matcher(lines.get(i));
+            if (!block.matches()) {
+                if (!lines.get(i).isBlank()) {
+                    previous = lines.get(i);
+                }
+                continue;
+            }
+            List<String> code = new ArrayList<>();
+            String line = block.group(1);
+            int end = i;
+            while (!line.contains(HTML_BLOCK_END)) {
+                code.add(line);
+                line = lines.get(++end);
+            }
+            code.add(line.substring(0, line.indexOf(HTML_BLOCK_END)));
+            if (UNCHECKED.matcher(previous).matches()) {
+                unchecked++;
+            } else {
+                samples.add(new Sample(name, i + 1, code.stream().map(DocumentationSamplesTest::unescape).toList()));
+            }
+            previous = "";
+            i = end;
+        }
+        return unchecked;
+    }
+
+    /** The text of an HTML line without its character references. */
+    private static String unescape(String html) {
+        return html.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'")
+                .replace("&amp;", "&");
     }
 
     /**

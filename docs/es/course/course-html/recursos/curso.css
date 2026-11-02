@@ -1,0 +1,986 @@
+/*
+ * Copyright the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Hoja de estilos del curso de Linneo en HTML.
+ *
+ * Objetivo: WCAG 2.2 nivel AA. Los colores son variables con un tema claro y otro oscuro; cada pareja de texto y
+ * fondo tiene un contraste de al menos 4.5:1, y los bordes que transmiten información y el indicador de foco, de al
+ * menos 3:1. El diseño se adapta a 320 píxeles de ancho sin desplazamiento horizontal de la página (solo los
+ * bloques de código y las tablas anchas se desplazan dentro de su propio contenedor, que recibe el foco), respeta
+ * el espaciado de texto del usuario (sin alturas fijas) y no usa animaciones.
+ */
+
+:root {
+    color-scheme: light dark;
+
+    --fondo: #ffffff;
+    --fondo-alterno: #f3f5f7;
+    --texto: #1a1d21;
+    --texto-suave: #48505c;
+    --enlace: #0a4b85;
+    --enlace-visitado: #5a2d82;
+    --borde: #c9ced6;
+    --borde-fuerte: #6b7480;
+
+    --cabecera-fondo: #102a43;
+    --cabecera-texto: #ffffff;
+    --cabecera-suave: #d3dce6;
+
+    --codigo-fondo: #f3f5f7;
+    --codigo-texto: #1a1d21;
+    --codigo-borde: #c9ced6;
+    --codigo-linea: #0a4b85;
+
+    --nota-fondo: #edf3fa;
+    --nota-borde: #0a4b85;
+    --importante-fondo: #fbf1e6;
+    --importante-borde: #8a4600;
+    --atencion-fondo: #fbeded;
+    --atencion-borde: #a12a2f;
+    --consejo-fondo: #ecf6ef;
+    --consejo-borde: #1d6a39;
+    --rgpd-fondo: #f3eff9;
+    --rgpd-borde: #5a2d82;
+
+    --foco-fondo: #ffdd00;
+    --foco-texto: #0b0c0c;
+    --foco-contorno: #0b0c0c;
+
+    --fuente: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans",
+            sans-serif;
+    --fuente-titulos: Georgia, Cambria, "Times New Roman", "Noto Serif", serif;
+    --fuente-codigo: Consolas, "Cascadia Mono", "SFMono-Regular", Menlo, "Liberation Mono", "Courier New", monospace;
+
+    --ancho-texto: 46rem;
+    --ancho-marco: 80rem;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fondo: #15181c;
+        --fondo-alterno: #1d2127;
+        --texto: #e8ebef;
+        --texto-suave: #b7bec8;
+        --enlace: #8cc8ff;
+        --enlace-visitado: #d0b3f2;
+        --borde: #3b424c;
+        --borde-fuerte: #8f99a6;
+
+        --cabecera-fondo: #0c1724;
+        --cabecera-texto: #ffffff;
+        --cabecera-suave: #c4cfdb;
+
+        --codigo-fondo: #1d2127;
+        --codigo-texto: #e8ebef;
+        --codigo-borde: #3b424c;
+        --codigo-linea: #8cc8ff;
+
+        --nota-fondo: #17263a;
+        --nota-borde: #8cc8ff;
+        --importante-fondo: #33240f;
+        --importante-borde: #f2b56b;
+        --atencion-fondo: #3a1a1c;
+        --atencion-borde: #f49a9e;
+        --consejo-fondo: #142d1d;
+        --consejo-borde: #86d6a0;
+        --rgpd-fondo: #2a1f3a;
+        --rgpd-borde: #d0b3f2;
+
+        --foco-fondo: #ffdd00;
+        --foco-texto: #0b0c0c;
+        --foco-contorno: #ffdd00;
+    }
+}
+
+/* ------------------------------------------------------------------ Base */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: var(--fuente);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    overflow-wrap: break-word;
+}
+
+/* Los destinos de los enlaces internos quedan visibles bajo el borde superior. */
+[id] {
+    scroll-margin-top: 1.5rem;
+}
+
+a {
+    color: var(--enlace);
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
+}
+
+a:visited {
+    color: var(--enlace-visitado);
+}
+
+a:hover {
+    text-decoration-thickness: 0.16em;
+}
+
+/* Indicador de foco: fondo amarillo con texto negro, visible sobre cualquier color de la página. */
+a:focus-visible,
+summary:focus-visible {
+    outline: 3px solid transparent;
+    background-color: var(--foco-fondo);
+    color: var(--foco-texto);
+    box-shadow: 0 -2px var(--foco-fondo), 0 4px var(--foco-texto);
+    text-decoration: none;
+}
+
+[tabindex]:focus-visible,
+main:focus-visible {
+    outline: 3px solid var(--foco-contorno);
+    outline-offset: 3px;
+}
+
+main:focus:not(:focus-visible) {
+    outline: none;
+}
+
+img,
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ------------------------------------------------------------- Saltar */
+
+.saltar {
+    position: absolute;
+    left: 1rem;
+    top: -10rem;
+    z-index: 10;
+    padding: 0.75rem 1rem;
+    background: var(--foco-fondo);
+    color: var(--foco-texto);
+    font-weight: 700;
+}
+
+.saltar:focus,
+.saltar:focus-visible {
+    top: 1rem;
+}
+
+.saltar:visited {
+    color: var(--foco-texto);
+}
+
+/* ------------------------------------------------------------ Cabecera */
+
+.cabecera {
+    background: var(--cabecera-fondo);
+    color: var(--cabecera-texto);
+    border-bottom: 4px solid var(--codigo-linea);
+}
+
+.cabecera-interior {
+    max-width: var(--ancho-marco);
+    margin: 0 auto;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
+}
+
+.marca {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+.marca a,
+.marca a:visited {
+    color: var(--cabecera-texto);
+    font-family: var(--fuente-titulos);
+    font-size: 1.35rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.marca a:hover {
+    text-decoration: underline;
+}
+
+.marca-subtitulo {
+    color: var(--cabecera-suave);
+    font-size: 0.9rem;
+}
+
+.cabecera nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1.25rem;
+}
+
+.cabecera nav li + li {
+    margin-top: 0;
+}
+
+.cabecera nav a,
+.cabecera nav a:visited {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 0.1rem;
+    color: var(--cabecera-texto);
+    font-weight: 600;
+}
+
+.cabecera nav a[aria-current="page"] {
+    text-decoration-thickness: 0.2em;
+}
+
+/* -------------------------------------------------------------- Marco */
+
+.marco {
+    max-width: var(--ancho-marco);
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.lateral {
+    display: none;
+}
+
+@media (min-width: 64rem) {
+    .marco {
+        display: grid;
+        grid-template-columns: 17rem minmax(0, 1fr);
+        gap: 3rem;
+    }
+
+    .lateral {
+        display: block;
+        padding: 2rem 0 3rem;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+
+    .lateral-interior {
+        position: sticky;
+        top: 0;
+        max-height: 100vh;
+        overflow-y: auto;
+        padding: 1rem 0.5rem 1rem 0;
+    }
+}
+
+.lateral-titulo {
+    margin: 0 0 0.75rem;
+    font-family: var(--fuente);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+}
+
+.lateral ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lateral li + li {
+    margin-top: 0.15rem;
+}
+
+.lateral a {
+    display: block;
+    min-height: 2rem;
+    padding: 0.35rem 0.5rem 0.35rem 0.75rem;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+}
+
+.lateral a:hover {
+    text-decoration: underline;
+}
+
+.lateral a[aria-current="page"] {
+    border-left-color: var(--enlace);
+    background: var(--fondo-alterno);
+    color: var(--texto);
+    font-weight: 700;
+}
+
+.lateral .numero {
+    display: inline-block;
+    min-width: 1.6rem;
+    color: var(--texto-suave);
+    font-variant-numeric: tabular-nums;
+}
+
+.lateral .seccion-lateral {
+    margin-top: 1.25rem;
+}
+
+/* ---------------------------------------------------------- Contenido */
+
+main {
+    min-width: 0;
+    padding: 1.5rem 0 3rem;
+}
+
+main > * {
+    max-width: var(--ancho-texto);
+}
+
+main > .ancho-completo {
+    max-width: none;
+}
+
+.migas ol {
+    list-style: none;
+    margin: 0 0 1.5rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    font-size: 0.95rem;
+    color: var(--texto-suave);
+}
+
+.migas li + li {
+    margin-top: 0;
+}
+
+.migas li + li::before {
+    content: "/";
+    margin: 0 0.4rem 0 0.15rem;
+    color: var(--texto-suave);
+}
+
+.migas [aria-current="page"] {
+    color: var(--texto);
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-family: var(--fuente-titulos);
+    line-height: 1.25;
+    color: var(--texto);
+}
+
+h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.9rem, 1.4rem + 2vw, 2.6rem);
+}
+
+h1 .etiqueta-capitulo {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-family: var(--fuente);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+}
+
+h2 {
+    margin: 2.75rem 0 1rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--borde);
+    font-size: 1.7rem;
+}
+
+h3 {
+    margin: 2rem 0 0.75rem;
+    font-size: 1.3rem;
+}
+
+h4 {
+    margin: 1.5rem 0 0.5rem;
+    font-family: var(--fuente);
+    font-size: 1.05rem;
+}
+
+p,
+ul,
+ol,
+dl,
+table,
+figure,
+pre,
+blockquote,
+details {
+    margin-top: 0;
+    margin-bottom: 1.1rem;
+}
+
+ul,
+ol {
+    padding-left: 1.6rem;
+}
+
+li + li {
+    margin-top: 0.35rem;
+}
+
+li > ul,
+li > ol {
+    margin-top: 0.35rem;
+    margin-bottom: 0;
+}
+
+.entradilla {
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--texto);
+}
+
+.ficha {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    margin: 0 0 1.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--borde);
+    border-radius: 4px;
+    background: var(--fondo-alterno);
+    font-size: 0.95rem;
+}
+
+.ficha div {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.ficha dt {
+    font-weight: 700;
+}
+
+.ficha dd {
+    margin: 0;
+}
+
+abbr[title] {
+    text-decoration: underline dotted;
+    text-underline-offset: 0.18em;
+    cursor: help;
+}
+
+strong {
+    font-weight: 700;
+}
+
+kbd {
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 3px;
+    font-family: var(--fuente-codigo);
+    font-size: 0.9em;
+}
+
+/* --------------------------------------------- Índice local del capítulo */
+
+.indice-capitulo {
+    margin: 1.5rem 0 2rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--borde);
+    border-left: 4px solid var(--enlace);
+    border-radius: 4px;
+}
+
+.indice-capitulo h2 {
+    margin: 0 0 0.5rem;
+    padding: 0;
+    border: 0;
+    font-family: var(--fuente);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.indice-capitulo ol {
+    margin: 0;
+    padding-left: 1.4rem;
+}
+
+.indice-capitulo li + li {
+    margin-top: 0.2rem;
+}
+
+/* ------------------------------------------------------------- Código */
+
+code,
+pre {
+    font-family: var(--fuente-codigo);
+    font-size: 0.92em;
+}
+
+:not(pre) > code {
+    padding: 0.08em 0.3em;
+    border: 1px solid var(--codigo-borde);
+    border-radius: 3px;
+    background: var(--codigo-fondo);
+    color: var(--codigo-texto);
+    overflow-wrap: anywhere;
+}
+
+pre.codigo {
+    max-width: min(100%, var(--ancho-texto));
+    overflow-x: auto;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--codigo-borde);
+    border-left: 4px solid var(--codigo-linea);
+    border-radius: 4px;
+    background: var(--codigo-fondo);
+    color: var(--codigo-texto);
+    line-height: 1.5;
+    tab-size: 4;
+}
+
+pre.codigo code {
+    font-size: 0.95rem;
+}
+
+pre.salida {
+    border-left-color: var(--borde-fuerte);
+}
+
+figure {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+figcaption {
+    margin-bottom: 0.45rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--texto-suave);
+}
+
+figure.ejemplo > pre {
+    margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------- Tablas */
+
+.tabla {
+    max-width: min(100%, var(--ancho-texto));
+    overflow-x: auto;
+    margin-bottom: 1.4rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.97rem;
+    line-height: 1.45;
+}
+
+caption {
+    padding-bottom: 0.5rem;
+    text-align: left;
+    font-weight: 700;
+    color: var(--texto-suave);
+}
+
+th,
+td {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--borde);
+    text-align: left;
+    vertical-align: top;
+}
+
+thead th {
+    background: var(--fondo-alterno);
+    border-bottom: 2px solid var(--borde-fuerte);
+}
+
+tbody th {
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------ Recuadros */
+
+.recuadro {
+    margin: 1.5rem 0;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--borde);
+    border-left-width: 5px;
+    border-radius: 4px;
+}
+
+.recuadro > :last-child {
+    margin-bottom: 0;
+}
+
+.recuadro-titulo {
+    margin: 0 0 0.4rem;
+    font-weight: 700;
+}
+
+.recuadro-nota {
+    background: var(--nota-fondo);
+    border-left-color: var(--nota-borde);
+}
+
+.recuadro-importante {
+    background: var(--importante-fondo);
+    border-left-color: var(--importante-borde);
+}
+
+.recuadro-atencion {
+    background: var(--atencion-fondo);
+    border-left-color: var(--atencion-borde);
+}
+
+.recuadro-consejo {
+    background: var(--consejo-fondo);
+    border-left-color: var(--consejo-borde);
+}
+
+.recuadro-rgpd {
+    background: var(--rgpd-fondo);
+    border-left-color: var(--rgpd-borde);
+}
+
+/* ------------------------------------------------- Flujos y definiciones */
+
+ol.flujo {
+    list-style: none;
+    counter-reset: paso;
+    margin: 1.5rem 0;
+    padding: 0;
+}
+
+ol.flujo > li {
+    counter-increment: paso;
+    position: relative;
+    margin: 0;
+    padding: 0.8rem 1rem 0.8rem 3.4rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 4px;
+    background: var(--fondo);
+}
+
+ol.flujo > li::before {
+    content: counter(paso);
+    position: absolute;
+    left: 0.9rem;
+    top: 0.8rem;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    background: var(--cabecera-fondo);
+    color: var(--cabecera-texto);
+    font-weight: 700;
+    line-height: 1.8rem;
+    text-align: center;
+}
+
+ol.flujo > li + li {
+    margin-top: 1.6rem;
+}
+
+ol.flujo > li + li::after {
+    content: "";
+    position: absolute;
+    left: 1.75rem;
+    top: -1.6rem;
+    height: 1.6rem;
+    border-left: 2px solid var(--borde-fuerte);
+}
+
+ol.flujo > li > :last-child {
+    margin-bottom: 0;
+}
+
+.flujo-titulo {
+    display: block;
+    font-weight: 700;
+}
+
+dl.definiciones dt {
+    margin-top: 1rem;
+    font-weight: 700;
+}
+
+dl.definiciones dd {
+    margin: 0.25rem 0 0 1.25rem;
+}
+
+/* --------------------------------------------- Ejercicios y cuestionario */
+
+details {
+    margin: 0.75rem 0 1rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 4px;
+}
+
+summary {
+    min-height: 2.75rem;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--enlace);
+}
+
+details[open] > summary {
+    border-bottom: 1px solid var(--borde);
+}
+
+details > :not(summary) {
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+details > :nth-child(2) {
+    margin-top: 0.9rem;
+}
+
+ol.ejercicios > li,
+ol.cuestionario > li {
+    margin-bottom: 1.5rem;
+}
+
+ol.cuestionario ol {
+    list-style-type: lower-alpha;
+}
+
+/* ------------------------------------------------------------- Índice */
+
+.capitulos {
+    list-style: none;
+    margin: 1.5rem 0;
+    padding: 0;
+}
+
+.capitulos > li {
+    margin: 0;
+    padding: 1rem 0;
+    border-top: 1px solid var(--borde);
+}
+
+.capitulos > li:last-child {
+    border-bottom: 1px solid var(--borde);
+}
+
+.capitulos h4 {
+    margin: 0 0 0.35rem;
+    font-size: 1.2rem;
+}
+
+.capitulos p {
+    margin: 0;
+}
+
+.capitulos .duracion {
+    margin-top: 0.3rem;
+    font-size: 0.92rem;
+    color: var(--texto-suave);
+}
+
+.parte {
+    margin-top: 2.5rem;
+}
+
+/* ------------------------------------------------------------ Paginación */
+
+.paginacion {
+    margin: 3rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--borde);
+}
+
+.paginacion ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.paginacion li {
+    margin: 0;
+}
+
+.paginacion a {
+    display: inline-flex;
+    flex-direction: column;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.paginacion a:hover {
+    text-decoration: underline;
+}
+
+.paginacion .rumbo {
+    font-size: 0.85rem;
+    color: var(--texto-suave);
+}
+
+.paginacion a:focus-visible .rumbo {
+    color: var(--foco-texto);
+}
+
+/* ------------------------------------------------------------------ Pie */
+
+.pie {
+    border-top: 1px solid var(--borde);
+    background: var(--fondo-alterno);
+    color: var(--texto-suave);
+    font-size: 0.92rem;
+}
+
+.pie-interior {
+    max-width: var(--ancho-marco);
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+}
+
+.pie p {
+    max-width: var(--ancho-texto);
+    margin: 0 0 0.5rem;
+}
+
+/* ------------------------------------------------------------- Utilidades */
+
+.visualmente-oculto {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* -------------------------------------------------- Alto contraste forzado */
+
+@media (forced-colors: active) {
+    .recuadro,
+    pre.codigo,
+    ol.flujo > li,
+    details,
+    .paginacion a {
+        border: 1px solid CanvasText;
+    }
+
+    a:focus-visible,
+    summary:focus-visible,
+    [tabindex]:focus-visible {
+        outline: 3px solid Highlight;
+    }
+}
+
+/* -------------------------------------------------------------- Impresión */
+
+@media print {
+    :root {
+        --fondo: #ffffff;
+        --texto: #000000;
+        --texto-suave: #333333;
+        --enlace: #000000;
+        --enlace-visitado: #000000;
+        --codigo-fondo: #ffffff;
+        --codigo-texto: #000000;
+    }
+
+    body {
+        font-size: 11pt;
+    }
+
+    .saltar,
+    .cabecera nav,
+    .lateral,
+    .migas,
+    .indice-capitulo,
+    .paginacion {
+        display: none;
+    }
+
+    .cabecera {
+        background: none;
+        color: #000000;
+        border-bottom: 1px solid #000000;
+    }
+
+    .marca a,
+    .marca a:visited,
+    .marca-subtitulo {
+        color: #000000;
+    }
+
+    .marco {
+        display: block;
+    }
+
+    main > * {
+        max-width: none;
+    }
+
+    pre.codigo {
+        overflow: visible;
+        white-space: pre-wrap;
+        break-inside: avoid;
+    }
+
+    h2,
+    h3 {
+        break-after: avoid;
+    }
+
+    table,
+    figure,
+    .recuadro {
+        break-inside: avoid;
+    }
+}

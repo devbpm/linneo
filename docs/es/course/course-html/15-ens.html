@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/ens/EnsCategorization.java
+  - src/main/java/io/github/devbpm/linneo/ens/package-info.java
+  - src/main/java/io/github/devbpm/linneo/Confidentiality.java
+  - src/main/java/io/github/devbpm/linneo/Integrity.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 15. Categoría ENS del sistema · Curso de Linneo</title>
+<meta name="description" content="Calcular la categoría de un sistema según el Esquema Nacional de Seguridad con EnsCategorization, desde la clasificación y lo que declara su responsable.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html" aria-current="page"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 15. Categoría ENS del sistema</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 15</span> Categoría ENS del sistema</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>45 minutos</dd></div>
+<div><dt>Parte IV:</dt><dd>Cumplimiento normativo</dd></div>
+</dl>
+<p class="entradilla">Los sistemas del sector público español se categorizan según el Esquema Nacional de Seguridad,
+y la categoría decide qué medidas de seguridad hay que aplicar. Dos de las cinco dimensiones que la determinan ya
+están en la clasificación de tus datos. En este capítulo aprenderás a obtenerlas con <code>EnsCategorization</code> y
+a completar las otras tres con lo que declara el responsable del sistema.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#el-ens-en-breve">El ENS en breve</a></li>
+<li><a href="#lo-que-aporta-la-clasificacion">Lo que aporta la clasificación</a></li>
+<li><a href="#lo-que-declara-el-responsable">Lo que declara el responsable del sistema</a></li>
+<li><a href="#fallo-seguro">Fallo seguro: errores y cotas inferiores</a></li>
+<li><a href="#desde-el-inventario">Desde el inventario de datos</a></li>
+<li><a href="#delimitar-el-sistema">Delimitar y documentar el sistema</a></li>
+<li><a href="#en-los-tests">La categoría en los tests</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>explicar las cinco dimensiones del <abbr title="Esquema Nacional de Seguridad">ENS</abbr>, sus niveles y cómo
+determinan la categoría de un sistema;</li>
+<li>obtener la confidencialidad y la integridad de un sistema a partir de clases clasificadas o de un inventario de
+datos, y leer el motivo de cada valoración;</li>
+<li>declarar la autenticidad, la trazabilidad y la disponibilidad, y explicar por qué una declaración puede elevar la
+confidencialidad o la integridad, pero nunca bajarlas;</li>
+<li>distinguir una categoría definitiva de una cota inferior con <code>isComplete()</code> y
+<code>missing()</code>;</li>
+<li>comprobar la categoría de un sistema en un test.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Necesitas los niveles de confidencialidad e integridad del <a href="02-proteccion.html">capítulo 2</a>, la
+clasificación de clases del <a href="06-verificacion.html">capítulo 6</a> y el inventario de datos del
+<a href="08-inventario.html">capítulo 8</a>. Los ejemplos usan el modelo de la universidad (<code>Student</code>,
+<code>Enrollment</code>, <code>Grade</code>, <code>MenuGroup</code>, <code>CourseStatistics</code>) clasificado con la
+taxonomía estándar. Todas las salidas que se muestran son las reales de ese código.</p>
+
+<h2 id="el-ens-en-breve">El ENS en breve</h2>
+<p>El Esquema Nacional de Seguridad (Real Decreto 311/2022) regula la seguridad de los sistemas de información del
+sector público español, y se aplica también a quienes le prestan servicios. Su anexo I categoriza cada
+sistema: valora la información y los servicios en cinco <strong>dimensiones</strong>, cada una en un
+<strong>nivel</strong> bajo, medio o alto según el perjuicio que causaría un incidente, y la <strong>categoría</strong>
+del sistema es el nivel más alto de cualquier dimensión.</p>
+<p>Linneo lo modela en el paquete <code>io.github.devbpm.linneo.ens</code>, con una sola clase,
+<code>EnsCategorization</code>, que anida su <code>Builder</code> y cuatro tipos más.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-15-1">
+<table>
+<caption id="tabla-15-1">Tabla 15.1. Las dimensiones (<code>EnsCategorization.Dimension</code>)</caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col"><code>code()</code></th><th scope="col">Quién la valora</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>CONFIDENTIALITY</code></th><td><code>C</code></td><td>Linneo, a partir de la
+clasificación; el responsable del sistema puede elevarla</td></tr>
+<tr><th scope="row"><code>INTEGRITY</code></th><td><code>I</code></td><td>Linneo, a partir de la clasificación; el
+responsable del sistema puede elevarla</td></tr>
+<tr><th scope="row"><code>TRACEABILITY</code></th><td><code>T</code></td><td>El responsable del sistema</td></tr>
+<tr><th scope="row"><code>AUTHENTICITY</code></th><td><code>A</code></td><td>El responsable del sistema</td></tr>
+<tr><th scope="row"><code>AVAILABILITY</code></th><td><code>D</code></td><td>El responsable del sistema</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-15-2">
+<table>
+<caption id="tabla-15-2">Tabla 15.2. Los niveles (<code>Level</code>) y las categorías
+(<code>SystemCategory</code>)</caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col"><code>spanishName()</code></th><th scope="col">Significado</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Level.LOW</code></th><td><code>BAJO</code></td><td>Perjuicio limitado.</td></tr>
+<tr><th scope="row"><code>Level.MEDIUM</code></th><td><code>MEDIO</code></td><td>Perjuicio grave.</td></tr>
+<tr><th scope="row"><code>Level.HIGH</code></th><td><code>ALTO</code></td><td>Perjuicio muy grave.</td></tr>
+<tr><th scope="row"><code>SystemCategory.BASIC</code></th><td><code>BÁSICA</code></td><td>Ninguna dimensión supera el
+nivel bajo.</td></tr>
+<tr><th scope="row"><code>SystemCategory.MEDIUM</code></th><td><code>MEDIA</code></td><td>Una dimensión es media y
+ninguna alta.</td></tr>
+<tr><th scope="row"><code>SystemCategory.HIGH</code></th><td><code>ALTA</code></td><td>Una dimensión es alta.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>El enumerado de la categoría se llama <code>SystemCategory</code>, y no <code>Category</code>, para que no choque
+con la anotación <code>@Category</code>. El cuarto tipo anidado, el record <code>Valuation</code>, guarda el nivel de
+una dimensión y su motivo: <code>dimension</code>, <code>level</code> y <code>reason</code>.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>La correspondencia entre los niveles de Linneo y los del ENS es una decisión de diseño de Linneo, no un criterio
+oficial. Revisa la valoración con la guía
+<abbr title="Centro Criptológico Nacional, Seguridad de las Tecnologías de la Información">CCN-STIC</abbr> 803
+antes de apoyarte en ella. Linneo calcula un punto de partida coherente con la clasificación; la categorización del
+sistema la aprueba quien corresponda en tu organización.</p>
+</div>
+
+<h2 id="lo-que-aporta-la-clasificacion">Lo que aporta la clasificación</h2>
+<p>Linneo conoce dos dimensiones de la información: la confidencialidad y la integridad de cada campo. El ENS define
+sus niveles con los mismos tres grados de perjuicio que Linneo (limitado, grave y muy grave), así que los niveles de
+Linneo se leen directamente como niveles del ENS:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-15-3">
+<table>
+<caption id="tabla-15-3">Tabla 15.3. De los niveles de Linneo a los del ENS</caption>
+<thead>
+<tr><th scope="col">Nivel del campo</th><th scope="col">Nivel del ENS</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Confidentiality.PUBLIC</code></th><td>ningún requisito: no fija valoración de
+confidencialidad</td></tr>
+<tr><th scope="row"><code>Confidentiality.LOW</code>, <code>Integrity.LOW</code></th><td><code>LOW</code>
+(<code>BAJO</code>)</td></tr>
+<tr><th scope="row"><code>Confidentiality.MEDIUM</code>, <code>Integrity.MEDIUM</code></th><td><code>MEDIUM</code>
+(<code>MEDIO</code>)</td></tr>
+<tr><th scope="row"><code>Confidentiality.HIGH</code>, <code>Integrity.HIGH</code></th><td><code>HIGH</code>
+(<code>ALTO</code>)</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Los niveles son los del campo: los de su categoría, con la elevación que declare el propio campo (capítulo 4). La
+valoración de cada dimensión es la más alta entre todos los campos, y su motivo nombra el primer campo que la fija:
+<code>field &lt;Clase&gt;.&lt;ruta&gt; (&lt;clave&gt;)</code>.</p>
+<p>Para dar la información de una clase, pásale su clasificación al builder con
+<code>information(ClassClassification)</code>. Llámalo una vez por cada clase del sistema.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.1. La información de <code>Student</code></figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification student = classifier.classify(Student.class);
+
+EnsCategorization ens = EnsCategorization.builder()
+        .information(student)
+        .build();
+
+System.out.println(ens.summary());
+ens.valuations().forEach(System.out::println);
+System.out.println(ens.isComplete() + " " + ens.missing());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Category HIGH (ALTA): C HIGH, I HIGH; not declared: T, A, D (lower bound)
+Valuation[dimension=CONFIDENTIALITY, level=HIGH, reason=field Student.disabilityDegree (user.health_and_medical.disability)]
+Valuation[dimension=INTEGRITY, level=HIGH, reason=field Student.disabilityDegree (user.health_and_medical.disability)]
+false [TRACEABILITY, AUTHENTICITY, AVAILABILITY]
+</code></pre>
+
+<p>El grado de discapacidad es una categoría especial, con confidencialidad e integridad <code>HIGH</code>: basta un
+campo así para que el sistema sea de categoría <code>ALTA</code>. <code>counsellingNotes</code>, elevada a
+<code>HIGH</code>, también lo fijaría, pero el motivo nombra el primer campo que alcanza el nivel. El resumen termina
+con <code>not declared: T, A, D (lower bound)</code>: faltan las tres dimensiones que solo conoce el responsable.</p>
+
+<p>La Tabla 15.4 muestra lo que da cada clase del modelo por separado, con un catálogo de asignaturas público que
+añade este capítulo:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.2. Un catálogo de asignaturas público</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class CatalogCourse {
+
+    @Category(REFERENCE_PUBLIC)
+    private String code;
+
+    @Category(REFERENCE_PUBLIC)
+    private String title;
+
+    @Category(REFERENCE_PUBLIC)
+    private int credits;
+}
+</code></pre>
+</figure>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-15-4">
+<table>
+<caption id="tabla-15-4">Tabla 15.4. El resumen de cada clase, con su información sola</caption>
+<thead>
+<tr><th scope="col">Clase</th><th scope="col"><code>summary()</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Student</code></th><td><code>Category HIGH (ALTA): C HIGH, I HIGH; not declared: T, A, D
+(lower bound)</code></td></tr>
+<tr><th scope="row"><code>Enrollment</code></th><td><code>Category HIGH (ALTA): C MEDIUM, I HIGH; not declared: T, A, D
+(lower bound)</code></td></tr>
+<tr><th scope="row"><code>Grade</code></th><td><code>Category HIGH (ALTA): C MEDIUM, I HIGH; not declared: T, A, D
+(lower bound)</code></td></tr>
+<tr><th scope="row"><code>MenuGroup</code></th><td><code>Category HIGH (ALTA): C LOW, I HIGH; not declared: T, A, D
+(lower bound)</code></td></tr>
+<tr><th scope="row"><code>CourseStatistics</code></th><td><code>Category HIGH (ALTA): C MEDIUM, I HIGH; not declared:
+T, A, D (lower bound)</code></td></tr>
+<tr><th scope="row"><code>CatalogCourse</code></th><td><code>Category MEDIUM (MEDIA): I MEDIUM; not declared: T, A, D
+(lower bound)</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Tres observaciones:</p>
+<ul>
+<li><strong>Los datos académicos tienen integridad alta.</strong> En la política de protección estándar, las
+categorías de <code>user.education</code> exigen integridad <code>HIGH</code>: una calificación alterada puede
+perjudicar gravemente al estudiante. Casi cualquier sistema que guarde matrículas o calificaciones sale de categoría
+<code>ALTA</code>.</li>
+<li><strong>El ENS valora toda la información, no solo los datos personales.</strong> <code>MenuGroup</code> no
+contiene ningún dato personal, pero su <code>requiredRole</code> es <code>system.security</code>, con integridad
+<code>HIGH</code>. Los campos agregados de <code>CourseStatistics</code> no son datos personales, pero conservan la
+confidencialidad y la integridad de su categoría.</li>
+<li><strong>Los datos públicos no fijan confidencialidad.</strong> Todos los campos de <code>CatalogCourse</code> son
+<code>PUBLIC</code>: el resumen no tiene <code>C</code> y <code>valuation(Dimension.CONFIDENTIALITY)</code> está
+vacío. La categoría sale de la integridad, <code>MEDIUM</code>.</li>
+</ul>
+
+<h2 id="lo-que-declara-el-responsable">Lo que declara el responsable del sistema</h2>
+<p>La autenticidad (que quien accede es quien dice ser), la trazabilidad (que se puede saber quién hizo qué) y la
+disponibilidad (que el servicio está cuando se necesita) no dependen de qué datos hay, sino de cómo se usa el sistema.
+Las declara el responsable del sistema con <code>declare(Dimension, Level, String reason)</code>. El motivo es
+obligatorio y aparece en la valoración como <code>declared: &lt;motivo&gt;</code>; un argumento <code>null</code> lanza
+<code>NullPointerException</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.3. El portal de matrícula, con las tres dimensiones declaradas</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">EnsCategorization portal = EnsCategorization.builder()
+        .information(classifier.classify(Enrollment.class))
+        .information(classifier.classify(Grade.class))
+        .information(classifier.classify(MenuGroup.class))
+        .declare(EnsCategorization.Dimension.AVAILABILITY, EnsCategorization.Level.MEDIUM,
+                "enrollment closes on fixed dates")
+        .declare(EnsCategorization.Dimension.AUTHENTICITY, EnsCategorization.Level.MEDIUM,
+                "students sign in with the university account")
+        .declare(EnsCategorization.Dimension.TRACEABILITY, EnsCategorization.Level.MEDIUM,
+                "changes to enrollments are audited")
+        .build();
+
+System.out.println(portal.summary());
+System.out.println(portal.category().spanishName() + " " + portal.isComplete());
+portal.valuations().forEach(v -&gt; System.out.println(v.dimension().code() + " " + v.level().spanishName()
+        + ": " + v.reason()));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Category HIGH (ALTA): C MEDIUM, I HIGH, T MEDIUM, A MEDIUM, D MEDIUM
+ALTA true
+C MEDIO: field Enrollment.programCode (user.education.program)
+I ALTO: field Enrollment.programCode (user.education.program)
+T MEDIO: declared: changes to enrollments are audited
+A MEDIO: declared: students sign in with the university account
+D MEDIO: declared: enrollment closes on fixed dates
+</code></pre>
+
+<p>Con las cinco dimensiones valoradas, el resumen ya no dice <code>lower bound</code> e <code>isComplete()</code> es
+<code>true</code>: la categoría es definitiva. Las valoraciones salen en el orden de las dimensiones (C, I, T, A, D),
+no en el de las declaraciones.</p>
+
+<h3 id="el-codigo-fija-el-suelo">El código fija el suelo</h3>
+<p>El responsable del sistema también puede declarar la confidencialidad o la integridad, pero solo para
+<strong>elevarlas</strong>. Una declaración inferior a lo que fijan los campos no tiene efecto: la valoración sigue
+siendo la del campo. Es el mismo principio que en el resto de Linneo: el código fija el suelo de la protección y las
+declaraciones solo pueden endurecerla.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.4. Una declaración que intenta bajar y otra que eleva</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">EnsCategorization lowered = EnsCategorization.builder()
+        .information(classifier.classify(Student.class))
+        .declare(EnsCategorization.Dimension.CONFIDENTIALITY, EnsCategorization.Level.LOW,
+                "only aggregated reports leave the system")
+        .build();
+System.out.println(lowered.valuation(EnsCategorization.Dimension.CONFIDENTIALITY).orElseThrow());
+
+EnsCategorization catalogue = EnsCategorization.builder()
+        .information(classifier.classify(CatalogCourse.class))
+        .declare(EnsCategorization.Dimension.INTEGRITY, EnsCategorization.Level.HIGH,
+                "the published catalogue binds the university")
+        .build();
+System.out.println(catalogue.summary());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Valuation[dimension=CONFIDENTIALITY, level=HIGH, reason=field Student.disabilityDegree (user.health_and_medical.disability)]
+Category HIGH (ALTA): I HIGH; not declared: T, A, D (lower bound)
+</code></pre>
+
+<p>El argumento de la primera declaración («solo salen informes agregados») habla de lo que sale del sistema, no de lo
+que guarda: el sistema sigue guardando el grado de discapacidad, así que la confidencialidad sigue siendo alta. En el
+catálogo, en cambio, el responsable decide que una errata en el catálogo publicado causaría un perjuicio muy grave, y
+la integridad sube a <code>HIGH</code>.</p>
+<p>Una dimensión declarada dos veces conserva el nivel más alto. Si el responsable declara la disponibilidad
+<code>HIGH</code> por el periodo de exámenes y después <code>LOW</code> para el resto del año, queda
+<code>HIGH</code>, con el motivo de la primera declaración. Ante dos valoraciones del mismo nivel se conserva la
+primera.</p>
+
+<h2 id="fallo-seguro">Fallo seguro: errores y cotas inferiores</h2>
+
+<h3 id="solo-una-clasificacion-sin-errores">Solo una clasificación sin errores da información</h3>
+<p>Un campo con un error de clasificación no tiene nivel. Si <code>EnsCategorization</code> lo ignorara, podría
+infravalorar la categoría: el campo sin clasificar podría ser el único con datos de salud. Por eso, siguiendo el
+principio de fallo seguro (<span lang="en">fail closed</span>), <code>information(ClassClassification)</code> lanza
+<code>IllegalArgumentException</code> ante una clasificación con errores:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.5. Una clase con un campo sin clasificar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class StudentDraft {
+
+    @Category(USER_NAME)
+    private String name;
+
+    private String nickname;
+}
+</code></pre>
+</figure>
+
+<pre class="codigo" tabindex="0"><code class="language-java">try {
+    EnsCategorization.builder().information(classifier.classify(StudentDraft.class));
+} catch (IllegalArgumentException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">edu.example.university.StudentDraft has classification errors, so some fields have no level: [ERROR UNCLASSIFIED_FIELD edu.example.university.StudentDraft.nickname: no @Category on the field and no @DefaultCategory on StudentDraft]
+</code></pre>
+
+<p>El mensaje nombra la clase con su paquete, aquí <code>edu.example.university</code>, y enumera los errores de la
+clasificación. Corrige la clasificación (capítulo 6) y vuelve a intentarlo.</p>
+
+<h3 id="categoria-definitiva-o-cota-inferior">Categoría definitiva o cota inferior</h3>
+<p>Mientras falte información, la categoría es solo una <strong>cota inferior</strong>: el sistema podría estar en una
+superior. <code>isComplete()</code> es <code>true</code> cuando se ha dado información <strong>y</strong> están
+valoradas la autenticidad, la trazabilidad y la disponibilidad. <code>missing()</code> devuelve las de esas tres que
+faltan, en el orden de las dimensiones; la confidencialidad y la integridad nunca aparecen, porque las da la
+información. El resumen lo dice en su final:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-15-5">
+<table>
+<caption id="tabla-15-5">Tabla 15.5. Los finales de <code>summary()</code></caption>
+<thead>
+<tr><th scope="col">Situación</th><th scope="col">Ejemplo real</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Nada dado ni declarado</th><td><code>Category BASIC (BÁSICA): ; no information given (lower
+bound)</code></td></tr>
+<tr><th scope="row">Solo declaraciones, sin información</th><td><code>Category MEDIUM (MEDIA): T LOW, A LOW, D MEDIUM;
+no information given (lower bound)</code></td></tr>
+<tr><th scope="row">Información, faltan dimensiones</th><td><code>Category HIGH (ALTA): I MEDIUM, D HIGH; not
+declared: T, A (lower bound)</code></td></tr>
+<tr><th scope="row">Completa</th><td><code>Category HIGH (ALTA): C MEDIUM, I HIGH, T MEDIUM, A MEDIUM, D
+MEDIUM</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>La segunda fila tiene <code>missing()</code> vacío y aun así <code>isComplete()</code> es <code>false</code>: sin
+información, nadie ha comprobado qué datos maneja el sistema. Sin ninguna valoración, <code>category()</code> devuelve
+<code>BASIC</code>, pero como cota inferior, no como conclusión.</p>
+
+<h2 id="desde-el-inventario">Desde el inventario de datos</h2>
+<p>Un sistema que no tiene las clases del modelo, como una aplicación de administración que trabaja con el inventario
+de datos guardado (capítulo 8), da su información con dos métodos más del builder:</p>
+<ul>
+<li><code>information(DataInventory inventory, Taxonomy taxonomy)</code> añade los campos guardados de
+<strong>todos</strong> los objetos del inventario;</li>
+<li><code>information(DataInventory inventory, String object, Taxonomy taxonomy)</code> añade los de un objeto, y
+lanza <code>IllegalArgumentException</code> si el inventario no lo tiene: una clave mal escrita dejaría fuera su
+información y subestimaría la categoría.</li>
+</ul>
+<p>En ambos, la taxonomía resuelve las claves guardadas (una clave que no tiene lanza <code>TaxonomyException</code>),
+los campos exentos se omiten y el motivo nombra <code>&lt;objeto&gt;.&lt;ruta&gt;</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.6. La información desde el inventario</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DataInventory inventory = classifier.inventory(List.of(Student.class, Enrollment.class, Grade.class),
+        type -&gt; type == Student.class ? "students" : type == Enrollment.class ? "enrollments" : "grades");
+
+EnsCategorization all = EnsCategorization.builder()
+        .information(inventory, taxonomy)
+        .build();
+EnsCategorization grades = EnsCategorization.builder()
+        .information(inventory, "grades", taxonomy)
+        .build();
+
+System.out.println(all.summary());
+all.valuations().forEach(System.out::println);
+System.out.println(grades.summary());
+try {
+    EnsCategorization.builder().information(inventory, "grade", taxonomy);   // una errata
+} catch (IllegalArgumentException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Category HIGH (ALTA): C HIGH, I HIGH; not declared: T, A, D (lower bound)
+Valuation[dimension=CONFIDENTIALITY, level=HIGH, reason=field students.counsellingNotes (user.content.private)]
+Valuation[dimension=INTEGRITY, level=HIGH, reason=field enrollments.academicYear (user.education.enrollment)]
+Category HIGH (ALTA): C MEDIUM, I HIGH; not declared: T, A, D (lower bound)
+The inventory has no object 'grade'
+</code></pre>
+
+<p>La categoría coincide con la de las clases, como debe ser: el inventario guarda los mismos niveles. Cambian los
+motivos, porque el inventario recorre los objetos y los campos en otro orden (por clave de objeto y por ruta) y se
+conserva el primer campo que alcanza cada nivel.</p>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Si el sistema es todo el inventario, usa <code>information(inventory, taxonomy)</code>: no puedes olvidar ningún
+objeto. Reserva la variante con <code>object</code> para sistemas que manejan solo una parte de los datos de la
+organización.</p>
+</div>
+
+<h2 id="delimitar-el-sistema">Delimitar y documentar el sistema</h2>
+
+<h3 id="que-informacion-dar">Qué información dar</h3>
+<p>La categoría es de un <strong>sistema</strong>, no de una clase. Antes de construir la categorización, decide qué
+forma parte del sistema que vas a categorizar: el portal de matrícula, el campus virtual, la aplicación de gestión del
+personal. Después da al builder <strong>toda</strong> la información que ese sistema maneja:</p>
+<ul>
+<li>todas sus clases persistentes, también las técnicas, como <code>MenuGroup</code>: el ENS valora toda la
+información, y una tabla sin datos personales puede fijar la integridad;</li>
+<li>las clases que comparte con otros sistemas. Una misma clase, como <code>Enrollment</code>, aporta su información a
+cada sistema que la maneja, y cada sistema tiene su propia categorización;</li>
+<li>si el sistema trabaja con el inventario guardado, todos sus objetos, preferiblemente con
+<code>information(inventory, taxonomy)</code>.</li>
+</ul>
+<p>Si dejas fuera una clase, la categoría puede salir menor de la real, y nada en Linneo puede detectarlo: no sabe qué
+clases forman tu sistema. Por eso compensa obtener la lista de clases de forma mecánica, por ejemplo con
+<code>ModelClasses.inPackage</code> (capítulo 6) o con las entidades que registra tu framework de persistencia.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-15-6">
+<table>
+<caption id="tabla-15-6">Tabla 15.6. Los métodos de <code>EnsCategorization.Builder</code></caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Efecto</th><th scope="col">Excepciones</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>information(ClassClassification)</code></th><td>Añade los campos de una clase; el motivo
+nombra <code>&lt;Clase&gt;.&lt;ruta&gt;</code>.</td><td><code>IllegalArgumentException</code> si la clasificación
+tiene errores</td></tr>
+<tr><th scope="row"><code>information(DataInventory, Taxonomy)</code></th><td>Añade los campos guardados de todos los
+objetos; omite los exentos.</td><td><code>TaxonomyException</code> si falta una clave</td></tr>
+<tr><th scope="row"><code>information(DataInventory, String, Taxonomy)</code></th><td>Lo mismo para un objeto.</td>
+<td><code>IllegalArgumentException</code> si el objeto no existe; <code>TaxonomyException</code></td></tr>
+<tr><th scope="row"><code>declare(Dimension, Level, String)</code></th><td>Declara el nivel de una dimensión con su
+motivo; en C e I solo eleva.</td><td><code>NullPointerException</code> si un argumento es <code>null</code></td></tr>
+<tr><th scope="row"><code>build()</code></th><td>Crea la categorización inmutable.</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="documentar-las-valoraciones">Documentar las valoraciones</h3>
+<p>Cada <code>Valuation</code> dice de dónde sale su nivel, así que la categorización puede documentarse sola. Este
+fragmento convierte el portal del Ejemplo 15.3 en una tabla Markdown para la documentación de seguridad del
+sistema:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.7. Una tabla con las valoraciones y sus motivos</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">StringBuilder table = new StringBuilder("| Dimensión | Nivel | Motivo |\n|---|---|---|\n");
+for (EnsCategorization.Valuation valuation : portal.valuations()) {
+    table.append("| ").append(valuation.dimension().code()).append(" | ")
+            .append(valuation.level().spanishName()).append(" | ")
+            .append(valuation.reason()).append(" |\n");
+}
+table.append("\nCategoría: ").append(portal.category().spanishName());
+System.out.println(table);
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">| Dimensión | Nivel | Motivo |
+|---|---|---|
+| C | MEDIO | field Enrollment.programCode (user.education.program) |
+| I | ALTO | field Enrollment.programCode (user.education.program) |
+| T | MEDIO | declared: changes to enrollments are audited |
+| A | MEDIO | declared: students sign in with the university account |
+| D | MEDIO | declared: enrollment closes on fixed dates |
+
+Categoría: ALTA
+</code></pre>
+
+<p>Los motivos están en inglés, como los demás textos que genera Linneo; los nombres de los niveles y de la categoría
+salen de <code>spanishName()</code>. Linneo no guarda la categorización: calcula. Las tres dimensiones declaradas y sus
+motivos pertenecen al responsable del sistema, que puede mantenerlos en la configuración o en la base de datos de la
+aplicación; el código los combina con la información en cada cálculo, de modo que la categoría siempre refleja el
+modelo actual.</p>
+
+<h2 id="en-los-tests">La categoría en los tests</h2>
+<p>La categoría de un sistema depende de la clasificación de sus datos, que cambia con el modelo. Un test que la
+comprueba en cada compilación avisa cuando un campo nuevo sube la categoría y obliga a revisar las medidas de
+seguridad. Las tres dimensiones declaradas pueden vivir en el propio test, con su motivo, o en la configuración donde
+las mantiene el responsable del sistema.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 15.8. Un test que fija la categoría del portal de matrícula</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">class EnrollmentPortalEnsTest {
+
+    private final Classifier classifier = new Classifier(Taxonomy.load());
+
+    @Test
+    void theEnrollmentPortalIsHigh() {
+        EnsCategorization.Builder builder = EnsCategorization.builder();
+        for (Class&lt;?&gt; type : List.of(Enrollment.class, Grade.class, MenuGroup.class)) {
+            builder.information(classifier.classify(type));
+        }
+        EnsCategorization ens = builder
+                .declare(EnsCategorization.Dimension.AVAILABILITY, EnsCategorization.Level.MEDIUM,
+                        "enrollment closes on fixed dates")
+                .declare(EnsCategorization.Dimension.AUTHENTICITY, EnsCategorization.Level.MEDIUM,
+                        "students sign in with the university account")
+                .declare(EnsCategorization.Dimension.TRACEABILITY, EnsCategorization.Level.MEDIUM,
+                        "changes to enrollments are audited")
+                .build();
+
+        assertTrue(ens.isComplete(), ens::summary);
+        assertEquals(EnsCategorization.SystemCategory.HIGH, ens.category(), ens::summary);
+    }
+}
+</code></pre>
+</figure>
+
+<p>El test pasa con el modelo actual. Si alguien clasificara mal una clase del portal, <code>information</code> lanzaría
+la excepción del Ejemplo 15.5 y el test fallaría antes de calcular nada. Si un cambio subiera la categoría de un
+sistema que hoy es <code>MEDIA</code>, el <code>assertEquals</code> lo detectaría con el resumen como mensaje.</p>
+
+<div class="recuadro recuadro-nota" role="note">
+<p class="recuadro-titulo">Nota</p>
+<p><code>EnsCategorization</code> es opcional y nacional. No forma parte de la comprobación de actividades ni del
+registro del <abbr title="Reglamento General de Protección de Datos">RGPD</abbr>; complementa la clasificación
+para las organizaciones sujetas al ENS. Como el resto de Linneo, calcula y no se conecta a nada.</p>
+</div>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Leer la categoría antes de declarar las tres dimensiones.</dt>
+<dd>Sin autenticidad, trazabilidad y disponibilidad, la categoría es una cota inferior. Comprueba
+<code>isComplete()</code> o lee el final de <code>summary()</code>.</dd>
+<dt>Intentar bajar la confidencialidad con una declaración.</dt>
+<dd>Las declaraciones solo elevan. Si un campo no debería tener ese nivel, el problema está en su clasificación o en
+lo que guarda el sistema, no en la categorización.</dd>
+<dt>Dar solo las clases con datos personales.</dt>
+<dd>El ENS valora toda la información. Una tabla técnica como <code>MenuGroup</code> puede fijar la integridad del
+sistema. Da todas las clases, o el inventario entero.</dd>
+<dt>Pasar una clasificación con errores.</dt>
+<dd><code>information</code> lanza <code>IllegalArgumentException</code>. Verifica el modelo en los tests (capítulo 6)
+antes de categorizar.</dd>
+<dt>Escribir a mano la clave de un objeto del inventario.</dt>
+<dd>Una errata lanza <code>IllegalArgumentException</code>; si iteras sobre <code>inventory.objects()</code>, o usas
+<code>information(inventory, taxonomy)</code>, no puede ocurrir.</dd>
+<dt>Tomar la correspondencia de niveles como oficial.</dt>
+<dd>Es de Linneo. Revisa la valoración con la guía CCN-STIC 803.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>El ENS valora un sistema en cinco dimensiones (C, I, T, A, D) con tres niveles; la categoría es el nivel más
+alto: <code>BÁSICA</code>, <code>MEDIA</code> o <code>ALTA</code>.</li>
+<li>La confidencialidad y la integridad salen de la clasificación: el nivel más alto de los campos, con
+<code>PUBLIC</code> sin requisito de confidencialidad. Cuentan todos los campos, personales o no.</li>
+<li>La autenticidad, la trazabilidad y la disponibilidad las declara el responsable con un motivo. Las declaraciones
+pueden elevar la confidencialidad y la integridad, nunca bajarlas.</li>
+<li>La información se da con <code>information(ClassClassification)</code>,
+<code>information(DataInventory, Taxonomy)</code> o <code>information(DataInventory, String, Taxonomy)</code>; una
+clasificación con errores o un objeto inexistente lanzan <code>IllegalArgumentException</code>.</li>
+<li>La categoría es definitiva solo con información y las tres dimensiones declaradas (<code>isComplete()</code>); si
+no, es una cota inferior.</li>
+<li>La correspondencia de niveles es de Linneo; revísala con la guía CCN-STIC 803.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>El catálogo en época de exámenes.</strong> El responsable del catálogo de asignaturas declara la
+disponibilidad <code>HIGH</code> («exam period») y luego <code>LOW</code> («rest of the year»). Predice
+<code>summary()</code>, el motivo de la disponibilidad y si hay valoración de confidencialidad.</p>
+<details><summary>Solución del ejercicio 1</summary>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Category HIGH (ALTA): I MEDIUM, D HIGH; not declared: T, A (lower bound)
+</code></pre>
+<p>La segunda declaración no baja la primera: la disponibilidad queda <code>HIGH</code> con el motivo
+<code>declared: exam period</code>. No hay confidencialidad (<code>valuation(Dimension.CONFIDENTIALITY)</code> está
+vacío) porque todos los campos son públicos. Faltan T y A, así que es una cota inferior.</p>
+</details>
+</li>
+<li>
+<p><strong>¿Puede ser <code>MEDIA</code>?</strong> Un compañero quiere que el portal de matrícula del Ejemplo 15.3
+sea de categoría <code>MEDIA</code> y propone declarar <code>Dimension.INTEGRITY</code> en <code>LOW</code>. ¿Qué
+ocurre? ¿Qué tendría que cambiar realmente?</p>
+<details><summary>Solución del ejercicio 2</summary>
+<p>Nada: la declaración es inferior a lo que fijan los campos y la integridad sigue en <code>HIGH</code>, con el
+motivo <code>field Enrollment.programCode (user.education.program)</code>. La categoría la fijan los datos académicos
+y la seguridad de los menús. Para que fuera <code>MEDIA</code>, el sistema tendría que dejar de guardar datos con
+integridad alta. Tampoco una extensión (capítulo 9) puede rebajar la protección de una categoría: cada nivel que
+declara es un mínimo y solo puede endurecerla.</p>
+</details>
+</li>
+<li>
+<p><strong>Una errata.</strong> La aplicación de administración categoriza su sistema con
+<code>information(inventory, "grade", taxonomy)</code>. ¿Qué ocurre y cómo evitarías el problema?</p>
+<details><summary>Solución del ejercicio 3</summary>
+<p>Lanza <code>IllegalArgumentException</code> con el mensaje <code>The inventory has no object 'grade'</code>. Es
+fallo seguro: sin la excepción, el objeto se quedaría fuera y la categoría podría ser menor de la real. Usa
+<code>information(inventory, taxonomy)</code> si el sistema maneja todo el inventario, o toma las claves de
+<code>inventory.objects()</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Un test para el catálogo.</strong> Escribe un test que compruebe que el catálogo público, con la
+disponibilidad, la autenticidad y la trazabilidad declaradas en <code>LOW</code>, es de categoría
+<code>MEDIA</code>.</p>
+<details><summary>Solución del ejercicio 4</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">@Test
+void thePublicCatalogueIsMedium() {
+    EnsCategorization ens = EnsCategorization.builder()
+            .information(classifier.classify(CatalogCourse.class))
+            .declare(EnsCategorization.Dimension.AVAILABILITY, EnsCategorization.Level.LOW,
+                    "a day without the catalogue harms no one")
+            .declare(EnsCategorization.Dimension.AUTHENTICITY, EnsCategorization.Level.LOW,
+                    "public read-only website")
+            .declare(EnsCategorization.Dimension.TRACEABILITY, EnsCategorization.Level.LOW,
+                    "no audit needed")
+            .build();
+    assertTrue(ens.isComplete(), ens::summary);
+    assertEquals(EnsCategorization.SystemCategory.MEDIUM, ens.category(), ens::summary);
+}
+</code></pre>
+<p>La categoría es <code>MEDIA</code> por la integridad <code>MEDIUM</code> de los datos de referencia públicos,
+aunque todas las dimensiones declaradas sean bajas.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>Un sistema solo tiene campos <code>REFERENCE_PUBLIC</code>. ¿Qué valoración de confidencialidad tiene?</p>
+<ol>
+<li><code>LOW</code>.</li>
+<li>Ninguna: <code>PUBLIC</code> no fija requisito.</li>
+<li><code>MEDIUM</code>, como su integridad.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La b. <code>Confidentiality.PUBLIC</code> no corresponde a ningún nivel del ENS, así que no hay valoración de
+confidencialidad. La integridad sí tiene nivel, y es la que fija la categoría.</p>
+</details>
+</li>
+<li>
+<p>¿Cuándo es <code>isComplete()</code> verdadero?</p>
+<ol>
+<li>Cuando las cinco dimensiones tienen valoración.</li>
+<li>Cuando se dio información y están valoradas la autenticidad, la trazabilidad y la disponibilidad.</li>
+<li>Cuando <code>missing()</code> está vacío.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La b. La a falla con un sistema de datos públicos, que nunca tiene confidencialidad. La c falla sin información:
+<code>missing()</code> puede estar vacío con solo declaraciones, y entonces <code>isComplete()</code> es
+<code>false</code>.</p>
+</details>
+</li>
+<li>
+<p>El responsable declara <code>CONFIDENTIALITY</code> en <code>LOW</code> para un sistema con datos de salud. ¿Cuál
+es la valoración?</p>
+<ol>
+<li><code>LOW</code>, con el motivo declarado.</li>
+<li><code>HIGH</code>, con el campo de salud como motivo.</li>
+<li>Se lanza una excepción.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La b. Las declaraciones solo elevan; una inferior se ignora sin error, y la valoración conserva el campo que la
+fija.</p>
+</details>
+</li>
+<li>
+<p>¿Qué hace <code>information(ClassClassification)</code> con una clase que tiene un campo sin clasificar?</p>
+<ol>
+<li>Omite el campo y sigue.</li>
+<li>Lanza <code>IllegalArgumentException</code>.</li>
+<li>Asigna al campo el nivel más alto.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La b. Un campo con error no tiene nivel, y omitirlo podría infravalorar la categoría: es la regla de fallo
+seguro.</p>
+</details>
+</li>
+<li>
+<p>¿Por qué <code>MenuGroup</code>, sin datos personales, sale de categoría <code>ALTA</code>?</p>
+<ol>
+<li>Por error: el ENS solo valora datos personales.</li>
+<li>Porque <code>requiredRole</code> es <code>system.security</code>, con integridad <code>HIGH</code>.</li>
+<li>Porque <code>@DefaultCategory</code> eleva todos los niveles.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La b. El ENS valora toda la información del sistema; la integridad alta de un dato de seguridad basta para la
+categoría <code>ALTA</code>.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li>Capítulo anterior: <a href="14-derechos.html">Derechos de los interesados</a>.</li>
+<li>Capítulo siguiente: <a href="16-exportadores.html">Exportar a PostgreSQL, OpenAPI y
+<abbr title="Open Data Contract Standard">ODCS</abbr></a>.</li>
+<li><a href="02-proteccion.html">Naturaleza jurídica y protección</a>, con los niveles de confidencialidad e
+integridad.</li>
+<li>Referencia: <a href="../../reference/ens.html">Categorización del ENS</a>.</li>
+<li>Referencia: <a href="../../reference/protection-levels.html">Niveles de protección</a>.</li>
+<li>Referencia: <a href="../../reference/classify/inventory.html">Inventario de datos</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="14-derechos.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 14. Derechos de los interesados</a></li>
+<li><a href="16-exportadores.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 16. Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/classify/DataInventory.java
+  - src/main/java/io/github/devbpm/linneo/classify/InventoryField.java
+  - src/main/java/io/github/devbpm/linneo/classify/InventoryDiff.java
+  - src/main/java/io/github/devbpm/linneo/classify/FieldChange.java
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
+  - tools/bench/InventoryBench.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 8. El inventario de datos · Curso de Linneo</title>
+<meta name="description" content="Convierte la clasificación del modelo en un inventario de datos que se guarda, se compara con la copia guardada y alimenta catálogos y actividades.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html" aria-current="page"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 8. El inventario de datos</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 8</span> El inventario de datos</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>75 minutos</dd></div>
+<div><dt>Parte II:</dt><dd>Clasificar el modelo de datos</dd></div>
+</dl>
+<p class="entradilla">Las aplicaciones no solo usan la clasificación donde vive, en el código: también guardan una copia
+en una tabla de campos, en un catálogo de datos o en el <span lang="en">back office</span> del delegado de protección
+de datos. Este capítulo enseña a convertir la clasificación en un inventario de datos, a compararlo con la copia
+guardada y a mantener esa copia al día sin perder protección por el camino.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#la-clasificacion-como-datos">La clasificación como datos</a></li>
+<li><a href="#el-inventario-del-codigo">El inventario del código</a></li>
+<li><a href="#que-registra-un-campo">Qué registra un campo</a></li>
+<li><a href="#por-que-no-guarda-niveles">Por qué no guarda los niveles de la taxonomía</a></li>
+<li><a href="#la-copia-guardada">La copia guardada</a></li>
+<li><a href="#comparar-inventarios">Comparar dos inventarios</a></li>
+<li><a href="#cambios-de-la-taxonomia">Los cambios de la taxonomía: <code>affectedBy</code></a></li>
+<li><a href="#la-conciliacion">La conciliación con la copia guardada</a></li>
+<li><a href="#el-patron-completo">El patrón completo</a></li>
+<li><a href="#fuente-de-catalogos-y-actividades">Los inventarios como fuente</a></li>
+<li><a href="#rendimiento">Rendimiento</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>construir el inventario de datos de un modelo con <code>Classifier.inventory</code> y elegir claves de objeto que
+sobrevivan a una refactorización;</li>
+<li>leer un <code>InventoryField</code> y explicar por qué guarda la clave declarada y solo los niveles que eleva el
+propio campo;</li>
+<li>reconstruir la copia guardada con el <code>Builder</code> o desde su texto, y usar las huellas para evitar
+comparaciones innecesarias;</li>
+<li>comparar dos inventarios con <code>InventoryDiff</code>, interpretar cada <code>FieldChange</code> y su dirección, y
+llevar a revisión los cambios que rebajan la protección;</li>
+<li>encontrar con <code>affectedBy</code> los campos a los que llega un cambio de la taxonomía;</li>
+<li>organizar una conciliación completa (construir, comparar, planificar y aplicar) repartiendo bien el trabajo entre
+Linneo y la aplicación.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo continúa el <a href="07-uso.html">capítulo 7</a>: allí usaste la clasificación en memoria; aquí la
+conviertes en datos. Necesitas la comparación de protecciones del <a href="02-proteccion.html">capítulo 2</a>
+(<code>covers</code>, <code>comparedTo</code> y la dirección de un cambio) y el test de clasificación del
+<a href="06-verificacion.html">capítulo 6</a>. Los ejemplos usan el modelo de la universidad con estas claves de
+objeto, tomadas de los nombres de sus tablas:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;Class&lt;?&gt;&gt; entities = List.of(MenuGroup.class, Student.class, Enrollment.class, Grade.class,
+        Staff.class, Document.class, Attachment.class, CourseStatistics.class);
+Map&lt;Class&lt;?&gt;, String&gt; tables = Map.of(
+        MenuGroup.class, "menu_groups", Student.class, "students", Enrollment.class, "enrollments",
+        Grade.class, "grades", Staff.class, "staff", Document.class, "documents",
+        Attachment.class, "attachments", CourseStatistics.class, "course_statistics");
+</code></pre>
+
+<h2 id="la-clasificacion-como-datos">La clasificación como datos</h2>
+<p>Una copia de la clasificación se desvía del código con facilidad. Un desarrollador añade
+<code>Student.phone</code> con <code>@Category(USER_CONTACT_PHONE_NUMBER)</code>; la compilación pasa porque la
+clasificación es correcta, pero a la tabla de campos le falta la fila, y la pantalla que debería enmascarar el
+teléfono lo muestra en claro. Un fichero de datos iniciales escrito a mano se desvía igual.</p>
+<p>El remedio es comparar la copia con el código y corregir la copia. Para compararlas hace falta que ambas tengan la
+misma forma: la de un <strong>inventario de datos</strong>. Un inventario de datos (<code>DataInventory</code>) es la
+clasificación de un modelo expresada como datos: para cada <strong>objeto</strong>, identificado por una clave que
+elige la aplicación, los campos que contiene con lo que el código declara para ellos. No contiene clases ni
+taxonomía, así que se puede guardar, volver a leer y comparar.</p>
+<p>Un objeto es cualquier grupo de campos del que la aplicación lleva un registro: una entidad, una tabla, un objeto
+de negocio. Cada campo del inventario es un <code>InventoryField</code>. La Tabla 8.1 resume las piezas.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-1">
+<table>
+<caption id="tabla-8-1">Tabla 8.1. Los tipos del inventario de datos</caption>
+<thead>
+<tr><th scope="col">Tipo</th><th scope="col">Qué es</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>DataInventory</code></th><td>Los objetos y sus campos. Se construye desde el código o desde
+lo guardado, se escribe como texto y tiene huellas.</td></tr>
+<tr><th scope="row"><code>InventoryField</code></th><td>Un campo: lo que el código declara para él, sin depender de
+ninguna taxonomía.</td></tr>
+<tr><th scope="row"><code>InventoryDiff</code></th><td>Las diferencias entre dos inventarios, campo a campo.</td></tr>
+<tr><th scope="row"><code>FieldChange</code></th><td>Cómo difiere un campo y en qué dirección se movió su
+protección.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Las instancias de los cuatro tipos son inmutables.</p>
+
+<h2 id="el-inventario-del-codigo">El inventario del código</h2>
+<p><code>Classifier.inventory(types, objectKey)</code> clasifica las clases y registra cada campo bajo la clave de
+objeto que la función <code>objectKey</code> da para su clase.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 8.1. El inventario del modelo de la universidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Classifier classifier = new Classifier(Taxonomy.load());
+DataInventory declared = classifier.inventory(entities, tables::get);
+
+System.out.println(declared);
+System.out.println(declared.objects());
+declared.fields("documents").forEach(System.out::println);
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">DataInventory[8 objects, 71 fields]
+[attachments, course_statistics, documents, enrollments, grades, menu_groups, staff, students]
+documents.attachments = user.unique_id.record_reference (DERIVED)
+documents.createdAt = system.operations (CLASS_DEFAULT)
+documents.createdBy = user.account.username (DECLARED)
+documents.documentType = user.content.private (DECLARED)
+documents.fileStore exempt: cliente del almacén de archivos, se abre bajo demanda
+documents.id = user.unique_id.record_reference (DECLARED)
+documents.studentId = user.unique_id.record_reference (DECLARED)
+documents.title = user.content.private (DECLARED)
+documents.updatedAt = system.operations (CLASS_DEFAULT)
+documents.version = system.operations (CLASS_DEFAULT)
+</code></pre>
+<p>Tres diferencias con la <code>ClassClassification</code> del capítulo 7:</p>
+<ul>
+<li>El inventario está <strong>ordenado</strong>: los objetos por clave y los campos por ruta. El mismo modelo da
+siempre el mismo inventario, sea cual sea el orden de las clases o el que informe la
+<abbr title="máquina virtual de Java">JVM</abbr>.</li>
+<li>El campo exento <code>fileStore</code> forma parte del inventario, solo con su motivo, para que eximir un campo
+que antes estaba clasificado se vea como un cambio.</li>
+<li>Cada campo guarda lo que el código <strong>declara</strong>, no lo que la taxonomía hace con ello. Lo explica la
+sección <a href="#que-registra-un-campo">Qué registra un campo</a>.</li>
+</ul>
+<p>Además de <code>objects()</code> y <code>fields(object)</code>, el inventario ofrece <code>fields()</code> (todos
+los campos, por objeto y después por ruta), <code>field(object, path)</code>, que devuelve un <code>Optional</code>, y
+<code>fieldsWith(key)</code>, los campos que declaran exactamente una clave:
+<code>declared.fieldsWith(USER_CONTACT_EMAIL)</code> devuelve <code>staff.workEmail</code> y
+<code>students.email</code>. Para un objeto que no existe, <code>fields(object)</code> devuelve una lista vacía.</p>
+
+<h3 id="errores-al-construir">Errores al construirlo</h3>
+<p><code>inventory</code> verifica las clases como <code>verify</code>: si alguna tiene un error, lanza una
+<code>ClassificationException</code> con todos los errores, porque un campo con error no tiene nada que registrar.
+También lanza <code>IllegalArgumentException</code> si la función devuelve una clave <code>null</code> o en blanco, o
+la misma clave para dos clases. Una clase repetida en la lista cuenta una sola vez.</p>
+
+<h3 id="claves-de-objeto">Elegir las claves de objeto</h3>
+<p>La clave de objeto pesa más de lo que parece. Las filas guardadas se emparejan con el código por el par
+(objeto, ruta). Si la clave cambia cuando se renombra o se mueve una clase, la comparación verá un objeto eliminado,
+con todos sus campos retirados, y otro nuevo, con todos sus campos añadidos.</p>
+<p>No uses el nombre de la clase. Con <code>Class::getSimpleName</code>, dos clases <code>Student</code> de paquetes
+distintos chocan:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">IllegalArgumentException: edu.example.university.Student and edu.example.other.Student have the same object key 'Student'
+</code></pre>
+<p>Toma la clave de algo que ya identifique el objeto en la aplicación y no cambie con una refactorización: el nombre
+de su tabla (por ejemplo, el de la anotación <code>@Table</code> de
+<abbr title="Jakarta Persistence API">JPA</abbr>), una anotación propia de objeto de negocio o
+un registro de la aplicación, como el mapa <code>tables</code> de este capítulo.</p>
+
+<h2 id="que-registra-un-campo">Qué registra un campo</h2>
+<p>Un <code>InventoryField</code> es un <code>record</code> con ocho componentes:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public record InventoryField(String object, String path, String key, Basis basis, Confidentiality confidentiality,
+                             Integrity integrity, Identifiability identifiability, String reason)
+</code></pre>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-2">
+<table>
+<caption id="tabla-8-2">Tabla 8.2. Componentes de <code>InventoryField</code></caption>
+<thead>
+<tr><th scope="col">Componente</th><th scope="col">Contenido</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>object</code>, <code>path</code></th><td>La clave del objeto y la ruta del campo
+(<code>campo.parte</code> en una parte de un compuesto).</td></tr>
+<tr><th scope="row"><code>key</code></th><td>La clave de la categoría <strong>tal como está escrita</strong>, aunque sea
+obsoleta; <code>null</code> en un campo exento.</td></tr>
+<tr><th scope="row"><code>basis</code></th><td><code>DECLARED</code>, <code>CLASS_DEFAULT</code>, <code>BY_ROW</code> o
+<code>DERIVED</code>; <code>null</code> en un campo exento.</td></tr>
+<tr><th scope="row"><code>confidentiality</code>, <code>integrity</code></th><td>Solo los niveles que el campo
+<strong>eleva</strong> explícitamente; <code>null</code> si toma los de su categoría.</td></tr>
+<tr><th scope="row"><code>identifiability</code></th><td>La identificabilidad que declara el campo
+(<code>PSEUDONYMIZED</code>, <code>ANONYMIZED</code> o <code>AGGREGATED</code>); <code>null</code> si no declara
+ninguna o declara <code>IDENTIFIED</code>.</td></tr>
+<tr><th scope="row"><code>reason</code></th><td>El motivo de una exención o de un valor por defecto de clase, o el
+<code>declaredBy</code> de una categoría por fila; <code>null</code> en los demás casos.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>En el modelo, <code>students.counsellingNotes</code> registra <code>confidentiality</code> = <code>HIGH</code>,
+porque el campo la eleva, e <code>integrity</code> = <code>null</code>; <code>students.analyticsId</code> registra
+<code>PSEUDONYMIZED</code>; <code>students.email</code> registra la identificabilidad <code>null</code>;
+<code>course_statistics.averageMark</code> registra <code>AGGREGATED</code>; y <code>attachments.content</code> registra
+el motivo <code>"el documentType del Document al que pertenece"</code>.</p>
+<p>Qué guarda cada campo depende de cómo lo resolvió el clasificador:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-3">
+<table>
+<caption id="tabla-8-3">Tabla 8.3. Lo que registra el inventario según la base</caption>
+<thead>
+<tr><th scope="col">Base</th><th scope="col"><code>key</code></th><th scope="col">Niveles</th>
+<th scope="col"><code>reason</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>DECLARED</code></th><td>el <code>value</code> de <code>@Category</code></td><td>los que
+<code>@Category</code> fija explícitamente</td><td><code>null</code></td></tr>
+<tr><th scope="row"><code>CLASS_DEFAULT</code></th><td>el <code>value</code> de <code>@DefaultCategory</code></td>
+<td><code>null</code></td><td>el motivo del valor por defecto</td></tr>
+<tr><th scope="row"><code>BY_ROW</code></th><td>el <code>ceiling</code> de <code>@CategoryByRow</code></td>
+<td><code>null</code></td><td>el <code>declaredBy</code></td></tr>
+<tr><th scope="row"><code>DERIVED</code></th><td>la clave de su propio <code>@Category</code>, o la de su fuente</td>
+<td>los de su propio <code>@Category</code>, o los que declara su fuente</td><td><code>null</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="forma-canonica">Una forma canónica</h3>
+<p>El constructor del <code>record</code> normaliza dos valores para que declaraciones iguales den campos iguales: una
+identificabilidad <code>IDENTIFIED</code> se guarda como <code>null</code>, porque es la que toma de todos modos una
+categoría personal, y un motivo en blanco de un campo clasificado se guarda como <code>null</code>. Así, una fila que
+guarda <code>IDENTIFIED</code> de forma explícita no aparece como cambiada frente al código.</p>
+<p>El constructor también valida la forma: un campo clasificado necesita a la vez <code>key</code> y
+<code>basis</code>, y un campo exento no tiene ninguno de los dos, ni niveles ni identificabilidad, pero sí un motivo.
+Cualquier otra combinación lanza <code>IllegalArgumentException</code>. <code>InventoryField.exempt(object, path,
+reason)</code> crea un campo exento.</p>
+
+<h3 id="resolver-un-campo">Resolver un campo con una taxonomía</h3>
+<p>Un campo del inventario no conoce su protección hasta que se resuelve con una taxonomía. Cuatro métodos lo hacen, y
+dan exactamente lo mismo que la <code>FieldClassification</code> del mismo campo:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-4">
+<table>
+<caption id="tabla-8-4">Tabla 8.4. Métodos que resuelven un <code>InventoryField</code></caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>category(taxonomy)</code></th><td>La categoría vigente: la de su clave o la sustituta de una
+clave obsoleta. <code>TaxonomyException</code> en un campo exento.</td></tr>
+<tr><th scope="row"><code>isPersonal(taxonomy)</code></th><td>Si los valores son datos personales; <code>false</code>
+en un campo exento.</td></tr>
+<tr><th scope="row"><code>identifiability(taxonomy)</code></th><td>La identificabilidad declarada, o
+<code>IDENTIFIED</code> si no declara ninguna; <code>null</code> en un campo exento o no personal.</td></tr>
+<tr><th scope="row"><code>protection(taxonomy)</code></th><td>La protección que necesita el campo;
+<code>Protection.LOWEST</code> en un campo exento.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Todos lanzan <code>TaxonomyException</code> si la taxonomía no contiene la clave del campo.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">InventoryField notes = declared.field("students", "counsellingNotes").orElseThrow();
+notes.confidentiality();          // HIGH: lo que eleva el campo
+notes.protection(taxonomy);       // ORDINARY, HIGH, MEDIUM, sin secreto
+notes.identifiability(taxonomy);  // IDENTIFIED
+</code></pre>
+
+<h2 id="por-que-no-guarda-niveles">Por qué no guarda los niveles de la taxonomía</h2>
+<p>El inventario guarda la clave y los niveles que eleva el propio campo, nunca los niveles que la taxonomía da a la
+categoría. Es una decisión de diseño con una consecuencia muy útil: <strong>un cambio de la taxonomía nunca cambia un
+inventario</strong>.</p>
+<p>Supón que tu organización decide endurecer la confidencialidad de los correos electrónicos, por ejemplo con una
+extensión de la taxonomía (capítulo 9):</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 8.2. Una taxonomía más estricta no cambia el inventario</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy stricter = Taxonomy.builder().withStandard().withExtensions()
+        .refineCategory(USER_CONTACT_EMAIL, category -&gt; category.confidentiality(Confidentiality.MEDIUM))
+        .build();
+DataInventory again = new Classifier(stricter).inventory(entities, tables::get);
+
+again.equals(declared);                                             // true
+InventoryField email = declared.field("students", "email").orElseThrow();
+email.protection(taxonomy).confidentiality();                       // LOW
+email.protection(stricter).confidentiality();                       // MEDIUM
+</code></pre>
+</figure>
+<p>Los dos inventarios son iguales, con la misma huella, porque el código declara lo mismo. Lo que cambia es la
+protección que obtienes al resolver los campos con la taxonomía del día. Si las filas guardadas contuvieran el nivel
+de cada campo, una taxonomía más estricta exigiría reescribir miles de filas, y una que faltara dejaría un campo menos
+protegido de lo debido. Con la clave guardada, la siguiente lectura ya resuelve el nivel más estricto.</p>
+<p>Separar las dos causas también ordena el trabajo: los cambios que vienen del código los encuentra
+<code>InventoryDiff</code>, y los que vienen de la taxonomía, <code>affectedBy</code>. Las dos secciones siguientes
+tratan cada uno.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Guardar la clave y la taxonomía aplicada permite reconstruir, tiempo después, la protección que tenía un campo en
+una fecha concreta: basta resolver el campo guardado con la taxonomía de ese día. Es una forma sencilla de demostrar
+ante una auditoría qué protección se aplicaba y por qué. Cómo guardar la taxonomía aplicada se explica en el
+<a href="10-versiones.html">capítulo 10</a>.</p>
+</div>
+
+<h2 id="la-copia-guardada">La copia guardada</h2>
+<p>La aplicación guarda su copia donde le conviene: una tabla de campos, un fichero bajo control de versiones o un
+catálogo. Para compararla con el código, la convierte otra vez en un <code>DataInventory</code>, con el
+<code>Builder</code> o desde texto.</p>
+
+<h3 id="el-builder">El <code>Builder</code></h3>
+<p><code>DataInventory.builder()</code> empieza un inventario vacío. Sus métodos añaden objetos y campos:</p>
+<dl class="definiciones">
+<dt><code>object(String key)</code></dt>
+<dd>Añade un objeto, aunque no tenga campos. Una clave en blanco lanza <code>IllegalArgumentException</code>.</dd>
+<dt><code>field(InventoryField field)</code></dt>
+<dd>Añade un campo y, si es nuevo, su objeto. Un segundo campo con la misma ruta en el mismo objeto lanza
+<code>IllegalArgumentException</code>.</dd>
+<dt><code>field(String object, String path, String key, Basis basis)</code></dt>
+<dd>Añade un campo clasificado que toma los niveles de su categoría, sin identificabilidad ni motivo.</dd>
+<dt><code>exempt(String object, String path, String reason)</code></dt>
+<dd>Añade un campo exento.</dd>
+<dt><code>build()</code></dt>
+<dd>Crea el inventario.</dd>
+</dl>
+<figure class="ejemplo">
+<figcaption>Ejemplo 8.3. Reconstruir la copia guardada a partir de la tabla de campos</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.classify.FieldClassification.Basis;
+
+DataInventory.Builder stored = DataInventory.builder();
+for (FieldRow row : fieldTable.activeRows()) {          // la consulta de la aplicación
+    if (row.exemptReason() != null) {
+        stored.exempt(row.object(), row.path(), row.exemptReason());
+    } else {
+        stored.field(new InventoryField(row.object(), row.path(), row.categoryKey(), Basis.valueOf(row.basis()),
+                row.raisedConfidentiality(), row.raisedIntegrity(), row.identifiability(), row.reason()));
+    }
+}
+DataInventory storedInventory = stored.build();
+</code></pre>
+</figure>
+<p>Solo entran en el inventario las columnas que manda el código. Las que editan los administradores de la
+aplicación, como una etiqueta, un orden de presentación o un interruptor de activo, se quedan fuera, y así la
+comparación nunca las toca.</p>
+
+<h3 id="el-texto">El inventario como texto</h3>
+<p><code>toTsv()</code> escribe el inventario como texto separado por tabuladores y <code>DataInventory.fromTsv</code>
+lo vuelve a leer; <code>DataInventory.fromTsv(declared.toTsv())</code> es igual a <code>declared</code>. El texto es
+determinista: los objetos van por clave y los campos por ruta. La primera línea indica el formato y su versión, y le
+siguen tres comentarios que nombran las filas. Un extracto, con <code>→</code> en lugar de cada tabulador para que se
+vean las celdas vacías:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">#linneo-inventory→1
+# object key
+# field object path key basis confidentiality integrity identifiability reason
+# exempt object path reason
+object→documents
+field→documents→attachments→user.unique_id.record_reference→DERIVED→→→→
+field→documents→createdAt→system.operations→CLASS_DEFAULT→→→→marcas de tiempo técnicas de auditoría y versión de bloqueo optimista
+exempt→documents→fileStore→cliente del almacén de archivos, se abre bajo demanda
+field→students→analyticsId→user.unique_id.pseudonymous→DECLARED→→→PSEUDONYMIZED→
+field→students→counsellingNotes→user.content.private→DECLARED→HIGH→→→
+</code></pre>
+<p>Hay tres tipos de fila: <code>object</code> (2 celdas), <code>field</code> (9 celdas) y <code>exempt</code> (4
+celdas). <code>fromTsv</code> lanza <code>IllegalArgumentException</code> ante otra primera línea, un número de celdas
+incorrecto, un tipo de fila o una constante desconocidos, una celda obligatoria vacía o dos filas del mismo campo. La
+referencia describe el formato completo, incluido el escape de tabuladores y saltos de línea dentro de una celda.</p>
+
+<h3 id="las-huellas">Las huellas</h3>
+<p>La mayoría de los arranques de una aplicación no traen cambios de clasificación. Para no comparar campo a campo
+cada vez, el inventario tiene huellas:</p>
+<ul>
+<li><code>fingerprint()</code> es el SHA-256 de <code>toTsv()</code>, en 64 dígitos hexadecimales en minúscula. Dos
+inventarios iguales tienen la misma huella, y se calcula una sola vez por inventario.</li>
+<li><code>fingerprint(object)</code> es la huella de un solo objeto: cambia únicamente cuando cambia ese objeto. Lanza
+<code>IllegalArgumentException</code> si el inventario no contiene el objeto.</li>
+</ul>
+<p>Guarda la huella junto a la copia. Si en el arranque la huella del código coincide, no hay nada que conciliar; si
+no, compara solo los objetos cuya huella se movió. Como las huellas se calculan sobre un texto determinista, no
+dependen de la JVM, del orden de las clases ni del orden de los campos.</p>
+
+<h2 id="comparar-inventarios">Comparar dos inventarios</h2>
+<p><code>InventoryDiff.between(before, after, taxonomy)</code> compara dos inventarios campo a campo.
+<code>before</code> es el anterior, normalmente lo guardado; <code>after</code>, el posterior, normalmente lo que
+declara el código ahora. La taxonomía sirve para resolver las claves y decir cómo se movió la protección de cada
+campo. El resultado es el <strong>plan</strong> de una conciliación: Linneo compara y la aplicación aplica.</p>
+
+<h3 id="un-ejemplo-de-plan">Un ejemplo con la universidad</h3>
+<p>La copia guardada corresponde a la versión anterior de la aplicación. Se diferencia del código actual en lo
+siguiente:</p>
+<ul>
+<li>no existía el objeto <code>course_statistics</code> ni el campo <code>enrollments.scholarshipType</code>;</li>
+<li><code>students.analyticsId</code> guardaba el identificador del estudiante (<code>user.unique_id</code>), no un
+seudónimo;</li>
+<li><code>students.counsellingNotes</code> no elevaba la confidencialidad;</li>
+<li><code>documents.fileStore</code> estaba clasificado como <code>user.content.private</code>;</li>
+<li><code>students</code> tenía un campo <code>mobilePhone</code>, y existía un objeto
+<code>newsletter_subscriptions</code> con un campo <code>email</code>, que el código ya no tiene.</li>
+</ul>
+<figure class="ejemplo">
+<figcaption>Ejemplo 8.4. El plan de conciliación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">InventoryDiff diff = InventoryDiff.between(storedInventory, declared, taxonomy);
+System.out.println(diff);
+diff.changes().forEach(System.out::println);
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">InventoryDiff[9 field change(s), 2 weakening]
+ADDED course_statistics.averageMark: course_statistics.averageMark = user.education.grade (DECLARED)
+ADDED course_statistics.courseCode: course_statistics.courseCode = reference.public (DECLARED)
+ADDED course_statistics.passed: course_statistics.passed = user.education.grade (DECLARED)
+CHANGED documents.fileStore LOOSENED: documents.fileStore exempt: cliente del almacén de archivos, se abre bajo demanda
+ADDED enrollments.scholarshipType: enrollments.scholarshipType = user.financial.scholarship (DECLARED)
+REMOVED newsletter_subscriptions.email: was newsletter_subscriptions.email = user.contact.email (DECLARED)
+CHANGED students.analyticsId LOOSENED: students.analyticsId = user.unique_id.pseudonymous (DECLARED)
+CHANGED students.counsellingNotes TIGHTENED: students.counsellingNotes = user.content.private (DECLARED)
+REMOVED students.mobilePhone: was students.mobilePhone = user.contact.phone_number (DECLARED)
+</code></pre>
+<p>Los cambios van por objeto y después por ruta. Un campo que no cambió no aparece. Además de
+<code>changes()</code>, el diff ofrece:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-5">
+<table>
+<caption id="tabla-8-5">Tabla 8.5. Métodos de <code>InventoryDiff</code> y su valor en el ejemplo</caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th><th scope="col">En el Ejemplo 8.4</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>weakening()</code></th><td>Los cambios que rebajan alguna protección.</td>
+<td><code>documents.fileStore</code> y <code>students.analyticsId</code></td></tr>
+<tr><th scope="row"><code>addedObjects()</code></th><td>Los objetos que solo tiene <code>after</code>.</td>
+<td><code>[course_statistics]</code></td></tr>
+<tr><th scope="row"><code>removedObjects()</code></th><td>Los objetos que solo tiene <code>before</code>.</td>
+<td><code>[newsletter_subscriptions]</code></td></tr>
+<tr><th scope="row"><code>changedObjects()</code></th><td>Los objetos con algún cambio: los que hay que
+conciliar.</td>
+<td><code>[course_statistics, documents, enrollments, newsletter_subscriptions, students]</code></td></tr>
+<tr><th scope="row"><code>isEmpty()</code></th><td><code>true</code> si los inventarios son iguales.</td>
+<td><code>false</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Las huellas por objeto cuentan la misma historia: las de <code>attachments</code>, <code>grades</code>,
+<code>menu_groups</code> y <code>staff</code> coinciden en las dos copias, y las de <code>documents</code>,
+<code>enrollments</code> y <code>students</code>, no.</p>
+
+<h3 id="field-change">Cada cambio: <code>FieldChange</code></h3>
+<p>Un <code>FieldChange</code> tiene el objeto y la ruta, el tipo de cambio (<code>kind</code>), el campo antes
+(<code>before</code>, <code>null</code> si se añadió), el campo después (<code>after</code>, <code>null</code> si se
+eliminó) y la dirección (<code>direction</code>). El tipo es un <code>FieldChange.Kind</code>:</p>
+<dl class="definiciones">
+<dt><code>ADDED</code></dt>
+<dd>El campo es nuevo. Un campo personal nuevo son datos personales nuevos que quizá deba recoger el registro de
+actividades de tratamiento.</dd>
+<dt><code>REMOVED</code></dt>
+<dd>El campo ya no está en el inventario posterior, ni siquiera como exento.</dd>
+<dt><code>CHANGED</code></dt>
+<dd>El campo está en ambos y cambió algo de lo que declara, incluido pasar a estar exento o dejar de estarlo.</dd>
+</dl>
+
+<h3 id="la-direccion">La dirección del cambio</h3>
+<p>La dirección es una <code>Protection.Direction</code>, calculada resolviendo los dos lados con la taxonomía dada y
+comparando sus protecciones con <code>comparedTo</code>:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-6">
+<table>
+<caption id="tabla-8-6">Tabla 8.6. Cómo se calcula <code>direction</code></caption>
+<thead>
+<tr><th scope="col">Situación</th><th scope="col">Dirección</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Campo añadido o eliminado</th><td><code>SAME</code></td></tr>
+<tr><th scope="row">Cambio con la misma protección e identificabilidad, por ejemplo otro motivo</th>
+<td><code>SAME</code></td></tr>
+<tr><th scope="row">La protección nueva cubre a la anterior y es más estricta en algo</th>
+<td><code>TIGHTENED</code></td></tr>
+<tr><th scope="row">La protección anterior cubre a la nueva y la nueva es más débil en algo</th>
+<td><code>LOOSENED</code></td></tr>
+<tr><th scope="row">Más estricta en una faceta y más débil en otra, o naturalezas no comparables</th>
+<td><code>MIXED</code></td></tr>
+<tr><th scope="row">Alguna de las dos claves no está en la taxonomía</th><td><code>MIXED</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Cuando la protección es personal en los dos lados, también se compara la identificabilidad, con
+<code>PSEUDONYMIZED</code> por debajo de <code>IDENTIFIED</code>, y las dos direcciones se combinan con
+<code>Direction.and</code>. Así se explican los cambios del ejemplo:</p>
+<ul>
+<li><code>students.counsellingNotes</code> es <code>TIGHTENED</code>: el campo eleva ahora la confidencialidad a
+<code>HIGH</code>.</li>
+<li><code>students.analyticsId</code> es <code>LOOSENED</code>: <code>user.unique_id</code> y
+<code>user.unique_id.pseudonymous</code> tienen la misma protección, pero el valor pasa de identificado a
+seudonimizado.</li>
+<li><code>documents.fileStore</code> es <code>LOOSENED</code>: un campo exento tiene la protección más baja.</li>
+</ul>
+<p>Un valor declarado <code>ANONYMIZED</code> o <code>AGGREGATED</code> pierde su naturaleza jurídica y también es
+<code>LOOSENED</code>. Seudonimizar un campo y a la vez elevar su confidencialidad es <code>MIXED</code>.</p>
+
+<h3 id="revisar-lo-que-rebaja">Revisar los cambios que rebajan la protección</h3>
+<p><code>FieldChange.weakens()</code> es <code>true</code> cuando la dirección es <code>LOOSENED</code> o
+<code>MIXED</code>, y <code>InventoryDiff.weakening()</code> reúne esos cambios. El código manda en la
+clasificación, así que la aplicación aplica también estos cambios; pero alguien debe confirmar que la protección más
+débil era intencionada. En el ejemplo, la revisión pediría dos confirmaciones: que <code>fileStore</code> de verdad
+no guarda contenido y que <code>analyticsId</code> es realmente un seudónimo.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>Los dos inventarios se comparan <strong>con la misma taxonomía</strong>, así que <code>InventoryDiff</code> solo ve
+los cambios que vienen del código. Una taxonomía más estricta deja el diff vacío:
+<code>InventoryDiff.between(declared, declared, stricter).isEmpty()</code> es <code>true</code>. Los cambios de la
+taxonomía se buscan con <code>affectedBy</code>.</p>
+</div>
+
+<h2 id="cambios-de-la-taxonomia">Los cambios de la taxonomía: <code>affectedBy</code></h2>
+<p><code>DataInventory.affectedBy(TaxonomyDiff diff)</code> responde a la otra pregunta: el código no cambió, pero la
+taxonomía sí. Para cada categoría de datos modificada en el diff de la taxonomía, devuelve los campos a los que llega
+el cambio, en el orden del diff:</p>
+<ul>
+<li>los campos que declaran su clave;</li>
+<li>los campos cuya <strong>clave obsoleta se sustituye</strong> por ella, en cualquiera de las dos versiones, porque
+un campo así toma la protección de la sustituta.</li>
+</ul>
+<p>Los campos exentos nunca se devuelven, y los cambios de usos y sujetos de datos tampoco, porque un inventario no
+los contiene. Con la taxonomía del Ejemplo 8.2:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">TaxonomyDiff changes = TaxonomyDiff.between(taxonomy, stricter);
+declared.affectedBy(changes).forEach((change, fields) -&gt; {
+    System.out.println(change);
+    fields.forEach(field -&gt; System.out.println("  " + field.object() + "." + field.path()));
+});
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">DATA_CATEGORY 'user.contact.email': [PROTECTION] TIGHTENED
+  staff.workEmail
+  students.email
+</code></pre>
+
+<h3 id="claves-obsoletas">Claves obsoletas</h3>
+<p>El caso de las claves obsoletas merece un ejemplo. Supón que la extensión de tu organización definía
+<code>user.contact.fax</code> y que su nueva versión la deja obsoleta, con <code>user.contact.phone_number</code> como
+sustituta, y además endurece la confidencialidad de los teléfonos. La copia guardada tiene un campo con cada clave:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 8.5. Un cambio que llega a un campo con una clave obsoleta</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">import io.github.devbpm.linneo.classify.FieldClassification.Basis;
+
+Taxonomy v1 = Taxonomy.builder().withStandard()
+        .category("user.contact.fax", "Fax number", "A fax number.")
+        .build();
+Taxonomy v2 = Taxonomy.builder().withStandard()
+        .category("user.contact.fax", "Fax number", "A fax number.",
+                category -&gt; category.deprecated("2.0.0", USER_CONTACT_PHONE_NUMBER))
+        .refineCategory(USER_CONTACT_PHONE_NUMBER, category -&gt; category.confidentiality(Confidentiality.MEDIUM))
+        .build();
+DataInventory contacts = DataInventory.builder()
+        .field("students", "fax", "user.contact.fax", Basis.DECLARED)
+        .field("staff", "officePhone", USER_CONTACT_PHONE_NUMBER, Basis.DECLARED)
+        .build();
+contacts.affectedBy(TaxonomyDiff.between(v1, v2))
+        .forEach((change, fields) -&gt; System.out.println(change + " -&gt; " + fields));
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">DATA_CATEGORY 'user.contact.fax': [DEPRECATION, REPLACEMENT] -&gt; [students.fax = user.contact.fax (DECLARED)]
+DATA_CATEGORY 'user.contact.phone_number': [PROTECTION] TIGHTENED -&gt; [staff.officePhone = user.contact.phone_number (DECLARED), students.fax = user.contact.fax (DECLARED)]
+</code></pre>
+<p><code>students.fax</code> aparece dos veces: por el cambio de su propia clave, que pasa a ser obsoleta, y por el
+cambio de su sustituta, cuya protección ahora toma. Resuelto con <code>v1</code>, su categoría es
+<code>user.contact.fax</code> con confidencialidad <code>LOW</code>; con <code>v2</code>, es
+<code>user.contact.phone_number</code> con <code>MEDIUM</code>. El inventario no cambia: el campo conserva la clave
+que declaró.</p>
+<p>Una aplicación usa <code>affectedBy</code> para dos cosas: migrar las claves que guarda cuando una categoría pasa
+a ser obsoleta, y registrar <strong>una entrada de auditoría por categoría modificada</strong>, con los campos a los
+que afecta, en lugar de una por campo. Cómo obtener y guardar la taxonomía aplicada, qué aspectos tiene un
+<code>TermChange</code> y cómo se gradúa un cambio de versión se explican en el <a href="10-versiones.html">capítulo
+10</a>.</p>
+
+<h2 id="la-conciliacion">La conciliación con la copia guardada</h2>
+<p>Una conciliación es el proceso que, al arrancar o al desplegar, pone la copia guardada de acuerdo con el código.
+Linneo no trae un conciliador, porque la mayor parte de uno es propia de cada aplicación: sus tablas, sus
+transacciones, sus bloqueos entre nodos, su auditoría. Linneo aporta la parte que es igual en todas.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-7">
+<table>
+<caption id="tabla-8-7">Tabla 8.7. Quién hace cada paso de la conciliación</caption>
+<thead>
+<tr><th scope="col">Paso</th><th scope="col">Quién</th><th scope="col">Con</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Saber qué declara el código</th><td>Linneo</td><td><code>Classifier.inventory</code></td></tr>
+<tr><th scope="row">Leer lo guardado</th><td>La aplicación</td><td>Sus consultas y
+<code>DataInventory.builder()</code></td></tr>
+<tr><th scope="row">Comparar y decir cómo se movió la protección</th><td>Linneo</td>
+<td><code>InventoryDiff.between</code>, <code>FieldChange.direction()</code></td></tr>
+<tr><th scope="row">Escribir los cambios en una transacción</th><td>La aplicación</td><td>Su persistencia</td></tr>
+<tr><th scope="row">Impedir que dos nodos concilien a la vez</th><td>La aplicación</td><td>Su mecanismo de
+bloqueo</td></tr>
+<tr><th scope="row">Auditar y pedir revisión de lo que rebaja</th><td>La aplicación</td>
+<td><code>InventoryDiff.weakening()</code></td></tr>
+<tr><th scope="row">Detectar una taxonomía nueva y a qué alcanza</th><td>Linneo</td>
+<td><code>TaxonomyDiff</code>, <code>affectedBy</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Dicho en una frase: <strong>Linneo compara y no persiste</strong>. Los tipos del inventario no tocan un fichero ni
+una base de datos, no bloquean nada, no guardan historial y no deciden qué acepta una revisión. Leer, escribir,
+bloquear y auditar la copia corresponde a la aplicación.</p>
+<p>Tres reglas hacen seguro un conciliador:</p>
+<ol>
+<li><strong>El código manda en la clasificación.</strong> Diga lo que diga la copia, la conciliación la reescribe
+como dice el código.</li>
+<li><strong>Retirar, no borrar.</strong> Un campo que el código ya no declara conserva su fila, marcada como retirada,
+porque los permisos, la auditoría y los informes apuntan a ella. Si el código lo vuelve a declarar, la fila
+revive.</li>
+<li><strong>Guardar claves, no niveles.</strong> La protección se resuelve con la taxonomía cuando hace falta, como
+explica la sección <a href="#por-que-no-guarda-niveles">Por qué no guarda los niveles de la taxonomía</a>.</li>
+</ol>
+
+<h2 id="el-patron-completo">El patrón completo</h2>
+<p>Una conciliación tiene cuatro pasos. En la universidad se ejecuta al arrancar la aplicación de secretaría:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Construir</span> Calcula el inventario del código con
+<code>classifier.inventory(entities, tables::get)</code>. Si su huella coincide con la guardada, termina.</li>
+<li><span class="flujo-titulo">Comparar</span> Lee lo guardado, conviértelo en un inventario y obtén el plan con
+<code>InventoryDiff.between(stored, declared, taxonomy)</code>.</li>
+<li><span class="flujo-titulo">Planificar</span> Registra para revisión cada cambio de <code>weakening()</code> y
+decide qué hacer con cada <code>FieldChange</code> según su tipo.</li>
+<li><span class="flujo-titulo">Aplicar</span> Escribe los cambios en una transacción, con el bloqueo que impide que
+otro nodo concilie a la vez, y guarda la huella nueva.</li>
+</ol>
+<figure class="ejemplo">
+<figcaption>Ejemplo 8.6. Un conciliador de la aplicación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">static void reconcile(Classifier classifier, Taxonomy taxonomy, List&lt;Class&lt;?&gt;&gt; entities,
+                      Map&lt;Class&lt;?&gt;, String&gt; tables) {
+    DataInventory declared = classifier.inventory(entities, tables::get);          // 1. construir
+    if (declared.fingerprint().equals(settings.read("linneo.inventory"))) {
+        return;                                                                     // nada cambió
+    }
+    DataInventory stored = fieldTable.readInventory();                             // la consulta de la aplicación
+    InventoryDiff diff = InventoryDiff.between(stored, declared, taxonomy);        // 2. comparar
+    for (FieldChange change : diff.weakening()) {                                  // 3. planificar
+        audit.reviewNeeded(change.toString());
+    }
+    for (FieldChange change : diff.changes()) {                                    // 4. aplicar
+        switch (change.kind()) {
+            case ADDED -&gt; fieldTable.insertOrRevive(change.after());
+            case REMOVED -&gt; fieldTable.retire(change.object(), change.path());
+            case CHANGED -&gt; fieldTable.rewriteCodeColumns(change.after());
+        }
+    }
+    settings.write("linneo.inventory", declared.fingerprint());
+}
+</code></pre>
+</figure>
+<p><code>settings</code>, <code>fieldTable</code> y <code>audit</code> son de la aplicación. La llamada al conciliador
+va dentro de la transacción y del bloqueo que use la aplicación, y la revisión de los cambios que rebajan la protección
+llega a quien deba aprobarla: el equipo responsable del modelo o el
+<abbr title="delegado de protección de datos">DPD</abbr>. Para limitar la comparación, guarda también la huella de cada
+objeto y lee de la tabla solo los objetos cuya huella se movió.</p>
+<p>La huella solo detecta cambios del <strong>código</strong>. Una edición manual de una columna que manda el código
+no se ve hasta la siguiente comparación completa. Haz una comparación completa con cada versión nueva de la
+aplicación, o impide esas ediciones con privilegios de base de datos.</p>
+<p>Cuando cambia la versión de Linneo o de una extensión, el mismo arranque compara la taxonomía aplicada con la
+actual y recorre <code>affectedBy</code>, como en la sección anterior. El <a href="10-versiones.html">capítulo 10</a>
+completa ese paso.</p>
+
+<h3 id="revision-en-el-control-de-versiones">Una revisión que muestra cada cambio</h3>
+<p>El texto del inventario es un buen fichero para el control de versiones: una línea por campo, ordenada, con su clave,
+su base, sus niveles elevados y su identificabilidad. Un test puede compararlo con el código, de modo que cada cambio
+de la clasificación aparezca en la solicitud de cambios, donde lo ve quien revisa:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Test
+void classificationIsReviewed() throws IOException {
+    String current = classifier.inventory(ENTITIES, Entities::key).toTsv();
+    String reviewed = Files.readString(Path.of("src/test/resources/inventory.tsv"));
+    assertEquals(reviewed, current, "the classification changed: review it and update inventory.tsv");
+}
+</code></pre>
+
+<h2 id="fuente-de-catalogos-y-actividades">Los inventarios como fuente</h2>
+<p>Un inventario guardado no sirve solo para conciliar. Como contiene todo lo que el código declara, otras partes de
+Linneo aceptan un <code>InventoryField</code> donde aceptan una <code>FieldClassification</code>, y dan el mismo
+resultado. Eso permite que un <span lang="en">back office</span> que no tiene las clases del modelo trabaje con la
+copia guardada.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-8-8">
+<table>
+<caption id="tabla-8-8">Tabla 8.8. Usos de un inventario guardado</caption>
+<thead>
+<tr><th scope="col">Uso</th><th scope="col">Con</th><th scope="col">Capítulo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Etiquetas de un catálogo de datos</th><td><code>OpenMetadataCatalog.tagsOf(InventoryField)</code>,
+<code>DataHubCatalog.termsOf(InventoryField)</code>, <code>AtlasCatalog.classificationsOf(InventoryField)</code></td>
+<td><a href="17-catalogos.html">17</a></td></tr>
+<tr><th scope="row">Mostrar, enmascarar u omitir</th><td><code>DisclosurePolicy.treatment(InventoryField,
+Taxonomy)</code></td><td><a href="07-uso.html">7</a></td></tr>
+<tr><th scope="row">Reglas de PostgreSQL, extensión OpenAPI y contrato
+<abbr title="Open Data Contract Standard">ODCS</abbr></th><td><code>PostgresAnonymizer</code>,
+<code>OpenApiExtension</code>, <code>OdcsSchema</code></td><td><a href="16-exportadores.html">16</a></td></tr>
+<tr><th scope="row">Actividades de tratamiento</th><td><code>ProcessingActivity.objects(...)</code> y
+<code>ProcessingChecker</code> con el inventario</td><td><a href="11-actividades.html">11</a></td></tr>
+</tbody>
+</table>
+</div>
+<p>Las etiquetas de un campo guardado coinciden exactamente con las de su clasificación; el test
+<code>InventoryPublishingTest</code> lo comprueba para los tres catálogos:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">InventoryField disability = declared.field("students", "disabilityDegree").orElseThrow();
+OpenMetadataCatalog.of(taxonomy).tagsOf(disability);
+DisclosurePolicy.forLogs().treatment(disability, taxonomy);       // OMIT
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">[DataCategory.user.health_and_medical.disability, PersonalData.SpecialCategory, PII.Sensitive, Confidentiality.High, Integrity.High, Identifiability.Identified]
+</code></pre>
+<p>Las actividades de tratamiento pueden nombrar objetos del inventario en lugar de clases. El comprobador resuelve
+esos objetos en el inventario que recibe y encuentra sus datos personales sin ver las clases:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 8.7. Una actividad que lee objetos del inventario</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity enrollment = ProcessingActivity.builder("enrollment", "Student enrollment")
+        .purposes(DataUses.EDUCATION_ENROLLMENT)
+        .dataSubjects(DataSubjects.STUDENT)
+        .objects("students", "enrollments")                        // claves del inventario
+        .build();
+ProcessingChecker checker = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, declared);
+checker.check(enrollment).violations().forEach(System.out::println);
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_LEGAL_BASIS enrollment: Personal data needs a lawful basis (GDPR article 6.1)
+ERROR MISSING_SPECIAL_CATEGORY_CONDITION enrollment: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+WARNING MISSING_RETENTION enrollment: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+</code></pre>
+<p>El segundo error demuestra que el comprobador encontró, a través del inventario y sin ver la clase, el grado de
+discapacidad de <code>students</code>. También muestra por qué una actividad no debe nombrar un objeto entero cuyos
+datos no usa: la matrícula no necesita el grado de discapacidad. El <a href="11-actividades.html">capítulo 11</a>
+declara la matrícula solo con el objeto <code>enrollments</code> y las claves de los pocos datos del estudiante que
+usa, y le añade su base jurídica y su referencia legal.</p>
+
+<h2 id="rendimiento">Rendimiento</h2>
+<p>La ejecución de <code>tools/bench/InventoryBench.java</code> mostrada en el
+<a href="07-uso.html#rendimiento">capítulo
+7</a> mide también el inventario de 800 entidades y 39 000 campos: unos 200 ms para construirlo, unos 50 ms para su
+huella, unos 80 ms para comparar dos inventarios con el 1 % de los campos cambiados y unos 25 ms para
+<code>affectedBy</code>. La parte de Linneo en una conciliación queda muy por debajo de un segundo y crece de forma
+lineal con el número de campos. El tiempo que importa es el de la aplicación:</p>
+<ul>
+<li>lee cada tabla con una sola consulta que devuelva las columnas que manda el código, no una consulta por objeto;</li>
+<li>escribe solo las filas que cambian, por lotes;</li>
+<li>audita por causa: una entrada por categoría de <code>affectedBy</code>, no una por campo;</li>
+<li>mantén la transacción y el bloqueo tan cortos como sea posible.</li>
+</ul>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Tomar las claves de objeto del nombre de la clase.</dt>
+<dd>Una refactorización parece entonces la eliminación de un objeto entero y la creación de otro, y dos clases con el
+mismo nombre simple chocan. Usa el nombre de la tabla o un identificador de negocio estable.</dd>
+<dt>Guardar en cada fila los niveles que resuelve la taxonomía.</dt>
+<dd>Una taxonomía más estricta exige entonces reescribir todas las filas, y una que falte deja un campo menos
+protegido. Guarda la clave y solo los niveles que eleva el campo.</dd>
+<dt>Borrar las filas de los campos eliminados.</dt>
+<dd>Los permisos, la auditoría y los informes pierden su referencia. Retíralas y revívelas si el código vuelve a
+declarar el campo.</dd>
+<dt>Meter en el inventario guardado las columnas que editan los administradores.</dt>
+<dd>La comparación las reescribiría en cada arranque. Solo entran las columnas que manda el código.</dd>
+<dt>Ignorar <code>weakening()</code> porque el código manda.</dt>
+<dd>El código gana, pero alguien debe confirmar que la protección más débil era intencionada.</dd>
+<dt>Esperar que <code>InventoryDiff</code> detecte una taxonomía más estricta.</dt>
+<dd>Compara con una sola taxonomía y solo ve cambios del código. Los de la taxonomía se buscan con
+<code>affectedBy</code>.</dd>
+<dt>Saltarse siempre la comparación porque la huella coincide.</dt>
+<dd>La huella no ve las ediciones manuales de la copia. Haz una comparación completa con cada versión nueva.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Un <code>DataInventory</code> es la clasificación como datos: objetos con claves que elige la aplicación y campos
+con lo que el código declara. Está ordenado, se escribe como texto y tiene huellas por inventario y por objeto.</li>
+<li><code>Classifier.inventory</code> lo construye desde el código; el <code>Builder</code> y <code>fromTsv</code>,
+desde lo guardado. Las claves de objeto deben ser estables.</li>
+<li>Un <code>InventoryField</code> guarda la clave declarada, aunque sea obsoleta, y solo los niveles que eleva el
+campo. Por eso un cambio de la taxonomía nunca cambia un inventario; la protección se obtiene resolviendo el campo con
+la taxonomía del día.</li>
+<li><code>InventoryDiff</code> compara dos inventarios con una misma taxonomía. Cada <code>FieldChange</code> es
+<code>ADDED</code>, <code>REMOVED</code> o <code>CHANGED</code>, con una dirección; <code>weakening()</code> reúne los
+cambios que deben revisarse.</li>
+<li><code>affectedBy</code> da los campos a los que llega cada cambio de la taxonomía, incluidos los que usan una
+clave obsoleta sustituida por la categoría modificada.</li>
+<li>Linneo compara y no persiste: la aplicación lee, escribe, bloquea y audita su copia.</li>
+<li>Un inventario guardado alimenta los catálogos, los exportadores, las políticas de divulgación y las actividades
+de tratamiento sin necesidad de las clases del modelo.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Predice el cambio.</strong> La copia guardada tiene <code>students.phone</code> con
+<code>user.contact.phone_number</code>. El código cambia el campo a <code>@Exempt("columna heredada, siempre
+vacía")</code>. ¿Qué <code>FieldChange</code> informa la comparación, con qué dirección, y está en
+<code>weakening()</code>?</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<pre class="codigo salida" tabindex="0"><code class="language-text">CHANGED students.phone LOOSENED: students.phone exempt: columna heredada, siempre vacía
+</code></pre>
+<p>Es un <code>CHANGED</code>, no un <code>REMOVED</code>, porque el campo sigue en el inventario como exento. Un
+campo exento tiene la protección más baja, así que la dirección es <code>LOOSENED</code> y el cambio está en
+<code>weakening()</code>. Aplícalo y pide la revisión: una columna «siempre vacía» que sigue existiendo puede llenarse
+mañana.</p>
+</details>
+</li>
+<li>
+<p><strong>Seudonimizar y elevar.</strong> El código cambia <code>Staff.fullName</code> de
+<code>@Category(USER_NAME)</code> a <code>@Category(value = USER_NAME, confidentiality = Confidentiality.HIGH,
+identifiability = Identifiability.PSEUDONYMIZED)</code>. ¿Qué dirección tiene el cambio? ¿Y si solo se seudonimiza?</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<p>Con los dos cambios, <code>MIXED</code>: la protección se endurece (<code>TIGHTENED</code>, por la
+confidencialidad) y la identificabilidad baja (<code>LOOSENED</code>), y <code>Direction.and</code> combina dos
+direcciones distintas en <code>MIXED</code>. Si solo se seudonimiza, la protección es la misma y la dirección es
+<code>LOOSENED</code>. En los dos casos el cambio está en <code>weakening()</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Una forma canónica.</strong> La tabla de campos de la aplicación guarda <code>IDENTIFIED</code> en la
+columna de identificabilidad de <code>students.email</code> y un motivo con dos espacios. ¿Informará la comparación un
+<code>CHANGED</code> para ese campo?</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<p>No. El constructor de <code>InventoryField</code> guarda <code>IDENTIFIED</code> como <code>null</code> y un motivo
+en blanco de un campo clasificado como <code>null</code>, así que el campo construido con esa fila es igual al del
+código y no hay cambio.</p>
+</details>
+</li>
+<li>
+<p><strong>Una taxonomía nueva.</strong> Una versión nueva de la taxonomía endurece <code>user.education.grade</code>.
+¿Cuál de <code>InventoryDiff</code> y <code>affectedBy</code> lo informa, y qué campos del modelo de la universidad
+aparecerían?</p>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<p><code>affectedBy</code>. <code>InventoryDiff</code> compara con una sola taxonomía y no ve cambios de la taxonomía.
+Aparecerían los campos que declaran <code>user.education.grade</code>: <code>grades.mark</code> y, aunque están
+agregados, <code>course_statistics.averageMark</code> y <code>course_statistics.passed</code>, porque los niveles
+de su categoría también cambian para ellos.</p>
+</details>
+</li>
+<li>
+<p><strong>Claves de objeto.</strong> Dos entidades, <code>edu.example.university.Student</code> y
+<code>edu.example.other.Student</code>, usan <code>Class::getSimpleName</code> como clave de objeto. ¿Qué hace
+<code>inventory</code> y cómo elegirías las claves?</p>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<p>Lanza <code>IllegalArgumentException</code> con el mensaje <code>edu.example.university.Student and
+edu.example.other.Student have the same object key 'Student'</code>. Toma la clave del nombre de la tabla, de una
+anotación de objeto de negocio o de un registro de la aplicación: algo que nombre el objeto, no la clase.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué niveles guarda un <code>InventoryField</code>?</p>
+<ol>
+<li>Los niveles efectivos del campo, como <code>FieldClassification</code>.</li>
+<li>Solo los niveles que el campo eleva explícitamente sobre los de su categoría.</li>
+<li>Ninguno: los niveles siempre se obtienen de la taxonomía.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La respuesta correcta es la b. Los niveles elevados son una declaración del código y se guardan; los de la
+categoría pertenecen a la taxonomía y no se copian (a), para que un cambio de taxonomía no cambie el inventario. Un
+campo que eleva un nivel sí lo guarda, así que c no es exacta.</p>
+</details>
+</li>
+<li>
+<p>¿Qué dirección tiene un <code>FieldChange</code> de tipo <code>ADDED</code>?</p>
+<ol>
+<li><code>SAME</code>.</li>
+<li><code>TIGHTENED</code>, porque aparece protección donde no la había.</li>
+<li>Depende de si el campo es personal.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La respuesta correcta es la a: un campo añadido o eliminado no tiene dos protecciones que comparar, así que su
+dirección es siempre <code>SAME</code>. Para saber si un campo nuevo trae datos personales nuevos, mira
+<code>change.after().isPersonal(taxonomy)</code>.</p>
+</details>
+</li>
+<li>
+<p>Una categoría se vuelve más estricta en la nueva versión de la taxonomía. ¿Qué devuelve
+<code>InventoryDiff.between(guardado, codigo, nueva)</code> si el código no cambió?</p>
+<ol>
+<li>Un <code>CHANGED</code> con dirección <code>TIGHTENED</code> por cada campo de esa categoría.</li>
+<li>Un diff vacío.</li>
+<li>Una <code>TaxonomyException</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La respuesta correcta es la b. Los dos inventarios son iguales porque el código declara lo mismo, y se comparan con
+una sola taxonomía. El cambio de la taxonomía se encuentra con <code>affectedBy</code>.</p>
+</details>
+</li>
+<li>
+<p>¿Cuál de estas tareas hace Linneo en una conciliación?</p>
+<ol>
+<li>Escribir las filas nuevas en la tabla de campos.</li>
+<li>Bloquear la conciliación para que no la ejecuten dos nodos a la vez.</li>
+<li>Decir qué campos cambiaron y en qué dirección se movió su protección.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La respuesta correcta es la c. Linneo compara y no persiste: escribir (a) y bloquear (b) corresponden a la
+aplicación, igual que leer y auditar.</p>
+</details>
+</li>
+<li>
+<p>¿Por qué un <span lang="en">back office</span> sin las clases del modelo puede comprobar una actividad de
+tratamiento?</p>
+<ol>
+<li>Porque el comprobador lee las anotaciones desde el inventario.</li>
+<li>Porque la actividad puede nombrar objetos de un inventario guardado, y el comprobador los resuelve con la
+taxonomía.</li>
+<li>Porque las actividades de tratamiento no necesitan conocer los datos personales.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La respuesta correcta es la b. El inventario no contiene anotaciones (a), sino lo que declararon; y una actividad
+sí necesita conocer sus datos personales (c): de ellos dependen, por ejemplo, la condición del artículo 9.2 del
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr> y la evaluación de impacto.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="10-versiones.html">Capítulo 10. Versiones de la taxonomía</a>: guardar la taxonomía aplicada y comparar
+versiones.</li>
+<li><a href="11-actividades.html">Capítulo 11. Actividades de tratamiento</a>: actividades con objetos del
+inventario.</li>
+<li><a href="17-catalogos.html">Capítulo 17. Catálogos de datos</a>: etiquetas de columnas a partir de campos
+guardados.</li>
+<li><a href="../../reference/classify/inventory.html">Referencia: inventario de datos</a>, con el formato completo del
+texto.</li>
+<li><a href="../../reference/taxonomy-diff.html">Referencia: diferencias entre taxonomías</a>.</li>
+<li><a href="../../reference/protection-levels.html">Referencia: niveles de protección y direcciones</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="07-uso.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 7. Usar la clasificación</a></li>
+<li><a href="09-extensiones.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 9. Ampliar la taxonomía</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

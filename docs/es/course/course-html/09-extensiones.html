@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
+  - src/main/java/io/github/devbpm/linneo/TermDraft.java
+  - src/main/java/io/github/devbpm/linneo/CategoryDraft.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyExtension.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyException.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
+  - src/main/java/io/github/devbpm/linneo/LegalNature.java
+  - src/main/java/module-info.java
+  - src/main/java/io/github/devbpm/linneo/extension/university/UniversityTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/university/UniversityCategories.java
+  - src/main/java/io/github/devbpm/linneo/extension/university/UniversityDataUses.java
+  - src/main/java/io/github/devbpm/linneo/extension/university/UniversityDataSubjects.java
+  - src/main/java/io/github/devbpm/linneo/extension/finance/FinanceTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/supplychain/SupplyChainTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/projectoperations/ProjectOperationsTaxonomy.java
+  - src/main/java/io/github/devbpm/linneo/extension/humanresources/HumanResourcesTaxonomy.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 9. Ampliar la taxonomía · Curso de Linneo</title>
+<meta name="description" content="Cómo añadir términos propios y endurecer la protección con TaxonomyBuilder y TaxonomyExtension, y cómo usar las cinco extensiones incluidas.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html" aria-current="page"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 9. Ampliar la taxonomía</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 9</span> Ampliar la taxonomía</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>90 minutos</dd></div>
+<div><dt>Parte III:</dt><dd>Gobernar la taxonomía</dd></div>
+</dl>
+<p class="entradilla">La taxonomía estándar cubre los datos más comunes, pero cada organización tiene datos, finalidades
+y políticas de seguridad propias. Este capítulo explica cómo añadir términos y endurecer la protección sin modificar
+Linneo: con el <code>TaxonomyBuilder</code>, que es el único lugar donde se monta y valida una taxonomía, y con una
+<code>TaxonomyExtension</code>, que empaqueta esos cambios para que toda la aplicación los aplique igual. Al final
+recorre las cinco extensiones sectoriales que incluye la biblioteca.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#cuando-extender">Cuándo extender y cuándo no</a></li>
+<li><a href="#taxonomy-builder">El <code>TaxonomyBuilder</code></a></li>
+<li><a href="#borradores">Los borradores: <code>TermDraft</code> y <code>CategoryDraft</code></a></li>
+<li><a href="#escribir-una-extension">Escribir una <code>TaxonomyExtension</code></a></li>
+<li><a href="#limites-de-una-extension">Lo que una extensión no puede hacer</a></li>
+<li><a href="#que-rechaza-build">Qué rechaza el constructor: <code>TaxonomyException</code></a></li>
+<li><a href="#registrar">Registrar la extensión</a></li>
+<li><a href="#extensiones-incluidas">Las cinco extensiones incluidas</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>decidir si una necesidad se resuelve con una clave existente, con una anotación de campo o con una extensión;</li>
+<li>explicar cómo resuelve el <code>TaxonomyBuilder</code> las facetas de cada categoría y por qué toda faceta declarada
+es un mínimo;</li>
+<li>escribir una <code>TaxonomyExtension</code> que añada categorías, usos de datos y sujetos de datos, endurezca
+categorías existentes, declare rasgos y deje obsoletos sus propios términos;</li>
+<li>predecir qué rechaza el constructor, en qué momento y con qué mensaje de <code>TaxonomyException</code>;</li>
+<li>registrar una extensión con <code>ServiceLoader</code> en el class path y en el module path, o aplicarla de forma
+explícita;</li>
+<li>aplicar la extensión universitaria incluida en Linneo y elegir entre las otras cuatro extensiones sectoriales.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo da por sabidos la naturaleza jurídica y los niveles de protección
+(<a href="02-proteccion.html">capítulo 2</a>), la estructura de la taxonomía, las claves con puntos, la herencia de la
+protección y los rasgos (<a href="03-taxonomia.html">capítulo 3</a>), y la anotación <code>@Category</code> con sus
+niveles elevados en el campo (<a href="04-anotaciones.html">capítulo 4</a>). Los ejemplos continúan el modelo de la
+universidad de los capítulos anteriores.</p>
+
+<h2 id="cuando-extender">Cuándo extender y cuándo no</h2>
+<p>Una <dfn>extensión</dfn> es un conjunto de términos y de endurecimientos de protección que una aplicación o un sector
+añade a la taxonomía estándar al construirla. Existe porque la taxonomía estándar no puede prever los datos de cada
+organización, y porque cambiar la biblioteca para cada caso no es viable: la extensión aporta lo que falta sin tocar
+Linneo y sin debilitar lo que ya existe.</p>
+
+<h3>Lo que necesita la universidad</h3>
+<p>La universidad del ejemplo conductor detecta cinco necesidades que la taxonomía estándar no cubre:</p>
+<ul>
+<li>una clave para los <strong>cuadernos de laboratorio</strong> de los estudiantes, que ninguna clave de
+<code>user.education.*</code> describe con exactitud;</li>
+<li>un atributo de <strong>conservación</strong> en esos cuadernos, que deben guardarse de forma permanente;</li>
+<li>una protección más estricta para los <strong>documentos de identidad</strong>: su política de seguridad considera
+que revelar un número de identificación causa un daño grave (<code>HIGH</code>), no moderado (<code>MEDIUM</code>);</li>
+<li>una finalidad para la <strong>ordenación de solicitudes de admisión</strong>, que puntúa a las personas y que el
+cribado de impacto debe ver;</li>
+<li>un sujeto de datos para los <strong>investigadores visitantes</strong>.</li>
+</ul>
+<p>Ninguna de estas necesidades exige cambiar Linneo. Las cinco caben en una sola extensión,
+<code>CampusTaxonomy</code>, que construirás en este capítulo.</p>
+
+<h3>Antes de extender, busca</h3>
+<p>Una clave nueva tiene un coste: otras herramientas, otras organizaciones y el propio delegado de protección de datos
+(<abbr title="delegado de protección de datos">DPD</abbr>) conocen las claves estándar, pero no las tuyas. Antes de
+añadir un término, revisa la <a href="../../reference/standard-taxonomy.html">taxonomía estándar</a> y, en una
+universidad, la <a href="../../reference/extensions/university.html">extensión universitaria</a>: ya tiene claves para
+tesis, asistencia, expedientes disciplinarios y muchos otros datos académicos. La Tabla 9.1 resume qué herramienta
+corresponde a cada necesidad.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-1">
+<table>
+<caption id="tabla-9-1">Tabla 9.1. Qué herramienta usar para cada necesidad</caption>
+<thead>
+<tr><th scope="col">Necesidad</th><th scope="col">Herramienta</th><th scope="col">Dónde se explica</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Un campo concreto necesita más protección que su categoría</th>
+<td><code>@Category(value = ..., confidentiality = ...)</code> en ese campo</td><td>Capítulo 4</td></tr>
+<tr><th scope="row">Toda la organización exige más protección para una categoría</th>
+<td><code>refineCategory</code> en una extensión</td><td>Este capítulo</td></tr>
+<tr><th scope="row">Un dato no tiene ninguna clave estándar que lo describa con verdad</th>
+<td><code>category</code>, como hija de una categoría existente</td><td>Este capítulo</td></tr>
+<tr><th scope="row">Una finalidad o un tipo de interesado propios</th>
+<td><code>dataUse</code> o <code>dataSubject</code></td><td>Este capítulo</td></tr>
+<tr><th scope="row">Las reglas jurídicas deben ver una propiedad de un término</th>
+<td><code>traits(...)</code> en el borrador del término</td><td>Este capítulo</td></tr>
+<tr><th scope="row">Una clave cambia de nombre</th>
+<td><code>deprecated(version, sustituta)</code>, nunca borrarla</td><td>Este capítulo y capítulo 10</td></tr>
+<tr><th scope="row">El sector ya tiene una extensión incluida en Linneo</th>
+<td><code>extend(new UniversityTaxonomy())</code> u otra de las cinco</td><td>Este capítulo</td></tr>
+<tr><th scope="row">Bajar la protección de una categoría</th>
+<td>Ninguna: no es posible, por diseño</td><td>Capítulo 2</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Dos reglas guían el diseño de cualquier término nuevo. Primera: añade los términos como <strong>hijos de términos
+existentes</strong>, para que cualquiera que conozca el árbol estándar los entienda y para que hereden una protección
+razonable. Segunda: una clave existente que describa con verdad el dato siempre es preferible a una nueva, aunque sea
+menos específica.</p>
+
+<h2 id="taxonomy-builder">El <code>TaxonomyBuilder</code></h2>
+<p>El <dfn>constructor de taxonomías</dfn> (<code>TaxonomyBuilder</code>, un objeto <span lang="en">builder</span>) es
+el único lugar donde se montan y validan las taxonomías. Todas las vías pasan por él: <code>Taxonomy.standard()</code>
+es la taxonomía que construye con los términos estándar, <code>Taxonomy.load()</code> le añade las extensiones
+registradas, y <code>Taxonomy.fromTsv</code> lee un texto guardado pasando también por el constructor
+(<a href="10-versiones.html">capítulo 10</a>). Como solo <code>build()</code> puede crear una <code>Taxonomy</code>,
+toda taxonomía que circula por la aplicación ha superado las mismas comprobaciones.</p>
+<p><code>Taxonomy.builder()</code> devuelve un constructor vacío. No es seguro entre hilos y está pensado para usarse
+una sola vez. La Tabla 9.2 resume sus métodos públicos.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-2">
+<table>
+<caption id="tabla-9-2">Tabla 9.2. Métodos de <code>TaxonomyBuilder</code></caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Qué hace</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>withStandard()</code></th><td>Añade la taxonomía estándar (orígenes <code>fideslang</code> y
+<code>linneo</code>) con su política de protección. Llamarlo otra vez no tiene efecto.</td></tr>
+<tr><th scope="row"><code>withExtensions()</code></th><td>Aplica las extensiones que encuentra
+<code>ServiceLoader</code> con el cargador de clases de contexto del hilo, o con el de Linneo si no hay
+ninguno.</td></tr>
+<tr><th scope="row"><code>withExtensions(ClassLoader)</code></th><td>Lo mismo con el cargador indicado. Las aplica
+ordenadas por <code>name()</code>.</td></tr>
+<tr><th scope="row"><code>extend(TaxonomyExtension)</code></th><td>Aplica una extensión: llama a su
+<code>contribute(this)</code> con su nombre como origen.</td></tr>
+<tr><th scope="row"><code>origin(String)</code></th><td>Fija el origen de los términos que se añadan a partir de ese
+momento. Por defecto es <code>"application"</code> (<code>TaxonomyBuilder.DEFAULT_ORIGIN</code>).</td></tr>
+<tr><th scope="row"><code>category(key, name, description)</code></th><td>Añade una categoría de datos que hereda toda
+su protección de su madre.</td></tr>
+<tr><th scope="row"><code>category(key, name, description, customizer)</code></th><td>Añade una categoría y declara sus
+propiedades en un <code>CategoryDraft</code>.</td></tr>
+<tr><th scope="row"><code>refineCategory(key, customizer)</code></th><td>Endurece una categoría existente o le añade
+rasgos, atributos u obsolescencia.</td></tr>
+<tr><th scope="row"><code>dataUse(...)</code> y <code>dataSubject(...)</code></th><td>Añaden un uso de datos o un sujeto
+de datos, con o sin personalizador <code>TermDraft</code>.</td></tr>
+<tr><th scope="row"><code>refineDataUse</code> y <code>refineDataSubject</code></th><td>Añaden rasgos u obsolescencia a
+un uso o a un sujeto existentes.</td></tr>
+<tr><th scope="row"><code>build()</code></th><td>Comprueba las jerarquías, resuelve las facetas heredadas y devuelve la
+<code>Taxonomy</code> inmutable.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Claves y orden de los términos</h3>
+<p>Una clave es una ruta de segmentos en minúsculas separados por puntos, cada uno con la forma
+<code>[a-z][a-z0-9_]*</code>. La madre de un término es su clave sin el último segmento:
+<code>user.education.lab_notebook</code> cuelga de <code>user.education</code>. Los métodos que añaden términos
+comprueban la clave en el momento: una clave mal formada o repetida en la misma jerarquía lanza
+<code>TaxonomyException</code> de inmediato. La existencia de la madre, en cambio, se comprueba en <code>build()</code>,
+así que puedes añadir los términos en cualquier orden.</p>
+
+<h3>Cada faceta declarada es un mínimo</h3>
+<p>Una <dfn>faceta</dfn> es cada propiedad de protección de una categoría: naturaleza jurídica, confidencialidad,
+integridad y secreto. En el constructor, <strong>toda faceta que declaras es un mínimo</strong>: si declaras un nivel
+inferior al que la categoría ya tiene, el resultado no baja; si dos declaraciones fijan niveles distintos, gana el más
+estricto, en cualquier orden. Esta regla hace que el resultado no dependa del orden en que se aplican las extensiones y
+que ninguna pueda debilitar lo que fija otra.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 9.1. Un nivel inferior no baja nada; dos niveles dan el más estricto</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy lower = Taxonomy.builder().withStandard()
+        .refineCategory(USER_EDUCATION_GRADE, c -&gt; c.confidentiality(Confidentiality.LOW))
+        .build();
+lower.requireCategory(USER_EDUCATION_GRADE).confidentiality();   // MEDIUM
+
+Taxonomy stricter = Taxonomy.builder().withStandard()
+        .refineCategory(USER_CONTACT_EMAIL, c -&gt; c.confidentiality(Confidentiality.MEDIUM))
+        .refineCategory(USER_CONTACT_EMAIL, c -&gt; c.confidentiality(Confidentiality.HIGH))
+        .build();
+stricter.requireCategory(USER_CONTACT_EMAIL).confidentiality();  // HIGH, en cualquier orden
+</code></pre>
+</figure>
+
+<p>En el Ejemplo 9.1, <code>user.education.grade</code> conserva su confidencialidad <code>MEDIUM</code> pese a la
+declaración de <code>LOW</code>, y <code>user.contact.email</code> queda en <code>HIGH</code> tanto si la declaración de
+<code>HIGH</code> va primero como si va después. Un nivel inferior no es un error: simplemente no tiene efecto. Por eso
+el constructor no avisa; si esperabas bajar un nivel, el resultado te lo mostrará.</p>
+
+<h3>Resolución de padres a hijos</h3>
+<p>Al llamar a <code>build()</code>, el constructor resuelve las categorías empezando por las raíces: las ordena por
+profundidad y, a igual profundidad, por clave. El proceso de cada categoría sigue estos pasos:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Madre</span> Comprueba que existe la madre en la misma jerarquía. Si no, lanza
+<code>TaxonomyException</code>.</li>
+<li><span class="flujo-titulo">Raíz</span> Una categoría raíz debe declarar naturaleza, confidencialidad e integridad:
+no tiene de quién heredarlas.</li>
+<li><span class="flujo-titulo">Herencia</span> Una hija hereda toda faceta que no declara. Una confidencialidad o una
+integridad declaradas por debajo de las de la madre se elevan a las de la madre.</li>
+<li><span class="flujo-titulo">Naturaleza</span> La hija conserva la naturaleza de la madre o la precisa según las
+reglas de la Tabla 9.3.</li>
+<li><span class="flujo-titulo">Máxima protección</span> Una categoría de naturaleza <code>SPECIAL_CATEGORY</code> o
+<code>CRIMINAL_OFFENCE</code> debe terminar con confidencialidad e integridad <code>HIGH</code>, declaradas o
+heredadas.</li>
+<li><span class="flujo-titulo">Secreto, atributos y rasgos</span> El secreto se combina con «o» hacia abajo; los
+atributos se heredan y los de la hija prevalecen; los rasgos de la hija son los propios más los de sus ancestros.</li>
+<li><span class="flujo-titulo">Sustituciones</span> Al final comprueba los términos obsoletos de las tres jerarquías: la
+sustituta debe existir, no formar un ciclo y llevar todos los rasgos; en las categorías, además, proteger al menos
+tanto.</li>
+</ol>
+<p>La consecuencia práctica del paso 3 es que <strong>elevar una categoría eleva todo lo que cuelga de ella</strong>. Si
+elevas <code>user.demographic</code> a confidencialidad <code>HIGH</code>, las hijas que declaraban <code>MEDIUM</code>
+por su cuenta, como <code>user.demographic.date_of_birth</code>, también pasan a <code>HIGH</code>.</p>
+
+<h3>Reglas de naturaleza</h3>
+<p>La naturaleza jurídica tiene un orden parcial (capítulo 2): los datos ordinarios pueden precisarse como categoría
+especial o como datos penales, pero un árbol nunca mezcla datos personales y no personales, y las dos naturalezas de
+máxima protección no se convierten una en otra. La Tabla 9.3 muestra lo que ocurre cuando una hija declara una
+naturaleza distinta de la de su madre; los mensajes son los que produce el constructor.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-3">
+<table>
+<caption id="tabla-9-3">Tabla 9.3. Naturaleza declarada por una hija frente a la de su madre</caption>
+<thead>
+<tr><th scope="col">Madre</th><th scope="col">Hija declara</th><th scope="col">Resultado</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ORDINARY</code></th><td><code>SPECIAL_CATEGORY</code> o <code>CRIMINAL_OFFENCE</code></td>
+<td>Se acepta. La hija debe alcanzar confidencialidad e integridad <code>HIGH</code>.</td></tr>
+<tr><th scope="row"><code>ORDINARY</code></th><td><code>NONE</code></td>
+<td>Error en <code>build()</code>: <code>Data category 'user.education.stats' declares nature NONE, which its parent
+'user.education' (ORDINARY) does not admit</code></td></tr>
+<tr><th scope="row"><code>NONE</code></th><td><code>ORDINARY</code></td>
+<td>Error en <code>build()</code>: <code>Data category 'org.business_records.staff_list' declares nature ORDINARY,
+which its parent 'org.business_records' (NONE) does not admit</code></td></tr>
+<tr><th scope="row"><code>SPECIAL_CATEGORY</code></th><td><code>ORDINARY</code></td>
+<td>Se acepta y la hija toma la naturaleza de la madre: un dato ordinario dentro de una categoría especial sigue siendo
+de categoría especial.</td></tr>
+<tr><th scope="row"><code>SPECIAL_CATEGORY</code></th><td><code>CRIMINAL_OFFENCE</code></td>
+<td>Error en <code>build()</code>: <code>Data category 'user.health_and_medical.x' declares nature CRIMINAL_OFFENCE,
+which its parent 'user.health_and_medical' (SPECIAL_CATEGORY) does not admit</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>La regla de máxima protección del paso 5 se comprueba aparte. Si añades <code>user.education.special_needs</code> con
+naturaleza <code>SPECIAL_CATEGORY</code> pero no declaras confidencialidad, la categoría hereda <code>MEDIUM</code> de
+<code>user.education</code> y <code>build()</code> falla:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Data category 'user.education.special_needs' is SPECIAL_CATEGORY data and must have HIGH confidentiality and integrity, not MEDIUM and HIGH
+</code></pre>
+<p>Declarar también <code>confidentiality(Confidentiality.HIGH)</code> resuelve el error. En este caso el constructor no
+eleva el nivel por ti: comprueba que la categoría alcanza la protección máxima, declarada o heredada, y si no la alcanza
+lanza la excepción.</p>
+
+<h3>El origen de los términos</h3>
+<p>Cada término registra su <dfn>origen</dfn> (<code>TermInfo.origin()</code>): quién lo añadió. Los términos estándar
+tienen origen <code>fideslang</code> o <code>linneo</code>; los de una extensión llevan el nombre de la extensión; los
+que añade la aplicación directamente sobre el constructor llevan <code>"application"</code>, o el que fijes con
+<code>origin(...)</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder()
+        .withStandard()
+        .origin("secretaria-virtual")
+        .category("user.education.library_loan", "Préstamo de biblioteca", "Libros en préstamo.")
+        .build();
+taxonomy.requireCategory("user.education.library_loan").info().origin();   // "secretaria-virtual"
+</code></pre>
+<p>Refinar un término no cambia su origen: después de endurecer <code>user.government_id</code>, su origen sigue siendo
+<code>fideslang</code>. Los catálogos de datos (<a href="17-catalogos.html">capítulo 17</a>) publican el origen, de modo
+que quien consulta el catálogo distingue los términos estándar de los propios.</p>
+
+<h2 id="borradores">Los borradores: <code>TermDraft</code> y <code>CategoryDraft</code></h2>
+<p>Un <dfn>borrador</dfn> es el objeto que recibe el personalizador de un término mientras el constructor está abierto:
+<code>CategoryDraft</code> para las categorías de datos y <code>TermDraft</code> para los usos y los sujetos de datos
+(<code>CategoryDraft</code> extiende <code>TermDraft</code>). Existe para que declares las propiedades de un término sin
+poder construir una <code>DataCategory</code> que no haya pasado por <code>build()</code>. Todos sus métodos devuelven
+el mismo borrador, así que se encadenan.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-4">
+<table>
+<caption id="tabla-9-4">Tabla 9.4. Métodos de los borradores</caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Borrador</th><th scope="col">Declara</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>nature(LegalNature)</code></th><td><code>CategoryDraft</code></td><td>La naturaleza jurídica,
+como mínimo. Si ya hay una declarada, una más precisa la sustituye, una cubierta no cambia nada y una irreconciliable
+lanza <code>TaxonomyException</code>.</td></tr>
+<tr><th scope="row"><code>confidentiality(Confidentiality)</code></th><td><code>CategoryDraft</code></td><td>La
+confidencialidad, como mínimo: se conserva la más estricta.</td></tr>
+<tr><th scope="row"><code>integrity(Integrity)</code></th><td><code>CategoryDraft</code></td><td>La integridad, como
+mínimo.</td></tr>
+<tr><th scope="row"><code>secret()</code></th><td><code>CategoryDraft</code></td><td>Marca la categoría, y todas sus
+hijas, como secreta. No se puede deshacer.</td></tr>
+<tr><th scope="row"><code>attribute(name, value)</code></th><td><code>CategoryDraft</code></td><td>Un atributo definido
+por la aplicación, que heredan las hijas que no fijan el suyo.</td></tr>
+<tr><th scope="row"><code>traits(Trait...)</code></th><td>Ambos</td><td>Rasgos del término, que heredan sus
+descendientes. Solo se suman.</td></tr>
+<tr><th scope="row"><code>since(version)</code></th><td>Ambos</td><td>La versión de su origen que introdujo el
+término.</td></tr>
+<tr><th scope="row"><code>deprecated(sinceVersion, replacedBy)</code></th><td>Ambos</td><td>Declara obsoleto el término;
+<code>replacedBy</code> es la clave de la sustituta, o <code>null</code>.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Los métodos lanzan <code>NullPointerException</code> ante un argumento <code>null</code> obligatorio y
+<code>TaxonomyException</code> en tres casos de contenido: un atributo con nombre en blanco (<code>An attribute of
+'&lt;key&gt;' has a blank name</code>), una obsolescencia sin versión (<code>The deprecation of '&lt;key&gt;' needs the
+version that deprecated it</code>) y un rasgo que no se aplica a la jerarquía del término, que verás más adelante.</p>
+
+<h3>Un borrador solo cambia dentro de su personalizador</h3>
+<p>El constructor abre el borrador mientras se ejecuta el personalizador que lo recibió y lo cierra al terminar. Guardar
+la referencia para modificarla después no funciona:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">CategoryDraft[] kept = new CategoryDraft[1];
+Taxonomy.builder().withStandard()
+        .category("user.education.lab_notebook", "Cuaderno de laboratorio", "", c -&gt; kept[0] = c);
+kept[0].secret();   // TaxonomyException
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">The draft of 'user.education.lab_notebook' can only be changed inside the customizer that received it
+</code></pre>
+<p>La regla garantiza que todo lo que se declara sobre un término ocurre en un punto visible del código, y que una
+extensión no puede alterar en diferido el borrador de otra.</p>
+
+<h2 id="escribir-una-extension">Escribir una <code>TaxonomyExtension</code></h2>
+<p><code>TaxonomyExtension</code> es una interfaz con dos métodos. <code>name()</code> devuelve un nombre corto y
+estable que se registra como origen de los términos que añade la extensión. <code>contribute(TaxonomyBuilder)</code>
+añade o refina términos sobre un constructor que ya contiene los términos estándar (si se empezó con
+<code>withStandard()</code>) y las extensiones aplicadas antes.</p>
+
+<h3>El nombre de la extensión</h3>
+<p>El nombre es a la vez el origen de cada término de la extensión, la clave de ordenación al cargar extensiones y su
+identidad. Por eso tiene restricciones:</p>
+<ul>
+<li>Tres nombres están reservados: <code>"fideslang"</code>, <code>"linneo"</code> y <code>"application"</code>. Un
+nombre reservado, vacío o en blanco se rechaza con <code>Invalid extension name '&lt;name&gt;' in
+&lt;clase&gt;</code>.</li>
+<li>Aplicar dos veces la misma <strong>clase</strong> de extensión no tiene efecto la segunda vez, así que una extensión
+puede aplicarse de forma explícita y estar además registrada como servicio.</li>
+<li>Dos clases <strong>distintas</strong> con el mismo nombre se rechazan: <code>The extensions
+io.github.devbpm.linneo.extension.university.UniversityTaxonomy and &lt;clase&gt; are both named
+'university'</code>.</li>
+<li>Las extensiones incluidas usan <code>"university"</code>, <code>"finance"</code>, <code>"supply_chain"</code>,
+<code>"project_operations"</code> y <code>"human_resources"</code>. No los reutilices.</li>
+</ul>
+
+<h3>La extensión de la universidad</h3>
+<p>El Ejemplo 9.2 reúne las cinco necesidades de la universidad en una sola extensión. Cada llamada al constructor
+corresponde a una de ellas, y las secciones siguientes las explican una a una.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 9.2. <code>CampusTaxonomy</code>, la extensión de la universidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.Categories;
+import io.github.devbpm.linneo.Confidentiality;
+import io.github.devbpm.linneo.TaxonomyBuilder;
+import io.github.devbpm.linneo.TaxonomyExtension;
+import io.github.devbpm.linneo.Trait;
+
+public final class CampusTaxonomy implements TaxonomyExtension {
+
+    @Override
+    public String name() {
+        return "campus";
+    }
+
+    @Override
+    public void contribute(TaxonomyBuilder builder) {
+        builder.category("user.education.lab_notebook", "Cuaderno de laboratorio",
+                        "Cuadernos de laboratorio del interesado: experimentos, mediciones y resultados.",
+                        c -&gt; c.attribute("retention", "permanent"))
+               .category("user.education.lab_journal", "Diario de laboratorio",
+                        "Nombre anterior de la clave del cuaderno de laboratorio.",
+                        c -&gt; c.deprecated("2.0", "user.education.lab_notebook"))
+               .refineCategory(Categories.USER_GOVERNMENT_ID, c -&gt; c.confidentiality(Confidentiality.HIGH))
+               .dataUse("education.admission.ranking", "Ordenación de solicitudes",
+                        "Ordena a los solicitantes de admisión según sus méritos.",
+                        u -&gt; u.traits(Trait.EVALUATION))
+               .dataSubject("visiting_researcher", "Investigador visitante",
+                        "Investigador de otra institución con una estancia temporal.");
+    }
+}
+</code></pre>
+</figure>
+
+<p>Aplicada sobre la taxonomía estándar, la extensión añade dos categorías, un uso de datos y un sujeto de datos:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new CampusTaxonomy()).build();
+System.out.println(taxonomy);
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Taxonomy[128 data categories, 64 data uses, 23 data subjects]
+</code></pre>
+<p>La taxonomía estándar imprime <code>Taxonomy[126 data categories, 63 data uses, 22 data subjects]</code>.</p>
+
+<h3>Añadir categorías</h3>
+<p><code>category(key, name, description)</code> añade una categoría que hereda toda su protección de su madre. La
+variante con personalizador permite declarar facetas, atributos, rasgos y ciclo de vida. En el Ejemplo 9.2,
+<code>user.education.lab_notebook</code> no declara ninguna faceta, así que toma la protección de
+<code>user.education</code>, y declara un atributo propio. Estos son sus valores efectivos:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">DataCategory notebook = taxonomy.requireCategory("user.education.lab_notebook");
+System.out.println(notebook.nature() + " " + notebook.confidentiality() + " " + notebook.integrity() + " "
+        + notebook.secret() + " " + notebook.attributes() + " " + notebook.info().origin());
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ORDINARY MEDIUM HIGH false {retention=permanent} campus
+</code></pre>
+<p>Un <dfn>atributo</dfn> es un par nombre-valor que define la aplicación y que Linneo no interpreta: lo hereda cada
+hija que no fija su propio valor y lo publican los catálogos. Lo lees con
+<code>taxonomy.requireCategory(key).attribute("retention")</code>. Si más adelante añades
+<code>user.education.lab_notebook.page</code> sin atributos, su <code>attribute("retention")</code> devuelve
+<code>permanent</code>; si una hija fija <code>retention</code> a otro valor, prevalece el de la hija.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>Una extensión solo puede añadir categorías <strong>por debajo</strong> de las existentes. Una categoría raíz es un
+dominio nuevo de datos que necesita su propia política de protección, y el constructor la rechaza mientras contribuye
+una extensión. La aplicación, trabajando directamente sobre el constructor, sí puede añadir una raíz declarando sus tres
+facetas.</p>
+</div>
+
+<h3>Añadir usos de datos y sujetos de datos</h3>
+<p><code>dataUse(key, name, description)</code> y <code>dataSubject(key, name, description)</code>, con un
+personalizador <code>TermDraft</code> opcional, añaden términos a las otras dos jerarquías. Los usos y los sujetos no
+tienen facetas de protección: su personalizador solo declara rasgos y ciclo de vida. A diferencia de las categorías, una
+extensión <strong>puede abrir una raíz nueva</strong> de usos o de sujetos. La extensión universitaria incluida lo hace
+con las raíces de uso <code>advancement</code> y <code>research</code>, porque fideslang no tiene ninguna finalidad para
+la captación de fondos ni para la investigación. Los sujetos de datos de fideslang son planos (sin jerarquía), y las
+extensiones incluidas siguen esa convención.</p>
+<p>En el Ejemplo 9.2, <code>education.admission.ranking</code> cuelga del uso estándar <code>education.admission</code>
+y <code>visiting_researcher</code> es un sujeto nuevo. Los dos tienen origen <code>campus</code>.</p>
+
+<h3>Endurecer categorías existentes</h3>
+<p><code>refineCategory(key, customizer)</code> modifica una categoría que ya está en el constructor, sea estándar o de
+una extensión aplicada antes. Puede subir niveles, precisar una naturaleza ordinaria como especial o penal, marcar la
+categoría como secreta, añadir atributos y rasgos y, si la categoría es suya, declararla obsoleta. Nunca puede
+debilitarla, porque cada faceta es un mínimo.</p>
+<p>La línea <code>refineCategory(Categories.USER_GOVERNMENT_ID, ...)</code> del Ejemplo 9.2 sube la confidencialidad de
+<code>user.government_id</code> a <code>HIGH</code>. Sus hijas no declaran confidencialidad propia, salvo
+<code>user.government_id.immigration</code>, que ya declaraba <code>HIGH</code>, así que todas heredan el nuevo nivel.
+Este programa compara el resultado con la taxonomía estándar:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy standard = Taxonomy.standard();
+for (DataCategory child : taxonomy.childrenOf(taxonomy.requireCategory(USER_GOVERNMENT_ID))) {
+    System.out.println(child.key() + " " + child.confidentiality()
+            + " (estándar: " + standard.requireCategory(child.key()).confidentiality() + ")");
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">user.government_id.birth_certificate HIGH (estándar: MEDIUM)
+user.government_id.drivers_license_number HIGH (estándar: MEDIUM)
+user.government_id.immigration HIGH (estándar: HIGH)
+user.government_id.national_identification_number HIGH (estándar: MEDIUM)
+user.government_id.passport_number HIGH (estándar: MEDIUM)
+user.government_id.social_security_number HIGH (estándar: MEDIUM)
+user.government_id.vehicle_registration HIGH (estándar: MEDIUM)
+</code></pre>
+<p>Refinar la categoría madre es la forma correcta de aplicar una política de seguridad a toda una rama. Anotar cada
+campo con <code>confidentiality = Confidentiality.HIGH</code> también funciona, pero obliga a recordarlo en cada campo
+nuevo; la extensión lo aplica una vez para toda la organización, y el origen de <code>user.government_id</code> sigue
+siendo <code>fideslang</code>.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Una extensión es el lugar adecuado para trasladar al código la política de seguridad de la organización: el delegado
+de protección de datos y el responsable de seguridad deciden qué categorías merecen más protección, y la extensión lo
+aplica a todos los campos que usan esas claves. Como los niveles solo suben, una extensión nunca puede dejar un dato por
+debajo de lo que fija la taxonomía estándar.</p>
+</div>
+
+<h3>Declarar rasgos</h3>
+<p>Un <dfn>rasgo</dfn> (<code>Trait</code>) es una propiedad de un término que leen las reglas jurídicas de Linneo, como
+el cribado de la evaluación de impacto (<a href="13-impacto-y-brechas.html">capítulo 13</a>) o los derechos de los
+interesados (<a href="14-derechos.html">capítulo 14</a>). Las reglas preguntan por rasgos, nunca por listas de claves,
+así que un término de tu extensión pesa lo mismo que uno estándar en cuanto declara los suyos. En el Ejemplo 9.2,
+<code>u.traits(Trait.EVALUATION)</code> declara que la ordenación de solicitudes puntúa a las personas.</p>
+<p>Cada rasgo se aplica solo a algunas jerarquías (Tabla 9.5). Declararlo en otra lanza <code>TaxonomyException</code>
+en el momento:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">The trait EVALUATION does not apply to the DATA_CATEGORY 'user.education.lab_notebook'
+</code></pre>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-5">
+<table>
+<caption id="tabla-9-5">Tabla 9.5. Los trece rasgos y las jerarquías en las que se declaran</caption>
+<thead>
+<tr><th scope="col">Rasgo</th><th scope="col">Categorías</th><th scope="col">Usos</th><th scope="col">Sujetos</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>FINANCIAL</code>, <code>BEHAVIOURAL</code>, <code>PRIVATE_LIFE</code></th>
+<td>Sí</td><td>No</td><td>No</td></tr>
+<tr><th scope="row"><code>DIRECT_IDENTIFIER</code>, <code>CONTACT_IDENTIFIER</code>,
+<code>INDIRECT_IDENTIFIER</code></th><td>Sí</td><td>No</td><td>No</td></tr>
+<tr><th scope="row"><code>BIOMETRIC</code>, <code>GENETIC</code></th><td>Sí</td><td>No</td><td>No</td></tr>
+<tr><th scope="row"><code>MONITORING</code></th><td>Sí</td><td>Sí</td><td>No</td></tr>
+<tr><th scope="row"><code>VULNERABLE</code></th><td>Sí</td><td>No</td><td>Sí</td></tr>
+<tr><th scope="row"><code>EVALUATION</code>, <code>DIRECT_MARKETING</code>, <code>RESEARCH</code></th>
+<td>No</td><td>Sí</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Los rasgos se heredan: un término tiene los suyos y los de todos sus ancestros. Por eso las categorías que una
+extensión añade bajo <code>user.financial</code> ya son <code>FINANCIAL</code> sin declararlo. Los rasgos solo se suman:
+declarar de nuevo algunos, como pueden hacer dos extensiones sobre el mismo término, conserva todos. Para añadir un
+rasgo a un término existente usa <code>refineCategory</code>, <code>refineDataUse</code> o
+<code>refineDataSubject</code>; una extensión puede hacerlo también sobre términos que no añadió, porque un rasgo
+endurece las reglas. Añadir un rasgo es un cambio menor de la taxonomía; quitarlo es un cambio mayor
+(<a href="10-versiones.html">capítulo 10</a>).</p>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Al añadir una finalidad, pregúntate si puntúa a las personas (<code>EVALUATION</code>), si las observa de forma
+sistemática (<code>MONITORING</code>), si es mercadotecnia directa (<code>DIRECT_MARKETING</code>) o investigación
+(<code>RESEARCH</code>). Al añadir un sujeto, pregúntate si está en una posición más débil que el responsable del
+tratamiento (<code>VULNERABLE</code>). Un rasgo olvidado deja al cribado de impacto sin ver lo que el término no dice
+por su clave. Los rasgos son una ayuda: el delegado de protección de datos sigue revisando cada resultado.</p>
+</div>
+
+<h3 id="obsoletos-propios">Declarar obsoletos tus propios términos</h3>
+<p>Las aplicaciones guardan las claves en bases de datos, inventarios y catálogos, así que una clave publicada no se
+borra ni se reutiliza: se declara <dfn>obsoleta</dfn> con la versión que la dejó obsoleta y, si la hay, su sustituta. En
+el Ejemplo 9.2, la universidad llamó <code>user.education.lab_journal</code> a los cuadernos en una primera versión y
+después la sustituyó por <code>user.education.lab_notebook</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">.category("user.education.lab_journal", "Diario de laboratorio",
+        "Nombre anterior de la clave del cuaderno de laboratorio.",
+        c -&gt; c.deprecated("2.0", "user.education.lab_notebook"))
+</code></pre>
+<p>Un campo que sigue anotado con la clave antigua se clasifica con la sustituta y produce un aviso, no un error:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING DEPRECATED_CATEGORY edu.example.university.LabNotebook.file: data category 'user.education.lab_journal' is deprecated; use 'user.education.lab_notebook'
+</code></pre>
+<p>Como las declaraciones que nombran la clave obsoleta se comprueban con la sustituta, <code>build()</code> exige dos
+cosas a la sustituta:</p>
+<ul>
+<li><strong>Que proteja al menos tanto</strong> (solo en categorías): una naturaleza que la obsoleta admita,
+confidencialidad e integridad no inferiores y secreto si la obsoleta lo es. Si no, el mensaje compara las dos
+protecciones: <code>The replacement 'user.contact.email' of data category 'user.education.old' has weaker protection:
+ORDINARY, LOW, MEDIUM instead of ORDINARY, MEDIUM, HIGH</code>.</li>
+<li><strong>Que conserve todos los rasgos</strong> (en las tres jerarquías). Si la universidad hubiera tenido un uso
+<code>education.admission.scoring</code> con <code>EVALUATION</code> y lo sustituyera por un
+<code>education.admission.ranking</code> sin ese rasgo, <code>build()</code> fallaría con <code>The replacement
+'education.admission.ranking' of data use 'education.admission.scoring' lacks its traits [EVALUATION]</code>. Una
+sustituta sin el rasgo levantaría en silencio una regla que leía el término antiguo.</li>
+</ul>
+<p>Una extensión solo puede declarar obsoletos, o fijar el <code>since</code> de, los términos que ella misma añadió.
+Para comprobar que una versión nueva de tu extensión no borra claves ni debilita la protección, compárala en un test con
+la taxonomía de tu última versión publicada mediante <code>TaxonomyDiff</code> (<a href="10-versiones.html">capítulo
+10</a>).</p>
+
+<h3>Constantes para tus claves</h3>
+<p>Las clases <code>Categories</code>, <code>DataUses</code> y <code>DataSubjects</code> solo cubren la taxonomía
+estándar. Da a tus claves constantes de compilación en tus propias clases, para usarlas en las anotaciones y para que
+una errata no compile. Las extensiones incluidas siguen el mismo patrón, con una clase por jerarquía:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 9.3. Constantes de las claves de la extensión</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public final class CampusCategories {
+    public static final String USER_EDUCATION_LAB_NOTEBOOK = "user.education.lab_notebook";
+    public static final String USER_EDUCATION_LAB_JOURNAL = "user.education.lab_journal";
+
+    private CampusCategories() {
+    }
+}
+</code></pre>
+</figure>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(CampusCategories.USER_EDUCATION_LAB_NOTEBOOK)
+private String notebookTitle;
+</code></pre>
+<p>Las constantes son cadenas, así que compilan aunque la taxonomía no tenga la clave: si la aplicación clasifica con
+una taxonomía sin tu extensión, el campo da un error <code>UNKNOWN_CATEGORY</code> en el test
+(<a href="06-verificacion.html">capítulo 6</a>). Usa las mismas constantes dentro de <code>contribute</code> para
+escribir cada clave una sola vez, y escribe un test que compruebe que las constantes nombran exactamente los términos
+que añade la extensión, como hace <code>ExtensionsTest</code> con las incluidas.</p>
+
+<h2 id="limites-de-una-extension">Lo que una extensión no puede hacer</h2>
+<p>Mientras se ejecuta el <code>contribute</code> de una extensión, el constructor rechaza lo que permitiría a una
+extensión cambiar lo que define otra o la taxonomía estándar. Las tres prohibiciones se comprueban en el momento de la
+llamada, frente a la extensión que contribuye entonces:</p>
+<dl class="definiciones">
+<dt>Añadir una categoría de datos raíz</dt>
+<dd><code>The extension 'campus' cannot add the root data category 'campus': an extension adds data categories below
+existing ones</code>. Los usos y los sujetos de datos sí pueden abrir una raíz.</dd>
+<dt>Cambiar el origen con <code>origin(...)</code></dt>
+<dd><code>The extension 'campus' cannot change the origin of its terms</code>. Los términos de una extensión llevan
+siempre su nombre.</dd>
+<dt>Cambiar el ciclo de vida de un término ajeno</dt>
+<dd>Llamar a <code>deprecated</code> o a <code>since</code> sobre un término cuyo origen es otro: <code>The extension
+'campus' cannot deprecate 'user.education.grade', which comes from 'linneo'</code>, o <code>The extension 'campus'
+cannot set the version that introduced 'student', which comes from 'linneo'</code>. Vale también para los términos de
+otra extensión: <code>The extension 'campus' cannot deprecate 'user.education.thesis', which comes from
+'university'</code>.</dd>
+</dl>
+<p>Todo lo demás está permitido: añadir categorías por debajo de las existentes, usos y sujetos, elevar la protección de
+cualquier categoría y añadir rasgos y atributos a cualquier término. Una aplicación que usa el constructor directamente,
+fuera de una extensión, no está sujeta a estas tres reglas: es la dueña de su taxonomía.</p>
+
+<h2 id="que-rechaza-build">Qué rechaza el constructor: <code>TaxonomyException</code></h2>
+<p><code>TaxonomyException</code> es una <code>RuntimeException</code> que indica que una taxonomía no puede
+construirse, o que una clave no forma parte de ella. Su mensaje nombra siempre la clave implicada. Algunos problemas se
+detectan al llamar a un método del constructor y el resto en <code>build()</code>; en ambos casos,
+<code>Taxonomy.load()</code> lanza la excepción, de modo que una extensión defectuosa detiene la aplicación o el test en
+lugar de producir una taxonomía más débil. Es el principio de fallo seguro (<span lang="en">fail closed</span>) aplicado
+a la propia taxonomía.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-6">
+<table>
+<caption id="tabla-9-6">Tabla 9.6. Errores del constructor y sus mensajes</caption>
+<thead>
+<tr><th scope="col">Problema</th><th scope="col">Mensaje de ejemplo</th><th scope="col">Cuándo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Clave mal formada</th><td><code>Invalid key 'user.education.LabNotebook': use lower-case segments
+separated by dots</code></td><td>Al añadir</td></tr>
+<tr><th scope="row">Clave repetida</th><td><code>Duplicate key 'user.education.grade'</code></td><td>Al añadir</td></tr>
+<tr><th scope="row">Refinar una clave que aún no existe</th><td><code>Cannot refine unknown data category
+'user.education.attendance'</code></td><td>Al refinar</td></tr>
+<tr><th scope="row">Naturaleza irreconciliable con la declarada</th><td><code>Cannot change the nature of
+'user.health_and_medical' from SPECIAL_CATEGORY to NONE</code></td><td>En <code>nature(...)</code></td></tr>
+<tr><th scope="row">Rasgo en una jerarquía que no lo admite</th><td><code>The trait MONITORING does not apply to the
+DATA_SUBJECT 'visiting_researcher'</code></td><td>En <code>traits(...)</code></td></tr>
+<tr><th scope="row">Borrador usado fuera de su personalizador</th>
+<td><code>The draft of 'user.education.lab_notebook' can only be changed inside the customizer that received
+it</code></td>
+<td>Al usarlo</td></tr>
+<tr><th scope="row">Nombre de extensión reservado o en blanco</th><td><code>Invalid extension name 'linneo' in
+&lt;clase&gt;</code></td><td>En <code>extend</code></td></tr>
+<tr><th scope="row">Origen en blanco</th><td><code>The origin of terms must not be blank</code></td>
+<td>En <code>origin</code></td></tr>
+<tr><th scope="row">Falta la madre</th><td><code>The parent 'user.education.lab_notebook' of data category
+'user.education.lab_notebook.entry' does not exist</code></td><td><code>build()</code></td></tr>
+<tr><th scope="row">Raíz sin todas sus facetas</th><td><code>Root data category 'research' must declare its nature,
+confidentiality and integrity</code></td><td><code>build()</code></td></tr>
+<tr><th scope="row">Naturaleza que la madre no admite</th><td>Véase la Tabla 9.3</td><td><code>build()</code></td></tr>
+<tr><th scope="row">Categoría especial o penal sin protección máxima</th><td><code>Data category
+'user.education.special_needs' is SPECIAL_CATEGORY data and must have HIGH confidentiality and integrity, not MEDIUM and
+HIGH</code></td><td><code>build()</code></td></tr>
+<tr><th scope="row">La sustituta no existe</th><td><code>The replacement 'user.education.new' of data category
+'user.education.old' does not exist</code></td><td><code>build()</code></td></tr>
+<tr><th scope="row">Las sustituciones forman un ciclo</th><td><code>The replacements of data category
+'user.education.a' form a cycle</code></td><td><code>build()</code></td></tr>
+<tr><th scope="row">La sustituta protege menos o le faltan rasgos</th><td>Véase
+<a href="#obsoletos-propios">Declarar obsoletos tus propios términos</a></td><td><code>build()</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>A estos se suman los tres errores propios de las extensiones de la sección anterior y el de dos clases con el mismo
+nombre. Un detalle sobre el momento: <code>nature(...)</code> solo puede detectar un conflicto si la categoría ya tiene
+una naturaleza <strong>declarada</strong>, como <code>user.health_and_medical</code>. Si refinas
+<code>user.contact.email</code>, que hereda su naturaleza, con <code>nature(LegalNature.NONE)</code>, la llamada se
+acepta y es <code>build()</code> quien falla con <code>Data category 'user.contact.email' declares nature NONE, which
+its parent 'user.contact' (ORDINARY) does not admit</code>.</p>
+
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p>El orden de <code>refineCategory</code> importa: la clave ya debe estar en el constructor. Los términos estándar
+siempre lo están; los de otra extensión, solo si esa extensión se aplicó antes. Si <code>CampusTaxonomy</code> refinara
+<code>user.education.attendance</code> y se aplicara antes que <code>UniversityTaxonomy</code>, fallaría con
+<code>Cannot refine unknown data category 'user.education.attendance'</code>.</p>
+</div>
+
+<h2 id="registrar">Registrar la extensión</h2>
+<p>Una extensión escrita no hace nada hasta que alguien la aplica. Hay dos formas: registrarla como servicio para que
+<code>Taxonomy.load()</code> la encuentre, o aplicarla de forma explícita con <code>extend</code>.</p>
+
+<h3>Con <code>ServiceLoader</code> en el class path</h3>
+<p><code>Taxonomy.load()</code> equivale a <code>Taxonomy.builder().withStandard().withExtensions().build()</code>:
+aplica todas las extensiones que encuentra <code>java.util.ServiceLoader</code>. Para registrar la tuya en el class
+path:</p>
+<ol>
+<li>Crea el fichero <code>src/main/resources/META-INF/services/io.github.devbpm.linneo.TaxonomyExtension</code> (en
+Maven; en otro sistema de compilación, en la raíz de los recursos).</li>
+<li>Escribe en él el nombre completo de la clase, una por línea:
+<code>edu.example.university.CampusTaxonomy</code>.</li>
+<li>Comprueba que la clase es pública y tiene un constructor Java público sin argumentos, como exige
+<code>ServiceLoader</code>; <code>CampusTaxonomy</code> tiene el implícito.</li>
+<li>Sustituye toda llamada a <code>Taxonomy.standard()</code> por <code>Taxonomy.load()</code>, una sola vez al
+arrancar, y comparte el resultado: cada llamada a <code>load()</code> construye una instancia nueva.</li>
+<li>Escribe un test que compruebe que <code>Taxonomy.load()</code> contiene una clave de tu extensión con su
+origen.</li>
+</ol>
+
+<h3>En el module path</h3>
+<p>En el module path, declara el servicio con una cláusula <code>provides</code> en el <code>module-info.java</code> de
+tu módulo. El módulo de Linneo declara <code>uses io.github.devbpm.linneo.TaxonomyExtension</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">module edu.example.university {
+    requires io.github.devbpm.linneo;
+
+    provides io.github.devbpm.linneo.TaxonomyExtension with edu.example.university.CampusTaxonomy;
+}
+</code></pre>
+
+<h3>El orden de <code>Taxonomy.load()</code></h3>
+<p><code>withExtensions()</code> busca las extensiones con el cargador de clases de contexto del hilo, o con el de
+Linneo si no hay ninguno, y las aplica <strong>ordenadas por nombre</strong>. El resultado no depende del orden del
+class path, que puede variar entre entornos. Si necesitas otro cargador, usa
+<code>Taxonomy.builder().withStandard().withExtensions(classLoader).build()</code>. Gracias a la regla del mínimo, el
+orden no cambia los niveles resultantes; solo importa para <code>refineCategory</code> sobre términos de otra extensión,
+como viste en el recuadro anterior.</p>
+
+<h3>Aplicarla de forma explícita</h3>
+<p><code>extend</code> aplica una extensión sin <code>ServiceLoader</code>. Es lo práctico en un test unitario de la
+propia extensión, y te deja elegir el orden:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new CampusTaxonomy()).build();
+</code></pre>
+<p>Aplicar una extensión de forma explícita y tenerla además registrada es inocuo: la segunda aplicación de la misma
+clase no tiene efecto.</p>
+
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p><code>Taxonomy.standard()</code> nunca incluye extensiones. Si la aplicación clasifica con
+<code>Taxonomy.standard()</code> mientras otra parte usa <code>Taxonomy.load()</code>, los campos con claves de la
+extensión dan <code>UNKNOWN_CATEGORY</code> y, lo que es peor, los niveles endurecidos por la extensión no se aplican.
+Usa la misma taxonomía en el <code>Classifier</code>, en el <code>ProcessingChecker</code> y en los exportadores.</p>
+</div>
+
+<h2 id="extensiones-incluidas">Las cinco extensiones incluidas</h2>
+<p>Linneo incluye cinco <dfn>extensiones sectoriales</dfn>: términos que la mayoría de las aplicaciones no necesitan,
+empaquetados como <code>TaxonomyExtension</code> en el mismo <abbr title="Java ARchive">JAR</abbr>, cada una en su
+propio paquete exportado <code>io.github.devbpm.linneo.extension.&lt;sector&gt;</code> con constantes de compilación
+para sus claves. La universitaria se basa en la Open Education API; las de finanzas, cadena de suministro, operaciones
+de proyecto y recursos humanos se basan en las áreas de negocio del Common Data Model. Siguen las mismas reglas que las
+tuyas.</p>
+
+<h3>No se aplican por defecto</h3>
+<p>El <code>module-info.java</code> de Linneo tiene la cláusula <code>uses</code>, pero ninguna <code>provides</code>, y
+el JAR no incluye fichero <code>META-INF/services</code>. Por tanto <code>Taxonomy.load()</code> nunca aplica una
+extensión incluida: la aplicación la pide de forma explícita con <code>extend(new UniversityTaxonomy())</code>, que
+funciona igual en el class path y en el module path, o la registra ella misma:</p>
+<ul>
+<li><strong>En el class path</strong>, escribe
+<code>io.github.devbpm.linneo.extension.university.UniversityTaxonomy</code> en el fichero
+<code>META-INF/services/io.github.devbpm.linneo.TaxonomyExtension</code> de tu aplicación.</li>
+<li><strong>En el module path</strong>, una cláusula <code>provides</code> solo puede nombrar una clase del propio
+módulo. Declara en tu módulo una clase con un método público estático <code>provider()</code> y nómbrala en la
+cláusula:</li>
+</ul>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.TaxonomyExtension;
+import io.github.devbpm.linneo.extension.university.UniversityTaxonomy;
+
+public final class UniversityProvider {
+
+    private UniversityProvider() {
+    }
+
+    public static TaxonomyExtension provider() {
+        return new UniversityTaxonomy();
+    }
+}
+</code></pre>
+<pre class="codigo" tabindex="0"><code class="language-java">module edu.example.university {
+    requires io.github.devbpm.linneo;
+
+    provides io.github.devbpm.linneo.TaxonomyExtension
+            with edu.example.university.CampusTaxonomy, edu.example.university.UniversityProvider;
+}
+</code></pre>
+
+<h3>Independientes entre sí</h3>
+<p>Las cinco extensiones son independientes: ninguna usa como madre una clave de otra, y ninguna clave aparece en dos de
+ellas. Por eso cualquiera puede aplicarse sola, con cualquier otra o con las cinco a la vez, y con tus propias
+extensiones. El test <code>ExtensionsTest</code> de Linneo lo comprueba: construye cada extensión sola sobre la
+taxonomía estándar (una madre de otra extensión no existiría y <code>build()</code> fallaría), verifica que no comparten
+claves y aplica las cinco juntas. Un término que necesitan dos extensiones pertenece a la taxonomía estándar, como
+<code>user.contact.emergency_contact</code>.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy all = Taxonomy.builder()
+        .withStandard()
+        .extend(new UniversityTaxonomy())
+        .extend(new FinanceTaxonomy())
+        .extend(new SupplyChainTaxonomy())
+        .extend(new ProjectOperationsTaxonomy())
+        .extend(new HumanResourcesTaxonomy())
+        .build();
+System.out.println(all);
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Taxonomy[225 data categories, 137 data uses, 48 data subjects]
+</code></pre>
+<p>Ninguna de las cinco endurece categorías estándar: todas se limitan a añadir términos y a declarar los rasgos de los
+suyos. Ninguno de sus términos lleva <code>since</code> ni está obsoleto, siguiendo la convención de fideslang para las
+etiquetas propias.</p>
+
+<h3>La extensión universitaria</h3>
+<p><code>UniversityTaxonomy</code> (paquete <code>io.github.devbpm.linneo.extension.university</code>, nombre
+<code>"university"</code>, también disponible como la constante <code>UniversityTaxonomy.NAME</code>) cubre los datos
+que una institución de educación superior guarda sobre estudiantes, solicitantes, personal, antiguos alumnos y
+benefactores más allá de las claves estándar <code>user.education.*</code>. Añade 32 categorías de datos, 28 usos de
+datos y 12 sujetos de datos:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
+System.out.println(taxonomy);
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Taxonomy[158 data categories, 91 data uses, 34 data subjects]
+</code></pre>
+
+<h4>Categorías</h4>
+<p>El mayor detalle está en el expediente académico. Las categorías cuelgan de claves estándar: cambios de matrícula y
+traslados bajo <code>user.education.enrollment</code>, convocatorias, notas finales y medias bajo
+<code>user.education.grade</code>, reconocimiento de créditos bajo <code>user.education.course_history</code>, avance en
+la titulación bajo <code>user.education.program</code>, títulos, certificados y competencia lingüística bajo
+<code>user.education.accomplishment</code>, y prácticas y movilidad bajo la nueva <code>user.education.placement</code>.
+Cuatro categorías económicas cuelgan de <code>user.financial</code>: donaciones, exenciones de tasas, valoraciones de
+renta para becas y estimaciones de patrimonio.</p>
+<p>La mayoría hereda la confidencialidad <code>MEDIUM</code> e integridad <code>HIGH</code> de
+<code>user.education</code>. La Tabla 9.7 muestra las que la extensión declara más protegidas.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-7">
+<table>
+<caption id="tabla-9-7">Tabla 9.7. Categorías de la extensión universitaria con protección reforzada</caption>
+<thead>
+<tr><th scope="col">Clave</th><th scope="col">Naturaleza</th><th scope="col">Confidencialidad</th>
+<th scope="col">Integridad</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>user.education.accommodation</code></th><td><code>SPECIAL_CATEGORY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.education.advising</code></th><td><code>ORDINARY</code></td><td><code>HIGH</code></td>
+<td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.education.application.evaluation</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.education.application.reference</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.education.disciplinary_record</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.education.equity_indicator</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.education.placement.internship.evaluation</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.education.risk_indicator</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.financial.fee.exemption</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.financial.scholarship.means_assessment</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+<tr><th scope="row"><code>user.financial.wealth_assessment</code></th><td><code>ORDINARY</code></td>
+<td><code>HIGH</code></td><td><code>HIGH</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Una adaptación académica revela una discapacidad o un problema de salud, así que es de categoría especial. La
+documentación de la extensión recuerda que un dato que revela más que su categoría va en una clave más estricta: el
+motivo médico de una ausencia en <code>user.health_and_medical</code>, un expediente disciplinario por un delito en
+<code>user.criminal_history</code>, o la condición de víctima que motiva una exención de tasas en
+<code>user.victim_status</code>.</p>
+
+<h4>Usos de datos, sujetos y rasgos</h4>
+<p>Los 28 usos de datos cuelgan sobre todo de la raíz estándar <code>education</code> (asesoramiento, asistencia,
+disciplina, analítica del aprendizaje, prácticas, apoyo al estudiante, dirección de tesis…), más
+<code>essential.legal_obligation.statutory_reporting</code> para las estadísticas que exigen las autoridades educativas.
+La extensión abre dos raíces de uso que fideslang no tiene: <code>advancement</code> (relaciones con antiguos alumnos,
+captación de fondos, gestión de donaciones e investigación de donantes) y <code>research</code>. Los 12 sujetos son
+planos: futuro estudiante, doctorando, estudiante de intercambio, examinador externo, invitado, mentor, donante, donante
+potencial, tutor de prácticas, autor de cartas de referencia, patrono y voluntario.</p>
+<p>La extensión declara los rasgos de sus finalidades: <code>advancement.alumni_relations</code>,
+<code>advancement.fundraising</code> y <code>advancement.prospect_research</code> son <code>DIRECT_MARKETING</code>;
+<code>advancement.prospect_research</code> y <code>education.financial_aid.means_assessment</code> son
+<code>EVALUATION</code>; <code>education.learning_analytics</code> es <code>EVALUATION</code> y <code>MONITORING</code>;
+y <code>research</code> es <code>RESEARCH</code>, que heredan <code>research.administration</code> y
+<code>research.participation</code>.</p>
+
+<h4>Usarla en el modelo</h4>
+<p>Las claves tienen constantes en <code>UniversityCategories</code>, <code>UniversityDataUses</code> y
+<code>UniversityDataSubjects</code>, con la misma regla de nombres que <code>Categories</code>. El Ejemplo 9.4 registra
+las ausencias de los estudiantes.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 9.4. Una clase que usa claves de la extensión universitaria</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Absence {
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long studentId;
+
+    @Category(UniversityCategories.USER_EDUCATION_ATTENDANCE)
+    private LocalDate date;
+
+    @Category(UniversityCategories.USER_EDUCATION_ATTENDANCE)
+    private boolean excused;
+
+    @Category(USER_HEALTH_AND_MEDICAL)   // el motivo médico es un dato de salud, no de asistencia
+    private String medicalReason;
+}
+</code></pre>
+</figure>
+<p>Con la taxonomía estándar más <code>UniversityTaxonomy</code>, el clasificador resuelve los cuatro campos. Este
+programa imprime la clave, la naturaleza, los niveles y el origen de cada uno:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy university = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
+new Classifier(university).verify(List.of(Absence.class)).get(0).fields().forEach(f -&gt;
+        System.out.println(f.path() + ": " + f.category().key() + " " + f.category().nature() + " "
+                + f.confidentiality() + " " + f.integrity() + " " + f.category().info().origin()));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">studentId: user.unique_id.record_reference ORDINARY LOW MEDIUM linneo
+date: user.education.attendance ORDINARY MEDIUM HIGH university
+excused: user.education.attendance ORDINARY MEDIUM HIGH university
+medicalReason: user.health_and_medical SPECIAL_CATEGORY HIGH HIGH fideslang
+</code></pre>
+<p>Con <code>Taxonomy.standard()</code>, en cambio, <code>classify(Absence.class).violations()</code> informa de dos
+errores en los campos de asistencia:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNKNOWN_CATEGORY edu.example.university.Absence.date: unknown data category 'user.education.attendance'
+ERROR UNKNOWN_CATEGORY edu.example.university.Absence.excused: unknown data category 'user.education.attendance'
+</code></pre>
+
+<h3>Las otras cuatro extensiones</h3>
+<p>Las extensiones de finanzas, cadena de suministro, operaciones de proyecto y recursos humanos se construyen igual
+(<code>&lt;Sector&gt;Taxonomy</code> más <code>&lt;Sector&gt;Categories</code>, <code>&lt;Sector&gt;DataUses</code> y
+<code>&lt;Sector&gt;DataSubjects</code>). Los registros de la organización cuelgan de <code>org.business_records</code>
+y son datos no personales; los datos de personas cuelgan de <code>user.*</code>. La Tabla 9.8 resume lo que añade cada
+una, comprobado en el código.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-9-8">
+<table>
+<caption id="tabla-9-8">Tabla 9.8. Las extensiones de finanzas, cadena de suministro, operaciones de proyecto y
+recursos humanos</caption>
+<thead>
+<tr><th scope="col">Extensión</th><th scope="col">Categorías de datos</th><th scope="col">Usos de datos</th>
+<th scope="col">Sujetos de datos</th><th scope="col">Rasgos que declara</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>FinanceTaxonomy</code> (<code>"finance"</code>)</th>
+<td>19: diez bajo <code>org.business_records</code> (presupuesto, contabilidad de costes, estados financieros, activo
+fijo, facturas, libro mayor, cuentas a pagar y a cobrar, impuestos, tesorería), ocho bajo <code>user.financial</code> y
+<code>user.workplace.signing_authority</code></td>
+<td>13, todos bajo la raíz estándar <code>finance</code></td>
+<td>3: <code>beneficial_owner</code>, <code>guarantor</code>, <code>payee</code></td>
+<td><code>EVALUATION</code> en <code>finance.credit_management</code> y
+<code>finance.anti_money_laundering</code></td></tr>
+<tr><th scope="row"><code>SupplyChainTaxonomy</code> (<code>"supply_chain"</code>)</th>
+<td>16: trece bajo <code>org.business_records</code> (inventario, planificación, compras, productos, producción,
+calidad, pedidos, envíos…), <code>user.contact.delivery</code>, <code>user.workplace.driving_record</code> y
+<code>user.workplace.labor_tracking</code></td>
+<td>12: once bajo <code>operations</code> y <code>sales.order_management</code></td>
+<td>3: <code>delivery_recipient</code>, <code>driver</code>, <code>supplier_contact</code></td>
+<td><code>MONITORING</code> en <code>operations.logistics.fleet_management</code>; <code>VULNERABLE</code> en
+<code>driver</code></td></tr>
+<tr><th scope="row"><code>ProjectOperationsTaxonomy</code> (<code>"project_operations"</code>)</th>
+<td>11: <code>org.business_records.project</code> y sus cinco hijas, y cinco bajo <code>user.workplace</code>
+(asignaciones, tarifas, competencias, imputación de horas, ocupación)</td>
+<td>6: <code>operations.project_management</code> y sus cinco hijas</td>
+<td>2: <code>project_stakeholder</code>, <code>subcontractor</code></td>
+<td>Ninguno</td></tr>
+<tr><th scope="row"><code>HumanResourcesTaxonomy</code> (<code>"human_resources"</code>)</th>
+<td>21: la rama nueva <code>user.employment</code> con 18 categorías por debajo (contrato, nómina, retribución,
+evaluación del desempeño, selección, régimen disciplinario, denuncias internas, adaptaciones del puesto…), y
+<code>user.health_and_medical.sick_leave</code> y <code>user.health_and_medical.occupational_health</code></td>
+<td>15, todos bajo la raíz estándar <code>employment</code></td>
+<td>6: <code>dependant</code>, <code>former_employee</code>, <code>reporting_person</code>, <code>retiree</code>,
+<code>temporary_agency_worker</code>, <code>worker_representative</code></td>
+<td><code>FINANCIAL</code> en retribución, beneficios y nómina; <code>MONITORING</code> en
+<code>user.employment.monitoring</code> y <code>employment.monitoring</code>; <code>EVALUATION</code> en
+<code>employment.performance</code> y <code>employment.recruitment.background_check</code>; <code>VULNERABLE</code> en
+cuatro sujetos</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Ninguna de estas cuatro abre una raíz de uso: todas cuelgan de raíces estándar. La de recursos humanos muestra la
+diferencia entre una raíz y una rama: <code>user.employment</code> es una categoría nueva, pero cuelga de
+<code>user</code>, así que no es una raíz y la extensión puede añadirla. Los términos heredan además los rasgos de sus
+madres estándar: las categorías bajo <code>user.financial</code> son <code>FINANCIAL</code> y
+<code>sales.order_management</code> hereda <code>DIRECT_MARKETING</code> de <code>sales</code>. La referencia de cada
+extensión enumera todos sus términos con su protección.</p>
+
+<h3>Combinar las incluidas con la tuya</h3>
+<p>Una extensión incluida y la tuya se aplican al mismo constructor como dos extensiones cualesquiera:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.builder()
+        .withStandard()
+        .extend(new UniversityTaxonomy())
+        .extend(new CampusTaxonomy())
+        .build();
+System.out.println(taxonomy);
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Taxonomy[160 data categories, 92 data uses, 35 data subjects]
+</code></pre>
+<p>Son 126 + 32 + 2 categorías, 63 + 28 + 1 usos y 22 + 12 + 1 sujetos. Aplicar las dos en el orden contrario da una
+taxonomía igual (la comparación con <code>equals</code> y las huellas coinciden). La combinación funciona porque los
+nombres son distintos (<code>university</code> y <code>campus</code>) y las claves también: si
+<code>CampusTaxonomy</code> añadiera <code>user.education.thesis</code>, la segunda extensión fallaría con
+<code>Duplicate key 'user.education.thesis'</code>. Para aplicar primero una extensión incluida y después todas las
+registradas, se llamen como se llamen, escribe <code>Taxonomy.builder().withStandard().extend(new
+UniversityTaxonomy()).withExtensions().build()</code>.</p>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Olvidar registrar la extensión, o registrarla solo en los recursos de test</dt>
+<dd>La aplicación falla con <code>UNKNOWN_CATEGORY</code> o, si clasifica con <code>Taxonomy.standard()</code>, nunca ve
+los niveles endurecidos. Registra la extensión en <code>src/main/resources</code> o en <code>module-info.java</code> y
+añade un test que compruebe que <code>Taxonomy.load()</code> contiene una de sus claves.</dd>
+<dt>Usar <code>Taxonomy.standard()</code> donde se necesita la extensión</dt>
+<dd><code>standard()</code> nunca incluye extensiones. Construye la taxonomía una vez con <code>load()</code> o con el
+constructor y pásala a todos los componentes.</dd>
+<dt>Intentar bajar un nivel para toda la organización</dt>
+<dd>No es posible por diseño: cada faceta declarada es un mínimo, y un nivel inferior se ignora sin aviso. Si un nivel
+estándar te parece excesivo, coméntalo con el DPD; la biblioteca no ofrece una vía para rebajarlo.</dd>
+<dt>Inventar raíces de categorías de datos</dt>
+<dd>El constructor rechaza una raíz añadida por una extensión. Añade la categoría como hija de la estándar más cercana,
+o como rama nueva bajo <code>user</code> u <code>org</code>, como hace <code>user.employment</code>.</dd>
+<dt>No declarar los rasgos de los términos que las reglas deberían ver</dt>
+<dd>Una finalidad que puntúa a las personas sin <code>EVALUATION</code> es invisible para el cribado de impacto. Revisa
+la Tabla 9.5 al añadir cada uso y cada sujeto.</dd>
+<dt>Renombrar o borrar una clave publicada</dt>
+<dd>Las aplicaciones la tienen guardada. Declárala obsoleta con su sustituta; la sustituta debe proteger al menos tanto
+y conservar todos sus rasgos.</dd>
+<dt>Usar un nombre reservado o el de una extensión incluida</dt>
+<dd><code>"fideslang"</code>, <code>"linneo"</code> y <code>"application"</code> se rechazan; <code>"university"</code>
+y los demás nombres de las incluidas chocan con ellas en cuanto se aplican juntas.</dd>
+<dt>Añadir una clave que ya existe en una extensión incluida</dt>
+<dd>Falla con <code>Duplicate key</code> en cuanto se combinan. Revisa la extensión incluida antes de añadir y, si ya
+tiene la clave, aplícala.</dd>
+<dt>Refinar un término de otra extensión que aún no se ha aplicado</dt>
+<dd><code>refineCategory</code> falla con <code>Cannot refine unknown data category</code>. Aplica primero la extensión
+que añade el término, con <code>extend</code> en el orden adecuado.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Extiende solo cuando ninguna clave estándar ni de una extensión incluida describe el dato con verdad, o cuando la
+organización exige más protección para una categoría entera.</li>
+<li>El <code>TaxonomyBuilder</code> es el único lugar donde se montan y validan las taxonomías; solo
+<code>build()</code> crea una <code>Taxonomy</code>.</li>
+<li>Cada faceta declarada es un mínimo: un nivel inferior no cambia nada, dos niveles dan el más estricto en cualquier
+orden y elevar una categoría eleva toda su rama.</li>
+<li>Los borradores solo cambian dentro del personalizador que los recibió.</li>
+<li>Una extensión añade categorías por debajo de las existentes, usos y sujetos (que pueden abrir raíces), endurece
+categorías, declara rasgos y deja obsoletos solo sus propios términos; la sustituta conserva protección y rasgos.</li>
+<li>Una extensión no puede añadir raíces de categorías, cambiar el origen ni el ciclo de vida de términos ajenos.</li>
+<li><code>Taxonomy.load()</code> aplica las extensiones registradas con <code>ServiceLoader</code>, ordenadas por
+nombre; <code>extend</code> las aplica de forma explícita.</li>
+<li>Las cinco extensiones incluidas no se registran como servicio, no comparten claves y no se usan como madres entre
+sí: se aplican con <code>extend</code>, solas o juntas.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li><p><strong>Préstamos de biblioteca.</strong> Añade a <code>CampusTaxonomy</code> la categoría
+<code>user.education.library_loan</code> («Préstamo de biblioteca») sin declarar ninguna faceta. ¿Cuáles son su
+naturaleza, confidencialidad, integridad y origen efectivos? Compruébalo con <code>requireCategory</code>.</p>
+<details><summary>Solución del ejercicio 1</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">builder.category("user.education.library_loan", "Préstamo de biblioteca",
+        "Libros y otros materiales que el interesado ha tomado en préstamo de la biblioteca.");
+</code></pre>
+<p>Hereda de <code>user.education</code>: naturaleza <code>ORDINARY</code>, confidencialidad <code>MEDIUM</code>,
+integridad <code>HIGH</code>, no secreta, sin rasgos, y origen <code>campus</code> porque la añade la extensión.</p>
+</details></li>
+<li><p><strong>Direcciones postales.</strong> La universidad decide que las direcciones postales de estudiantes y
+personal tienen confidencialidad <code>MEDIUM</code>. Escribe el refinamiento. ¿Funciona <code>build()</code>? ¿Qué
+claves cambian?</p>
+<details><summary>Solución del ejercicio 2</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">.refineCategory(Categories.USER_CONTACT_ADDRESS, c -&gt; c.confidentiality(Confidentiality.MEDIUM))
+</code></pre>
+<p>Funciona. <code>user.contact.address</code> y sus hijas <code>city</code>, <code>country</code>,
+<code>postal_code</code>, <code>state</code> y <code>street</code> pasan de <code>LOW</code> a <code>MEDIUM</code>. Las
+demás claves de <code>user.contact</code>, como <code>user.contact.email</code>, no cambian.</p>
+</details></li>
+<li><p><strong>Predice.</strong> Para cada cuerpo de <code>contribute</code> de una extensión llamada
+<code>"campus"</code>, indica si <code>Taxonomy.builder().withStandard().extend(...).build()</code> funciona y, si no,
+en qué momento falla:</p>
+<ol>
+<li><code>builder.category("user.education.lab_notebook.entry", "Entrada", "Una entrada.");</code> (sola)</li>
+<li><code>builder.refineCategory(Categories.USER_HEALTH_AND_MEDICAL, c -&gt;
+c.nature(LegalNature.ORDINARY));</code></li>
+<li><code>builder.refineCategory(Categories.USER_EDUCATION_TEST_SCORE, CategoryDraft::secret);</code></li>
+<li><code>builder.refineCategory(Categories.USER_EDUCATION_GRADE, c -&gt; c.deprecated("2.0", null));</code></li>
+<li><code>builder.dataSubject("visiting_researcher", "Investigador visitante", "", s -&gt;
+s.traits(Trait.VULNERABLE));</code></li>
+</ol>
+<details><summary>Solución del ejercicio 3</summary>
+<ol>
+<li>Falla en <code>build()</code>: <code>The parent 'user.education.lab_notebook' of data category
+'user.education.lab_notebook.entry' does not exist</code>.</li>
+<li>Funciona y no cambia nada: la categoría especial ya cubre los datos ordinarios, y la naturaleza sigue siendo
+<code>SPECIAL_CATEGORY</code>.</li>
+<li>Funciona: las puntuaciones de pruebas pasan a ser secretas. Es más estricto, así que se permite.</li>
+<li>Falla al llamar a <code>deprecated</code>: <code>The extension 'campus' cannot deprecate 'user.education.grade',
+which comes from 'linneo'</code>.</li>
+<li>Funciona: <code>VULNERABLE</code> se aplica a los sujetos de datos.</li>
+</ol>
+</details></li>
+<li><p><strong>Registrar y probar.</strong> Registra <code>CampusTaxonomy</code> en el class path y escribe un test que
+compruebe que <code>Taxonomy.load()</code> contiene <code>user.education.lab_notebook</code> con origen
+<code>"campus"</code> y que <code>user.government_id.passport_number</code> tiene confidencialidad
+<code>HIGH</code>.</p>
+<details><summary>Solución del ejercicio 4</summary>
+<p>Fichero <code>src/main/resources/META-INF/services/io.github.devbpm.linneo.TaxonomyExtension</code> con la línea
+<code>edu.example.university.CampusTaxonomy</code>, y el test:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Test
+void campusExtensionIsLoaded() {
+    Taxonomy taxonomy = Taxonomy.load();
+    assertEquals("campus", taxonomy.requireCategory("user.education.lab_notebook").info().origin());
+    assertEquals(Confidentiality.HIGH,
+            taxonomy.requireCategory(USER_GOVERNMENT_ID_PASSPORT_NUMBER).confidentiality());
+}
+</code></pre>
+</details></li>
+<li><p><strong>Elegir extensión.</strong> Un hospital universitario quiere clasificar las nóminas de su personal, los
+partes de baja por enfermedad y las facturas de sus proveedores. ¿Qué extensiones incluidas aplicarías y con qué
+claves? ¿Qué naturaleza tendrán los partes de baja?</p>
+<details><summary>Solución del ejercicio 5</summary>
+<p>Recursos humanos para las nóminas (<code>user.employment.payroll</code>, que es <code>FINANCIAL</code>) y los partes
+de baja (<code>user.health_and_medical.sick_leave</code>), y finanzas para las facturas de proveedores
+(<code>org.business_records.invoice</code>, un registro de la organización sin datos personales). Los partes de baja
+cuelgan de <code>user.health_and_medical</code>, así que heredan <code>SPECIAL_CATEGORY</code> con confidencialidad e
+integridad <code>HIGH</code>. Las dos extensiones se combinan sin conflicto porque no comparten claves.</p>
+</details></li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li><p>Una extensión refina <code>user.contact.email</code> con <code>confidentiality(Confidentiality.PUBLIC)</code>.
+¿Qué confidencialidad tiene el correo en la taxonomía resultante?</p>
+<ol>
+<li><code>PUBLIC</code>, porque el refinamiento es lo último que se aplica.</li>
+<li><code>LOW</code>, la que ya tenía.</li>
+<li>Ninguna: <code>build()</code> lanza <code>TaxonomyException</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La b. Cada faceta declarada es un mínimo: <code>PUBLIC</code> es inferior a <code>LOW</code>, así que no cambia nada.
+No es un error (la c), y nunca baja (la a).</p>
+</details></li>
+<li><p>¿Qué origen tiene <code>user.government_id</code> después de que <code>CampusTaxonomy</code> lo refine?</p>
+<ol>
+<li><code>campus</code>.</li>
+<li><code>fideslang</code>.</li>
+<li><code>application</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La b. Refinar no cambia el origen: lo conserva quien añadió el término. <code>campus</code> (la a) es el origen de
+los términos que la extensión añade, y <code>application</code> (la c) el de los añadidos fuera de una extensión.</p>
+</details></li>
+<li><p>¿Cuál de estas operaciones puede hacer una extensión?</p>
+<ol>
+<li>Añadir la raíz de usos de datos <code>advancement</code>.</li>
+<li>Añadir la raíz de categorías de datos <code>campus</code>.</li>
+<li>Declarar obsoleta la categoría estándar <code>user.education.grade</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La a. Los usos y los sujetos de datos pueden abrir raíces; la extensión universitaria lo hace con
+<code>advancement</code>. Una raíz de categorías (la b) es un dominio nuevo que el constructor rechaza, y una extensión
+solo deja obsoletos sus propios términos (la c).</p>
+</details></li>
+<li><p>¿Aplica <code>Taxonomy.load()</code> la extensión universitaria incluida en Linneo?</p>
+<ol>
+<li>Sí, porque está en el mismo JAR.</li>
+<li>Solo en el module path.</li>
+<li>No, salvo que la aplicación la registre como servicio.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La c. El módulo de Linneo declara <code>uses</code> pero ninguna <code>provides</code>, y el JAR no tiene fichero
+<code>META-INF/services</code>. Estar en el JAR (la a) no la registra, y el module path (la b) no cambia nada.</p>
+</details></li>
+<li><p>Una extensión deja obsoleto su uso <code>education.admission.scoring</code>, que tiene el rasgo
+<code>EVALUATION</code>, con la sustituta <code>education.admission.ranking</code>, que no lo tiene. ¿Qué ocurre?</p>
+<ol>
+<li><code>build()</code> lanza <code>TaxonomyException</code>: a la sustituta le faltan rasgos.</li>
+<li>Funciona y la sustituta hereda el rasgo de la obsoleta.</li>
+<li>Funciona, pero el clasificador emite un aviso.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La a. La sustituta debe llevar todos los rasgos del término que sustituye, porque las declaraciones que nombran la
+clave obsoleta se comprueban con ella. Los rasgos no pasan de la obsoleta a la sustituta (la b); se heredan de madres a
+hijas. No es un aviso (la c): es un error de construcción.</p>
+</details></li>
+<li><p>¿En qué orden aplica <code>Taxonomy.load()</code> las extensiones registradas?</p>
+<ol>
+<li>En el orden del class path.</li>
+<li>Ordenadas por su <code>name()</code>.</li>
+<li>Ordenadas por el nombre completo de la clase.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 6</summary>
+<p>La b. <code>withExtensions</code> ordena por <code>name()</code> para que el resultado no dependa del class path (la
+a). El nombre de la clase (la c) no interviene.</p>
+</details></li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="../../reference/extending.html">Referencia: extender la taxonomía</a>, con todos los métodos del
+constructor y los borradores.</li>
+<li><a href="../../reference/extensions/">Referencia: las extensiones incluidas</a>, y las páginas de
+<a href="../../reference/extensions/university.html">universidad</a>,
+<a href="../../reference/extensions/finance.html">finanzas</a>,
+<a href="../../reference/extensions/supply-chain.html">cadena de suministro</a>,
+<a href="../../reference/extensions/project-operations.html">operaciones de proyecto</a> y
+<a href="../../reference/extensions/human-resources.html">recursos humanos</a>.</li>
+<li><a href="../../reference/terms.html">Referencia: términos y rasgos</a>.</li>
+<li><a href="../../reference/protection-levels.html">Referencia: niveles de protección</a>.</li>
+<li><a href="10-versiones.html">Capítulo 10. Versiones de la taxonomía</a>, para comprobar que una versión nueva de tu
+extensión es compatible.</li>
+<li><a href="17-catalogos.html">Capítulo 17. Catálogos de datos</a>, para publicar los términos de tu extensión.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="08-inventario.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 8. El inventario de datos</a></li>
+<li><a href="10-versiones.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 10. Versiones de la taxonomía</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

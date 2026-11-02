@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/module-info.java
+  - src/main/java/io/github/devbpm/linneo/Taxonomy.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyDiff.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Category.java
+  - src/main/java/io/github/devbpm/linneo/annotation/CategoryByRow.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Composite.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DefaultCategory.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DerivedFrom.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Exempt.java
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/Violation.java
+  - src/main/java/io/github/devbpm/linneo/classify/DataInventory.java
+  - src/main/java/io/github/devbpm/linneo/classify/DisclosurePolicy.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
+  - src/main/java/io/github/devbpm/linneo/processing/LegalBasis.java
+  - src/main/java/io/github/devbpm/linneo/processing/SpecialCategoryCondition.java
+  - src/main/java/io/github/devbpm/linneo/processing/CriminalDataBasis.java
+  - src/main/java/io/github/devbpm/linneo/processing/TransferSafeguard.java
+  - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
+  - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
+  - src/main/java/io/github/devbpm/linneo/ens/EnsCategorization.java
+  - src/main/java/io/github/devbpm/linneo/export/postgresql/PostgresAnonymizer.java
+  - src/main/java/io/github/devbpm/linneo/export/openapi/OpenApiExtension.java
+  - src/main/java/io/github/devbpm/linneo/export/odcs/OdcsSchema.java
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OpenMetadataCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/datahub/DataHubCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/atlas/AtlasCatalog.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anexo A. Referencia rápida · Curso de Linneo</title>
+<meta name="description" content="Referencia rápida de Linneo: módulo y paquetes, anotaciones, problemas del clasificador, puntos de entrada de la API, enumerados, códigos del comprobador y recetas.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html" aria-current="page">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html" aria-current="page"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Anexo A. Referencia rápida</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Anexo A</span> Referencia rápida</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>Consulta</dd></div>
+<div><dt>Sección:</dt><dd>Anexos</dd></div>
+</dl>
+<p class="entradilla">Este anexo reúne en una página lo que más se consulta de Linneo: el módulo y sus paquetes, las
+anotaciones, los problemas que notifica el clasificador, los puntos de entrada de la
+<abbr title="interfaz de programación de aplicaciones">API</abbr>, los enumerados y los códigos del comprobador de
+actividades, y recetas cortas para las tareas habituales. Cada tabla indica el capítulo que explica cada elemento; los
+detalles completos están en la <a href="../../reference/">referencia de la API</a>.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#modulo-y-paquetes">Módulo y paquetes</a></li>
+<li><a href="#anotaciones">Las seis anotaciones</a></li>
+<li><a href="#violaciones">Problemas del clasificador</a></li>
+<li><a href="#api-por-paquete">Puntos de entrada de la API</a></li>
+<li><a href="#enumerados-de-proteccion">Enumerados de protección y rasgos</a></li>
+<li><a href="#bases-juridicas">Bases jurídicas</a></li>
+<li><a href="#codigos-de-tratamiento">Códigos del comprobador de actividades</a></li>
+<li><a href="#enumerados-de-cumplimiento">Enumerados de las herramientas de cumplimiento</a></li>
+<li><a href="#recetas">Recetas</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="modulo-y-paquetes">Módulo y paquetes</h2>
+<p>Linneo es una biblioteca para Java 21 o superior, sin dependencias en tiempo de ejecución. Con Maven:</p>
+<pre class="codigo" tabindex="0"><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.github.devbpm&lt;/groupId&gt;
+    &lt;artifactId&gt;linneo&lt;/artifactId&gt;
+    &lt;version&gt;0.1.0&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+<p>El <abbr title="Java Archive">JAR</abbr> es el módulo <abbr title="Java Platform Module System">JPMS</abbr>
+<code>io.github.devbpm.linneo</code>. Una
+aplicación modular añade <code>requires io.github.devbpm.linneo;</code> a su <code>module-info.java</code>. La
+declaración del módulo es esta:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">module io.github.devbpm.linneo {
+    exports io.github.devbpm.linneo;
+    exports io.github.devbpm.linneo.annotation;
+    exports io.github.devbpm.linneo.classify;
+    exports io.github.devbpm.linneo.processing;
+    exports io.github.devbpm.linneo.catalog.openmetadata;
+    exports io.github.devbpm.linneo.catalog.datahub;
+    exports io.github.devbpm.linneo.catalog.atlas;
+    exports io.github.devbpm.linneo.ens;
+    exports io.github.devbpm.linneo.export.odcs;
+    exports io.github.devbpm.linneo.export.openapi;
+    exports io.github.devbpm.linneo.export.postgresql;
+    exports io.github.devbpm.linneo.extension.university;
+    exports io.github.devbpm.linneo.extension.finance;
+    exports io.github.devbpm.linneo.extension.supplychain;
+    exports io.github.devbpm.linneo.extension.projectoperations;
+    exports io.github.devbpm.linneo.extension.humanresources;
+
+    uses io.github.devbpm.linneo.TaxonomyExtension;
+}
+</code></pre>
+<p>La cláusula <code>uses</code> permite que <code>Taxonomy.load()</code> encuentre extensiones con
+<code>ServiceLoader</code>. No hay cláusula <code>provides</code>: las cinco extensiones incluidas se aplican de forma
+explícita.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-1">
+<table>
+<caption id="tabla-a-1">Tabla A.1. Los paquetes exportados (prefijo <code>io.github.devbpm.linneo</code>)</caption>
+<thead>
+<tr><th scope="col">Paquete</th><th scope="col">Tipos principales</th><th scope="col">Capítulos</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">(raíz)</th><td><code>Taxonomy</code>, <code>TaxonomyBuilder</code>, <code>TaxonomyExtension</code>,
+<code>TaxonomyDiff</code>, <code>TermChange</code>, <code>Term</code>, <code>DataCategory</code>, <code>DataUse</code>,
+<code>DataSubject</code>, <code>Trait</code>, <code>Protection</code>, <code>LegalNature</code>,
+<code>Confidentiality</code>, <code>Integrity</code>, <code>Identifiability</code>, <code>Categories</code>,
+<code>DataUses</code>, <code>DataSubjects</code></td><td><a href="02-proteccion.html">2</a>,
+<a href="03-taxonomia.html">3</a>, <a href="09-extensiones.html">9</a>, <a href="10-versiones.html">10</a></td></tr>
+<tr><th scope="row"><code>.annotation</code></th><td><code>@Category</code>, <code>@DefaultCategory</code>,
+<code>@CategoryByRow</code>, <code>@DerivedFrom</code>, <code>@Composite</code>, <code>@Exempt</code></td>
+<td><a href="04-anotaciones.html">4</a>, <a href="05-estructuras.html">5</a></td></tr>
+<tr><th scope="row"><code>.classify</code></th><td><code>Classifier</code>, <code>ClassClassification</code>,
+<code>FieldClassification</code>, <code>Violation</code>, <code>ClassificationException</code>,
+<code>ModelClasses</code>, <code>DisclosurePolicy</code>, <code>DataInventory</code>, <code>InventoryField</code>,
+<code>InventoryDiff</code>, <code>FieldChange</code></td><td><a href="06-verificacion.html">6</a>,
+<a href="07-uso.html">7</a>, <a href="08-inventario.html">8</a></td></tr>
+<tr><th scope="row"><code>.processing</code></th><td><code>ProcessingActivity</code>, <code>Governance</code>,
+<code>Transfer</code>, <code>LegalBasis</code>, <code>SpecialCategoryCondition</code>, <code>CriminalDataBasis</code>,
+<code>TransferSafeguard</code>, <code>Jurisdiction</code>, <code>ProcessingChecker</code>, <code>CheckedActivity</code>,
+<code>ProcessingViolation</code>, <code>ProcessingException</code>, <code>ProcessingRecord</code>,
+<code>RecordDiff</code>, <code>ActivityChange</code>, <code>SubjectRights</code>, <code>ImpactScreening</code>,
+<code>BreachAssessment</code></td><td><a href="11-actividades.html">11</a>, <a href="12-registro.html">12</a>,
+<a href="13-impacto-y-brechas.html">13</a>, <a href="14-derechos.html">14</a></td></tr>
+<tr><th scope="row"><code>.ens</code></th><td><code>EnsCategorization</code></td><td><a
+href="15-ens.html">15</a></td></tr>
+<tr><th scope="row"><code>.export.postgresql</code>, <code>.export.openapi</code>, <code>.export.odcs</code></th>
+<td><code>PostgresAnonymizer</code>, <code>OpenApiExtension</code>, <code>OdcsSchema</code></td>
+<td><a href="16-exportadores.html">16</a></td></tr>
+<tr><th scope="row"><code>.catalog.openmetadata</code>, <code>.catalog.datahub</code>, <code>.catalog.atlas</code></th>
+<td><code>OpenMetadataCatalog</code>, <code>OpenMetadataMapping</code>, <code>OmClassification</code>,
+<code>OmTag</code>; <code>DataHubCatalog</code>, <code>DataHubMapping</code>, <code>DhProposal</code>;
+<code>AtlasCatalog</code>, <code>AtlasMapping</code>, <code>AtlasClassificationDef</code></td>
+<td><a href="17-catalogos.html">17</a></td></tr>
+<tr><th scope="row"><code>.extension.university</code>, <code>.finance</code>, <code>.supplychain</code>,
+<code>.projectoperations</code>, <code>.humanresources</code></th><td><code>UniversityTaxonomy</code>,
+<code>FinanceTaxonomy</code>, <code>SupplyChainTaxonomy</code>, <code>ProjectOperationsTaxonomy</code>,
+<code>HumanResourcesTaxonomy</code>, cada una con sus constantes <code>&lt;Dominio&gt;Categories</code>,
+<code>&lt;Dominio&gt;DataUses</code> y <code>&lt;Dominio&gt;DataSubjects</code></td>
+<td><a href="09-extensiones.html">9</a></td></tr>
+</tbody>
+</table>
+</div>
+<p>El paquete <code>io.github.devbpm.linneo.internal</code> (la carga de la taxonomía estándar y el escritor
+<abbr title="JavaScript Object Notation">JSON</abbr> mínimo) no se exporta y no forma parte de la API.</p>
+
+<h2 id="anotaciones">Las seis anotaciones</h2>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-2">
+<table>
+<caption id="tabla-a-2">Tabla A.2. Anotaciones, dónde van y sus elementos</caption>
+<thead>
+<tr><th scope="col">Anotación</th><th scope="col">Se aplica a</th><th scope="col">Elementos</th>
+<th scope="col">Para qué</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><a href="04-anotaciones.html"><code>@Category</code></a></th><td>campo, componente de record</td>
+<td><code>String value()</code>; opcionales <code>Identifiability[] identifiability()</code>,
+<code>Confidentiality[] confidentiality()</code>, <code>Integrity[] integrity()</code>, con <code>{}</code> por
+defecto</td><td>La categoría del campo; los opcionales elevan niveles o declaran la identificabilidad.</td></tr>
+<tr><th scope="row"><a href="04-anotaciones.html"><code>@DefaultCategory</code></a></th><td>clase</td>
+<td><code>String value()</code>, <code>String reason()</code></td><td>Una categoría no personal para los campos sin
+anotación de la clase.</td></tr>
+<tr><th scope="row"><a href="05-estructuras.html"><code>@CategoryByRow</code></a></th><td>campo, componente de
+record</td><td><code>String declaredBy()</code>, <code>String ceiling()</code></td><td>Una categoría que cambia por
+fila, con su techo.</td></tr>
+<tr><th scope="row"><a href="05-estructuras.html"><code>@DerivedFrom</code></a></th><td>campo, componente de
+record</td><td><code>String[] value()</code>; opcional <code>Class&lt;?&gt; type()</code></td><td>Un valor calculado
+a partir de otros campos, de esta clase o de <code>type</code>.</td></tr>
+<tr><th scope="row"><a href="05-estructuras.html"><code>@Composite</code></a></th><td>clase</td><td>ninguno</td>
+<td>Una clase de valor que se clasifica por sus campos, con rutas <code>campo.parte</code>.</td></tr>
+<tr><th scope="row"><a href="04-anotaciones.html"><code>@Exempt</code></a></th><td>campo, componente de record</td>
+<td><code>String value()</code></td><td>Un campo técnico que no contiene datos del modelo, con su motivo.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Recuerda: en cuanto indicas un elemento opcional de <code>@Category</code>, tienes que escribir
+<code>value =</code>, y cada opcional admite como mucho un valor.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_CONTENT_PRIVATE, confidentiality = Confidentiality.HIGH)
+private String counsellingNotes;
+</code></pre>
+
+<h2 id="violaciones">Problemas del clasificador</h2>
+<p>Cada <code>Violation</code> tiene <code>type</code>, <code>path</code>, <code>severity</code>, <code>code</code> y
+<code>message</code>. Todos los códigos son errores salvo <code>DEPRECATED_CATEGORY</code>, que es un aviso. Más
+detalle en el <a href="06-verificacion.html">capítulo 6</a>.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-3">
+<table>
+<caption id="tabla-a-3">Tabla A.3. Los valores de <code>Violation.Code</code> y cómo se corrigen</caption>
+<thead>
+<tr><th scope="col">Código</th><th scope="col">Causa</th><th scope="col">Corrección</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>UNCLASSIFIED_FIELD</code></th><td>Un campo sin categoría propia ni valor por defecto
+aplicable, o que puede contener datos que el clasificador no ve.</td><td>Añade <code>@Category</code> (o la anotación
+adecuada); en una clase sin datos personales, <code>@DefaultCategory</code>.</td></tr>
+<tr><th scope="row"><code>UNKNOWN_CATEGORY</code></th><td>Una clave que la taxonomía no tiene.</td><td>Usa las
+constantes de <code>Categories</code> o de tu extensión, y la misma taxonomía que la aplicación.</td></tr>
+<tr><th scope="row"><code>DEPRECATED_CATEGORY</code> (aviso)</th><td>Una clave obsoleta; el campo se clasifica con su
+sustituta.</td><td>Cambia a la clave sustituta que indica el mensaje.</td></tr>
+<tr><th scope="row"><code>PERSONAL_DEFAULT</code></th><td>Un <code>@DefaultCategory</code> con una categoría
+personal.</td><td>Declara los campos personales uno a uno con <code>@Category</code>.</td></tr>
+<tr><th scope="row"><code>MISSING_REASON</code></th><td>Un motivo o un <code>declaredBy</code> en blanco.</td>
+<td>Escribe un motivo que un revisor pueda comprobar.</td></tr>
+<tr><th scope="row"><code>CONFLICTING_ANNOTATIONS</code></th><td>Anotaciones que se excluyen, o <code>@Exempt</code> en
+una relación o un compuesto.</td><td>Deja una sola; clasifica la relación con <code>@DerivedFrom</code> o
+<code>@Category</code>, y el compuesto como un valor con <code>@Category</code> o <code>@CategoryByRow</code>.</td></tr>
+<tr><th scope="row"><code>LOWERED_LEVEL</code></th><td>Un nivel declarado inferior al de la categoría.</td><td>Quita
+el elemento: en un campo los niveles solo suben.</td></tr>
+<tr><th scope="row"><code>AMBIGUOUS_VALUE</code></th><td>Un elemento opcional con más de un valor.</td><td>Indica
+uno solo.</td></tr>
+<tr><th scope="row"><code>IDENTIFIABILITY_NOT_APPLICABLE</code></th><td><code>identifiability</code> en una categoría
+no personal.</td><td>Quítala.</td></tr>
+<tr><th scope="row"><code>DUPLICATE_FIELD</code></th><td>Un campo oculta otro de una superclase.</td><td>Renombra
+uno de los dos.</td></tr>
+<tr><th scope="row"><code>UNKNOWN_SOURCE</code></th><td>Una fuente de <code>@DerivedFrom</code> que no existe, está
+exenta o tiene un error, o ninguna fuente.</td><td>Corrige la ruta o la fuente.</td></tr>
+<tr><th scope="row"><code>AMBIGUOUS_DERIVATION</code></th><td>Fuentes con clasificaciones distintas en un derivado
+sin <code>@Category</code>.</td><td>Declara la categoría del valor derivado.</td></tr>
+<tr><th scope="row"><code>WEAKER_THAN_SOURCE</code></th><td>Un derivado que protege menos que una fuente.</td>
+<td>Declara una categoría al menos igual de protectora, o el valor anonimizado o agregado.</td></tr>
+<tr><th scope="row"><code>WEAKER_THAN_PARTS</code></th><td>Un compuesto guardado como un valor protege menos que
+sus campos.</td><td>Eleva la categoría del campo o del techo.</td></tr>
+<tr><th scope="row"><code>CYCLE</code></th><td>Un compuesto que se contiene a sí mismo o derivados en ciclo.</td>
+<td>Rompe el ciclo o clasifica el campo como un valor.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="api-por-paquete">Puntos de entrada de la API</h2>
+
+<h3 id="api-taxonomia">Taxonomía</h3>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-4">
+<table>
+<caption id="tabla-a-4">Tabla A.4. <code>Taxonomy</code>, <code>TaxonomyBuilder</code> y
+<code>TaxonomyDiff</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Para qué</th><th scope="col">Cap.</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Taxonomy.standard()</code></th><td>La taxonomía estándar: fideslang más los términos de
+Linneo. Una instancia compartida.</td><td>3</td></tr>
+<tr><th scope="row"><code>Taxonomy.load()</code></th><td>La estándar más las <code>TaxonomyExtension</code> registradas
+con <code>ServiceLoader</code>, ordenadas por nombre.</td><td>3, 9</td></tr>
+<tr><th scope="row"><code>Taxonomy.builder()</code></th><td>Un <code>TaxonomyBuilder</code> vacío.</td><td>9</td></tr>
+<tr><th scope="row"><code>category</code>, <code>requireCategory</code>, <code>resolveCategory</code></th><td>Una
+categoría por clave: <code>Optional</code>, o <code>TaxonomyException</code> si falta, o la sustituta vigente si es
+obsoleta. Igual con <code>dataUse</code> y <code>dataSubject</code>.</td><td>3</td></tr>
+<tr><th scope="row"><code>categories()</code>, <code>dataUses()</code>, <code>dataSubjects()</code></th><td>Todos los
+términos de cada jerarquía.</td><td>3</td></tr>
+<tr><th scope="row"><code>parentOf</code>, <code>childrenOf</code>, <code>ancestorsOf</code></th><td>Navegar el
+árbol.</td><td>3</td></tr>
+<tr><th scope="row"><code>toTsv()</code>, <code>Taxonomy.fromTsv(String)</code>, <code>fingerprint()</code></th>
+<td>La taxonomía como datos y su huella.</td><td>10</td></tr>
+<tr><th scope="row"><code>withStandard()</code>, <code>withExtensions()</code>, <code>extend(TaxonomyExtension)</code>,
+<code>build()</code></th><td>Montar una taxonomía con el builder.</td><td>9</td></tr>
+<tr><th scope="row"><code>category</code>, <code>dataUse</code>, <code>dataSubject</code>,
+<code>refineCategory</code>, <code>refineDataUse</code>, <code>refineDataSubject</code></th><td>Añadir términos o
+endurecer los existentes con un <code>CategoryDraft</code> o un <code>TermDraft</code>.</td><td>9</td></tr>
+<tr><th scope="row"><code>TaxonomyDiff.between(before, after)</code></th><td>Los cambios (<code>changes()</code>), los
+incompatibles (<code>breakingChanges()</code>), la versión necesaria (<code>requiredBump()</code>:
+<code>NONE</code>, <code>PATCH</code>, <code>MINOR</code>, <code>MAJOR</code>) y <code>requireCompatible()</code>, que
+lanza <code>TaxonomyException</code>.</td><td>10</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="api-clasificacion">Clasificación e inventario</h3>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-5">
+<table>
+<caption id="tabla-a-5">Tabla A.5. El paquete <code>classify</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Para qué</th><th scope="col">Cap.</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>new Classifier(Taxonomy)</code></th><td>Un clasificador inmutable para una taxonomía.</td>
+<td>6</td></tr>
+<tr><th scope="row"><code>classify(Class)</code>, <code>classifyAll(Collection)</code></th><td>Una
+<code>ClassClassification</code> por clase, sin lanzar excepciones.</td><td>6</td></tr>
+<tr><th scope="row"><code>verify(Collection)</code></th><td>Lo mismo, pero lanza <code>ClassificationException</code>
+con todos los errores.</td><td>6</td></tr>
+<tr><th scope="row"><code>inventory(Collection, Function)</code></th><td>Un <code>DataInventory</code> con las claves de
+objeto que elige la aplicación.</td><td>8</td></tr>
+<tr><th scope="row"><code>ModelClasses.inPackage(Class)</code>, <code>inPackageTree(Class)</code></th><td>Las clases
+del modelo a partir de una clase ancla.</td><td>6</td></tr>
+<tr><th scope="row"><code>ClassClassification</code>: <code>isValid()</code>, <code>errors()</code>,
+<code>fields()</code>, <code>field(path)</code>, <code>personalFields()</code>, <code>holdsPersonalData()</code>,
+<code>ceiling()</code></th><td>Leer la clasificación de una clase.</td><td>7</td></tr>
+<tr><th scope="row"><code>FieldClassification</code>: <code>category()</code>, <code>protection()</code>,
+<code>isPersonal()</code>, <code>isSecret()</code>, <code>identifiability()</code></th><td>Leer un campo.</td>
+<td>7</td></tr>
+<tr><th scope="row"><code>DisclosurePolicy.forLogs()</code>, <code>builder().mask(..).omit(..)</code>,
+<code>treatment(..)</code>, <code>treatments(ClassClassification)</code></th><td><code>CLEAR</code>,
+<code>MASK</code> u <code>OMIT</code> para cada campo.</td><td>7</td></tr>
+<tr><th scope="row"><code>DataInventory</code>: <code>builder()</code>, <code>objects()</code>,
+<code>fields(object)</code>, <code>field(object, path)</code>, <code>affectedBy(TaxonomyDiff)</code>,
+<code>toTsv()</code>, <code>fromTsv(String)</code>, <code>fingerprint()</code></th><td>La clasificación como datos que
+la aplicación guarda.</td><td>8</td></tr>
+<tr><th scope="row"><code>InventoryDiff.between(before, after, taxonomy)</code></th><td>Los cambios de campo
+(<code>changes()</code>) y los que debilitan la protección (<code>weakening()</code>).</td><td>8</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="api-tratamientos">Actividades de tratamiento</h3>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-6">
+<table>
+<caption id="tabla-a-6">Tabla A.6. El paquete <code>processing</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Para qué</th><th scope="col">Cap.</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ProcessingActivity.builder(key, name)</code></th><td>Declarar el alcance
+(<code>purposes</code>, <code>dataSubjects</code>, <code>dataCategories</code>, <code>entities</code>,
+<code>objects</code>, <code>riskFactors</code>) y, si se quiere, la gobernanza inicial.</td><td>11</td></tr>
+<tr><th scope="row"><code>withGovernance(Governance)</code>, <code>allRiskFactors()</code></th><td>Combinar el alcance
+con la gobernanza guardada; unir los factores de riesgo.</td><td>11, 13</td></tr>
+<tr><th scope="row"><code>Governance.builder()</code>, <code>toBuilder()</code>, <code>Governance.NONE</code></th>
+<td>Bases, referencia legal, conservación, destinatarios, transferencias, evaluación de impacto y factores de
+riesgo.</td><td>11</td></tr>
+<tr><th scope="row"><code>new ProcessingChecker(taxonomy[, jurisdiction[, inventory]])</code></th><td>Un comprobador
+para el <abbr title="Reglamento General de Protección de Datos">RGPD</abbr> solo, con reglas nacionales o con un
+inventario de datos.</td><td>11</td></tr>
+<tr><th scope="row"><code>check(activity)</code>, <code>checkAll(activities)</code></th><td>Una
+<code>CheckedActivity</code> por actividad, sin lanzar excepciones.</td><td>11</td></tr>
+<tr><th scope="row"><code>verify(activities)</code></th><td>El <code>ProcessingRecord</code>, o una
+<code>ProcessingException</code> con todos los errores.</td><td>11, 12</td></tr>
+<tr><th scope="row"><code>CheckedActivity</code>: <code>isValid()</code>, <code>errors()</code>,
+<code>warnings()</code>, <code>protection()</code>, <code>natures()</code>, <code>screening()</code></th><td>Leer el
+resultado de una actividad.</td><td>11, 13</td></tr>
+<tr><th scope="row"><code>ProcessingRecord</code>: <code>toMarkdown(title)</code>, <code>toJson()</code>,
+<code>fingerprint()</code>, <code>activity(key)</code></th><td>El registro del artículo 30.</td><td>12</td></tr>
+<tr><th scope="row"><code>RecordDiff.between(before, after)</code></th><td>Los <code>ActivityChange</code> entre dos
+registros.</td><td>12</td></tr>
+<tr><th scope="row"><code>ImpactScreening.of(CheckedActivity)</code></th><td>El cribado de la evaluación de impacto:
+<code>outcome()</code>, <code>findings()</code>, <code>mandatoryCase()</code>, <code>criteria()</code>,
+<code>summary()</code>.</td><td>13</td></tr>
+<tr><th scope="row"><code>BreachAssessment.builder()</code></th><td>La gravedad de una brecha:
+<code>severity()</code>, <code>score()</code>, <code>notifyAuthority()</code>, <code>communicateToSubjects()</code>,
+<code>explanation()</code>.</td><td>13</td></tr>
+<tr><th scope="row"><code>SubjectRights.of(record, taxonomy, dataSubject[, jurisdiction])</code></th><td>Las
+actividades de una categoría de interesados, <code>storedFields(..)</code> y un <code>Entitlement</code> por
+derecho.</td><td>14</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="api-ens-exportadores-catalogos"><abbr title="Esquema Nacional de Seguridad">ENS</abbr>, exportadores y
+catálogos</h3>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-7">
+<table>
+<caption id="tabla-a-7">Tabla A.7. Los paquetes <code>ens</code>, <code>export.*</code> y
+<code>catalog.*</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Para qué</th><th scope="col">Cap.</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>EnsCategorization.builder()</code>: <code>information(..)</code>,
+<code>declare(..)</code>, <code>build()</code></th><td>La categoría ENS: <code>category()</code>,
+<code>isComplete()</code>, <code>missing()</code>, <code>summary()</code>.</td><td>15</td></tr>
+<tr><th scope="row"><code>PostgresAnonymizer.of(DisclosurePolicy)</code></th><td>Sentencias
+<code>SECURITY LABEL</code> de PostgreSQL Anonymizer: <code>rule(..)</code>, <code>label(..)</code>,
+<code>labels(..)</code>; <code>withMask</code> y <code>withValue</code> para personalizarlas.</td><td>16</td></tr>
+<tr><th scope="row"><code>OpenApiExtension.of(..)</code>, <code>toJson(ClassClassification)</code>,
+<code>NAME</code></th><td>La extensión <code>x-linneo</code> de cada propiedad de una API.</td><td>16</td></tr>
+<tr><th scope="row"><code>OdcsSchema.of(Taxonomy)</code>: <code>schemaJson(inventory)</code>,
+<code>objectJson(..)</code>, <code>propertyJson(..)</code>; <code>OdcsSchema.classification(Protection)</code></th>
+<td>El <code>schema</code> de un contrato de datos del Open Data Contract Standard.</td><td>16</td></tr>
+<tr><th scope="row"><code>OpenMetadataCatalog.of(taxonomy[, mapping])</code></th><td><code>classifications()</code>,
+<code>tags()</code>, <code>tagOf(category)</code>, <code>tagsOf(..)</code>.</td><td>17</td></tr>
+<tr><th scope="row"><code>DataHubCatalog.of(taxonomy[, mapping])</code></th><td><code>proposals()</code>,
+<code>termOf(category)</code>, <code>termsOf(..)</code>.</td><td>17</td></tr>
+<tr><th scope="row"><code>AtlasCatalog.of(taxonomy[, mapping])</code></th><td><code>classificationDefs()</code>,
+<code>typeDefsJson()</code>, <code>createJson(..)</code>, <code>updateJson(..)</code>,
+<code>classificationsOf(..)</code>, <code>classificationsJson(..)</code>.</td><td>17</td></tr>
+</tbody>
+</table>
+</div>
+<p>Los exportadores y los catálogos devuelven texto o cuerpos JSON; ninguno se conecta a nada. Sus métodos para un
+campo aceptan un <code>FieldClassification</code> o un <code>InventoryField</code> (este último, con la taxonomía
+donde hace falta resolver su clave).</p>
+
+<h2 id="enumerados-de-proteccion">Enumerados de protección y rasgos</h2>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-8">
+<table>
+<caption id="tabla-a-8">Tabla A.8. Los enumerados de protección y los rasgos, en su orden de declaración</caption>
+<thead>
+<tr><th scope="col">Enumerado</th><th scope="col">Valores</th><th scope="col">Cap.</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>LegalNature</code></th><td><code>NONE</code>, <code>ORDINARY</code>,
+<code>SPECIAL_CATEGORY</code>, <code>CRIMINAL_OFFENCE</code></td><td>2</td></tr>
+<tr><th scope="row"><code>Confidentiality</code></th><td><code>PUBLIC</code>, <code>LOW</code>, <code>MEDIUM</code>,
+<code>HIGH</code></td><td>2</td></tr>
+<tr><th scope="row"><code>Integrity</code></th><td><code>LOW</code>, <code>MEDIUM</code>, <code>HIGH</code></td>
+<td>2</td></tr>
+<tr><th scope="row"><code>Identifiability</code></th><td><code>IDENTIFIED</code>, <code>PSEUDONYMIZED</code>,
+<code>ANONYMIZED</code>, <code>AGGREGATED</code> (los dos últimos no son datos personales)</td><td>2, 4</td></tr>
+<tr><th scope="row"><code>Protection.Direction</code></th><td><code>SAME</code>, <code>TIGHTENED</code>,
+<code>LOOSENED</code>, <code>MIXED</code></td><td>2</td></tr>
+<tr><th scope="row"><code>Trait</code></th><td><code>FINANCIAL</code>, <code>BEHAVIOURAL</code>,
+<code>PRIVATE_LIFE</code>, <code>DIRECT_IDENTIFIER</code>, <code>CONTACT_IDENTIFIER</code>,
+<code>INDIRECT_IDENTIFIER</code>, <code>BIOMETRIC</code>, <code>GENETIC</code>, <code>MONITORING</code>,
+<code>VULNERABLE</code>, <code>EVALUATION</code>, <code>DIRECT_MARKETING</code>, <code>RESEARCH</code></td>
+<td>3</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>Protection</code> es el orden parcial único para comparar protección: <code>Protection.of(nature,
+confidentiality, integrity, secret)</code>, <code>LOWEST</code>, <code>covers(other)</code>, <code>join(other)</code>,
+<code>joinAll(protections)</code> y <code>comparedTo(before)</code>. Úsalo en lugar de comparar naturalezas y niveles
+a mano.</p>
+
+<h2 id="bases-juridicas">Bases jurídicas</h2>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-9">
+<table>
+<caption id="tabla-a-9">Tabla A.9. Las bases y condiciones, con su artículo del RGPD</caption>
+<thead>
+<tr><th scope="col">Enumerado</th><th scope="col">Valores (<code>article()</code>)</th>
+<th scope="col">Piden referencia legal</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>LegalBasis</code></th><td><code>CONSENT</code> (6.1.a), <code>CONTRACT</code> (6.1.b),
+<code>LEGAL_OBLIGATION</code> (6.1.c), <code>VITAL_INTERESTS</code> (6.1.d), <code>PUBLIC_INTEREST</code> (6.1.e),
+<code>LEGITIMATE_INTERESTS</code> (6.1.f)</td><td><code>LEGAL_OBLIGATION</code>, <code>PUBLIC_INTEREST</code></td></tr>
+<tr><th scope="row"><code>SpecialCategoryCondition</code></th><td><code>EXPLICIT_CONSENT</code> (9.2.a),
+<code>EMPLOYMENT_AND_SOCIAL_SECURITY</code> (9.2.b), <code>VITAL_INTERESTS</code> (9.2.c),
+<code>NOT_FOR_PROFIT_BODIES</code> (9.2.d), <code>MADE_PUBLIC_BY_THE_DATA_SUBJECT</code> (9.2.e),
+<code>LEGAL_CLAIMS</code> (9.2.f), <code>SUBSTANTIAL_PUBLIC_INTEREST</code> (9.2.g),
+<code>HEALTH_OR_SOCIAL_CARE</code> (9.2.h), <code>PUBLIC_HEALTH</code> (9.2.i),
+<code>ARCHIVING_RESEARCH_AND_STATISTICS</code> (9.2.j)</td><td>las de las letras b, g, h, i y j</td></tr>
+<tr><th scope="row"><code>CriminalDataBasis</code></th><td><code>OFFICIAL_AUTHORITY</code>,
+<code>AUTHORISED_BY_LAW</code> (ambas 10)</td><td><code>AUTHORISED_BY_LAW</code></td></tr>
+<tr><th scope="row"><code>TransferSafeguard</code></th><td><code>ADEQUACY_DECISION</code> (45),
+<code>STANDARD_CONTRACTUAL_CLAUSES</code> (46.2.c), <code>BINDING_CORPORATE_RULES</code> (47),
+<code>DEROGATION</code> (49)</td><td>—</td></tr>
+<tr><th scope="row"><code>Jurisdiction</code></th><td><code>EU</code> (el RGPD solo), <code>SPAIN</code> (además la
+<abbr title="Ley Orgánica de Protección de Datos Personales y garantía de los derechos digitales">LOPDGDD</abbr>)</td>
+<td>—</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>LegalBasis</code>, <code>SpecialCategoryCondition</code> y <code>TransferSafeguard</code> tienen además
+<code>fideslangName()</code>, el nombre que les da fideslang; <code>CriminalDataBasis</code> no lo tiene. En los tres
+primeros enumerados de la tabla, <code>requiresLegalReference()</code> dice si piden nombrar la ley con
+<code>legalReference(..)</code>. Más detalle en el <a href="11-actividades.html">capítulo 11</a>.</p>
+
+<h2 id="codigos-de-tratamiento">Códigos del comprobador de actividades</h2>
+<p>Cada <code>ProcessingViolation</code> tiene <code>activity</code>, <code>severity</code>, <code>code</code>,
+<code>element</code> y <code>message</code>. Un <strong>error</strong> es algo que haría la actividad ilícita tal
+como está declarada, o imposible de comprobar, y hace fallar <code>verify</code>; un <strong>aviso</strong> es un hueco
+del registro.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-10">
+<table>
+<caption id="tabla-a-10">Tabla A.10. Los valores de <code>ProcessingViolation.Code</code></caption>
+<thead>
+<tr><th scope="col">Código</th><th scope="col">Gravedad</th><th scope="col">Elemento</th>
+<th scope="col">Cuándo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>UNKNOWN_KEY</code></th><td>error</td><td><code>PURPOSES</code>,
+<code>DATA_SUBJECTS</code> o <code>PERSONAL_DATA</code></td><td>Una clave, un objeto o una clave de campo
+desconocidos.</td></tr>
+<tr><th scope="row"><code>MISSING_PURPOSE</code></th><td>error</td><td><code>PURPOSES</code></td><td>Sin
+finalidad.</td></tr>
+<tr><th scope="row"><code>MISSING_DATA_SUBJECTS</code></th><td>error</td><td><code>DATA_SUBJECTS</code></td><td>Sin
+interesados.</td></tr>
+<tr><th scope="row"><code>MISSING_PERSONAL_DATA</code></th><td>error</td><td><code>PERSONAL_DATA</code></td><td>Sin
+datos personales.</td></tr>
+<tr><th scope="row"><code>ENTITY_NOT_CLASSIFIED</code></th><td>error</td><td><code>PERSONAL_DATA</code></td><td>Una
+entidad con errores de clasificación.</td></tr>
+<tr><th scope="row"><code>MISSING_LEGAL_BASIS</code></th><td>error</td><td><code>LEGAL_BASIS</code></td><td>Datos
+personales sin base (6.1).</td></tr>
+<tr><th scope="row"><code>MISSING_SPECIAL_CATEGORY_CONDITION</code></th><td>error</td>
+<td><code>SPECIAL_CATEGORY_CONDITION</code></td><td>Categorías especiales sin condición (9.2).</td></tr>
+<tr><th scope="row"><code>MISSING_CRIMINAL_DATA_BASIS</code></th><td>error</td>
+<td><code>CRIMINAL_DATA_BASIS</code></td><td>Datos penales sin base (10).</td></tr>
+<tr><th scope="row"><code>CONSENT_NOT_SUFFICIENT</code></th><td>error o aviso</td>
+<td><code>SPECIAL_CATEGORY_CONDITION</code></td><td>En España, consentimiento explícito para datos del artículo 9.1
+de la LOPDGDD: error si es la única condición, aviso si hay otras.</td></tr>
+<tr><th scope="row"><code>IMPACT_ASSESSMENT_REQUIRED</code></th><td>error</td><td><code>IMPACT_ASSESSMENT</code></td>
+<td>Un caso del artículo 35.3 sin evaluación citada.</td></tr>
+<tr><th scope="row"><code>DUPLICATE_ACTIVITY</code></th><td>error</td><td><code>KEY</code></td><td>Dos actividades
+con la misma clave.</td></tr>
+<tr><th scope="row"><code>DEPRECATED_KEY</code></th><td>aviso</td><td><code>PURPOSES</code>,
+<code>DATA_SUBJECTS</code> o <code>PERSONAL_DATA</code></td><td>Una clave obsoleta, comprobada con su
+sustituta.</td></tr>
+<tr><th scope="row"><code>NOT_PERSONAL_DATA</code></th><td>aviso</td><td><code>PERSONAL_DATA</code></td><td>Una
+categoría declarada que no es personal.</td></tr>
+<tr><th scope="row"><code>UNNEEDED_CONDITION</code></th><td>aviso</td><td><code>LEGITIMATE_INTEREST</code>,
+<code>SPECIAL_CATEGORY_CONDITION</code> o <code>CRIMINAL_DATA_BASIS</code></td><td>Una condición o un interés que no
+hacen falta.</td></tr>
+<tr><th scope="row"><code>MISSING_LEGAL_REFERENCE</code></th><td>aviso</td><td><code>LEGAL_REFERENCE</code></td>
+<td>Una base que descansa en una ley sin nombrarla.</td></tr>
+<tr><th scope="row"><code>MISSING_LEGITIMATE_INTEREST</code></th><td>aviso</td>
+<td><code>LEGITIMATE_INTEREST</code></td><td>Intereses legítimos sin el interés perseguido.</td></tr>
+<tr><th scope="row"><code>MISSING_RETENTION</code></th><td>aviso</td><td><code>RETENTION</code></td><td>Sin plazo de
+conservación (30.1.f).</td></tr>
+<tr><th scope="row"><code>IMPACT_ASSESSMENT_RECOMMENDED</code></th><td>aviso</td>
+<td><code>IMPACT_ASSESSMENT</code></td><td>Dos criterios o más sin evaluación citada, o, en España, datos biométricos
+o genéticos.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>Element.isGovernance()</code> es <code>false</code> para <code>KEY</code>, <code>PURPOSES</code>,
+<code>DATA_SUBJECTS</code> y <code>PERSONAL_DATA</code> (el alcance, que declara el código) y <code>true</code> para
+<code>LEGAL_BASIS</code>, <code>LEGITIMATE_INTEREST</code>, <code>SPECIAL_CATEGORY_CONDITION</code>,
+<code>CRIMINAL_DATA_BASIS</code>, <code>LEGAL_REFERENCE</code>, <code>RETENTION</code> e
+<code>IMPACT_ASSESSMENT</code> (la gobernanza, que mantiene el delegado de protección de datos).</p>
+
+<h2 id="enumerados-de-cumplimiento">Enumerados de las herramientas de cumplimiento</h2>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-a-11">
+<table>
+<caption id="tabla-a-11">Tabla A.11. Enumerados anidados de los capítulos 13 a 15</caption>
+<thead>
+<tr><th scope="col">Enumerado</th><th scope="col">Valores</th><th scope="col">Cap.</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ImpactScreening.Outcome</code></th><td><code>NOT_INDICATED</code>, <code>POSSIBLE</code>,
+<code>LIKELY</code>, <code>REQUIRED</code></td><td>13</td></tr>
+<tr><th scope="row"><code>ImpactScreening.Criterion</code></th><td><code>EVALUATION</code>,
+<code>AUTOMATED_DECISIONS</code>, <code>SYSTEMATIC_MONITORING</code>, <code>SENSITIVE_DATA</code>,
+<code>LARGE_SCALE</code>, <code>DATASET_MATCHING</code>, <code>VULNERABLE_SUBJECTS</code>,
+<code>INNOVATIVE_TECHNOLOGY</code>, <code>PREVENTS_RIGHTS</code></td><td>13</td></tr>
+<tr><th scope="row"><code>ImpactScreening.Factor</code></th><td>los anteriores salvo <code>SENSITIVE_DATA</code>,
+más <code>PUBLICLY_ACCESSIBLE_AREA</code></td><td>13</td></tr>
+<tr><th scope="row"><code>BreachAssessment.Severity</code></th><td><code>LOW</code>, <code>MEDIUM</code>,
+<code>HIGH</code>, <code>VERY_HIGH</code></td><td>13</td></tr>
+<tr><th scope="row"><code>BreachAssessment.Identification</code></th><td><code>NEGLIGIBLE</code> (0,25),
+<code>LIMITED</code> (0,5), <code>SIGNIFICANT</code> (0,75), <code>MAXIMUM</code> (1)</td><td>13</td></tr>
+<tr><th scope="row"><code>BreachAssessment.Exposure</code>, <code>Alteration</code>,
+<code>Unavailability</code></th><td><code>NONE</code> y dos grados (+0,25 y +0,5): <code>KNOWN_RECIPIENTS</code>,
+<code>UNKNOWN_RECIPIENTS</code>; <code>RECOVERABLE</code>, <code>UNRECOVERABLE</code>; <code>TEMPORARY</code>,
+<code>PERMANENT</code></td><td>13</td></tr>
+<tr><th scope="row"><code>SubjectRights.Right</code></th><td><code>ACCESS</code>, <code>RECTIFICATION</code>,
+<code>ERASURE</code>, <code>RESTRICTION</code>, <code>PORTABILITY</code>, <code>OBJECTION</code>,
+<code>AUTOMATED_DECISION</code></td><td>14</td></tr>
+<tr><th scope="row"><code>SubjectRights.Availability</code></th><td><code>YES</code>, <code>CONDITIONAL</code>,
+<code>NO</code></td><td>14</td></tr>
+<tr><th scope="row"><code>EnsCategorization.Dimension</code></th><td><code>CONFIDENTIALITY</code>,
+<code>INTEGRITY</code>, <code>TRACEABILITY</code>, <code>AUTHENTICITY</code>, <code>AVAILABILITY</code></td>
+<td>15</td></tr>
+<tr><th scope="row"><code>EnsCategorization.Level</code>, <code>SystemCategory</code></th><td><code>LOW</code>,
+<code>MEDIUM</code>, <code>HIGH</code>; <code>BASIC</code>, <code>MEDIUM</code>, <code>HIGH</code></td><td>15</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="recetas">Recetas</h2>
+<p>Cada receta es un fragmento que compila. Los nombres del modelo (<code>Student</code>,
+<code>UniversityActivities</code>) son los del ejemplo conductor del curso.</p>
+
+<h3 id="receta-verificar-el-modelo">Verificar el modelo en un test</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">class ClassificationTest {
+
+    @Test
+    void theModelIsClassified() {
+        new Classifier(Taxonomy.load()).verify(ModelClasses.inPackageTree(Student.class));
+    }
+}
+</code></pre>
+
+<h3 id="receta-enmascarar-un-log">Decidir qué se escribe en un log</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">Map&lt;String, DisclosurePolicy.Treatment&gt; treatments =
+        DisclosurePolicy.forLogs().treatments(classifier.classify(Student.class));
+treatments.get("email");              // MASK
+treatments.get("disabilityDegree");   // OMIT
+treatments.get("createdAt");          // CLEAR
+</code></pre>
+
+<h3 id="receta-inventario">Comparar el inventario guardado con el modelo</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">DataInventory stored = DataInventory.fromTsv(Files.readString(Path.of("inventory.tsv")));
+DataInventory current = classifier.inventory(List.of(Student.class, Enrollment.class),
+        type -&gt; type == Student.class ? "students" : "enrollments");
+InventoryDiff diff = InventoryDiff.between(stored, current, taxonomy);
+diff.weakening().forEach(System.out::println);
+</code></pre>
+
+<h3 id="receta-ampliar-la-taxonomia">Aplicar una extensión incluida</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy university = Taxonomy.builder()
+        .withStandard()
+        .extend(new UniversityTaxonomy())
+        .build();
+</code></pre>
+
+<h3 id="receta-versiones">Graduar el cambio de la taxonomía</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy released = Taxonomy.fromTsv(Files.readString(Path.of("released-taxonomy.tsv")));
+TaxonomyDiff diff = TaxonomyDiff.between(released, Taxonomy.load());
+System.out.println(diff.requiredBump());
+diff.requireCompatible();   // TaxonomyException con cada cambio incompatible
+</code></pre>
+
+<h3 id="receta-registro">Verificar las actividades y escribir el registro</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingRecord record = new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)
+        .verify(UniversityActivities.all());
+Files.writeString(Path.of("target/record-of-processing.md"), record.toMarkdown("Example University"));
+Files.writeString(Path.of("target/record-of-processing.json"), record.toJson());
+</code></pre>
+
+<h3 id="receta-solo-alcance">Fallar la compilación solo por el alcance</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;ProcessingViolation&gt; scopeErrors = checker.checkAll(UniversityActivities.all()).stream()
+        .flatMap(checked -&gt; checked.errors().stream())
+        .filter(violation -&gt; !violation.element().isGovernance())
+        .toList();
+assertTrue(scopeErrors.isEmpty(), () -&gt; "Fix the scope of the activities: " + scopeErrors);
+</code></pre>
+
+<h3 id="receta-cribado">Cribar la evaluación de impacto</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">for (CheckedActivity checked : checker.checkAll(UniversityActivities.all())) {
+    System.out.println(checked.activity().key() + ": " + checked.screening().summary());
+}
+</code></pre>
+
+<h3 id="receta-brecha">Orientar una brecha</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">BreachAssessment breach = BreachAssessment.builder()
+        .affected(classifier.classify(Student.class).fields())
+        .confidentiality(BreachAssessment.Exposure.KNOWN_RECIPIENTS)
+        .individuals(37)
+        .build();
+System.out.println(breach.explanation());
+</code></pre>
+
+<h3 id="receta-derechos">Empezar la respuesta a un interesado</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">SubjectRights rights = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN);
+for (SubjectRights.ActivityRights activity : rights.activities()) {
+    System.out.println(activity.activity().activity().key() + ": "
+            + activity.entitlement(SubjectRights.Right.ERASURE).availability());
+}
+</code></pre>
+
+<h3 id="receta-ens">Categorizar un sistema según el ENS</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">EnsCategorization ens = EnsCategorization.builder()
+        .information(classifier.classify(Student.class))
+        .declare(EnsCategorization.Dimension.AVAILABILITY, EnsCategorization.Level.MEDIUM, "fixed deadlines")
+        .declare(EnsCategorization.Dimension.AUTHENTICITY, EnsCategorization.Level.MEDIUM, "students sign in")
+        .declare(EnsCategorization.Dimension.TRACEABILITY, EnsCategorization.Level.MEDIUM, "changes are audited")
+        .build();
+System.out.println(ens.summary());
+</code></pre>
+
+<h3 id="receta-exportar">Exportar a herramientas y catálogos</h3>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification student = classifier.classify(Student.class);
+List&lt;String&gt; labels = PostgresAnonymizer.of(DisclosurePolicy.forLogs())
+        .labels(student, path -&gt; "students." + path.toLowerCase());
+String openApi = OpenApiExtension.toJson(student);
+List&lt;String&gt; tags = OpenMetadataCatalog.of(taxonomy).tagsOf(student.field("email").orElseThrow());
+List&lt;String&gt; terms = DataHubCatalog.of(taxonomy).termsOf(student.field("email").orElseThrow());
+</code></pre>
+<p>Para el campo <code>email</code> de <code>Student</code>, <code>tags</code> es
+<code>[DataCategory.user.contact.email, PersonalData.Personal, PII.NonSensitive, Confidentiality.Low,
+Integrity.Medium, Identifiability.Identified]</code>.</p>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="../../reference/">Referencia de la API</a>, con todos los tipos públicos.</li>
+<li><a href="anexo-b-glosario.html">Anexo B. Glosario</a>, con los términos del curso.</li>
+<li><a href="01-introduccion.html">Capítulo 1</a>, para el recorrido completo de la biblioteca.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="18-ciclo-de-vida.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 18. Linneo en el ciclo de vida</a></li>
+<li><a href="anexo-b-glosario.html" rel="next"><span class="rumbo">Siguiente</span>Anexo B. Glosario</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

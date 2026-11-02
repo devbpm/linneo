@@ -185,7 +185,7 @@ for (var entry : declared.affectedBy(changes).entrySet()) {
 settings.write("linneo.taxonomy", taxonomy.toTsv());
 ```
 
-`Taxonomy.toTsv()` escribe cada término con su protección efectiva, unos 30 KB para la taxonomía estándar y 60 KB con
+`Taxonomy.toTsv()` escribe cada término con su protección efectiva, unos 36 KB para la taxonomía estándar y 70 KB con
 las cinco extensiones incluidas; `fromTsv` lo lee pasando por el `TaxonomyBuilder`, así que un texto dañado se
 rechaza. El mismo texto permite a un auditor reproducir, años después, la protección que tenía un campo un día
 concreto.

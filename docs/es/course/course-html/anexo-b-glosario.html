@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/LegalNature.java
+  - src/main/java/io/github/devbpm/linneo/Confidentiality.java
+  - src/main/java/io/github/devbpm/linneo/Integrity.java
+  - src/main/java/io/github/devbpm/linneo/Identifiability.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
+  - src/main/java/io/github/devbpm/linneo/Taxonomy.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyDiff.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Category.java
+  - src/main/java/io/github/devbpm/linneo/annotation/CategoryByRow.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Composite.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DefaultCategory.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DerivedFrom.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Exempt.java
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/DataInventory.java
+  - src/main/java/io/github/devbpm/linneo/classify/DisclosurePolicy.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/ImpactScreening.java
+  - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
+  - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
+  - src/main/java/io/github/devbpm/linneo/ens/EnsCategorization.java
+  - src/main/java/io/github/devbpm/linneo/export/postgresql/PostgresAnonymizer.java
+  - src/main/java/io/github/devbpm/linneo/export/openapi/OpenApiExtension.java
+  - src/main/java/io/github/devbpm/linneo/export/odcs/OdcsSchema.java
+  - src/main/java/io/github/devbpm/linneo/catalog/openmetadata/OpenMetadataCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/datahub/DataHubCatalog.java
+  - src/main/java/io/github/devbpm/linneo/catalog/atlas/AtlasCatalog.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anexo B. Glosario · Curso de Linneo</title>
+<meta name="description" content="Definiciones breves de los términos técnicos de Linneo y de los conceptos jurídicos y de seguridad que usa, con enlace al capítulo que los explica.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html" aria-current="page">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html" aria-current="page"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Anexo B. Glosario</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Anexo B</span> Glosario</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>Consulta</dd></div>
+<div><dt>Sección:</dt><dd>Anexos</dd></div>
+</dl>
+<p class="entradilla">Este glosario reúne los términos técnicos de Linneo y los conceptos de protección de datos y de
+seguridad que la biblioteca usa. Cada definición es breve y remite al capítulo que lo explica con ejemplos. Los
+identificadores de código figuran entre paréntesis, tal como aparecen en la biblioteca.</p>
+
+<nav aria-label="Letras del glosario">
+<p><a href="#letra-a">A</a> · <a href="#letra-b">B</a> · <a href="#letra-c">C</a> · <a href="#letra-d">D</a> ·
+<a href="#letra-e">E</a> · <a href="#letra-f">F</a> · <a href="#letra-g">G</a> · <a href="#letra-h">H</a> ·
+<a href="#letra-i">I</a> · <a href="#letra-j">J</a> · <a href="#letra-l">L</a> · <a href="#letra-n">N</a> ·
+<a href="#letra-o">O</a> · <a href="#letra-p">P</a> · <a href="#letra-r">R</a> · <a href="#letra-s">S</a> ·
+<a href="#letra-t">T</a> · <a href="#letra-u">U</a> · <a href="#letra-v">V</a> · <a href="#letra-w">W</a></p>
+</nav>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#letra-a">A</a></li>
+<li><a href="#letra-b">B</a></li>
+<li><a href="#letra-c">C</a></li>
+<li><a href="#letra-d">D</a></li>
+<li><a href="#letra-e">E</a></li>
+<li><a href="#letra-f">F</a></li>
+<li><a href="#letra-g">G</a></li>
+<li><a href="#letra-h">H</a></li>
+<li><a href="#letra-i">I</a></li>
+<li><a href="#letra-j">J</a></li>
+<li><a href="#letra-l">L</a></li>
+<li><a href="#letra-n">N</a></li>
+<li><a href="#letra-o">O</a></li>
+<li><a href="#letra-p">P</a></li>
+<li><a href="#letra-r">R</a></li>
+<li><a href="#letra-s">S</a></li>
+<li><a href="#letra-t">T</a></li>
+<li><a href="#letra-u">U</a></li>
+<li><a href="#letra-v">V</a></li>
+<li><a href="#letra-w">W</a></li>
+</ol>
+</nav>
+<h2 id="letra-a">A</h2>
+<dl class="definiciones">
+<dt id="g-actividad-de-tratamiento">actividad de tratamiento (<code>ProcessingActivity</code>)</dt>
+<dd>Un proceso de la organización tal como se declara en el registro de actividades de tratamiento (art. 30.1
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr>): sus finalidades, sus categorías de interesados y
+sus datos personales, que forman el alcance, más su gobernanza. Se construye con
+<code>ProcessingActivity.builder</code> y se comprueba con un <code>ProcessingChecker</code>. Véase el
+<a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-aepd"><abbr title="Agencia Española de Protección de Datos">AEPD</abbr></dt>
+<dd>Agencia Española de Protección de Datos, la autoridad de control española. Con <code>Jurisdiction.SPAIN</code>,
+Linneo aplica su lista del artículo 35.4 del RGPD, que cuenta los datos biométricos y genéticos como criterios propios
+para la evaluación de impacto. Véase el <a href="13-impacto-y-brechas.html">capítulo 13</a>.</dd>
+<dt id="g-agregado">agregado (<code>AGGREGATED</code>)</dt>
+<dd>Identificabilidad de un valor que resume a varias personas y no describe a ninguna, como la nota media de una
+asignatura. No es un dato personal mientras nadie pueda reidentificar a las personas. Véase el
+<a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-alcance">alcance</dt>
+<dd>La parte de una actividad de tratamiento que el código conoce con certeza: sus finalidades, sus categorías de
+interesados, sus datos personales y los factores de riesgo que el código conoce
+(<code>ProcessingActivity.riskFactors</code>). Se separa de la gobernanza porque tienen responsables distintos, y
+cada infracción indica con su elemento a cuál de las dos pertenece. Véase el <a href="11-actividades.html">capítulo
+11</a>.</dd>
+<dt id="g-anonimizado">anonimizado (<code>ANONYMIZED</code>)</dt>
+<dd>Identificabilidad de un valor que ya no se puede vincular a la persona. Deja de ser un dato personal mientras
+nadie pueda reidentificarla; declararlo es una afirmación que alguien debe poder justificar. Véase el
+<a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-apache-atlas">Apache Atlas (<code>AtlasCatalog</code>)</dt>
+<dd>Catálogo de metadatos de código abierto. Linneo traduce la taxonomía a tipos de clasificación de Atlas, con el
+árbol de categorías como supertipos, y calcula las clasificaciones de cada columna; no hace llamadas
+<abbr title="Protocolo de transferencia de hipertexto">HTTP</abbr>. Véase el <a href="17-catalogos.html">capítulo
+17</a>.</dd>
+<dt id="g-atributo">atributo</dt>
+<dd>Par nombre-valor que la aplicación asocia a una categoría de datos, como una clase de conservación. Se hereda por
+el árbol y una hija puede fijar su propio valor; la taxonomía estándar no define ninguno. Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-autoridad-de-control">autoridad de control</dt>
+<dd>Autoridad pública independiente que supervisa la aplicación del RGPD; en España, la AEPD.
+<code>BreachAssessment.notifyAuthority()</code> indica si una brecha debe notificársele en 72 horas (art. 33.1 RGPD).
+Véase el <a href="13-impacto-y-brechas.html">capítulo 13</a>.</dd>
+<dt id="g-aviso">aviso (<code>WARNING</code>)</dt>
+<dd>Problema que no hace fallar la verificación pero conviene corregir, como una clave obsoleta o un hueco en el
+registro de actividades. Véanse los capítulos <a href="06-verificacion.html">6</a> y
+<a href="11-actividades.html">11</a>.</dd>
+</dl>
+
+<h2 id="letra-b">B</h2>
+<dl class="definiciones">
+<dt id="g-base-del-campo">base del campo (<code>FieldClassification.Basis</code>)</dt>
+<dd>De dónde sale la categoría de un campo: <code>DECLARED</code> (<code>@Category</code>), <code>CLASS_DEFAULT</code>
+(<code>@DefaultCategory</code>), <code>BY_ROW</code> (el techo de <code>@CategoryByRow</code>) o <code>DERIVED</code>
+(<code>@DerivedFrom</code>). Véanse los capítulos <a href="07-uso.html">7</a> y
+<a href="08-inventario.html">8</a>.</dd>
+<dt id="g-base-juridica">base jurídica (<code>LegalBasis</code>)</dt>
+<dd>Fundamento que hace lícito un tratamiento según el artículo 6.1 del RGPD: consentimiento, contrato, obligación
+legal, intereses vitales, interés público o intereses legítimos. Los nombres de las constantes coinciden con los de
+fideslang. Véase el <a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-borrador">borrador (<code>TermDraft</code>, <code>CategoryDraft</code>)</dt>
+<dd>Las propiedades declaradas de un término mientras el constructor de taxonomías está abierto. Solo se puede cambiar
+dentro de la función que lo recibe, y cada faceta que declara es un mínimo. Véase el
+<a href="09-extensiones.html">capítulo 9</a>.</dd>
+<dt id="g-brecha">brecha</dt>
+<dd>Véase <a href="#g-violacion-de-la-seguridad-de-los-datos-personales">violación de la seguridad de los datos
+personales</a>.</dd>
+</dl>
+
+<h2 id="letra-c">C</h2>
+<dl class="definiciones">
+<dt id="g-campo-de-inventario">campo de inventario (<code>InventoryField</code>)</dt>
+<dd>Un campo de un inventario de datos con lo que declara el código para él: su clave, su base, los niveles que eleva
+y su identificabilidad, sin depender de ninguna taxonomía. Un campo exento solo tiene su motivo. Véase el
+<a href="08-inventario.html">capítulo 8</a>.</dd>
+<dt id="g-catalogo-de-datos">catálogo de datos</dt>
+<dd>Herramienta en la que una organización documenta y etiqueta sus bases de datos, tablas y columnas. Linneo genera
+los cuerpos <abbr title="JavaScript Object Notation">JSON</abbr> para OpenMetadata, DataHub y Apache Atlas, y la
+aplicación los envía. Véase el <a href="17-catalogos.html">capítulo 17</a>.</dd>
+<dt id="g-categoria-de-datos">categoría de datos (<code>DataCategory</code>)</dt>
+<dd>Término que describe qué contiene un campo y lleva la protección que requiere ese tipo de dato: naturaleza
+jurídica, confidencialidad, integridad y secreto, además de atributos y rasgos. Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-categoria-de-interesados">categoría de interesados</dt>
+<dd>Véase <a href="#g-sujeto-de-datos">sujeto de datos</a>.</dd>
+<dt id="g-categoria-ens">categoría <abbr title="Esquema Nacional de Seguridad">ENS</abbr>
+(<code>EnsCategorization</code>)</dt>
+<dd>Categoría de seguridad de un sistema según el ENS: BÁSICA,
+MEDIA o ALTA, según el nivel más alto de sus cinco dimensiones. Linneo toma la confidencialidad y la integridad de la
+clasificación; el responsable del sistema declara la autenticidad, la trazabilidad y la disponibilidad. Véase el
+<a href="15-ens.html">capítulo 15</a>.</dd>
+<dt id="g-categoria-especial-de-datos">categoría especial de datos (<code>SPECIAL_CATEGORY</code>)</dt>
+<dd>Datos del artículo 9.1 del RGPD: origen racial o étnico, opiniones políticas, convicciones religiosas o
+filosóficas, afiliación sindical, datos genéticos, datos biométricos tratados para identificar a una persona, salud,
+vida sexual y orientación sexual. Exigen confidencialidad e integridad <code>HIGH</code> y, para tratarse, una
+condición del artículo 9.2. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-categoria-por-defecto">categoría por defecto (<code>@DefaultCategory</code>)</dt>
+<dd>Véase <a href="#g-valor-por-defecto-de-clase">valor por defecto de clase</a>.</dd>
+<dt id="g-categoria-por-fila">categoría por fila (<code>@CategoryByRow</code>)</dt>
+<dd>Anotación de un campo cuya categoría depende de cada fila, como el contenido de un documento. Declara qué decide
+la categoría y el techo, la categoría más protectora que puede tener una fila. Véase el
+<a href="05-estructuras.html">capítulo 5</a>.</dd>
+<dt id="g-cepd"><abbr title="Comité Europeo de Protección de Datos">CEPD</abbr></dt>
+<dd>Comité Europeo de Protección de Datos. Asumió las directrices WP248 rev.01 sobre la evaluación de impacto,
+cuyos criterios aplica <code>ImpactScreening</code>. Véase el
+<a href="13-impacto-y-brechas.html">capítulo 13</a>.</dd>
+<dt id="g-clases-del-modelo">clases del modelo (<code>ModelClasses</code>)</dt>
+<dd>Utilidad que lista las clases de un paquete del modelo a partir de una clase ancla, para que un test verifique
+todas y no solo las que alguien recordó. Falla en lugar de omitir lo que no puede listar. Véase el
+<a href="06-verificacion.html">capítulo 6</a>.</dd>
+<dt id="g-clasificacion-de-un-campo">clasificación de un campo (<code>FieldClassification</code>)</dt>
+<dd>La categoría, la base, los niveles efectivos y la identificabilidad de un campo. <code>protection()</code> da su
+protección e <code>isPersonal()</code> dice si guarda datos personales. Véase el <a href="07-uso.html">capítulo
+7</a>.</dd>
+<dt id="g-clasificacion-de-una-clase">clasificación de una clase (<code>ClassClassification</code>)</dt>
+<dd>El resultado de clasificar una clase: una entrada por campo, incluidos los heredados, los campos exentos y los
+problemas encontrados. <code>ceiling()</code> da la protección que necesita un registro completo. Véase el
+<a href="07-uso.html">capítulo 7</a>.</dd>
+<dt id="g-clasificador">clasificador (<code>Classifier</code>)</dt>
+<dd>Lee por reflexión las anotaciones de una jerarquía de clases, sin leer nunca los valores, y las comprueba contra
+una taxonomía. <code>classify</code> devuelve el resultado y <code>verify</code> lanza
+<code>ClassificationException</code> si hay errores. Véase el <a href="06-verificacion.html">capítulo 6</a>.</dd>
+<dt id="g-clave">clave</dt>
+<dd>Identificador único de un término en notación de puntos, como <code>user.contact.email</code>; su madre es la
+clave sin el último segmento. Las aplicaciones guardan y publican claves, por eso una clave nunca cambia de
+significado ni se reutiliza. Véase el <a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-comprobador-de-actividades">comprobador de actividades (<code>ProcessingChecker</code>)</dt>
+<dd>Comprueba actividades de tratamiento contra la taxonomía y la clasificación de sus entidades, con el mismo fallo
+seguro que el clasificador, y construye el registro de actividades con <code>verify</code>. Véase el
+<a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-compuesto">compuesto (<code>@Composite</code>)</dt>
+<dd>Clase cuyas instancias forman parte de otro registro, como una dirección embebida. Los campos que la contienen se
+clasifican por los campos del compuesto, con rutas <code>campo.parte</code>. Véase el
+<a href="05-estructuras.html">capítulo 5</a>.</dd>
+<dt id="g-conciliacion">conciliación</dt>
+<dd>Proceso, a cargo de la aplicación, que pone de acuerdo una copia guardada de la clasificación, como una tabla de
+campos o un catálogo, con el código. Linneo aporta la comparación; la aplicación aplica los cambios. Véase el
+<a href="08-inventario.html">capítulo 8</a>.</dd>
+<dt id="g-condicion-del-articulo-9-2">condición del artículo 9.2 (<code>SpecialCategoryCondition</code>)</dt>
+<dd>Excepción que levanta la prohibición de tratar categorías especiales de datos (art. 9.2 RGPD), como el
+consentimiento explícito o la asistencia sanitaria. Una actividad con datos especiales sin ella es un error. Véase el
+<a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-confidencialidad">confidencialidad (<code>Confidentiality</code>)</dt>
+<dd>Daño que causaría revelar un dato: <code>PUBLIC</code>, <code>LOW</code>, <code>MEDIUM</code> o <code>HIGH</code>.
+Es independiente de la integridad. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-constante-de-clave">constante de clave</dt>
+<dd>Constante <code>public static final String</code> de <code>Categories</code>, <code>DataUses</code> o
+<code>DataSubjects</code>, clases generadas a partir de la taxonomía estándar, o de las clases de constantes de una
+extensión. Puede usarse en anotaciones, y una errata no compila. Véase el <a href="03-taxonomia.html">capítulo
+3</a>.</dd>
+<dt id="g-constructor-de-taxonomias">constructor de taxonomías (<code>TaxonomyBuilder</code>)</dt>
+<dd>El único lugar donde se ensamblan y validan las taxonomías: términos estándar, extensiones y términos propios.
+<code>build()</code> resuelve la herencia y rechaza lo que incumple las reglas. Véase el
+<a href="09-extensiones.html">capítulo 9</a>.</dd>
+<dt id="g-cubrir">cubrir (<code>covers</code>)</dt>
+<dd>Una protección cubre a otra cuando es al menos igual de estricta en todas las facetas: cubre cada naturaleza de la
+otra, no tiene niveles inferiores y es secreta si la otra lo es. Véase el <a href="02-proteccion.html">capítulo
+2</a>.</dd>
+</dl>
+
+<h2 id="letra-d">D</h2>
+<dl class="definiciones">
+<dt id="g-datahub">DataHub (<code>DataHubCatalog</code>)</dt>
+<dd>Plataforma de metadatos de código abierto. Linneo publica la taxonomía como un glosario de negocio, con nodos y
+términos, mediante cuerpos <code>ingestProposal</code>, y calcula los términos de cada campo. Véase el
+<a href="17-catalogos.html">capítulo 17</a>.</dd>
+<dt id="g-dato-personal">dato personal (<code>ORDINARY</code>)</dt>
+<dd>Información sobre una persona física identificada o identificable (art. 4.1 RGPD). <code>ORDINARY</code> es la
+naturaleza de los datos personales sin un régimen reforzado; las categorías especiales y los datos penales también son
+datos personales. Un campo guarda datos personales si su categoría es personal y su identificabilidad es
+<code>IDENTIFIED</code> o <code>PSEUDONYMIZED</code>. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-datos-penales">datos penales (<code>CRIMINAL_OFFENCE</code>)</dt>
+<dd>Datos relativos a condenas e infracciones penales o a medidas de seguridad conexas (art. 10 RGPD y
+<abbr title="Ley Orgánica de Protección de Datos Personales y garantía de los derechos digitales">LOPDGDD</abbr>).
+Exigen la máxima protección y una base del artículo 10 (<code>CriminalDataBasis</code>); las sanciones administrativas
+no son de esta naturaleza. Véanse los capítulos <a href="02-proteccion.html">2</a> y
+<a href="11-actividades.html">11</a>.</dd>
+<dt id="g-delegado-de-proteccion-de-datos">delegado de protección de datos
+(<abbr title="delegado de protección de datos">DPD</abbr>)</dt>
+<dd>Persona que asesora al responsable del tratamiento y supervisa el cumplimiento. En Linneo decide la gobernanza de
+las actividades y revisa los resultados de las reglas, que son una ayuda y no un veredicto. Véanse los capítulos
+<a href="11-actividades.html">11</a> y <a href="18-ciclo-de-vida.html">18</a>.</dd>
+<dt id="g-derecho-del-interesado">derecho del interesado (<code>SubjectRights.Right</code>)</dt>
+<dd>Los derechos de los artículos 15 a 22 del RGPD que dependen del tratamiento: acceso, rectificación, supresión,
+limitación, portabilidad, oposición y no ser objeto de decisiones automatizadas. <code>SubjectRights</code> indica
+cuáles da cada base jurídica. Véase el <a href="14-derechos.html">capítulo 14</a>.</dd>
+<dt id="g-derivado">derivado (<code>@DerivedFrom</code>)</dt>
+<dd>Campo calculado a partir de otros, como la edad a partir de la fecha de nacimiento. Toma la clasificación de su
+fuente o declara una que la cubra; nunca se exime. Véase el <a href="05-estructuras.html">capítulo 5</a>.</dd>
+<dt id="g-diferencias-entre-inventarios">diferencias entre inventarios (<code>InventoryDiff</code>,
+<code>FieldChange</code>)</dt>
+<dd>Comparación campo a campo de dos inventarios de datos bajo una misma taxonomía, como lo guardado y lo que declara
+el código: el plan de una conciliación. Véase el <a href="08-inventario.html">capítulo 8</a>.</dd>
+<dt id="g-diferencias-entre-registros">diferencias entre registros (<code>RecordDiff</code>,
+<code>ActivityChange</code>)</dt>
+<dd>Comparación actividad a actividad de dos registros de actividades. Dos registros con la misma huella no tienen
+diferencias. Véase el <a href="12-registro.html">capítulo 12</a>.</dd>
+<dt id="g-diferencias-entre-taxonomias">diferencias entre taxonomías (<code>TaxonomyDiff</code>,
+<code>TermChange</code>)</dt>
+<dd>Comparación término a término de dos versiones de una taxonomía, con los aspectos de cada cambio, la dirección de
+su protección y el salto de versión que exige. Véase el <a href="10-versiones.html">capítulo 10</a>.</dd>
+<dt id="g-direccion-de-un-cambio">dirección de un cambio (<code>Protection.Direction</code>)</dt>
+<dd>Cómo cambió una protección respecto de otra anterior: <code>SAME</code>, <code>TIGHTENED</code>,
+<code>LOOSENED</code> o <code>MIXED</code>. Las dos últimas debilitan (<code>weakens()</code>) y merecen revisión.
+Véanse los capítulos <a href="02-proteccion.html">2</a> y <a href="10-versiones.html">10</a>.</dd>
+</dl>
+
+<h2 id="letra-e">E</h2>
+<dl class="definiciones">
+<dt id="g-eipd"><abbr title="evaluación de impacto relativa a la protección de datos">EIPD</abbr></dt>
+<dd>Evaluación de impacto relativa a la protección de datos (art. 35 RGPD). <code>ImpactScreening</code> no la
+realiza: indica qué criterios se cumplen. El comprobador da un error si una actividad que entra en un caso del
+artículo 35.3 no hace referencia a ninguna evaluación. Véase el <a href="13-impacto-y-brechas.html">capítulo
+13</a>.</dd>
+<dt id="g-elemento">elemento (<code>ProcessingViolation.Element</code>)</dt>
+<dd>Parte de una actividad de tratamiento a la que se refiere una infracción, como las finalidades o la base jurídica.
+<code>isGovernance()</code> dice si pertenece a la gobernanza o al alcance. Véase el
+<a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-enisa"><abbr title="Agencia de la Unión Europea para la Ciberseguridad">ENISA</abbr></dt>
+<dd>Agencia de la Unión Europea para la Ciberseguridad. <code>BreachAssessment</code> sigue su metodología de 2013
+para valorar la gravedad de las violaciones de la seguridad de los datos personales. Véase el
+<a href="13-impacto-y-brechas.html">capítulo 13</a>.</dd>
+<dt id="g-ens">ENS</dt>
+<dd>Esquema Nacional de Seguridad (Real Decreto 311/2022), el marco de seguridad del sector público español. Valora la
+información y los servicios en cinco dimensiones con niveles bajo, medio y alto. Véase el
+<a href="15-ens.html">capítulo 15</a>.</dd>
+<dt id="g-error">error (<code>ERROR</code>)</dt>
+<dd>Problema que hace fallar la verificación: <code>verify</code> lanza <code>ClassificationException</code> o
+<code>ProcessingException</code> con todos los errores. Véanse los capítulos <a href="06-verificacion.html">6</a> y
+<a href="11-actividades.html">11</a>.</dd>
+<dt id="g-exencion">exención (<code>@Exempt</code>)</dt>
+<dd>Anotación que excluye, con un motivo, un campo que no contiene datos del modelo, como una caché. Los campos
+estáticos y sintéticos, y los <code>transient</code> sin anotaciones de Linneo, se excluyen sin ella; un valor
+calculado no es una exención. Véase el
+<a href="04-anotaciones.html">capítulo 4</a>.</dd>
+<dt id="g-exportador">exportador</dt>
+<dd>Componente que traduce la clasificación a texto para otra herramienta sin conectarse a ella: las reglas de
+PostgreSQL Anonymizer, la extensión OpenAPI y el esquema <abbr title="Open Data Contract Standard">ODCS</abbr>. Véase
+el <a href="16-exportadores.html">capítulo 16</a>.</dd>
+<dt id="g-extension">extensión (<code>TaxonomyExtension</code>)</dt>
+<dd>Términos que una aplicación o un sector añade a la taxonomía, y la protección más estricta que exige. Se aplica
+con <code>extend</code> o se registra con <code>ServiceLoader</code> para que <code>Taxonomy.load()</code> la aplique;
+Linneo incluye cinco. Véase el <a href="09-extensiones.html">capítulo 9</a>.</dd>
+</dl>
+
+<h2 id="letra-f">F</h2>
+<dl class="definiciones">
+<dt id="g-faceta">faceta</dt>
+<dd>Cada propiedad que forma la protección de un dato: naturaleza jurídica, confidencialidad, integridad y secreto en
+la categoría, más la identificabilidad en el campo. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-fallo-seguro">fallo seguro (<span lang="en">fail closed</span>)</dt>
+<dd>Principio de diseño de Linneo por el que lo que no está clasificado o es dudoso es un error, no un valor por
+defecto silencioso. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-fideslang">fideslang</dt>
+<dd>Taxonomía abierta para la ingeniería de la privacidad, publicada por Ethyca con licencia CC BY 4.0. Linneo incluye
+completa su taxonomía por defecto, de la versión que fija <code>StandardTaxonomy.FIDESLANG_VERSION</code>. Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+</dl>
+
+<h2 id="letra-g">G</h2>
+<dl class="definiciones">
+<dt id="g-gobernanza">gobernanza (<code>Governance</code>)</dt>
+<dd>La parte de una actividad de tratamiento que decide la función de protección de datos: las bases jurídicas (con
+el interés legítimo, las condiciones del artículo 9.2 y la base del artículo 10), la referencia legal, la
+conservación, los destinatarios, las transferencias, la evaluación de impacto y los factores de riesgo que el código no
+ve. Se combina con el alcance con <code>withGovernance</code>.
+Véase el <a href="11-actividades.html">capítulo 11</a>.</dd>
+</dl>
+
+<h2 id="letra-h">H</h2>
+<dl class="definiciones">
+<dt id="g-huella">huella (<code>fingerprint</code>)</dt>
+<dd>SHA-256 en hexadecimal del contenido, escrito de forma determinista, de una taxonomía, un inventario o un registro
+de actividades. Valores iguales tienen la misma huella; dice que algo cambió, no qué. Véanse los capítulos
+<a href="08-inventario.html">8</a>, <a href="10-versiones.html">10</a> y <a href="12-registro.html">12</a>.</dd>
+</dl>
+
+<h2 id="letra-i">I</h2>
+<dl class="definiciones">
+<dt id="g-identificabilidad">identificabilidad (<code>Identifiability</code>)</dt>
+<dd>Cómo de directamente apunta un valor guardado a una persona: <code>IDENTIFIED</code>, <code>PSEUDONYMIZED</code>,
+<code>ANONYMIZED</code> o <code>AGGREGATED</code>. Pertenece al campo, no a la categoría. Véase el
+<a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-identificador-directo-de-contacto-e-indirecto">identificador directo, de contacto e indirecto</dt>
+<dd>Los rasgos <code>DIRECT_IDENTIFIER</code>, <code>CONTACT_IDENTIFIER</code> e <code>INDIRECT_IDENTIFIER</code>, que
+dicen cómo identifica un dato: por sí solo, porque permite localizar a la persona o porque la singulariza dentro de un
+sistema. <code>BreachAssessment</code> los lee para la facilidad de identificación. Véanse los capítulos
+<a href="03-taxonomia.html">3</a> y <a href="13-impacto-y-brechas.html">13</a>.</dd>
+<dt id="g-infraccion">infracción (<code>Violation</code>, <code>ProcessingViolation</code>)</dt>
+<dd>Problema encontrado al clasificar una clase (<code>Violation</code>, con la ruta del campo) o al comprobar una
+actividad de tratamiento (<code>ProcessingViolation</code>, con su elemento), con su gravedad (error o aviso), su
+código y un mensaje. No debe confundirse con una violación de la seguridad de los datos personales. Véanse los
+capítulos <a href="06-verificacion.html">6</a> y <a href="11-actividades.html">11</a>.</dd>
+<dt id="g-integridad">integridad (<code>Integrity</code>)</dt>
+<dd>Daño que causaría un cambio no autorizado o no detectado del dato: <code>LOW</code>, <code>MEDIUM</code> o
+<code>HIGH</code>. Es independiente de la confidencialidad. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-interesado">interesado</dt>
+<dd>Persona física a la que se refieren los datos personales. En la taxonomía, las categorías de interesados son los
+sujetos de datos, y <code>SubjectRights</code> responde a lo que pide un interesado al ejercer sus derechos. Véanse
+los capítulos <a href="03-taxonomia.html">3</a> y <a href="14-derechos.html">14</a>.</dd>
+<dt id="g-inventario-de-datos">inventario de datos (<code>DataInventory</code>)</dt>
+<dd>La clasificación del modelo como dato: por objeto, los campos con lo que declara el código. No contiene clases ni
+taxonomía, así que se puede guardar, leer y comparar; un cambio de la taxonomía nunca lo cambia. Véase el
+<a href="08-inventario.html">capítulo 8</a>.</dd>
+</dl>
+
+<h2 id="letra-j">J</h2>
+<dl class="definiciones">
+<dt id="g-jpms"><abbr title="Java Platform Module System">JPMS</abbr></dt>
+<dd>Sistema de módulos de la plataforma Java. Linneo es el módulo <code>io.github.devbpm.linneo</code>, que exporta
+sus paquetes públicos y no exporta <code>internal</code>. Véase el <a href="01-introduccion.html">capítulo 1</a>.</dd>
+<dt id="g-jurisdiccion">jurisdicción (<code>Jurisdiction</code>)</dt>
+<dd>Derecho nacional que el comprobador de actividades aplica además del RGPD: <code>EU</code>, solo el RGPD, o
+<code>SPAIN</code>, el RGPD y la LOPDGDD. Véase el <a href="11-actividades.html">capítulo 11</a>.</dd>
+</dl>
+
+<h2 id="letra-l">L</h2>
+<dl class="definiciones">
+<dt id="g-lopdgdd">LOPDGDD</dt>
+<dd>Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales. Linneo cita su texto
+consolidado de 27 de diciembre de 2025. Véanse los capítulos <a href="02-proteccion.html">2</a> y
+<a href="11-actividades.html">11</a>.</dd>
+</dl>
+
+<h2 id="letra-n">N</h2>
+<dl class="definiciones">
+<dt id="g-naturaleza-juridica">naturaleza jurídica (<code>LegalNature</code>)</dt>
+<dd>Qué es un dato según la normativa de protección de datos: <code>NONE</code>, <code>ORDINARY</code>,
+<code>SPECIAL_CATEGORY</code> o <code>CRIMINAL_OFFENCE</code>. La fija la raíz de cada jerarquía y solo se endurece al
+bajar por el árbol. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+</dl>
+
+<h2 id="letra-o">O</h2>
+<dl class="definiciones">
+<dt id="g-obsoleto">obsoleto</dt>
+<dd>Término que no debe usarse en declaraciones nuevas: tiene <code>deprecatedSince</code> y, si la hay,
+<code>replacedBy</code>. Las declaraciones que lo usan siguen funcionando, se resuelven a su sustituta y producen un
+aviso. Véase el <a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-odcs">ODCS (<code>OdcsSchema</code>)</dt>
+<dd>Open Data Contract Standard, versión 3. Linneo genera el <code>schema</code> de un contrato de datos con un objeto
+por cada objeto del inventario y una propiedad por cada campo clasificado. Véase el
+<a href="16-exportadores.html">capítulo 16</a>.</dd>
+<dt id="g-openapi">OpenAPI (<code>OpenApiExtension</code>)</dt>
+<dd>Especificación para describir <abbr title="interfaces de programación de aplicaciones">API</abbr>. Linneo genera
+para cada propiedad la extensión <code>x-linneo</code>, con su categoría y su protección. Véase el
+<a href="16-exportadores.html">capítulo 16</a>.</dd>
+<dt id="g-openmetadata">OpenMetadata (<code>OpenMetadataCatalog</code>)</dt>
+<dd>Catálogo de datos de código abierto. Linneo traduce la taxonomía a una clasificación con etiquetas anidadas y
+reutiliza sus clasificaciones predefinidas <code>PersonalData</code> y <code>PII</code>. Véase el
+<a href="17-catalogos.html">capítulo 17</a>.</dd>
+<dt id="g-orden-parcial">orden parcial</dt>
+<dd>Relación de orden en la que dos elementos pueden no ser comparables. La protección lo es: los datos especiales y
+los penales son más estrictos que los ordinarios, pero ninguno de los dos cubre al otro. Véase el
+<a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-origen">origen</dt>
+<dd>Quién definió un término (<code>TermInfo.origin()</code>): <code>fideslang</code>, <code>linneo</code>, el nombre
+de una extensión o el que fije la aplicación, por defecto <code>application</code>. Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+</dl>
+
+<h2 id="letra-p">P</h2>
+<dl class="definiciones">
+<dt id="g-politica-de-divulgacion">política de divulgación (<code>DisclosurePolicy</code>)</dt>
+<dd>Umbrales en el orden de la protección que deciden si el valor de un campo se muestra (<code>CLEAR</code>), se
+enmascara (<code>MASK</code>) o se omite (<code>OMIT</code>) en un canal, como un log. Un campo más protegido nunca
+recibe un trato más laxo, y los secretos se omiten siempre. Véase el <a href="07-uso.html">capítulo 7</a>.</dd>
+<dt id="g-politica-de-proteccion">política de protección</dt>
+<dd>El recurso <code>linneo-category-policy.tsv</code>, que fija las facetas de protección de las categorías estándar
+y cita en su cabecera las fuentes jurídicas; fideslang no define ninguna. Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-postgresql-anonymizer">PostgreSQL Anonymizer (<code>PostgresAnonymizer</code>)</dt>
+<dd>Extensión de PostgreSQL que enmascara datos en vistas y volcados. Linneo genera las sentencias <code>SECURITY
+LABEL FOR anon</code> que siguen una política de divulgación, típicamente para las copias de los entornos de pruebas.
+Véase el <a href="16-exportadores.html">capítulo 16</a>.</dd>
+<dt id="g-proteccion">protección (<code>Protection</code>)</dt>
+<dd>Las facetas de unos datos como un único valor: el conjunto de sus naturalezas más estrictas, la confidencialidad,
+la integridad y el secreto. Es la única forma en que Linneo compara protección, con <code>covers</code>,
+<code>join</code> y <code>comparedTo</code>. Véase el <a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-proteccion-efectiva">protección efectiva</dt>
+<dd>Las facetas que tiene una categoría después de resolver la herencia: las que declara o, si no declara, las de su
+madre, y nunca más débiles que estas. Véase el <a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-punto-abierto">punto abierto</dt>
+<dd>Un aviso de una actividad tal como aparece en el registro de actividades: un hueco que el DPD debe completar o
+confirmar. Véase el <a href="12-registro.html">capítulo 12</a>.</dd>
+</dl>
+
+<h2 id="letra-r">R</h2>
+<dl class="definiciones">
+<dt id="g-rasgo">rasgo (<code>Trait</code>)</dt>
+<dd>Propiedad de un término que leen las reglas jurídicas de Linneo, como dato financiero, identificador, interesado
+vulnerable o mercadotecnia directa. Se hereda por el árbol y cada uno se aplica solo a ciertas jerarquías. Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-referencia">referencia</dt>
+<dd>Campo sin anotación propia cuyo tipo es otra clase del modelo: guarda, en la práctica, la clave de ese registro.
+El valor por defecto de la clase solo lo cubre si el registro referido no contiene datos personales. Véase el
+<a href="05-estructuras.html">capítulo 5</a>.</dd>
+<dt id="g-registro-de-actividades-de-tratamiento">registro de actividades de tratamiento
+(<abbr title="registro de actividades de tratamiento">RAT</abbr>, <code>ProcessingRecord</code>)</dt>
+<dd>El registro del artículo 30.1 del RGPD. <code>ProcessingChecker.verify</code> lo construye con las actividades sin
+errores; se escribe en Markdown y en JSON y tiene una huella. Véase el <a href="12-registro.html">capítulo
+12</a>.</dd>
+<dt id="g-responsable-del-tratamiento">responsable del tratamiento</dt>
+<dd>Quien determina los fines y los medios del tratamiento; en el curso, la universidad. Las actividades de
+tratamiento y su registro son suyos. Véase el <a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-rgpd">RGPD</dt>
+<dd>Reglamento (UE) 2016/679, Reglamento General de Protección de Datos. Linneo cita su texto con la corrección de
+errores del <abbr title="Diario Oficial de la Unión Europea">DOUE</abbr> L 127 de 23 de mayo de 2018. Véase el
+<a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-ruta">ruta</dt>
+<dd>Identifica un campo dentro de una clase clasificada: su nombre o, para un campo de un compuesto,
+<code>campo.parte</code>. Véase el <a href="05-estructuras.html">capítulo 5</a>.</dd>
+</dl>
+
+<h2 id="letra-s">S</h2>
+<dl class="definiciones">
+<dt id="g-salto-de-version">salto de versión (<code>TaxonomyDiff.Bump</code>)</dt>
+<dd>Cambio de versión semántica que exige un cambio de la taxonomía: <code>NONE</code>, <code>PATCH</code>,
+<code>MINOR</code> o <code>MAJOR</code>. Eliminar o debilitar es mayor; añadir o endurecer, menor. Véase el
+<a href="10-versiones.html">capítulo 10</a>.</dd>
+<dt id="g-secreto">secreto</dt>
+<dd>Marca de una categoría cuyos datos dan acceso, como contraseñas, claves o tokens. Un secreto nunca se lee de
+vuelta, se exporta ni se publica; la marca se hereda hacia abajo. Véase el <a href="02-proteccion.html">capítulo
+2</a>.</dd>
+<dt id="g-seudonimizado">seudonimizado (<code>PSEUDONYMIZED</code>)</dt>
+<dd>Identificabilidad de un valor que solo se puede vincular a la persona con información adicional guardada por
+separado (art. 4.5 RGPD). Sigue siendo un dato personal (considerando 26). Véase el
+<a href="02-proteccion.html">capítulo 2</a>.</dd>
+<dt id="g-sujeto-de-datos">sujeto de datos (<code>DataSubject</code>)</dt>
+<dd>Término que describe de quién son los datos: una categoría de interesados, como <code>student</code> o
+<code>employee</code>. Describe actividades de tratamiento, no campos. Véase el <a href="03-taxonomia.html">capítulo
+3</a>.</dd>
+<dt id="g-sustituta">sustituta (<code>replaced_by</code>)</dt>
+<dd>Término que sustituye a uno obsoleto. Debe proteger al menos lo mismo y conservar todos sus rasgos;
+<code>resolveCategory</code> y sus equivalentes siguen la cadena de sustitutas. Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+</dl>
+
+<h2 id="letra-t">T</h2>
+<dl class="definiciones">
+<dt id="g-taxonomia">taxonomía (<code>Taxonomy</code>)</dt>
+<dd>Conjunto inmutable de términos en tres jerarquías: categorías, usos y sujetos de datos. Se obtiene con
+<code>standard()</code> o <code>load()</code>, o se construye a partir de <code>builder()</code>. Véase el
+<a href="03-taxonomia.html">capítulo
+3</a>.</dd>
+<dt id="g-taxonomia-estandar">taxonomía estándar</dt>
+<dd>La taxonomía de fideslang más los términos, la política de protección y los rasgos de Linneo, sin extensiones de
+la aplicación: <code>Taxonomy.standard()</code>. Véase el <a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-techo">techo (<code>ceiling</code>)</dt>
+<dd>En <code>@CategoryByRow</code>, la categoría más protectora que puede tener una fila, que se usa donde hace falta
+una sola categoría para todo el campo. No confundir con <code>ClassClassification.ceiling()</code>, la protección de
+un registro completo. Véase el <a href="05-estructuras.html">capítulo 5</a>.</dd>
+<dt id="g-termino">término (<code>Term</code>)</dt>
+<dd>Nodo de una de las tres jerarquías: <code>DataCategory</code>, <code>DataUse</code> o <code>DataSubject</code>,
+con su <code>TermInfo</code> (clave, madre, nombre, descripción, origen y ciclo de vida). Véase el
+<a href="03-taxonomia.html">capítulo 3</a>.</dd>
+<dt id="g-transferencia-internacional">transferencia internacional (<code>Transfer</code>,
+<code>TransferSafeguard</code>)</dt>
+<dd>Comunicación de datos personales a un tercer país o a una organización internacional (capítulo V del RGPD), con la
+garantía que la permite: decisión de adecuación, cláusulas contractuales tipo, normas corporativas vinculantes o una
+excepción. Véase el <a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-tratamiento">tratamiento</dt>
+<dd>Cualquier operación sobre datos personales, como recogerlos, guardarlos, consultarlos, comunicarlos o suprimirlos.
+Linneo lo describe con actividades de tratamiento. Véase el <a href="11-actividades.html">capítulo 11</a>.</dd>
+<dt id="g-tsv"><abbr title="valores separados por tabuladores">TSV</abbr></dt>
+<dd>Valores separados por tabuladores. Es el formato de los ficheros de la taxonomía estándar y del texto que escriben
+<code>Taxonomy.toTsv()</code> y <code>DataInventory.toTsv()</code>, con una primera línea que nombra el formato y su
+versión. Véanse los capítulos <a href="03-taxonomia.html">3</a> y <a href="10-versiones.html">10</a>.</dd>
+</dl>
+
+<h2 id="letra-u">U</h2>
+<dl class="definiciones">
+<dt id="g-uso-de-datos">uso de datos (<code>DataUse</code>)</dt>
+<dd>Término que describe para qué se tratan los datos: la finalidad de una actividad de tratamiento, como
+<code>education.enrollment</code>. Véase el <a href="03-taxonomia.html">capítulo 3</a>.</dd>
+</dl>
+
+<h2 id="letra-v">V</h2>
+<dl class="definiciones">
+<dt id="g-valor-por-defecto-de-clase">valor por defecto de clase (<code>@DefaultCategory</code>)</dt>
+<dd>Anotación de clase que declara, con un motivo, la categoría no personal de los campos de la clase que no tienen
+anotación propia. No se hereda, y nunca cubre un campo cuyo contenido el clasificador no ve ni una referencia a un
+registro con datos personales. Una categoría personal como valor por defecto es el error
+<code>PERSONAL_DEFAULT</code>. Véanse los capítulos <a href="04-anotaciones.html">4</a> y
+<a href="05-estructuras.html">5</a>.</dd>
+<dt id="g-verificacion">verificación</dt>
+<dd>Comprobación que falla ante cualquier error, pensada para ejecutarse en los tests: <code>Classifier.verify</code>
+para el modelo y <code>ProcessingChecker.verify</code> para las actividades. Véase el
+<a href="06-verificacion.html">capítulo 6</a>.</dd>
+<dt id="g-violacion-de-la-seguridad-de-los-datos-personales">violación de la seguridad de los datos personales
+(<code>BreachAssessment</code>)</dt>
+<dd>Incidente de seguridad que afecta a datos personales, también llamado brecha. <code>BreachAssessment</code>
+calcula su gravedad con la metodología de ENISA a partir de la clasificación de los campos afectados, y dice si hay
+que notificarla a la autoridad de control o comunicarla a los interesados. Véase el
+<a href="13-impacto-y-brechas.html">capítulo 13</a>.</dd>
+<dt id="g-vulnerable">vulnerable (<code>VULNERABLE</code>)</dt>
+<dd>Rasgo de los interesados en una posición más débil que el responsable, como menores, empleados o pacientes, y de
+los datos que tratan de ellos por su naturaleza. Es uno de los criterios de las directrices WP248. Véanse los
+capítulos <a href="03-taxonomia.html">3</a> y <a href="13-impacto-y-brechas.html">13</a>.</dd>
+</dl>
+
+<h2 id="letra-w">W</h2>
+<dl class="definiciones">
+<dt id="g-wp248">WP248</dt>
+<dd>Directrices del Grupo de Trabajo del Artículo 29 sobre la evaluación de impacto relativa a la protección de datos
+(revisión 01), asumidas por el CEPD. Sus nueve criterios son los que aplica <code>ImpactScreening</code>. Véase el
+<a href="13-impacto-y-brechas.html">capítulo 13</a>.</dd>
+<dt id="g-wp29"><abbr title="Grupo de Trabajo del Artículo 29">WP29</abbr></dt>
+<dd>Grupo de Trabajo del Artículo 29, el órgano consultivo europeo de protección de datos anterior al CEPD, autor de
+las directrices WP248. Véase el <a href="13-impacto-y-brechas.html">capítulo 13</a>.</dd>
+</dl>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="anexo-a-referencia-rapida.html" rel="prev"><span class="rumbo">Anterior</span>Anexo A. Referencia rápida</a></li>
+<li><a href="index.html" rel="next"><span class="rumbo">Siguiente</span>Índice del curso</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

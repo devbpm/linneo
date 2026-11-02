@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/LegalNature.java
+  - src/main/java/io/github/devbpm/linneo/Confidentiality.java
+  - src/main/java/io/github/devbpm/linneo/Integrity.java
+  - src/main/java/io/github/devbpm/linneo/Identifiability.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
+  - src/main/java/io/github/devbpm/linneo/DataCategory.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-category-policy.tsv
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 2. Naturaleza jurídica y protección · Curso de Linneo</title>
+<meta name="description" content="Qué es un dato según el RGPD, cuánto daño causaría revelarlo o alterarlo, cómo se guarda y cómo compara Linneo protecciones.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html" aria-current="page"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 2. Naturaleza jurídica y protección</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 2</span> Naturaleza jurídica y protección</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>60 minutos</dd></div>
+<div><dt>Parte I:</dt><dd>Fundamentos</dd></div>
+</dl>
+<p class="entradilla">Antes de anotar un solo campo necesitas el vocabulario con el que Linneo describe la protección
+de un dato: qué es según la normativa de protección de datos, cuánto daño causaría revelarlo o alterarlo, cómo de
+directamente apunta a una persona y si da acceso a algo. Este capítulo presenta esas facetas, las reglas que las
+relacionan y el tipo <code>Protection</code>, la única forma correcta de compararlas.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#por-que-clasificar">Por qué clasificar: el problema de la universidad</a></li>
+<li><a href="#naturaleza-juridica">La naturaleza jurídica</a></li>
+<li><a href="#naturaleza-en-el-arbol">Las naturalezas solo se endurecen al bajar por el árbol</a></li>
+<li><a href="#confidencialidad-e-integridad">Confidencialidad e integridad: dos escalas independientes</a></li>
+<li><a href="#identificabilidad">La identificabilidad, una propiedad del valor almacenado</a></li>
+<li><a href="#secretos">Los secretos</a></li>
+<li><a href="#protection">Protection, el orden parcial único</a></li>
+<li><a href="#fallo-seguro">El fallo seguro</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>distinguir las cuatro naturalezas jurídicas de <code>LegalNature</code> y relacionarlas con los artículos 4.1, 9 y
+10 del <abbr title="Reglamento General de Protección de Datos">RGPD</abbr>;</li>
+<li>explicar por qué una naturaleza solo se endurece al bajar por el árbol y reconocer las combinaciones que la
+biblioteca rechaza;</li>
+<li>asignar niveles de confidencialidad e integridad como dos escalas independientes y justificar cada valor;</li>
+<li>declarar la identificabilidad de un valor almacenado y decir cuándo deja de ser un dato personal;</li>
+<li>identificar los secretos de la taxonomía estándar y explicar por qué se tratan aparte;</li>
+<li>comparar y combinar protecciones con <code>covers</code>, <code>join</code> y <code>comparedTo</code>, y explicar
+por qué no se comparan niveles a mano;</li>
+<li>explicar qué significa el fallo seguro en Linneo y qué errores produce.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo supone que has leído el <a href="01-introduccion.html">capítulo 1</a>: sabes qué es Linneo, cómo se
+instala y que trabaja con una taxonomía de claves con puntos, como <code>user.contact.email</code>. La taxonomía en
+sí, con sus jerarquías y su <abbr title="interfaz de programación de aplicaciones">API</abbr>, es el tema del
+<a href="03-taxonomia.html">capítulo 3</a>; aquí solo necesitas saber
+que cada clave nombra una <dfn>categoría de datos</dfn> (<code>DataCategory</code>) y que cada categoría lleva una
+protección.</p>
+<p>Los ejemplos usan las constantes de clave de <code>Categories</code> con un <code>import static</code>, como el
+resto del curso. Las salidas que se muestran son las de la versión actual de la biblioteca.</p>
+
+<h2 id="por-que-clasificar">Por qué clasificar: el problema de la universidad</h2>
+<p>El ejemplo conductor del curso es una pequeña universidad. Su sistema de gestión académica guarda estudiantes,
+matrículas, calificaciones, fichas del personal, documentos que suben los estudiantes y mucha configuración. Antes o
+después alguien de la universidad hace preguntas como estas:</p>
+<ul>
+<li>«¿Qué tablas contienen datos de salud?», para una evaluación de impacto o para notificar una brecha.</li>
+<li>«¿Podemos enviar esta tabla al equipo de analítica?», porque la finalidad y la minimización importan.</li>
+<li>«¿Qué debe decir el registro de actividades de tratamiento sobre la matrícula?», por el art. 30 RGPD.</li>
+<li>«¿Qué columnas hay que enmascarar en los logs o excluir de la copia para el entorno de pruebas?», por las medidas
+de seguridad del art. 32 RGPD.</li>
+</ul>
+<p>Si la respuesta vive en una hoja de cálculo mantenida a mano, queda desfasada el día que alguien añade una columna.
+Linneo pone la respuesta junto al campo, en el código fuente, y la comprueba en los tests. La anotación dice qué
+contiene el campo; todo lo demás se deriva de la categoría.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.1. Un campo que declara su categoría</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(USER_HEALTH_AND_MEDICAL_DISABILITY)
+private Integer disabilityDegree;
+</code></pre>
+</figure>
+
+<p>Con esa línea, Linneo sabe que <code>disabilityDegree</code> es un dato de salud, una categoría especial de datos
+personales, con confidencialidad e integridad altas. No hace falta escribirlo en el campo: lo dice la categoría
+<code>user.health_and_medical.disability</code>, que hereda su protección de <code>user.health_and_medical</code>.</p>
+
+<h3 id="las-facetas">Las facetas de la protección</h3>
+<p>La protección de un dato en Linneo tiene cinco facetas. Cuatro pertenecen a la categoría y una al campo
+concreto:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-1">
+<table>
+<caption id="tabla-2-1">Tabla 2.1. Las facetas de la protección</caption>
+<thead>
+<tr><th scope="col">Faceta</th><th scope="col">Tipo</th><th scope="col">Pregunta que responde</th>
+<th scope="col">Dónde se fija</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">naturaleza jurídica</th><td><code>LegalNature</code></td>
+<td>¿Qué es el dato según la normativa?</td><td>categoría</td></tr>
+<tr><th scope="row">confidencialidad</th><td><code>Confidentiality</code></td>
+<td>¿Cuánto daño causaría revelarlo?</td><td>categoría; un campo puede elevarla</td></tr>
+<tr><th scope="row">integridad</th><td><code>Integrity</code></td>
+<td>¿Cuánto daño causaría un cambio no deseado?</td><td>categoría; un campo puede elevarla</td></tr>
+<tr><th scope="row">secreto</th><td><code>boolean</code></td>
+<td>¿Da acceso a algo?</td><td>categoría</td></tr>
+<tr><th scope="row">identificabilidad</th><td><code>Identifiability</code></td>
+<td>¿Cómo de directamente apunta el valor guardado a una persona?</td><td>solo el campo</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>El recorrido completo, desde la anotación hasta el uso de la protección, es este:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Anotas la clave</span> El campo declara su categoría con <code>@Category</code>
+(capítulo 4).</li>
+<li><span class="flujo-titulo">La taxonomía aporta la protección</span> La categoría tiene sus cuatro facetas
+efectivas, declaradas o heredadas (capítulo 3).</li>
+<li><span class="flujo-titulo">El campo la ajusta</span> Puede elevar la confidencialidad o la integridad y declarar
+su identificabilidad, nunca rebajar nada.</li>
+<li><span class="flujo-titulo">El clasificador comprueba</span> Cualquier duda es un error, no un valor por defecto
+(capítulo 6).</li>
+<li><span class="flujo-titulo">La aplicación usa el resultado</span> Los logs, los catálogos, el registro de
+actividades o la categoría <abbr title="Esquema Nacional de Seguridad">ENS</abbr> parten de la misma clasificación del
+campo.</li>
+</ol>
+
+<h2 id="naturaleza-juridica">La naturaleza jurídica</h2>
+<p>La <dfn>naturaleza jurídica</dfn> dice qué es una categoría de datos según la normativa de protección de datos: el
+Reglamento (UE) 2016/679 (RGPD) y, para España, la Ley Orgánica 3/2018
+(<abbr title="Ley Orgánica de Protección de Datos Personales y garantía de los derechos digitales">LOPDGDD</abbr>). En
+Linneo es el enumerado <code>LegalNature</code>, con cuatro valores.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-2">
+<table>
+<caption id="tabla-2-2">Tabla 2.2. Las cuatro naturalezas jurídicas</caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col">Significado</th><th scope="col">Ejemplos en la universidad</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>NONE</code></th>
+<td>No es un dato personal: datos del sistema, de la organización o de referencia.</td>
+<td>la configuración de los menús, la lista de países, los edificios del campus</td></tr>
+<tr><th scope="row"><code>ORDINARY</code></th>
+<td>Dato personal (artículo 4.1 del RGPD): información sobre una persona física identificada o identificable.</td>
+<td>el nombre y el correo de un estudiante, una matrícula, una calificación</td></tr>
+<tr><th scope="row"><code>SPECIAL_CATEGORY</code></th>
+<td>Categoría especial de datos personales (artículo 9.1 del RGPD): origen racial o étnico, opiniones políticas,
+convicciones religiosas o filosóficas, afiliación sindical, datos genéticos, datos biométricos tratados para
+identificar de manera unívoca a una persona, salud, vida sexual y orientación sexual.</td>
+<td>el grado de discapacidad, un certificado médico, una huella dactilar para el control de acceso</td></tr>
+<tr><th scope="row"><code>CRIMINAL_OFFENCE</code></th>
+<td>Datos relativos a condenas e infracciones penales o a medidas de seguridad conexas (artículo 10 del RGPD y de la
+LOPDGDD).</td>
+<td>el certificado de delitos sexuales que se pide al personal que trabaja con menores</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="categorias-especiales">Categorías especiales y datos penales</h3>
+<p>Las categorías especiales y los datos penales son datos personales con un régimen reforzado. El Javadoc de
+<code>LegalNature</code> recoge dos precisiones de la ley española que conviene conocer. Primera: en España el
+consentimiento por sí solo no levanta la prohibición cuando la finalidad principal es identificar la ideología, la
+afiliación sindical, la religión, la orientación sexual, las creencias o el origen racial o étnico (artículo 9.1 de la
+LOPDGDD). Segunda: el tratamiento amparado en el artículo 9.2, letras g), h) e i), del RGPD necesita una norma con
+rango de ley (artículo 9.2 de la LOPDGDD).</p>
+<p>Los datos penales son un régimen distinto del de las categorías especiales, por eso tienen un valor propio. Y no
+todo lo sancionador es penal: los datos sobre infracciones y sanciones administrativas no son
+<code>CRIMINAL_OFFENCE</code>. La taxonomía estándar los guarda en <code>user.administrative_sanction</code>, de
+naturaleza <code>ORDINARY</code> con confidencialidad e integridad altas, porque el artículo 27 de la LOPDGDD
+restringe su tratamiento sin hacerlos penales. Del mismo modo, <code>user.victim_status</code> (el reconocimiento como
+víctima de violencia de género, violencia sexual, terrorismo u otro delito) es deliberadamente <code>ORDINARY</code>
+con protección alta: es una decisión de diseño de Linneo que su cabecera de política documenta.</p>
+
+<h3 id="metodos-de-legalnature">Los métodos de <code>LegalNature</code></h3>
+<p><code>isPersonal()</code> devuelve <code>false</code> solo para <code>NONE</code>.
+<code>requiresMaximumProtection()</code> devuelve <code>true</code> para <code>SPECIAL_CATEGORY</code> y
+<code>CRIMINAL_OFFENCE</code>: los datos de esas naturalezas deben tener siempre confidencialidad e integridad
+<code>HIGH</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.2. Qué naturalezas son personales y cuáles exigen la máxima protección</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">for (LegalNature nature : LegalNature.values()) {
+    System.out.printf("%-17s isPersonal=%-5s requiresMaximumProtection=%s%n",
+            nature, nature.isPersonal(), nature.requiresMaximumProtection());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">NONE              isPersonal=false requiresMaximumProtection=false
+ORDINARY          isPersonal=true  requiresMaximumProtection=false
+SPECIAL_CATEGORY  isPersonal=true  requiresMaximumProtection=true
+CRIMINAL_OFFENCE  isPersonal=true  requiresMaximumProtection=true
+</code></pre>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>La naturaleza es una propiedad de la categoría, no un juicio sobre un tratamiento concreto. Linneo marca que un
+campo contiene datos de salud; decidir si su tratamiento es lícito, con qué base jurídica y con qué condición del
+artículo 9.2, corresponde a las actividades de tratamiento que declara la organización y revisa el delegado de
+protección de datos (<abbr title="delegado de protección de datos">DPD</abbr>). El
+<a href="11-actividades.html">capítulo 11</a> muestra cómo se comprueba.</p>
+</div>
+
+<h2 id="naturaleza-en-el-arbol">Las naturalezas solo se endurecen al bajar por el árbol</h2>
+<p>Las categorías forman un árbol: <code>user.health_and_medical</code> es hija de <code>user</code>, y
+<code>user.health_and_medical.disability</code> es hija de la primera. La raíz de cada jerarquía fija su naturaleza, y
+al bajar por el árbol la naturaleza solo puede mantenerse o hacerse más estricta. Esto importa porque las aplicaciones
+razonan sobre subárboles enteros: si <code>system</code> no contiene datos personales, ninguna de sus descendientes
+puede contenerlos, y si <code>user.health_and_medical</code> es de categoría especial, nada por debajo puede
+«rebajarse» a dato ordinario.</p>
+<p>La regla está en <code>LegalNature.admits(child)</code>, que dice si una hija puede declarar la naturaleza
+<code>child</code> cuando su madre tiene esta:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-3">
+<table>
+<caption id="tabla-2-3">Tabla 2.3. Qué naturaleza admite una hija según la de su madre</caption>
+<thead>
+<tr><th scope="col">Naturaleza de la madre</th><th scope="col">La hija puede ser</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>NONE</code></th><td>solo <code>NONE</code></td></tr>
+<tr><th scope="row"><code>ORDINARY</code></th>
+<td><code>ORDINARY</code>, <code>SPECIAL_CATEGORY</code> o <code>CRIMINAL_OFFENCE</code></td></tr>
+<tr><th scope="row"><code>SPECIAL_CATEGORY</code></th><td>solo <code>SPECIAL_CATEGORY</code></td></tr>
+<tr><th scope="row"><code>CRIMINAL_OFFENCE</code></th><td>solo <code>CRIMINAL_OFFENCE</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<pre class="codigo" tabindex="0"><code class="language-java">LegalNature.ORDINARY.admits(LegalNature.SPECIAL_CATEGORY);          // true: user -&gt; user.health_and_medical
+LegalNature.SPECIAL_CATEGORY.admits(LegalNature.ORDINARY);          // false
+LegalNature.SPECIAL_CATEGORY.admits(LegalNature.CRIMINAL_OFFENCE);  // false
+LegalNature.NONE.admits(LegalNature.ORDINARY);                      // false
+</code></pre>
+
+<p>Por eso bajo <code>user</code> (ordinaria) cuelgan <code>user.health_and_medical</code> y
+<code>user.biometric</code> (categoría especial) y <code>user.criminal_history</code> (datos penales), y por eso nada
+por debajo de ellas cambia de naturaleza.</p>
+
+<h3 id="lo-que-rechaza-el-constructor">Lo que hace el constructor con una naturaleza declarada</h3>
+<p>Las taxonomías las construye <code>TaxonomyBuilder</code>, que el <a href="09-extensiones.html">capítulo 9</a>
+explica en detalle. Al construir, cada naturaleza declarada se trata como un mínimo, y hay dos casos distintos.</p>
+<p>Una naturaleza que no se puede conciliar con la de la madre es un error: una hija personal bajo una madre no
+personal (o al revés), o una hija penal bajo una madre de categoría especial (o al revés). El constructor no adivina
+qué quisiste decir; lanza <code>TaxonomyException</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.3. Dos naturalezas que el constructor rechaza</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">try {
+    Taxonomy.builder().withStandard()
+            .category("system.configuration.advisor", "Advisor", "Advisor assigned to each student.",
+                    c -&gt; c.nature(LegalNature.ORDINARY))
+            .build();
+} catch (TaxonomyException e) {
+    System.out.println(e.getMessage());
+}
+try {
+    Taxonomy.builder().withStandard()
+            .category("user.health_and_medical.court_order", "Court Order", "Court orders about the subject.",
+                    c -&gt; c.nature(LegalNature.CRIMINAL_OFFENCE))
+            .build();
+} catch (TaxonomyException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Data category 'system.configuration.advisor' declares nature ORDINARY, which its parent 'system.configuration' (NONE) does not admit
+Data category 'user.health_and_medical.court_order' declares nature CRIMINAL_OFFENCE, which its parent 'user.health_and_medical' (SPECIAL_CATEGORY) does not admit
+</code></pre>
+
+<p>El primer error es el que interesa: el tutor asignado a cada estudiante es un dato personal y no puede vivir bajo
+<code>system</code>. Su sitio es una rama de <code>user</code>. El segundo muestra que la categoría especial y los
+datos penales no se convierten la una en la otra.</p>
+<p>Una naturaleza más débil pero compatible no es un error: el constructor la eleva. Si declaras <code>ORDINARY</code>
+en una hija de una categoría especial, la hija queda de categoría especial, porque cada faceta declarada es un mínimo
+y la madre ya exige más.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.4. Una hija ordinaria de una categoría especial se eleva</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy campus = Taxonomy.builder().withStandard()
+        .category("user.health_and_medical.allergy", "Allergy", "Allergies the student declares.",
+                c -&gt; c.nature(LegalNature.ORDINARY))
+        .build();
+System.out.println(campus.requireCategory("user.health_and_medical.allergy").protection());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Protection[natures=[SPECIAL_CATEGORY], confidentiality=HIGH, integrity=HIGH, secret=false]
+</code></pre>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>Que el constructor eleve un nivel no significa que debas confiar en ello. Las reglas de contribución de Linneo
+piden escribir el nivel que el término necesita de verdad, y un test de la biblioteca comprueba que sus propios
+términos y sus extensiones no declaran nada por debajo de lo que heredan.</p>
+</div>
+
+<h3 id="maxima-proteccion">La máxima protección de los datos especiales y penales</h3>
+<p>Toda categoría cuya naturaleza efectiva exige la máxima protección debe acabar con confidencialidad
+<code>HIGH</code> e integridad <code>HIGH</code>, declaradas o heredadas. Si una hija pasa a ser de categoría especial
+bajo una madre con niveles bajos, debe subirlos también. En esta taxonomía mínima, sin la estándar, la hija
+<code>data.health</code> declara la naturaleza pero no los niveles:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy.builder()
+        .category("data", "Data", "Any data.", c -&gt; c.nature(LegalNature.ORDINARY)
+                .confidentiality(Confidentiality.LOW).integrity(Integrity.LOW))
+        .category("data.health", "Health", "Health data.", c -&gt; c.nature(LegalNature.SPECIAL_CATEGORY))
+        .build();
+</code></pre>
+
+<p><code>build()</code> lanza <code>TaxonomyException</code> con este mensaje:</p>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Data category 'data.health' is SPECIAL_CATEGORY data and must have HIGH confidentiality and integrity, not LOW and LOW
+</code></pre>
+
+<p>La regla también protege a quien construye una <code>DataCategory</code> a mano: su constructor lanza
+<code>IllegalArgumentException</code> si la naturaleza es de categoría especial o penal y los niveles no son ambos
+<code>HIGH</code>.</p>
+
+<h3 id="covers-y-admits">Comparar naturalezas: <code>covers</code> frente a <code>admits</code></h3>
+<p>Fuera del árbol también hace falta comparar naturalezas: ¿necesitan estos datos al menos la protección de aquellos?
+Para eso está <code>LegalNature.covers(other)</code>. El orden que define es <dfn>parcial</dfn>: <code>NONE</code>
+está por debajo de todas, <code>ORDINARY</code> por debajo de las dos naturalezas reforzadas, y esas dos no son
+comparables entre sí, porque cada una trae obligaciones que la otra no tiene.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-4">
+<table>
+<caption id="tabla-2-4">Tabla 2.4. Qué naturalezas cubre cada una</caption>
+<thead>
+<tr><th scope="col">Naturaleza</th><th scope="col">Cubre</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>NONE</code></th><td><code>NONE</code></td></tr>
+<tr><th scope="row"><code>ORDINARY</code></th><td><code>NONE</code>, <code>ORDINARY</code></td></tr>
+<tr><th scope="row"><code>SPECIAL_CATEGORY</code></th>
+<td><code>NONE</code>, <code>ORDINARY</code>, <code>SPECIAL_CATEGORY</code></td></tr>
+<tr><th scope="row"><code>CRIMINAL_OFFENCE</code></th>
+<td><code>NONE</code>, <code>ORDINARY</code>, <code>CRIMINAL_OFFENCE</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<pre class="codigo" tabindex="0"><code class="language-java">LegalNature.SPECIAL_CATEGORY.covers(LegalNature.ORDINARY);          // true
+LegalNature.CRIMINAL_OFFENCE.covers(LegalNature.NONE);              // true
+LegalNature.SPECIAL_CATEGORY.covers(LegalNature.CRIMINAL_OFFENCE);  // false
+LegalNature.CRIMINAL_OFFENCE.covers(LegalNature.SPECIAL_CATEGORY);  // false
+</code></pre>
+
+<p><code>admits</code> es más estricta que <code>covers</code>. <code>ORDINARY.covers(NONE)</code> es cierto: un dato
+personal necesita al menos la protección de uno que no lo es. Pero <code>ORDINARY.admits(NONE)</code> es falso, porque
+una jerarquía también conserva si contiene datos personales. Usa <code>admits</code> para la relación madre-hija y
+<code>covers</code> para todo lo demás; en la práctica, casi nunca llamarás a ninguno de los dos directamente, porque
+<code>Protection</code> los usa por ti.</p>
+
+<h2 id="confidencialidad-e-integridad">Confidencialidad e integridad: dos escalas independientes</h2>
+<p>La naturaleza dice qué régimen jurídico se aplica. Las otras dos facetas miden el daño: la
+<dfn>confidencialidad</dfn> mide cuánto daño causaría revelar el dato, y la <dfn>integridad</dfn> cuánto daño causaría
+una modificación no autorizada o no detectada.</p>
+
+<h3 id="niveles-de-confidencialidad">Niveles de confidencialidad</h3>
+<p><code>Confidentiality</code> tiene cuatro niveles, declarados de menos a más estricto, así que
+<code>compareTo</code> los ordena por exigencia. <code>LOW</code>, <code>MEDIUM</code> y <code>HIGH</code> siguen las
+escalas de tres niveles habituales en seguridad de la información, como el ENS o
+<abbr title="Federal Information Processing Standards" lang="en">FIPS</abbr> 199; <code>PUBLIC</code> es para
+los datos pensados para publicarse.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-5">
+<table>
+<caption id="tabla-2-5">Tabla 2.5. Niveles de confidencialidad</caption>
+<thead>
+<tr><th scope="col">Nivel</th><th scope="col">Criterio</th><th scope="col">Ejemplo en la taxonomía estándar</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>PUBLIC</code></th><td>Datos públicos: revelarlos no causa daño.</td>
+<td><code>reference.public</code> (países, monedas, festivos)</td></tr>
+<tr><th scope="row"><code>LOW</code></th><td>La revelación causaría un daño limitado.</td>
+<td><code>user.contact.email</code></td></tr>
+<tr><th scope="row"><code>MEDIUM</code></th><td>La revelación causaría un daño grave.</td>
+<td><code>user.education.grade</code></td></tr>
+<tr><th scope="row"><code>HIGH</code></th><td>La revelación causaría un daño muy grave. Siempre es el nivel de los
+datos especiales y penales.</td><td><code>user.financial.credit_card</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="niveles-de-integridad">Niveles de integridad</h3>
+<p><code>Integrity</code> tiene tres niveles, también en orden creciente.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-6">
+<table>
+<caption id="tabla-2-6">Tabla 2.6. Niveles de integridad</caption>
+<thead>
+<tr><th scope="col">Nivel</th><th scope="col">Criterio</th><th scope="col">Ejemplo en la taxonomía estándar</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>LOW</code></th><td>Un cambio no deseado causaría un daño limitado.</td>
+<td><code>system.operations</code></td></tr>
+<tr><th scope="row"><code>MEDIUM</code></th><td>Un cambio no deseado causaría un daño grave.</td>
+<td><code>user.contact.email</code></td></tr>
+<tr><th scope="row"><code>HIGH</code></th><td>Un cambio no deseado causaría un daño muy grave.</td>
+<td><code>user.education.grade</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="por-que-dos-escalas">Por qué son independientes</h3>
+<p>Una única puntuación de «sensibilidad» mezclaría dos riesgos que se controlan de forma distinta. La universidad
+tiene ejemplos claros de ambas direcciones:</p>
+<ul>
+<li>Una <strong>calificación</strong> es moderadamente confidencial, pero su integridad es crítica: una nota alterada
+sin que nadie lo note cambia el expediente de alguien.</li>
+<li>Una <strong>matriz de permisos</strong> (<code>system.security</code>) apenas causa daño si se revela, pero un
+cambio no deseado da acceso a quien no debe.</li>
+<li>Los <strong>datos de menores</strong> (<code>user.childrens</code>) tienen confidencialidad alta por la
+vulnerabilidad de las personas, y su integridad sigue la de <code>user</code>.</li>
+</ul>
+<p>El Ejemplo 2.5 imprime los niveles efectivos de varias categorías estándar.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.5. Confidencialidad e integridad de algunas categorías estándar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy taxonomy = Taxonomy.standard();
+for (String key : List.of(USER_CONTACT_EMAIL, USER_EDUCATION_GRADE, USER_FINANCIAL_CREDIT_CARD,
+        USER_CHILDRENS, USER_BEHAVIOR_ACTIVITY_LOG, SYSTEM_SECURITY, SYSTEM_CONFIGURATION,
+        ORG_BUSINESS_RECORDS, REFERENCE_PUBLIC)) {
+    DataCategory c = taxonomy.requireCategory(key);
+    System.out.printf("%-30s %-8s %-7s %s%n", c.key(), c.nature(), c.confidentiality(), c.integrity());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">user.contact.email             ORDINARY LOW     MEDIUM
+user.education.grade           ORDINARY MEDIUM  HIGH
+user.financial.credit_card     ORDINARY HIGH    HIGH
+user.childrens                 ORDINARY HIGH    MEDIUM
+user.behavior.activity_log     ORDINARY MEDIUM  HIGH
+system.security                NONE     LOW     HIGH
+system.configuration           NONE     LOW     MEDIUM
+org.business_records           NONE     MEDIUM  MEDIUM
+reference.public               NONE     PUBLIC  MEDIUM
+</code></pre>
+
+<p>Fíjate en la última columna: una tabla de referencia pública (<code>reference.public</code>) no tiene nada que
+ocultar, pero su integridad es <code>MEDIUM</code>, porque una lista de países o de festivos alterada estropea todo lo
+que la usa. Y el registro de actividad de los usuarios (<code>user.behavior.activity_log</code>) tiene integridad
+<code>HIGH</code>: es la prueba de quién hizo qué.</p>
+<p>Los dos enumerados tienen un método <code>max</code> que devuelve el más estricto de dos niveles:
+<code>Confidentiality.LOW.max(Confidentiality.HIGH)</code> es <code>HIGH</code>. Es útil cuando combinas niveles
+sueltos; para combinar protecciones completas usa <code>Protection.join</code>, que se ve más abajo.</p>
+
+<h3 id="de-donde-salen-los-niveles">De dónde salen los niveles</h3>
+<p>fideslang, el origen de la mayoría de las claves, no define niveles de protección. Los pone la política de Linneo,
+el recurso <code>linneo-category-policy.tsv</code>, cuya cabecera cita las fuentes jurídicas de cada decisión: máxima
+protección para las categorías especiales y los datos penales; confidencialidad e integridad altas para las sanciones
+administrativas y la condición de víctima; confidencialidad alta para los datos de interesados vulnerables, para lo
+que da acceso y para las tarjetas de pago. El <a href="03-taxonomia.html">capítulo 3</a> explica cómo se heredan por
+el árbol.</p>
+<p>Un campo concreto puede necesitar más que su categoría. <code>@Category</code> permite elevar la confidencialidad o
+la integridad de un campo, nunca rebajarlas: declarar un nivel inferior es un error <code>LOWERED_LEVEL</code>
+(capítulo 4). Y el ENS usa la misma escala de tres niveles para valorar la información, de modo que el
+<a href="15-ens.html">capítulo 15</a> toma de estas dos facetas las dimensiones de confidencialidad e integridad del
+sistema.</p>
+
+<h2 id="identificabilidad">La identificabilidad, una propiedad del valor almacenado</h2>
+<p>La <dfn>identificabilidad</dfn> dice cómo de directamente apunta un valor guardado a una persona. A diferencia de
+las facetas anteriores, pertenece al campo y no a la categoría: la misma categoría puede guardarse identificada en una
+tabla y agregada en otra. Una calificación junto al identificador del estudiante lo identifica; la nota media de una
+asignatura con 120 matriculados no describe a ninguno.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-7">
+<table>
+<caption id="tabla-2-7">Tabla 2.7. Los valores de <code>Identifiability</code></caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col">Significado</th><th scope="col">¿Dato personal?</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>IDENTIFIED</code></th>
+<td>El valor identifica a la persona directamente o mediante otros datos que tiene el responsable del
+tratamiento.</td><td>sí</td></tr>
+<tr><th scope="row"><code>PSEUDONYMIZED</code></th>
+<td>El valor solo puede vincularse a la persona con información adicional guardada por separado (artículo 4.5 del
+RGPD).</td><td>sí (considerando 26 del RGPD)</td></tr>
+<tr><th scope="row"><code>ANONYMIZED</code></th>
+<td>El valor ya no puede vincularse a la persona.</td><td>no, mientras nadie pueda reidentificarla</td></tr>
+<tr><th scope="row"><code>AGGREGATED</code></th>
+<td>El valor resume a varias personas y no describe a ninguna.</td>
+<td>no, mientras nadie pueda reidentificarla</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Un campo con una categoría personal y sin identificabilidad declarada es <code>IDENTIFIED</code>. Para declarar
+otra, usa el elemento <code>identifiability</code> de <code>@Category</code>. El servicio de analítica de la
+universidad guarda, por ejemplo, una fila por estudiante bajo un seudónimo y la nota media de la asignatura:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.6. Tres campos con identificabilidad distinta</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class GradeAnalytics {
+
+    @Category(value = USER_UNIQUE_ID_PSEUDONYMOUS, identifiability = Identifiability.PSEUDONYMIZED)
+    private String analyticsId;
+
+    @Category(value = USER_EDUCATION_GRADE, identifiability = Identifiability.PSEUDONYMIZED)
+    private BigDecimal finalGrade;
+
+    @Category(value = USER_EDUCATION_GRADE, identifiability = Identifiability.AGGREGATED)
+    private BigDecimal courseAverage;
+}
+</code></pre>
+</figure>
+
+<p>La nota final está junto al seudónimo, así que también está seudonimizada: quien tenga la tabla de correspondencias
+puede saber de quién es. La media de la asignatura, en cambio, resume a todos los matriculados. El clasificador
+(capítulo 6) refleja la diferencia en <code>FieldClassification.isPersonal()</code> y en la naturaleza de la
+protección del campo:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.7. La identificabilidad cambia si el campo es un dato personal</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">for (FieldClassification field : classifier.classify(GradeAnalytics.class).fields()) {
+    System.out.println(field.path() + " " + field.identifiability() + " personal=" + field.isPersonal()
+            + " natures=" + field.protection().natures());
+}
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">analyticsId PSEUDONYMIZED personal=true natures=[ORDINARY]
+finalGrade PSEUDONYMIZED personal=true natures=[ORDINARY]
+courseAverage AGGREGATED personal=false natures=[NONE]
+</code></pre>
+
+<p>Los niveles de confidencialidad e integridad de <code>courseAverage</code> se conservan (son los de la categoría),
+pero su naturaleza pasa a <code>NONE</code>: el valor ya no es un dato personal.</p>
+
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p>Seudonimizado no significa anónimo. Un identificador seudónimo sigue siendo un dato personal, y declarar
+<code>ANONYMIZED</code> o <code>AGGREGATED</code> un valor que se puede reidentificar le quita la protección que
+necesita. Es una afirmación que alguien debe poder justificar en una revisión.</p>
+</div>
+
+<p>La identificabilidad solo tiene sentido en categorías personales. Declararla en una categoría no personal, como
+<code>system.configuration</code>, es un error <code>IDENTIFIABILITY_NOT_APPLICABLE</code> (capítulo 4).</p>
+
+<h2 id="secretos">Los secretos</h2>
+<p>Algunos datos no solo describen a alguien: dan acceso. Contraseñas y sus hashes, claves de API, claves de firma,
+tokens. Linneo marca esas
+categorías como <dfn>secretos</dfn>. Un secreto nunca debe leerse de vuelta, exportarse ni publicarse; solo
+verificarse.</p>
+<p>La marca es un <code>boolean</code> de la categoría (<code>DataCategory.secret()</code>) y se hereda con un O
+lógico: una categoría es secreta si lo declara o si su madre es secreta, y nada puede revertirlo por debajo.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.8. Los secretos de la taxonomía estándar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy.standard().categories().stream()
+        .filter(DataCategory::secret)
+        .forEach(c -&gt; System.out.println(c.key() + " " + c.nature() + " " + c.confidentiality()));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">system.authentication.secret NONE HIGH
+user.authorization.biometric SPECIAL_CATEGORY HIGH
+user.authorization.credentials ORDINARY HIGH
+user.authorization.password ORDINARY HIGH
+user.device.session_id ORDINARY HIGH
+</code></pre>
+
+<p>Hay tres cosas que observar en la lista:</p>
+<ul>
+<li><code>user.authorization</code>, el alcance de los permisos de una persona, no está: es confidencial, pero no da
+acceso por sí mismo. Sí lo están sus hijas que sirven para autenticarse.</li>
+<li><code>user.device.session_id</code>, una categoría añadida por Linneo, es secreta porque mientras la sesión es
+válida da acceso como una credencial.</li>
+<li><code>system.authentication.secret</code> no es un dato personal, y es un secreto. «No personal» no significa «no
+sensible».</li>
+</ul>
+<p>Las herramientas de Linneo tratan los secretos aparte: una <code>DisclosurePolicy</code> los omite siempre en
+cualquier canal (capítulo 7), y por eso se marcan en la taxonomía y no en cada campo.</p>
+
+<h2 id="protection">Protection, el orden parcial único</h2>
+<p>Hasta aquí has visto las facetas por separado. En la práctica casi siempre hay que comparar protecciones completas:
+¿protege este campo derivado al menos lo que sus fuentes?, ¿se ha debilitado esta categoría en la nueva versión de la
+taxonomía?, ¿qué protección necesita una exportación del registro entero? Linneo responde a todas esas preguntas con
+un mismo tipo, el record <code>Protection</code>.</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">public record Protection(Set&lt;LegalNature&gt; natures, Confidentiality confidentiality,
+                         Integrity integrity, boolean secret)
+</code></pre>
+
+<p>Contiene las cuatro facetas de una categoría. La naturaleza es un conjunto porque el orden de las naturalezas es
+parcial: la protección de un registro que contiene datos de salud y antecedentes penales conserva las dos naturalezas,
+y no cubre ninguna de las dos por sí sola. El constructor deja en el conjunto solo las naturalezas más estrictas
+(<code>{ORDINARY, SPECIAL_CATEGORY}</code> pasa a ser <code>{SPECIAL_CATEGORY}</code>), de modo que protecciones
+iguales son records iguales, y lanza <code>IllegalArgumentException</code> si el conjunto está vacío.</p>
+<p>Se obtiene de una categoría con <code>DataCategory.protection()</code>, de un campo con
+<code>FieldClassification.protection()</code>, o se construye con <code>Protection.of(nature, confidentiality,
+integrity, secret)</code>. La constante <code>Protection.LOWEST</code> es la más baja: no personal,
+<code>PUBLIC</code>, integridad <code>LOW</code> y no secreta.</p>
+
+<h3 id="covers">covers: ¿protege al menos lo mismo?</h3>
+<p><code>a.covers(b)</code> es cierto cuando <code>a</code> es al menos tan estricta como <code>b</code> en todas las
+facetas a la vez: cada naturaleza de <code>b</code> está cubierta por alguna de <code>a</code>
+(<code>LegalNature.covers</code>), ningún nivel es inferior y, si <code>b</code> es secreta, <code>a</code> también.
+Basta con que una faceta quede por debajo para que no cubra.</p>
+
+<h3 id="join">join: la protección de unos datos que contienen otros</h3>
+<p><code>a.join(b)</code> es la menor protección que cubre a las dos: las naturalezas más estrictas de ambas, los
+niveles más altos y secreta si lo es alguna. Es la protección que necesitan unos datos que contienen los dos tipos,
+por ejemplo una fila exportada entera. <code>Protection.joinAll(collection)</code> combina una colección y devuelve
+<code>LOWEST</code> si está vacía.</p>
+
+<h3 id="comparedto">comparedTo: cómo cambió una protección</h3>
+<p><code>after.comparedTo(before)</code> compara una protección con una anterior, como la misma categoría en la
+versión previa de la taxonomía, y devuelve un <code>Protection.Direction</code>:</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-2-8">
+<table>
+<caption id="tabla-2-8">Tabla 2.8. Los valores de <code>Protection.Direction</code></caption>
+<thead>
+<tr><th scope="col">Valor</th><th scope="col">Significado</th><th scope="col"><code>weakens()</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>SAME</code></th><td>La protección es la misma.</td><td><code>false</code></td></tr>
+<tr><th scope="row"><code>TIGHTENED</code></th>
+<td>La nueva cubre a la antigua: más estricta en al menos una faceta y no más débil en ninguna.</td>
+<td><code>false</code></td></tr>
+<tr><th scope="row"><code>LOOSENED</code></th>
+<td>La antigua cubre a la nueva: más débil en al menos una faceta y no más estricta en ninguna.</td>
+<td><code>true</code></td></tr>
+<tr><th scope="row"><code>MIXED</code></th>
+<td>Más estricta en una faceta y más débil en otra, o una naturaleza no comparable con la antigua, como unos datos de
+categoría especial que pasan a ser penales.</td><td><code>true</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>weakens()</code> marca lo que alguien debe revisar: un cambio mixto merece la misma revisión que un
+debilitamiento. <code>Direction.and(other)</code> combina las direcciones de dos facetas de un mismo cambio:
+<code>SAME</code> da la otra, dos iguales se mantienen y cualquier otra pareja da <code>MIXED</code>.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.9. Comparar y combinar protecciones de categorías estándar</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Protection email = taxonomy.requireCategory(USER_CONTACT_EMAIL).protection();
+Protection grade = taxonomy.requireCategory(USER_EDUCATION_GRADE).protection();
+Protection disability = taxonomy.requireCategory(USER_HEALTH_AND_MEDICAL_DISABILITY).protection();
+Protection criminal = taxonomy.requireCategory(USER_CRIMINAL_HISTORY).protection();
+
+System.out.println(disability);
+System.out.println(disability.covers(email));
+System.out.println(disability.covers(criminal));
+System.out.println(disability.join(criminal));
+System.out.println(email.join(grade));
+System.out.println(grade.comparedTo(email));
+System.out.println(email.comparedTo(grade));
+System.out.println(criminal.comparedTo(disability));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Protection[natures=[SPECIAL_CATEGORY], confidentiality=HIGH, integrity=HIGH, secret=false]
+true
+false
+Protection[natures=[SPECIAL_CATEGORY, CRIMINAL_OFFENCE], confidentiality=HIGH, integrity=HIGH, secret=false]
+Protection[natures=[ORDINARY], confidentiality=MEDIUM, integrity=HIGH, secret=false]
+TIGHTENED
+LOOSENED
+MIXED
+</code></pre>
+
+<p>Lee la salida línea a línea. Los datos de discapacidad cubren al correo, pero no a los antecedentes penales, aunque
+ambos tengan niveles <code>HIGH</code>: las naturalezas no son comparables. Su combinación conserva las dos
+naturalezas. La combinación del correo y la calificación toma la confidencialidad de la calificación y la integridad
+más alta. Y pasar de datos de salud a datos penales es un cambio <code>MIXED</code>, no un endurecimiento.</p>
+<p>La protección de una clase entera es la combinación de sus campos: <code>ClassClassification.ceiling()</code>
+devuelve el <code>joinAll</code> de las protecciones de todos ellos. Para la entidad <code>Student</code> del curso,
+que tiene el grado de discapacidad entre sus campos, es la de la categoría especial:</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.10. La protección de un registro completo de <code>Student</code></figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">System.out.println(classifier.classify(Student.class).ceiling());
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">Protection[natures=[SPECIAL_CATEGORY], confidentiality=HIGH, integrity=HIGH, secret=false]
+</code></pre>
+
+<h3 id="donde-se-usa">Dónde compara Linneo protecciones</h3>
+<p><code>Protection</code> es la única forma en que la biblioteca compara protección. Lo encontrarás en todo el
+curso:</p>
+<ul>
+<li>el constructor exige que la sustituta de una categoría obsoleta cubra su protección (capítulos 3 y 9);</li>
+<li>un campo <code>@DerivedFrom</code> que declara su categoría debe cubrir a sus fuentes, y un campo que guarda un
+<code>@Composite</code> entero debe cubrir a sus partes (capítulo 5);</li>
+<li><code>DisclosurePolicy</code> decide si un campo se muestra, se enmascara o se omite según los umbrales que cubre
+su protección (capítulo 7);</li>
+<li>el inventario de datos marca los cambios de campo que debilitan la protección (capítulo 8), y
+<code>TaxonomyDiff</code> da la dirección del cambio de cada categoría (capítulo 10).</li>
+</ul>
+
+<h3 id="no-comparar-a-mano">Por qué no se comparan niveles a mano</h3>
+<p>Escribir la comparación a mano parece sencillo y casi siempre está mal, por tres motivos que el Ejemplo 2.11
+demuestra:</p>
+<ol>
+<li>El orden de declaración de <code>LegalNature</code> no es un orden de protección. <code>compareTo</code> dice que
+<code>CRIMINAL_OFFENCE</code> es «mayor» que <code>SPECIAL_CATEGORY</code> solo porque se declara después; ninguna de
+las dos cubre a la otra.</li>
+<li>Comparar solo los niveles olvida la marca de secreto. Una tarjeta de pago tiene niveles iguales o superiores a los
+de un identificador de sesión, pero el identificador de sesión es secreto y la tarjeta no.</li>
+<li>Un cambio puede subir una faceta y bajar otra. Una comparación que se fija en un único nivel no ve el
+<code>MIXED</code>.</li>
+</ol>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.11. Dos comparaciones a mano que dan la respuesta equivocada</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">boolean byOrdinal = LegalNature.CRIMINAL_OFFENCE.compareTo(LegalNature.SPECIAL_CATEGORY) &gt; 0;
+boolean byCovers = LegalNature.CRIMINAL_OFFENCE.covers(LegalNature.SPECIAL_CATEGORY);
+System.out.println(byOrdinal + " " + byCovers);
+
+Protection card = taxonomy.requireCategory(USER_FINANCIAL_CREDIT_CARD).protection();
+Protection session = taxonomy.requireCategory(USER_DEVICE_SESSION_ID).protection();
+boolean levelsOnly = card.confidentiality().compareTo(session.confidentiality()) &gt;= 0
+        &amp;&amp; card.integrity().compareTo(session.integrity()) &gt;= 0;
+System.out.println(levelsOnly + " " + card.covers(session) + " " + session.comparedTo(card));
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">true false
+true false MIXED
+</code></pre>
+
+<p>La comparación a mano diría que los datos penales «cubren» a los de salud y que la tarjeta «cubre» al identificador
+de sesión. <code>covers</code> responde correctamente en los dos casos. Además, <code>Protection</code> está
+comprobada de forma exhaustiva: el test <code>ProtectionTest</code> recorre las 120 protecciones distintas posibles y
+verifica que <code>covers</code> es un orden parcial (reflexivo, antisimétrico y transitivo) y que <code>join</code>
+es la menor cota superior. Una comparación propia no tiene esa garantía.</p>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Si en una revisión de código ves <code>confidentiality().compareTo(...)</code> o <code>nature() ==</code> para
+decidir si algo está suficientemente protegido, pide que se reescriba con <code>covers</code>, <code>join</code> o
+<code>comparedTo</code>. Para preguntar solo si unos datos exigen la máxima protección, usa
+<code>Protection.requiresMaximumProtection()</code>; para saber si son personales, <code>isPersonal()</code>.</p>
+</div>
+
+<h2 id="fallo-seguro">El fallo seguro</h2>
+<p>La decisión de diseño que atraviesa toda la biblioteca es el <dfn>fallo seguro</dfn> (<span lang="en">fail
+closed</span>): lo que no está clasificado o es dudoso es un error, no un valor por defecto silencioso. El enfoque
+contrario, clasificar lo que uno recuerda y suponer que el resto es inocuo, es el camino por el que los datos de salud
+acaban en un log de depuración.</p>
+<p>En lo que has visto en este capítulo, el fallo seguro se concreta así:</p>
+<ul>
+<li>una naturaleza que no se puede conciliar con la de la madre hace fallar la construcción de la taxonomía, y una
+categoría especial o penal sin niveles <code>HIGH</code> también;</li>
+<li>un nivel declarado por debajo del heredado se eleva al de la madre, nunca al revés;</li>
+<li>una clave desconocida lanza <code>TaxonomyException</code> en <code>requireCategory</code>, en lugar de devolver
+un valor nulo que alguien podría tratar como «sin protección»;</li>
+<li>un cambio <code>MIXED</code> cuenta como debilitamiento.</li>
+</ul>
+<p>En la clasificación de los campos, que se ve en los capítulos 4 a 6, son errores un campo sin clasificar, una clave
+que no existe, un nivel rebajado, un valor por defecto de clase con una categoría personal y unas anotaciones que se
+contradicen. Una clave obsoleta es solo un aviso y se resuelve a su sustituta.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 2.12. Un campo que nadie clasificó hace fallar la verificación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Applicant {
+
+    @Category(USER_NAME)
+    private String fullName;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    private String previousSchool;
+}
+</code></pre>
+</figure>
+
+<pre class="codigo" tabindex="0"><code class="language-java">try {
+    classifier.verify(List.of(Applicant.class));
+} catch (ClassificationException e) {
+    System.out.println(e.getMessage());
+}
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">1 classification error(s):
+ - ERROR UNCLASSIFIED_FIELD edu.example.university.Applicant.previousSchool: no @Category on the field and no @DefaultCategory on Applicant
+</code></pre>
+
+<p>Quien añadió <code>previousSchool</code> sin clasificarlo rompe la compilación, y la corrección es una anotación de
+una línea que se revisa junto con la columna: <code>@Category(USER_EDUCATION_PREVIOUS_EDUCATION)</code>.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>El fallo seguro hace que olvidar algo sea difícil, no que el resultado sea jurídicamente correcto. Linneo comprueba
+lo que el código declara; si la clave elegida describe bien el dato, si la identificabilidad declarada es real o si la
+política de niveles se ajusta a la organización son decisiones de las personas responsables. La biblioteca ayuda a
+demostrar el cumplimiento y a no olvidar nada; no lo garantiza.</p>
+</div>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Tratar los datos penales como una categoría especial.</dt>
+<dd>El artículo 10 del RGPD es un régimen distinto del artículo 9. Usa <code>user.criminal_history</code>, de
+naturaleza <code>CRIMINAL_OFFENCE</code>, y recuerda que las sanciones administrativas no son penales
+(<code>user.administrative_sanction</code>).</dd>
+<dt>Colgar un dato personal de <code>system</code> u <code>org</code>.</dt>
+<dd>Una jerarquía <code>NONE</code> nunca contiene datos personales y el constructor lo rechaza. Busca la rama de
+<code>user</code> que corresponde al dato.</dd>
+<dt>Usar una única puntuación de sensibilidad.</dt>
+<dd>Confidencialidad e integridad son independientes. Una calificación y una matriz de permisos necesitan controles
+distintos; mantén las dos escalas.</dd>
+<dt>Declarar <code>ANONYMIZED</code> un valor seudonimizado.</dt>
+<dd>Si existe una tabla de correspondencias, el valor es <code>PSEUDONYMIZED</code> y sigue siendo un dato personal.
+Solo los valores que nadie puede reidentificar son <code>ANONYMIZED</code> o <code>AGGREGATED</code>.</dd>
+<dt>Suponer que «no personal» significa «no sensible».</dt>
+<dd>Una clave de firma (<code>system.authentication.secret</code>) no es un dato personal y es un secreto con
+confidencialidad alta.</dd>
+<dt>Comparar protecciones con <code>compareTo</code> o con <code>==</code>.</dt>
+<dd>El orden de declaración de <code>LegalNature</code> no es un orden de protección y los niveles no recogen el
+secreto. Usa <code>covers</code>, <code>join</code> y <code>comparedTo</code>.</dd>
+<dt>Confiar en que el constructor eleve un nivel declarado por debajo.</dt>
+<dd>Funciona, pero oculta un error de diseño de tu término. Declara el nivel que el dato necesita de verdad.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>La protección de un dato tiene cinco facetas: naturaleza jurídica, confidencialidad, integridad y secreto en la
+categoría, e identificabilidad en el campo.</li>
+<li><code>LegalNature</code> tiene cuatro valores: <code>NONE</code>, <code>ORDINARY</code> (art. 4.1 RGPD),
+<code>SPECIAL_CATEGORY</code> (art. 9) y <code>CRIMINAL_OFFENCE</code> (art. 10). Las dos últimas exigen
+confidencialidad e integridad <code>HIGH</code>.</li>
+<li>Al bajar por el árbol, la naturaleza solo se mantiene o se endurece (<code>admits</code>); una naturaleza que no
+se puede conciliar es un error y una más débil compatible se eleva.</li>
+<li>Confidencialidad (<code>PUBLIC</code> a <code>HIGH</code>) e integridad (<code>LOW</code> a <code>HIGH</code>)
+miden daños distintos y se fijan por separado.</li>
+<li>Los valores seudonimizados siguen siendo datos personales; los anonimizados y agregados no, mientras nadie pueda
+reidentificar a la persona.</li>
+<li>Los secretos dan acceso, se heredan hacia abajo y nunca se leen de vuelta, se exportan ni se publican.</li>
+<li><code>Protection</code> es el único orden de protección: <code>covers</code> compara, <code>join</code> combina y
+<code>comparedTo</code> dice si un cambio endurece, debilita o mezcla.</li>
+<li>El fallo seguro convierte en error lo que falta o es dudoso; ayuda a demostrar el cumplimiento, no lo
+garantiza.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Naturalezas.</strong> Indica la <code>LegalNature</code> de cada dato que guarda la universidad: (a) el
+correo de un estudiante; (b) el texto de una opción de menú del portal; (c) un certificado médico que justifica la
+ausencia a un examen; (d) el certificado de delitos sexuales del personal que trabaja con menores; (e) una sanción
+disciplinaria impuesta a un estudiante; (f) la religión de un estudiante, registrada para organizar la capellanía; (g)
+el código <abbr title="Organización Internacional de Normalización">ISO</abbr> de un país.</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>(a) <code>ORDINARY</code>. (b) <code>NONE</code>. (c) <code>SPECIAL_CATEGORY</code>, por ser un dato de salud. (d)
+<code>CRIMINAL_OFFENCE</code>. (e) <code>ORDINARY</code>: es una sanción administrativa, no penal; en la taxonomía
+estándar es <code>user.administrative_sanction</code>, con confidencialidad e integridad <code>HIGH</code>. (f)
+<code>SPECIAL_CATEGORY</code>, convicciones religiosas. (g) <code>NONE</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Dos escalas.</strong> Para cada dato, di si la preocupación principal es la confidencialidad o la
+integridad y por qué: (a) la nota final de un estudiante; (b) la cadena de hashes que protege el log de auditoría; (c)
+el domicilio de un empleado; (d) el rol que da acceso al módulo de calificaciones.</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<p>(a) Las dos importan, pero la integridad es crítica: la taxonomía estándar da a <code>user.education.grade</code>
+confidencialidad <code>MEDIUM</code> e integridad <code>HIGH</code>. (b) Integridad: la cadena es la prueba de que el
+log no se alteró, y revelarla no causa daño (<code>system.integrity</code>, integridad <code>HIGH</code>). (c)
+Confidencialidad: revelarlo expone a la persona. (d) Integridad: cambiar quién tiene el rol da acceso a quien no debe
+(<code>system.security</code>, integridad <code>HIGH</code>).</p>
+</details>
+</li>
+<li>
+<p><strong>Identificabilidad.</strong> Elige la <code>Identifiability</code> de cada valor guardado y di si es un dato
+personal: (a) el identificador del estudiante en la tabla de matrículas; (b) un identificador aleatorio de analítica
+cuya correspondencia con los estudiantes se guarda en otra tabla de acceso restringido; (c) el número de aprobados de
+una asignatura; (d) la respuesta a una encuesta cuyo vínculo con quien respondió se destruyó de forma
+irreversible.</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<p>(a) <code>IDENTIFIED</code>, personal. (b) <code>PSEUDONYMIZED</code>, personal: la correspondencia existe, aunque
+esté separada. (c) <code>AGGREGATED</code>, no personal. (d) <code>ANONYMIZED</code>, no personal mientras nadie pueda
+reidentificar a quien respondió.</p>
+</details>
+</li>
+<li>
+<p><strong>Predice la salida.</strong> Sin ejecutarlo, escribe lo que imprime este código y después compruébalo:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Protection grade = taxonomy.requireCategory(USER_EDUCATION_GRADE).protection();
+Protection biometric = taxonomy.requireCategory(USER_AUTHORIZATION_BIOMETRIC).protection();
+Protection config = taxonomy.requireCategory(SYSTEM_CONFIGURATION).protection();
+System.out.println(biometric.covers(grade));
+System.out.println(grade.covers(config));
+System.out.println(grade.join(config).equals(grade));
+System.out.println(config.comparedTo(grade));
+System.out.println(biometric.join(grade).secret());
+</code></pre>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<pre class="codigo salida" tabindex="0"><code class="language-text">true
+true
+true
+LOOSENED
+true
+</code></pre>
+<p><code>user.authorization.biometric</code> es <code>SPECIAL_CATEGORY</code>, <code>HIGH</code>, <code>HIGH</code> y
+secreta, así que cubre a la calificación (<code>ORDINARY</code>, <code>MEDIUM</code>, <code>HIGH</code>). La
+calificación cubre a <code>system.configuration</code> (<code>NONE</code>, <code>LOW</code>, <code>MEDIUM</code>), de
+modo que combinarlas no cambia nada y la configuración es un debilitamiento respecto de la calificación. La
+combinación con un secreto es secreta.</p>
+</details>
+</li>
+<li>
+<p><strong>Revisión de código.</strong> Un compañero ha escrito este método para decidir si un campo puede copiarse en
+una tabla destino sin perder protección. Explica qué falla y reescríbelo.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">static boolean safeCopy(FieldClassification field, DataCategory target) {
+    return target.nature().compareTo(field.category().nature()) &gt;= 0
+            &amp;&amp; target.confidentiality().compareTo(field.confidentiality()) &gt;= 0;
+}
+</code></pre>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<p>Tiene tres fallos. Usa el orden de declaración de <code>LegalNature</code>, que acepta copiar datos de salud en una
+categoría penal. No mira la integridad ni la marca de secreto. Y usa la naturaleza de la categoría del campo en lugar
+de la de su protección, que ya tiene en cuenta si el valor está anonimizado o agregado. La versión correcta delega en
+<code>Protection</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">static boolean safeCopy(FieldClassification field, DataCategory target) {
+    return target.protection().covers(field.protection());
+}
+</code></pre>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué valores de <code>LegalNature</code> son datos personales?</p>
+<ol>
+<li>Solo <code>ORDINARY</code>.</li>
+<li><code>ORDINARY</code> y <code>SPECIAL_CATEGORY</code>.</li>
+<li><code>ORDINARY</code>, <code>SPECIAL_CATEGORY</code> y <code>CRIMINAL_OFFENCE</code>.</li>
+<li>Todos, porque <code>NONE</code> también se refiere a personas jurídicas.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La c. <code>isPersonal()</code> devuelve <code>false</code> solo para <code>NONE</code>. La a y la b olvidan que
+las categorías especiales y los datos penales son datos personales con un régimen reforzado. La d es falsa: los datos
+de personas jurídicas no son datos personales y viven bajo <code>org</code>, de naturaleza <code>NONE</code>.</p>
+</details>
+</li>
+<li>
+<p>Declaras <code>ORDINARY</code> en una hija nueva de <code>user.health_and_medical</code>. ¿Qué ocurre al
+construir?</p>
+<ol>
+<li>La hija queda <code>ORDINARY</code>.</li>
+<li>La hija queda <code>SPECIAL_CATEGORY</code>, con confidencialidad e integridad <code>HIGH</code>.</li>
+<li><code>build()</code> lanza <code>TaxonomyException</code>.</li>
+<li>La hija queda con dos naturalezas.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La b. Cada faceta declarada es un mínimo y una naturaleza más débil pero compatible se eleva a la de la madre. La a
+rebajaría un dato de salud. La c es lo que ocurre con una naturaleza que no se puede conciliar, como
+<code>CRIMINAL_OFFENCE</code> o <code>NONE</code>. La d confunde la categoría, que tiene una sola naturaleza, con
+<code>Protection</code>, que puede tener varias.</p>
+</details>
+</li>
+<li>
+<p>¿Es un dato personal un valor declarado <code>PSEUDONYMIZED</code>?</p>
+<ol>
+<li>No, porque no identifica directamente a nadie.</li>
+<li>Sí, porque puede vincularse a la persona con información adicional (art. 4.5 y considerando 26 RGPD).</li>
+<li>Solo si su categoría es de categoría especial.</li>
+<li>Depende de la confidencialidad de la categoría.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La b. Solo <code>ANONYMIZED</code> y <code>AGGREGATED</code> dejan de ser datos personales, y solo mientras nadie
+pueda reidentificar a la persona. La a confunde seudonimizado con anónimo. La c y la d mezclan la identificabilidad
+con otras facetas que no deciden si el dato es personal.</p>
+</details>
+</li>
+<li>
+<p>¿Qué devuelve <code>criminal.comparedTo(health)</code> si ambas tienen confidencialidad e integridad
+<code>HIGH</code> y no son secretas?</p>
+<ol>
+<li><code>SAME</code>, porque los niveles coinciden.</li>
+<li><code>TIGHTENED</code>, porque <code>CRIMINAL_OFFENCE</code> se declara después.</li>
+<li><code>LOOSENED</code>.</li>
+<li><code>MIXED</code>, porque las naturalezas no son comparables.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La d. Ninguna de las dos naturalezas cubre a la otra, así que ninguna protección cubre a la otra. La a ignora la
+naturaleza, la b confunde el orden de declaración con un orden de protección y la c supondría que la de salud cubre a
+la penal. <code>MIXED.weakens()</code> es cierto: merece revisión.</p>
+</details>
+</li>
+<li>
+<p>¿Cuál de estas categorías estándar es secreta?</p>
+<ol>
+<li><code>user.authorization</code>.</li>
+<li><code>user.device.session_id</code>.</li>
+<li><code>system.security</code>.</li>
+<li><code>user.financial.credit_card</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La b: un identificador de sesión da acceso como una credencial mientras la sesión es válida. La a es el alcance de
+los permisos, confidencial pero no secreto. La c es una matriz de permisos, crítica para la integridad, no un secreto.
+La d tiene confidencialidad <code>HIGH</code>, pero una tarjeta no es una credencial de acceso al sistema.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="../../reference/protection-levels.html">Referencia: niveles de protección</a>, con
+<code>LegalNature</code>, <code>Confidentiality</code>, <code>Integrity</code>, <code>Identifiability</code> y
+<code>Protection</code>.</li>
+<li><a href="../../reference/standard-taxonomy.html">Referencia: taxonomía estándar</a>, con la política de protección
+y su base legal.</li>
+<li><a href="03-taxonomia.html">Capítulo 3. La taxonomía</a>: cómo viaja la protección con la categoría.</li>
+<li><a href="04-anotaciones.html">Capítulo 4. Anotar campos y clases</a>: elevar niveles y declarar la
+identificabilidad.</li>
+<li><a href="07-uso.html">Capítulo 7. Usar la clasificación</a>: la protección de campo y de clase, y
+<code>DisclosurePolicy</code>.</li>
+<li><a href="15-ens.html">Capítulo 15. Categoría ENS del sistema</a>: la misma escala de tres niveles aplicada al
+sistema.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="01-introduccion.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 1. Qué es Linneo</a></li>
+<li><a href="03-taxonomia.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 3. La taxonomía</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

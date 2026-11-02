@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/ModelClasses.java
+  - src/main/java/io/github/devbpm/linneo/classify/DataInventory.java
+  - src/main/java/io/github/devbpm/linneo/classify/InventoryDiff.java
+  - src/main/java/io/github/devbpm/linneo/TaxonomyDiff.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 18. Linneo en el ciclo de vida · Curso de Linneo</title>
+<meta name="description" content="Cómo se integra Linneo en el trabajo diario: tests en la integración continua, revisión de cambios, actualizaciones de la taxonomía, colaboración con el DPD y límites de la herramienta.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html" aria-current="page"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 18. Linneo en el ciclo de vida</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 18</span> Linneo en el ciclo de vida</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>60 minutos</dd></div>
+<div><dt>Parte V:</dt><dd>Integración y práctica</dd></div>
+</dl>
+<p class="entradilla">Los capítulos anteriores presentan cada herramienta por separado. Este capítulo final las reúne en
+la práctica de un equipo. Explica dónde vive cada pieza en el proyecto, qué comprueba la integración continua, qué debe
+mirar quien revisa un cambio y cómo se reparten el trabajo el equipo de desarrollo y el delegado de protección de
+datos. Termina con los límites de la herramienta y una lista de comprobación para adoptarla.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#piezas">Dónde vive cada pieza</a></li>
+<li><a href="#integracion-continua">La integración continua</a></li>
+<li><a href="#ciclo-de-un-cambio">El ciclo de un cambio en el modelo</a></li>
+<li><a href="#revision">Revisar un cambio</a></li>
+<li><a href="#actualizaciones">Actualizar Linneo y la taxonomía</a></li>
+<li><a href="#delegado">El ciclo de aprobación con el delegado</a></li>
+<li><a href="#limites">Límites de la herramienta</a></li>
+<li><a href="#adopcion">Lista de comprobación para adoptar Linneo</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>organizar en un proyecto el modelo anotado, los tests de clasificación y de tratamiento y la gobernanza
+guardada;</li>
+<li>configurar la integración continua para que un error de clasificación o de licitud detenga la entrega;</li>
+<li>revisar un cambio del modelo con criterios concretos;</li>
+<li>actualizar la versión de Linneo o de la taxonomía sin perder protección;</li>
+<li>describir el ciclo de aprobación del registro con el delegado de protección de datos;</li>
+<li>explicar qué no puede ver Linneo y qué medidas complementarias lo cubren.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo da por sabidos los capítulos 4 a 8 (anotar, verificar y usar la clasificación, y el inventario de
+datos) y los capítulos 11 y 12 (actividades de tratamiento y registro). Los fragmentos de código son esquemas que
+remiten a esos capítulos para los detalles.</p>
+
+<h2 id="piezas">Dónde vive cada pieza</h2>
+<p>Linneo no impone una estructura de proyecto, pero conviene que cada pieza tenga un dueño claro. La Tabla 18.1
+recoge una organización probada.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-18-1">
+<table>
+<caption id="tabla-18-1">Tabla 18.1. Las piezas de un proyecto que usa Linneo</caption>
+<thead>
+<tr><th scope="col">Pieza</th><th scope="col">Dónde</th><th scope="col">Responsable</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Modelo anotado</th><td>El paquete del modelo, junto a las entidades.</td><td>Equipo de
+desarrollo</td></tr>
+<tr><th scope="row">Extensión de la taxonomía</th><td>Un paquete propio con la <code>TaxonomyExtension</code> y sus
+constantes, registrada con <code>ServiceLoader</code> (capítulo 9).</td><td>Desarrollo, con la revisión del
+delegado</td></tr>
+<tr><th scope="row">Test de clasificación</th><td>Los tests del módulo del modelo.</td><td>Equipo de
+desarrollo</td></tr>
+<tr><th scope="row">Alcance de las actividades</th><td>Código: finalidades, interesados, entidades, objetos del
+inventario y factores de riesgo que el código conoce (capítulo 11).</td><td>Equipo de desarrollo</td></tr>
+<tr><th scope="row">Gobernanza de las actividades</th><td>El almacenamiento de la aplicación, editado desde sus
+pantallas o desde un fichero versionado.</td><td>Delegado de protección de datos</td></tr>
+<tr><th scope="row">Copias guardadas</th><td>El inventario, la taxonomía aplicada y la huella del registro aprobado, en
+el almacenamiento de la aplicación (capítulos 8, 10 y 12).</td><td>La aplicación</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="recuadro recuadro-consejo" role="note">
+<p class="recuadro-titulo">Consejo</p>
+<p>Guarda la gobernanza fuera del código cuando el delegado la edite desde una pantalla, y en un fichero versionado
+cuando prefiera revisarla en una solicitud de cambios. En los dos casos, el código la combina con el alcance mediante
+<code>withGovernance</code>, que sustituye la gobernanza de la actividad sin mezclarla.</p>
+</div>
+
+<h2 id="integracion-continua">La integración continua</h2>
+<p>La integración continua es el lugar natural de Linneo: es donde un error detiene una entrega antes de que llegue a
+producción. Dos tests bastan para cubrir lo esencial. El primero verifica el modelo completo; el segundo, las
+actividades de tratamiento.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 18.1. Los dos tests que protegen una entrega</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">class ComplianceTest {
+
+    private static final Taxonomy TAXONOMY = Taxonomy.load();
+
+    @Test
+    void theModelIsClassified() {
+        new Classifier(TAXONOMY).verify(ModelClasses.inPackageTree(Student.class));
+    }
+
+    @Test
+    void theActivitiesAreLawful() {
+        ProcessingRecord record = new ProcessingChecker(TAXONOMY).verify(UniversityActivities.all());
+        assertTrue(record.activity("enrollment").isPresent());
+    }
+}
+</code></pre>
+</figure>
+
+<p>Tres decisiones del Ejemplo 18.1 merecen explicación:</p>
+<ol>
+<li><strong><code>Taxonomy.load()</code>, no <code>Taxonomy.standard()</code>.</strong> El test debe ver las mismas
+extensiones que la aplicación; con la taxonomía estándar, las claves de una extensión propia serían desconocidas.</li>
+<li><strong>Las clases salen del propio modelo.</strong> <code>ModelClasses.inPackageTree</code> recorre el paquete
+de la clase ancla y sus subpaquetes, y falla en lugar de saltarse lo que no puede leer. Una clase nueva queda
+verificada sin que nadie tenga que acordarse de añadirla a una lista.</li>
+<li><strong>Todas las clases, en una sola llamada.</strong> Algunas comprobaciones cruzan clases: un campo derivado de
+otra clase, un compuesto guardado entero o una referencia a otro registro. Cada clase informa solo de sus propios
+problemas, así que una clase que falta en la lista no muestra los suyos. Una sola llamada, además, lee una vez cada
+clase compartida y da un único informe con todos los errores (<a href="06-verificacion.html">capítulo 6</a>).</li>
+</ol>
+
+<p>El segundo test usa <code>verify</code>, que falla también con los errores de la gobernanza. Si el delegado mantiene
+la gobernanza fuera del código, como en la Tabla 18.1, haz que la compilación falle solo con los errores del alcance:
+filtra los de <code>checkAll</code> por <code>element().isGovernance()</code>, como el segundo test del Ejemplo 11.7
+(<a href="11-actividades.html#verificar-en-un-test">capítulo 11</a>).</p>
+
+<p>Los avisos no detienen la compilación. En la clasificación, un aviso es una clave obsoleta que se resuelve a su
+sustituta; en el registro, un punto abierto, casi siempre de la gobernanza. Conviene publicarlos en el informe de la
+compilación para que nadie los pierda de vista.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 18.2. Mostrar los avisos sin detener la compilación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;CheckedActivity&gt; checked = new ProcessingChecker(TAXONOMY)
+        .checkAll(UniversityActivities.all());
+checked.stream()
+        .flatMap(activity -&gt; activity.warnings().stream())
+        .forEach(warning -&gt; System.out.println(warning));
+</code></pre>
+</figure>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>No conviertas los avisos en errores de forma general. Un aviso del registro suele ser un dato que solo el delegado
+de protección de datos puede aportar, como un plazo de conservación. Bloquear la entrega del equipo de desarrollo por
+ello mezcla las responsabilidades que Linneo separa.</p>
+</div>
+
+<h2 id="ciclo-de-un-cambio">El ciclo de un cambio en el modelo</h2>
+<p>Un cambio corriente, como añadir un campo, recorre estos pasos. Cada uno lo resuelve una herramienta distinta.</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Declarar</span> Quien añade el campo lo anota con la categoría de su contenido. Si
+eleva un nivel, lo declara en la misma anotación.</li>
+<li><span class="flujo-titulo">Verificar</span> El test de clasificación lo comprueba en local y en la integración
+continua.</li>
+<li><span class="flujo-titulo">Revisar</span> La anotación aparece en la solicitud de cambios, donde un revisor la
+contrasta con el contenido real del campo.</li>
+<li><span class="flujo-titulo">Conciliar</span> Al desplegar, la aplicación compara el inventario del código con la
+copia guardada, aplica los cambios y envía a revisión los que rebajan la protección (capítulo 8).</li>
+<li><span class="flujo-titulo">Publicar</span> Las etiquetas del catálogo y las reglas de enmascaramiento se
+actualizan con la nueva clasificación (capítulos 16 y 17).</li>
+<li><span class="flujo-titulo">Aprobar</span> Si el campo cambia los datos de una actividad, el registro cambia y el
+delegado revisa la diferencia antes de volver a firmarlo (capítulo 12).</li>
+</ol>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 18.3. Conciliar el inventario al arrancar la aplicación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DataInventory declared = classifier.inventory(ModelClasses.inPackageTree(Student.class),
+        type -&gt; tableNameOf(type));
+if (!declared.fingerprint().equals(storedFingerprint)) {
+    InventoryDiff diff = InventoryDiff.between(DataInventory.fromTsv(storedInventory), declared, taxonomy);
+    diff.changes().forEach(change -&gt; apply(change));
+    diff.weakening().forEach(change -&gt; requestReview(change));
+}
+</code></pre>
+</figure>
+
+<p>La huella (<code>fingerprint</code>) permite saltarse la comparación cuando nada ha cambiado. La aplicación
+decide cómo aplicar cada cambio y cómo pedir la revisión; Linneo solo dice qué ha cambiado y en qué dirección.</p>
+
+<h2 id="revision">Revisar un cambio</h2>
+<p>El clasificador garantiza que la clasificación es completa y coherente, pero no que sea correcta: no puede saber si
+un campo llamado <code>notes</code> contiene observaciones médicas. Esa comprobación corresponde a quien revisa el
+cambio. La lista siguiente recoge las preguntas que conviene hacerse.</p>
+<ol>
+<li>¿La categoría describe lo que el campo contiene, o solo lo que su nombre sugiere? Un texto libre debe declarar
+lo más sensible que pueda llegar a contener.</li>
+<li>¿Hay que elevar la confidencialidad o la integridad? Unas notas de orientación psicológica son contenido privado,
+pero exigen más que el nivel de su categoría.</li>
+<li>¿La identificabilidad declarada es real? Un identificador solo es seudonimizado si la clave que lo vincula a la
+persona se guarda aparte.</li>
+<li>¿Las exenciones (<code>@Exempt</code>) están justificadas? Una exención es para lo que la clase guarda sin formar
+parte de los datos del modelo, como una caché o un manejador técnico; un valor calculado a partir de datos nunca lo
+es.</li>
+<li>¿Un valor calculado declara de qué se deriva? <code>@DerivedFrom</code> impide que proteja menos que su
+origen.</li>
+<li>¿Cambian los datos de alguna actividad de tratamiento? Si es así, el delegado debe saberlo.</li>
+</ol>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Las anotaciones y su historial en el control de versiones son una prueba documental de que la organización conoce
+sus datos y los protege desde el diseño (artículo 25 del
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr>). Esa prueba es más sólida cuando la revisión de los
+cambios incluye las preguntas anteriores.</p>
+</div>
+
+<h2 id="actualizaciones">Actualizar Linneo y la taxonomía</h2>
+<p>Una versión nueva de Linneo puede traer una taxonomía nueva: términos añadidos, protección más estricta, claves
+obsoletas. Las reglas de versionado garantizan que una versión menor no quita términos ni rebaja la protección. Aun
+así, una aplicación que guarda claves debe comprobar el cambio antes de aplicarlo.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 18.4. Comprobar una taxonomía nueva contra la aplicada</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Taxonomy applied = Taxonomy.fromTsv(storedTaxonomy);
+TaxonomyDiff diff = TaxonomyDiff.between(applied, Taxonomy.load()).requireCompatible();
+Map&lt;TermChange, List&lt;InventoryField&gt;&gt; affected = declared.affectedBy(diff);
+</code></pre>
+</figure>
+
+<p><code>requireCompatible()</code> rechaza la taxonomía nueva si tiene algún cambio incompatible, de los que exigen una
+versión mayor: quitar un término, rebajar su protección, quitarle un rasgo o cambiar la sustituta de un término
+obsoleto.
+<code>affectedBy</code> indica qué campos alcanza cada cambio, incluidos los que usan una clave que ha quedado
+obsoleta. Como el inventario guarda claves y no niveles, una categoría más estricta protege más a sus campos en cuanto
+se aplica. El capítulo 10 explica el procedimiento completo.</p>
+<p>Las claves obsoletas aparecen como avisos de la clasificación. Sustitúyelas por su reemplazo en el código cuando
+convenga: el clasificador ya las resuelve a la sustituta, de modo que no hay pérdida de protección mientras tanto.</p>
+
+<h2 id="delegado">El ciclo de aprobación con el delegado</h2>
+<p>El registro de actividades de tratamiento no se firma una vez para siempre. Cada cambio del código o de la
+gobernanza puede modificarlo, y el delegado necesita saber exactamente qué ha cambiado desde su última aprobación.</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Aprobar</span> El delegado aprueba el registro. La aplicación guarda su huella y lo
+necesario para reconstruirlo: la taxonomía aplicada, el inventario de datos y la gobernanza aprobada.</li>
+<li><span class="flujo-titulo">Comparar huellas</span> Antes de la siguiente aprobación, la aplicación genera el
+registro actual. Si su huella coincide con la guardada, no hay nada que revisar.</li>
+<li><span class="flujo-titulo">Reconstruir y comparar</span> Si difieren, la aplicación reconstruye el registro
+aprobado con lo guardado, y <code>RecordDiff.between(approved, current)</code> enumera las actividades cambiadas, los
+aspectos afectados y si ahora tratan datos que exigen más protección.</li>
+<li><span class="flujo-titulo">Revisar y firmar</span> El delegado revisa solo lo que ha cambiado, completa los
+puntos abiertos y vuelve a aprobar.</li>
+</ol>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 18.5. Lo que ha cambiado desde la última aprobación</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">if (!current.fingerprint().equals(approvedFingerprint)) {
+    RecordDiff diff = RecordDiff.between(approved, current);
+    diff.changes().forEach(change -&gt; System.out.println(change));
+}
+</code></pre>
+</figure>
+
+<p>Cada <code>ActivityChange</code> indica si el cambio es solo de la gobernanza (<code>isGovernance()</code>) o si
+también cambiaron el alcance o los datos, de modo que la revisión llega a quien corresponde. El
+<a href="12-registro.html#ciclo-de-aprobacion">capítulo 12</a> desarrolla el ciclo completo.</p>
+
+<h2 id="limites">Límites de la herramienta</h2>
+<p>No se puede controlar todo el escenario legal desde el código. Linneo está diseñado para cerrar los huecos en los que
+podría caer un modelo bien escrito, no para impedir cualquier mal uso. Conocer sus límites es parte de usarlo bien.</p>
+<dl class="definiciones">
+<dt>No ve los valores</dt>
+<dd>La clasificación es una declaración. Un campo mal declarado, o un texto libre que acaba conteniendo algo no
+previsto, solo lo detecta la revisión humana o una herramienta de descubrimiento de datos complementaria.</dd>
+<dt>No ve lo que ocurre fuera del modelo</dt>
+<dd>Los ficheros que se suben, los logs que escriben otras bibliotecas o los datos que un encargado del tratamiento
+copia a su sistema quedan fuera. Se declaran en las actividades de tratamiento (destinatarios, transferencias) o se
+gestionan con otras medidas.</dd>
+<dt>No decide por el delegado</dt>
+<dd>Las reglas jurídicas son fijas, citadas y proporcionadas. El cribado de impacto, la valoración de
+brechas y los derechos de los interesados son orientaciones para el delegado, no resoluciones.</dd>
+<dt>Confía en un uso correcto</dt>
+<dd>Una anotación puede eximir un campo que no debería estarlo, y un tipo genérico usado sin parámetros escapa a
+algunas comprobaciones. Estos casos solo se alcanzan usando mal la biblioteca y los cubren la revisión de código y
+los avisos del compilador.</dd>
+</dl>
+
+<h2 id="adopcion">Lista de comprobación para adoptar Linneo</h2>
+<p>Para incorporar Linneo a una aplicación existente, sigue estos pasos en orden. Cada paso deja la aplicación en un
+estado estable.</p>
+<ol>
+<li>Añade la dependencia y un test de clasificación con <code>ModelClasses.inPackageTree</code> sobre el modelo.</li>
+<li>Ejecuta el test una vez para obtener la lista completa de campos sin clasificar.</li>
+<li>Marca primero las clases sin datos personales con <code>@DefaultCategory</code>. Suelen ser muchas y reducen la
+lista con rapidez.</li>
+<li>Anota los campos personales clase a clase, empezando por las que contienen categorías especiales.</li>
+<li>Revisa con el delegado las clasificaciones dudosas y decide si hace falta una extensión de la taxonomía.</li>
+<li>Usa <code>DisclosurePolicy</code> en los logs y en las exportaciones.</li>
+<li>Declara las actividades de tratamiento y genera el primer registro. Los avisos son la lista de tareas del
+delegado.</li>
+<li>Guarda el inventario y la taxonomía aplicada, y concilia en cada despliegue.</li>
+<li>Publica en el catálogo de datos y en las herramientas de base de datos y de
+<abbr title="interfaz de programación de aplicaciones">API</abbr>, si los usas.</li>
+</ol>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Verificar con una lista de clases escrita a mano</dt>
+<dd>La próxima clase que alguien añada queda sin verificar. Usa <code>ModelClasses</code> o el metamodelo de
+<abbr title="Jakarta Persistence API">JPA</abbr>.</dd>
+<dt>Tratar los avisos como errores en la integración continua</dt>
+<dd>Bloquea al equipo de desarrollo por datos que solo puede aportar el delegado. Publica los avisos y haz su
+seguimiento en el proceso de gobernanza.</dd>
+<dt>Aplicar una taxonomía nueva sin compararla</dt>
+<dd>Una aplicación que guarda claves debe comprobar la compatibilidad y los campos afectados antes de aplicarla.</dd>
+<dt>Volver a firmar el registro sin mirar la diferencia</dt>
+<dd>Sin <code>RecordDiff</code>, el delegado revisa el registro entero o, peor, no lo revisa. La diferencia hace la
+revisión proporcionada y completa.</dd>
+<dt>Confiar en Linneo para lo que no ve</dt>
+<dd>La clasificación no sustituye la revisión de los cambios ni las medidas de seguridad sobre lo que queda fuera del
+modelo.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Cada pieza tiene un dueño: el código declara el alcance; el delegado, la gobernanza; la aplicación guarda las
+copias.</li>
+<li>Dos tests en la integración continua bastan: el modelo completo con <code>ModelClasses</code> y las actividades
+con <code>ProcessingChecker</code>.</li>
+<li>Los errores detienen la entrega; los avisos se publican y los resuelve la gobernanza.</li>
+<li>La revisión de los cambios comprueba lo que el clasificador no puede: que la categoría describe el contenido
+real.</li>
+<li>Las taxonomías nuevas se comparan antes de aplicarse, y el registro se compara con el aprobado antes de volver a
+firmarse.</li>
+<li>Linneo es una ayuda proporcionada: cierra los huecos de un modelo bien escrito y confía en el buen criterio de
+quien lo usa.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p>Sustituye la lista de clases del test de clasificación de tu proyecto del curso por
+<code>ModelClasses.inPackageTree(Student.class)</code>. Añade después una clase nueva sin anotar en un subpaquete y
+ejecuta el test. ¿Qué ocurre?</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>El test falla con un <code>UNCLASSIFIED_FIELD</code> por cada campo de la clase nueva, aunque nadie la haya añadido
+a ninguna lista: <code>inPackageTree</code> la encuentra en el subpaquete. Anótala o marca la clase con
+<code>@DefaultCategory</code> si no contiene datos personales.</p>
+</details>
+</li>
+<li>
+<p>Un compañero propone que la integración continua falle ante cualquier aviso del registro, «para no olvidar nada».
+Redacta una respuesta breve con una alternativa.</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<p>Los avisos del registro son, casi siempre, huecos de la gobernanza: datos como el plazo de conservación o la
+referencia legal que aporta el delegado. Si fallan la compilación, el equipo de desarrollo queda bloqueado por algo
+que no le corresponde. La alternativa es publicar los avisos en el informe de la compilación y hacer su seguimiento en
+el proceso de gobernanza, por ejemplo con una tarea por cada punto abierto. Los errores, que sí indican un tratamiento
+ilícito tal como está declarado, siguen deteniendo la entrega.</p>
+</details>
+</li>
+<li>
+<p>Durante una revisión encuentras este campo nuevo. ¿Qué preguntarías antes de aprobarlo?</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(USER_CONTENT_PUBLIC)
+private String tutorComments;
+</code></pre>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<p>Preguntaría qué contienen realmente los comentarios del tutor. Si son observaciones sobre el rendimiento o la
+situación personal del estudiante, no son contenido público: <code>USER_CONTENT_PRIVATE</code> es más adecuado, quizá
+con la confidencialidad elevada. Si pueden incluir información de salud, la categoría debe reflejar lo más sensible
+que puedan contener. También comprobaría si el campo cambia los datos de alguna actividad de tratamiento.</p>
+</details>
+</li>
+<li>
+<p>Ordena estos pasos del ciclo de aprobación: comparar con <code>RecordDiff</code>, guardar la huella del registro
+aprobado, reconstruir el registro aprobado, revisar los aspectos cambiados y volver a firmar.</p>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<p>Guardar la huella al aprobar; si la huella del registro actual difiere, reconstruir el registro aprobado y
+compararlo con <code>RecordDiff</code>; revisar los aspectos cambiados y volver a firmar.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Por qué el test de clasificación debe verificar todas las clases del modelo?</p>
+<ol>
+<li>Porque la clasificación de cada clase cambia según las clases que la acompañen.</li>
+<li>Porque cada clase informa solo de sus propios problemas, aunque se deban a otra clase: si falta en la lista, los
+suyos no aparecen.</li>
+<li>Porque el clasificador guarda en caché las clases que ya ha verificado.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La b. Algunas comprobaciones cruzan clases (derivados, compuestos guardados enteros, referencias), pero cada error
+se informa en la clase que lo comete, así que esa clase tiene que estar en la lista. La clasificación de una clase es
+la misma sola que acompañada (a), y el clasificador no guarda estado entre llamadas: es inmutable (c). Hacerlo en una
+sola llamada lee una vez cada clase compartida y da un único informe.</p>
+</details>
+</li>
+<li>
+<p>¿Qué comprueba el clasificador y qué no?</p>
+<ol>
+<li>Comprueba que la clasificación es completa y coherente, pero no que describa el contenido real.</li>
+<li>Comprueba que cada categoría describe el contenido real del campo.</li>
+<li>Comprueba los valores guardados en la base de datos.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La a. Linneo no lee valores; la correspondencia entre la categoría y el contenido real la garantiza la revisión
+humana.</p>
+</details>
+</li>
+<li>
+<p>Al actualizar Linneo, ¿qué hace <code>TaxonomyDiff.requireCompatible()</code>?</p>
+<ol>
+<li>Sustituye en el código las claves obsoletas.</li>
+<li>Rechaza la taxonomía nueva si tiene un cambio incompatible, como quitar términos o rebajar la protección.</li>
+<li>Actualiza el inventario guardado.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La b. No modifica el código ni el inventario: Linneo compara y la aplicación decide qué hacer con el
+resultado.</p>
+</details>
+</li>
+<li>
+<p>¿Quién completa un aviso del registro sobre un plazo de conservación que falta?</p>
+<ol>
+<li>El equipo de desarrollo, en el alcance de la actividad.</li>
+<li>El delegado de protección de datos, en la gobernanza.</li>
+<li>Nadie: los avisos se pueden ignorar.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La b. La conservación forma parte de la gobernanza. Los avisos no detienen la compilación, pero son puntos abiertos
+del registro que hay que resolver.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="06-verificacion.html">Capítulo 6. Verificar en los tests</a>, para <code>ModelClasses</code> y las
+infracciones.</li>
+<li><a href="08-inventario.html">Capítulo 8. El inventario de datos</a>, para la conciliación completa.</li>
+<li><a href="10-versiones.html">Capítulo 10. Versiones de la taxonomía</a>, para comparar taxonomías.</li>
+<li><a href="12-registro.html">Capítulo 12. El registro de actividades</a>, para el ciclo de aprobación.</li>
+<li><a href="anexo-a-referencia-rapida.html">Anexo A. Referencia rápida</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="17-catalogos.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 17. Catálogos de datos</a></li>
+<li><a href="anexo-a-referencia-rapida.html" rel="next"><span class="rumbo">Siguiente</span>Anexo A. Referencia rápida</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

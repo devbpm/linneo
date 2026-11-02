@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
+  - src/main/java/io/github/devbpm/linneo/processing/LegalBasis.java
+  - src/main/java/io/github/devbpm/linneo/processing/SpecialCategoryCondition.java
+  - src/main/java/io/github/devbpm/linneo/processing/CriminalDataBasis.java
+  - src/main/java/io/github/devbpm/linneo/processing/TransferSafeguard.java
+  - src/main/java/io/github/devbpm/linneo/processing/Transfer.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/CheckedActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingViolation.java
+  - src/main/java/io/github/devbpm/linneo/processing/Jurisdiction.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingException.java
+  - src/main/java/io/github/devbpm/linneo/processing/package-info.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 11. Actividades de tratamiento · Curso de Linneo</title>
+<meta name="description" content="Declara las actividades de tratamiento con sus bases jurídicas y su gobernanza, y compruébalas con ProcessingChecker en cada compilación.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html" aria-current="page"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 11. Actividades de tratamiento</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 11</span> Actividades de tratamiento</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>100 minutos</dd></div>
+<div><dt>Parte IV:</dt><dd>Cumplimiento normativo</dd></div>
+</dl>
+<p class="entradilla">Hasta ahora has clasificado campos. El
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr> pregunta por procesos: para qué se tratan los datos,
+de quién son y con qué base jurídica. En este capítulo declaras las actividades de tratamiento de la universidad,
+separas lo que sabe el código de lo que decide el delegado de protección de datos y haces que la compilación detecte una
+actividad que sería ilícita tal como está declarada.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#de-los-campos-a-los-procesos">De los campos a los procesos</a></li>
+<li><a href="#declarar-una-actividad">Declarar una actividad</a></li>
+<li><a href="#bases-juridicas">Las bases jurídicas</a></li>
+<li><a href="#gobernanza">La gobernanza de una actividad</a></li>
+<li><a href="#alcance-y-gobernanza">Alcance frente a gobernanza</a></li>
+<li><a href="#el-comprobador">El comprobador</a></li>
+<li><a href="#infracciones">Las infracciones</a></li>
+<li><a href="#jurisdiccion-espanola">La jurisdicción española</a></li>
+<li><a href="#actividades-de-la-universidad">Las cuatro actividades de la universidad</a></li>
+<li><a href="#verificar-en-un-test">Verificar las actividades en un test</a></li>
+<li><a href="#reglas-fijas-y-citadas">Reglas fijas, citadas y proporcionadas</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>declarar una actividad de tratamiento con <code>ProcessingActivity.builder</code>: sus finalidades, sus interesados
+y sus datos personales, como claves, como entidades anotadas o como objetos de un inventario de datos;</li>
+<li>elegir la base jurídica y, cuando los datos lo exigen, la condición del artículo 9.2 o la base del artículo 10 del
+RGPD, con las constantes que siguen a fideslang;</li>
+<li>separar el alcance que declara el código de la gobernanza que mantiene el delegado de protección de datos, y
+combinarlos con <code>withGovernance</code>;</li>
+<li>leer las infracciones de un <code>ProcessingChecker</code> por su código, su gravedad y su elemento, y distinguir un
+error de un aviso;</li>
+<li>aplicar las reglas españolas de la
+<abbr title="Ley Orgánica de Protección de Datos Personales y garantía de los derechos digitales">LOPDGDD</abbr> con
+<code>Jurisdiction.SPAIN</code>;</li>
+<li>verificar las actividades de la universidad en un test que falle con los errores de todas ellas o solo con los del
+alcance.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Este capítulo usa el modelo anotado de la universidad: <code>Student</code>, <code>Enrollment</code>,
+<code>Staff</code> y su superclase <code>AuditedEntity</code> (capítulos <a href="04-anotaciones.html">4</a> y
+<a href="05-estructuras.html">5</a>), y da por sabidas la naturaleza jurídica de una categoría
+(<a href="02-proteccion.html">capítulo 2</a>), las tres dimensiones de la taxonomía y sus rasgos
+(<a href="03-taxonomia.html">capítulo 3</a>) y el <code>Classifier</code> (<a href="06-verificacion.html">capítulo
+6</a>). La sección sobre objetos del inventario necesita además el <a href="08-inventario.html">capítulo 8</a>.</p>
+<p>Los nombres, las descripciones y los demás textos de las actividades están en inglés, como los textos que añade el
+registro (<a href="12-registro.html">capítulo 12</a>): así el registro queda en un solo idioma. Todas las salidas que se
+muestran son las reales de ese código.</p>
+
+<h2 id="de-los-campos-a-los-procesos">De los campos a los procesos</h2>
+<p>Las anotaciones y el <code>Classifier</code> dicen qué contiene cada campo. El registro de actividades de tratamiento
+(<abbr title="registro de actividades de tratamiento">RAT</abbr>) que exige el artículo 30 del RGPD pregunta otra cosa:
+para qué se tratan los datos, de quién son, con qué base jurídica, durante cuánto tiempo y quién los recibe. Son
+propiedades de los <strong>procesos</strong>, no de los campos.</p>
+<p>Una <strong>actividad de tratamiento</strong> es uno de esos procesos: un conjunto de operaciones con datos
+personales que sirve a unas finalidades determinadas. El mismo campo <code>Grade.mark</code> interviene en la evaluación
+de los estudiantes, en la expedición de certificados y en las estadísticas de una titulación: son tres actividades, cada
+una con su finalidad y quizá con su propia base jurídica.</p>
+<p>El paquete <code>io.github.devbpm.linneo.processing</code> modela esas actividades. Una
+<code>ProcessingActivity</code> reúne las tres dimensiones de la taxonomía, que hasta ahora usabas por separado, y cada
+una alimenta una parte del registro (Tabla 11.1).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-1">
+<table>
+<caption id="tabla-11-1">Tabla 11.1. Las dimensiones de la taxonomía en una actividad y en el registro</caption>
+<thead>
+<tr><th scope="col">Dimensión de la taxonomía</th><th scope="col">En la actividad</th>
+<th scope="col">Contenido del registro (art. 30.1 RGPD)</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Usos de datos (<code>DataUses</code>)</th><td><code>purposes</code></td>
+<td>Letra b: fines del tratamiento</td></tr>
+<tr><th scope="row">Sujetos de datos (<code>DataSubjects</code>)</th><td><code>dataSubjects</code></td>
+<td>Letra c: categorías de interesados</td></tr>
+<tr><th scope="row">Categorías de datos (<code>Categories</code>)</th>
+<td><code>dataCategories</code>, <code>entities</code> y <code>objects</code></td>
+<td>Letra c: categorías de datos personales</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Lo que la taxonomía no puede saber lo añade la actividad: la base jurídica (artículo 6.1), la condición que permite
+tratar categorías especiales (artículo 9.2), la base para los datos penales (artículo 10), la ley en la que descansan
+esas bases, el plazo de conservación, los destinatarios, las transferencias internacionales y la evaluación de impacto.
+Linneo agrupa todo eso en la <strong>gobernanza</strong> de la actividad y lo mantiene separado de su
+<strong>alcance</strong> (finalidades, interesados y datos personales), porque cada parte tiene un responsable distinto;
+lo verás en <a href="#alcance-y-gobernanza">Alcance frente a gobernanza</a>.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Linneo comprueba <em>declaraciones</em>: que la actividad nombra una base donde el RGPD la exige, que sus claves
+existen y que sus entidades están clasificadas. No decide si una base es la adecuada, si un interés legítimo prevalece
+sobre los derechos de los interesados ni si una ley ampara de verdad el tratamiento. Eso lo deciden el responsable del
+tratamiento y su delegado de protección de datos. Las leyes que aparecen en este capítulo («Higher Education Act»,
+«Child Protection Act») son ficticias.</p>
+</div>
+
+<h2 id="declarar-una-actividad">Declarar una actividad</h2>
+
+<h3>Una primera actividad</h3>
+<p>La universidad envía un boletín por correo electrónico a sus antiguos alumnos. Un primer borrador declara solo lo que
+el equipo de desarrollo conoce con certeza: la finalidad, los interesados y los datos (Ejemplo 11.1).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 11.1. Primer borrador del boletín de antiguos alumnos</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingChecker checker = new ProcessingChecker(Taxonomy.load());
+
+ProcessingActivity draft = ProcessingActivity.builder("alumni-newsletter", "Alumni newsletter")
+        .purposes(DataUses.MARKETING_COMMUNICATIONS_EMAIL)
+        .dataSubjects(DataSubjects.ALUMNUS)
+        .dataCategories(USER_NAME, USER_CONTACT_EMAIL)
+        .build();
+
+CheckedActivity checked = checker.check(draft);
+checked.violations().forEach(System.out::println);
+</code></pre>
+</figure>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_LEGAL_BASIS alumni-newsletter: Personal data needs a lawful basis (GDPR article 6.1)
+WARNING MISSING_RETENTION alumni-newsletter: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+</code></pre>
+
+<p><code>check</code> nunca lanza una excepción por un problema de la actividad. Devuelve una
+<code>CheckedActivity</code> con los términos resueltos, los datos personales, la protección que requieren y todas las
+<strong>infracciones</strong> encontradas, cada una un <code>ProcessingViolation</code>. Aquí
+<code>checked.isValid()</code> es <code>false</code>, porque una de ellas es un error.</p>
+<p>Las dos líneas muestran la regla de todo el paquete, que aplica el mismo fallo seguro (<span lang="en">fail
+closed</span>) que el clasificador:</p>
+<ul>
+<li>un <strong>error</strong> es algo que haría la actividad <strong>ilícita tal como está declarada</strong>, o
+imposible de comprobar. Tratar datos personales sin base jurídica es el caso más claro;</li>
+<li>un <strong>aviso</strong> es un <strong>hueco en el registro</strong>: la actividad puede ser lícita, pero falta
+información o hay algo que revisar. La falta de un plazo de conservación es uno.</li>
+</ul>
+<p>Las secciones siguientes recorren cada parte de la declaración, y <a href="#el-comprobador">El comprobador</a>
+explica qué hace <code>check</code> con ella.</p>
+
+<h3>Clave, nombre y descripción</h3>
+<p><code>ProcessingActivity.builder(key, name)</code> empieza la declaración. La <strong>clave</strong> identifica la
+actividad en el registro, en su <abbr title="JavaScript Object Notation">JSON</abbr> y en las comparaciones entre
+registros, así que debe ser estable. Admite letras, dígitos, puntos, guiones bajos y guiones, y empieza por una letra o
+un dígito. <code>build()</code> rechaza cualquier otra con una <code>IllegalArgumentException</code>; para la clave
+<code>"alumni newsletter"</code>, con un espacio:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">Invalid processing activity key 'alumni newsletter': use letters, digits, dots, underscores and hyphens, starting with a letter or digit
+</code></pre>
+<p>El <strong>nombre</strong> es el encabezado de la actividad en el registro. No puede estar en blanco
+(<code>The processing activity 'x' needs a name</code>) y se le quitan los espacios de los extremos. La
+<strong>descripción</strong>, opcional, se fija con <code>description(...)</code>; una descripción en blanco se guarda
+como <code>null</code>.</p>
+<p>La actividad solo <strong>guarda lo declarado</strong>. Su constructor no busca las claves en la taxonomía, no
+clasifica las entidades ni comprueba las bases: esa es la tarea del <code>ProcessingChecker</code>.</p>
+
+<h3>Finalidades e interesados</h3>
+<p><code>purposes(...)</code> añade las <strong>finalidades</strong>, que son claves de usos de datos, y
+<code>dataSubjects(...)</code> añade las <strong>categorías de interesados</strong>, que son claves de sujetos de datos.
+Usa las constantes de <code>DataUses</code> y <code>DataSubjects</code> en lugar de cadenas: una errata en una constante
+no compila, mientras que una errata en una cadena solo aparece al comprobar, como el error <code>UNKNOWN_KEY</code>. Una
+actividad sin finalidades o sin interesados es un error (<code>MISSING_PURPOSE</code>,
+<code>MISSING_DATA_SUBJECTS</code>), porque el artículo 30.1 pide ambas cosas.</p>
+
+<h3 id="datos-personales">Datos personales: claves, entidades u objetos</h3>
+<p>Los datos personales de una actividad se declaran de tres maneras, que pueden combinarse (Tabla 11.2).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-2">
+<table>
+<caption id="tabla-11-2">Tabla 11.2. Tres formas de declarar los datos personales de una actividad</caption>
+<thead>
+<tr><th scope="col">Método del builder</th><th scope="col">Qué recibe</th><th scope="col">Qué hace el comprobador</th>
+<th scope="col">Cuándo usarlo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>dataCategories(String...)</code></th><td>Claves de categorías de datos</td>
+<td>Las busca en la taxonomía. Una categoría no personal es el aviso <code>NOT_PERSONAL_DATA</code> y queda fuera del
+registro.</td>
+<td>Datos que no declara ninguna entidad de la lista, o una parte de lo que contiene una entidad.</td></tr>
+<tr><th scope="row"><code>entities(Class&lt;?&gt;...)</code></th><td>Clases del modelo anotadas</td>
+<td>Las clasifica con el <code>Classifier</code> y toma las categorías de sus campos personales, con los niveles que
+eleva cada campo.</td>
+<td>La actividad trata la entidad completa.</td></tr>
+<tr><th scope="row"><code>objects(String...)</code></th><td>Claves de objetos de un inventario de datos</td>
+<td>Lee los campos del objeto en el inventario con el que se creó el comprobador.</td>
+<td>La aplicación comprueba las actividades sin las clases del modelo, a partir de lo que guarda.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Declarar <strong>entidades</strong> hace que el registro siga al modelo. Si alguien añade un campo personal a
+<code>Enrollment</code>, todas las actividades que incluyen <code>Enrollment</code> pasan a tratarlo sin tocar ninguna
+declaración. Los campos agregados o anonimizados no son datos personales y no cuentan: una actividad cuya única entidad
+es <code>CourseStatistics</code> recibe el error <code>MISSING_PERSONAL_DATA</code>. Una entidad con errores de
+clasificación es el error <code>ENTITY_NOT_CLASSIFIED</code>, que solo los cuenta; ejecuta el test del clasificador para
+verlos.</p>
+<p>La otra cara es que una entidad aporta <strong>todos</strong> sus campos personales. Supón que la matrícula incluyera
+la entidad <code>Student</code>:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity enrollment = ProcessingActivity.builder("enrollment", "Student enrollment")
+        .purposes(DataUses.EDUCATION_ENROLLMENT)
+        .dataSubjects(DataSubjects.STUDENT)
+        .entities(Student.class, Enrollment.class)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 12")
+        .retention("Six years after the student leaves")
+        .build();
+checker.check(enrollment).violations().forEach(System.out::println);
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_SPECIAL_CATEGORY_CONDITION enrollment: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+</code></pre>
+
+<p>El grado de discapacidad (<code>Student.disabilityDegree</code>) ha entrado con la entidad, junto con las notas de
+orientación y el identificador de analítica: la actividad trata ahora 16 categorías y requiere confidencialidad e
+integridad <code>HIGH</code>. La matrícula no usa esos datos, así que la universidad incluye solo
+<code>Enrollment</code> y declara como claves los pocos datos del estudiante que sí usa. Fíjate también en que
+<code>Enrollment</code> hereda de <code>AuditedEntity</code>, cuyo campo <code>createdBy</code> guarda el nombre de
+usuario del empleado que creó la fila: la actividad trata <code>user.account.username</code> aunque ese dato no sea de
+un estudiante. Una entidad contiene lo que contiene; revisa las categorías que devuelve el comprobador.</p>
+<p>Los <strong>objetos</strong> sirven a una aplicación que guarda la clasificación en su base de datos
+(<a href="08-inventario.html">capítulo 8</a>) y comprueba sus actividades donde no tiene las clases, por ejemplo en la
+aplicación de gestión que usa el delegado de protección de datos. Crea el comprobador con el inventario (Ejemplo
+11.2).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 11.2. Datos personales tomados de un objeto del inventario</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">DataInventory declared = classifier.inventory(List.of(Enrollment.class), type -&gt; "enrollments");
+ProcessingChecker withInventory = new ProcessingChecker(taxonomy, Jurisdiction.EU, declared);
+
+ProcessingActivity enrollment = ProcessingActivity.builder("enrollment", "Student enrollment")
+        .purposes(DataUses.EDUCATION_ENROLLMENT)
+        .dataSubjects(DataSubjects.STUDENT)
+        .objects("enrollments")
+        .dataCategories(USER_NAME, USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER, USER_CONTACT_EMAIL)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 12")
+        .build();
+CheckedActivity checked = withInventory.check(enrollment);
+</code></pre>
+</figure>
+
+<p>Con el inventario que <code>Classifier.inventory</code> construye para una clase, el objeto aporta las mismas
+categorías y la misma protección que la clase. Un objeto que el inventario no contiene es el error
+<code>UNKNOWN_KEY</code>; con un comprobador creado sin inventario, cualquier objeto lo es. El error de
+<code>checker.check(enrollment)</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNKNOWN_KEY enrollment: Unknown object 'enrollments': the checker was given no data inventory
+</code></pre>
+
+<h3>Factores de riesgo del alcance</h3>
+<p>Algunos hechos que pesan en la necesidad de una evaluación de impacto relativa a la protección de datos
+(<abbr title="evaluación de impacto relativa a la protección de datos">EIPD</abbr>) no se deducen de los términos de la
+actividad. Si el código decide por sí solo, por ejemplo al asignar becas sin intervención humana, solo el código lo
+sabe. <code>riskFactors(...)</code> declara esos <strong>factores de riesgo</strong> con las constantes de
+<code>ImpactScreening.Factor</code>, y forman parte del alcance:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity scoring = ProcessingActivity.builder("scholarship-scoring", "Scholarship scoring")
+        .purposes(DataUses.EDUCATION_FINANCIAL_AID)
+        .dataSubjects(DataSubjects.STUDENT)
+        .entities(Enrollment.class)
+        .riskFactors(ImpactScreening.Factor.AUTOMATED_DECISIONS)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 45")
+        .retention("Five years")
+        .build();
+checker.check(scoring).violations().forEach(System.out::println);
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING IMPACT_ASSESSMENT_RECOMMENDED scholarship-scoring: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 2. automated decisions: declared AUTOMATED_DECISIONS; 4. sensitive data: highly personal data user.financial.fee; highly personal data user.financial.scholarship
+</code></pre>
+
+<p>El comprobador hace un <strong>cribado</strong>: una valoración previa, por criterios, de si la actividad necesita
+una EIPD. Las decisiones automatizadas declaradas y los datos financieros de <code>Enrollment</code> cumplen dos
+criterios, así que una EIPD es probable. El <a href="13-impacto-y-brechas.html">capítulo 13</a> explica el cribado y
+cada factor; aquí basta con saber que los factores del código forman parte del alcance y que la gobernanza puede añadir
+los suyos, pero no quitar estos.</p>
+
+<h3>Cómo se comporta el builder</h3>
+<p>Los métodos de lista (<code>purposes</code>, <code>dataSubjects</code>, <code>dataCategories</code>,
+<code>entities</code>, <code>objects</code>, <code>recipients</code> y <code>transfer</code>),
+<code>specialCategoryConditions</code> y <code>riskFactors</code> <strong>añaden</strong> a lo indicado antes:
+<code>purposes(a).purposes(b, c)</code> declara las tres finalidades. Los demás métodos <strong>sustituyen</strong> el
+valor anterior, así que gana la última llamada. <code>build()</code> puede llamarse más de una vez, de modo que un
+builder sirve para derivar variantes de una actividad.</p>
+
+<h2 id="bases-juridicas">Las bases jurídicas</h2>
+<p>Cuatro enumerados nombran lo que hace lícita una actividad o una transferencia. Cada constante devuelve su
+disposición del RGPD con <code>article()</code>. <code>LegalBasis</code>, <code>SpecialCategoryCondition</code> y
+<code>TransferSafeguard</code> devuelven además, con <code>fideslangName()</code>, el valor que usan las declaraciones
+de privacidad de fideslang para el mismo concepto (<code>legal_basis_for_processing</code>,
+<code>special_category_legal_basis</code> y <code>legal_basis_for_transfers</code>), de modo que una actividad puede
+trasladarse a una herramienta que use fideslang. <code>requiresLegalReference()</code> dice si la base descansa en el
+Derecho de la Unión o de un Estado miembro, que la actividad debe entonces nombrar.</p>
+
+<h3>La base jurídica: <code>LegalBasis</code> (artículo 6.1)</h3>
+<p>Toda actividad que trata datos personales necesita una <strong>base jurídica</strong>; sin ella, el comprobador
+informa del error <code>MISSING_LEGAL_BASIS</code>. Se declara con <code>legalBasis(LegalBasis)</code> y admite los
+valores de la Tabla 11.3.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-3">
+<table>
+<caption id="tabla-11-3">Tabla 11.3. Constantes de <code>LegalBasis</code></caption>
+<thead>
+<tr><th scope="col">Constante</th><th scope="col"><code>article()</code></th>
+<th scope="col"><code>fideslangName()</code></th>
+<th scope="col"><code>requiresLegalReference()</code></th><th scope="col">Significado</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>CONSENT</code></th><td><code>6.1.a</code></td><td><code>Consent</code></td>
+<td><code>false</code></td>
+<td>El interesado ha dado su consentimiento para uno o varios fines específicos.</td></tr>
+<tr><th scope="row"><code>CONTRACT</code></th><td><code>6.1.b</code></td><td><code>Contract</code></td>
+<td><code>false</code></td>
+<td>Necesario para un contrato con el interesado, o para medidas precontractuales a petición suya.</td></tr>
+<tr><th scope="row"><code>LEGAL_OBLIGATION</code></th><td><code>6.1.c</code></td><td><code>Legal obligations</code></td>
+<td><code>true</code></td><td>Necesario para cumplir una obligación legal del responsable.</td></tr>
+<tr><th scope="row"><code>VITAL_INTERESTS</code></th><td><code>6.1.d</code></td><td><code>Vital interests</code></td>
+<td><code>false</code></td><td>Necesario para proteger intereses vitales del interesado o de otra persona
+física.</td></tr>
+<tr><th scope="row"><code>PUBLIC_INTEREST</code></th><td><code>6.1.e</code></td><td><code>Public interest</code></td>
+<td><code>true</code></td>
+<td>Necesario para una misión realizada en interés público o en el ejercicio de poderes públicos.</td></tr>
+<tr><th scope="row"><code>LEGITIMATE_INTERESTS</code></th><td><code>6.1.f</code></td>
+<td><code>Legitimate interests</code></td><td><code>false</code></td>
+<td>Necesario para los intereses legítimos del responsable o de un tercero, ponderados con los derechos del
+interesado.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>El interés legítimo exige indicar el interés perseguido. <code>legitimateInterest("...")</code> fija la base
+<code>LEGITIMATE_INTERESTS</code> <strong>y</strong> el interés en una sola llamada. Con
+<code>legalBasis(LegalBasis.LEGITIMATE_INTERESTS)</code> a secas, el comprobador avisa:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING MISSING_LEGITIMATE_INTEREST alumni-newsletter: State the legitimate interest pursued (GDPR article 6.1.f)
+</code></pre>
+<p>Y al revés: como gana la última llamada, un <code>legalBasis(LegalBasis.CONSENT)</code> posterior a
+<code>legitimateInterest(...)</code> cambia la base pero conserva el interés. El comprobador lo señala con un aviso:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING UNNEEDED_CONDITION alumni-newsletter: A legitimate interest is stated but the lawful basis is article 6.1.a
+</code></pre>
+
+<h3>Categorías especiales: <code>SpecialCategoryCondition</code> (artículo 9.2)</h3>
+<p>El artículo 9.1 del RGPD prohíbe tratar las <strong>categorías especiales</strong> de datos (las de naturaleza
+jurídica <code>SPECIAL_CATEGORY</code>), salvo que se aplique una de las condiciones del artículo 9.2,
+<strong>además</strong> de la base jurídica. Sin ninguna, el error es <code>MISSING_SPECIAL_CATEGORY_CONDITION</code>, y
+su mensaje nombra las categorías que lo provocan. Declarar una condición en una actividad sin categorías especiales es
+el aviso <code>UNNEEDED_CONDITION</code>. La Tabla 11.4 enumera las condiciones.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-4">
+<table>
+<caption id="tabla-11-4">Tabla 11.4. Constantes de <code>SpecialCategoryCondition</code></caption>
+<thead>
+<tr><th scope="col">Constante</th><th scope="col"><code>article()</code></th>
+<th scope="col"><code>fideslangName()</code></th>
+<th scope="col"><code>requiresLegalReference()</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>EXPLICIT_CONSENT</code></th><td><code>9.2.a</code></td><td><code>Explicit consent</code></td>
+<td><code>false</code></td></tr>
+<tr><th scope="row"><code>EMPLOYMENT_AND_SOCIAL_SECURITY</code></th><td><code>9.2.b</code></td>
+<td><code>Employment, social security and social protection</code></td><td><code>true</code></td></tr>
+<tr><th scope="row"><code>VITAL_INTERESTS</code></th><td><code>9.2.c</code></td><td><code>Vital interests</code></td>
+<td><code>false</code></td></tr>
+<tr><th scope="row"><code>NOT_FOR_PROFIT_BODIES</code></th><td><code>9.2.d</code></td>
+<td><code>Not-for-profit bodies</code></td>
+<td><code>false</code></td></tr>
+<tr><th scope="row"><code>MADE_PUBLIC_BY_THE_DATA_SUBJECT</code></th><td><code>9.2.e</code></td>
+<td><code>Made public by the data subject</code></td><td><code>false</code></td></tr>
+<tr><th scope="row"><code>LEGAL_CLAIMS</code></th><td><code>9.2.f</code></td>
+<td><code>Legal claims or judicial acts</code></td>
+<td><code>false</code></td></tr>
+<tr><th scope="row"><code>SUBSTANTIAL_PUBLIC_INTEREST</code></th><td><code>9.2.g</code></td>
+<td><code>Reasons of substantial public interest (with a basis in law)</code></td><td><code>true</code></td></tr>
+<tr><th scope="row"><code>HEALTH_OR_SOCIAL_CARE</code></th><td><code>9.2.h</code></td>
+<td><code>Health or social care (with a basis in law)</code></td><td><code>true</code></td></tr>
+<tr><th scope="row"><code>PUBLIC_HEALTH</code></th><td><code>9.2.i</code></td>
+<td><code>Public health (with a basis in law)</code></td><td><code>true</code></td></tr>
+<tr><th scope="row"><code>ARCHIVING_RESEARCH_AND_STATISTICS</code></th><td><code>9.2.j</code></td>
+<td><code>Archiving, research and statistics (with a basis in law)</code></td><td><code>true</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>specialCategoryConditions(...)</code> <strong>añade</strong> condiciones: una actividad declara un conjunto,
+una por cada tipo de dato especial que trata con una condición distinta, como el consentimiento explícito para los datos
+de salud y una obligación del derecho laboral para la afiliación sindical. Las condiciones se declaran para la
+actividad, no para cada categoría, así que el comprobador no sabe qué condición cubre cada dato. Esa limitación explica
+la regla española de <a href="#jurisdiccion-espanola">La jurisdicción española</a>.</p>
+
+<h3>Datos penales: <code>CriminalDataBasis</code> (artículo 10)</h3>
+<p>Los datos relativos a condenas e infracciones penales (naturaleza <code>CRIMINAL_OFFENCE</code>) necesitan su propia
+base, que se declara con <code>criminalDataBasis(...)</code>. Sin ella, el error es
+<code>MISSING_CRIMINAL_DATA_BASIS</code>. El enumerado tiene dos valores, ambos con <code>article()</code> igual a
+<code>10</code>, y ningún <code>fideslangName()</code>, porque fideslang no tiene un campo para este concepto:</p>
+<ul>
+<li><code>OFFICIAL_AUTHORITY</code>: el tratamiento se realiza bajo la supervisión de las autoridades públicas
+(<code>requiresLegalReference()</code> es <code>false</code>);</li>
+<li><code>AUTHORISED_BY_LAW</code>: lo autoriza el Derecho de la Unión o de un Estado miembro con garantías adecuadas
+(<code>requiresLegalReference()</code> es <code>true</code>).</li>
+</ul>
+<p>Declarar una base del artículo 10 en una actividad sin datos penales es el aviso <code>UNNEEDED_CONDITION</code>.</p>
+
+<h3>Transferencias: <code>TransferSafeguard</code> y <code>Transfer</code> (capítulo V)</h3>
+<p>Una <strong>transferencia</strong> lleva datos personales a un tercer país o a una organización internacional.
+<code>transfer(destination, safeguard)</code> añade un <code>Transfer</code>, un record con el destino, texto libre que
+no puede estar en blanco (<code>A transfer needs a destination</code>), y la <strong>garantía</strong> que permite la
+transferencia (Tabla 11.5).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-5">
+<table>
+<caption id="tabla-11-5">Tabla 11.5. Constantes de <code>TransferSafeguard</code></caption>
+<thead>
+<tr><th scope="col">Constante</th><th scope="col"><code>article()</code></th>
+<th scope="col"><code>fideslangName()</code></th>
+<th scope="col">Significado</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ADEQUACY_DECISION</code></th><td><code>45</code></td><td><code>Adequacy Decision</code></td>
+<td>La Comisión ha decidido que el destino garantiza un nivel de protección adecuado.</td></tr>
+<tr><th scope="row"><code>STANDARD_CONTRACTUAL_CLAUSES</code></th><td><code>46.2.c</code></td><td><code>SCCs</code></td>
+<td>Cláusulas tipo de protección de datos adoptadas por la Comisión.</td></tr>
+<tr><th scope="row"><code>BINDING_CORPORATE_RULES</code></th><td><code>47</code></td><td><code>BCRs</code></td>
+<td>Normas corporativas vinculantes aprobadas por una autoridad de control.</td></tr>
+<tr><th scope="row"><code>DEROGATION</code></th><td><code>49</code></td><td><code>Other</code></td>
+<td>Una excepción para situaciones específicas, como el consentimiento explícito o la ejecución de un
+contrato.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>El comprobador no examina los destinatarios ni las transferencias: no hay ninguna regla que pueda deducirse de ellos
+con certeza. El registro los enumera, cada transferencia con el artículo y el nombre de fideslang de su garantía.</p>
+
+<h3>La referencia legal</h3>
+<p>Algunas bases descansan en una ley: <code>LEGAL_OBLIGATION</code> y <code>PUBLIC_INTEREST</code>, las condiciones de
+las letras b, g, h, i y j del artículo 9.2 y <code>AUTHORISED_BY_LAW</code>. <code>legalReference("...")</code> nombra
+esa ley en un único texto que cubre todas las bases de la actividad. Si falta, el comprobador emite <strong>un
+solo</strong> aviso <code>MISSING_LEGAL_REFERENCE</code> con los artículos de todas las bases que la piden. Para la
+admisión de la universidad sin referencia legal:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING MISSING_LEGAL_REFERENCE admissions: GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference
+</code></pre>
+<p>Es un aviso y no un error: la base puede ser correcta y la ley existir, pero el registro no lo dice. Como el texto es
+uno solo, nombra en él todas las leyes implicadas, por ejemplo <code>Higher Education Act, arts. 12 and 31</code>.</p>
+
+<h2 id="gobernanza">La gobernanza de una actividad</h2>
+<p>Las bases jurídicas, la referencia legal, la conservación, los destinatarios, las transferencias y la evaluación de
+impacto forman la <strong>gobernanza</strong> de la actividad: lo que decide y mantiene al día la función de protección
+de datos del responsable, con el delegado de protección de datos
+(<abbr title="delegado de protección de datos">DPD</abbr>) al frente. Linneo la representa con el record
+<code>Governance</code> (Tabla 11.6), y cada actividad guarda la suya en <code>governance()</code>.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-6">
+<table>
+<caption id="tabla-11-6">Tabla 11.6. Componentes de <code>Governance</code></caption>
+<thead>
+<tr><th scope="col">Componente</th><th scope="col">Artículo del RGPD</th><th scope="col">Contenido</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>legalBasis</code></th><td>6.1</td><td>La base jurídica, o <code>null</code>.</td></tr>
+<tr><th scope="row"><code>legitimateInterest</code></th><td>6.1.f</td>
+<td>El interés perseguido, cuando la base es <code>LEGITIMATE_INTERESTS</code>.</td></tr>
+<tr><th scope="row"><code>specialCategoryConditions</code></th><td>9.2</td>
+<td>El conjunto de condiciones para categorías especiales.</td></tr>
+<tr><th scope="row"><code>criminalDataBasis</code></th><td>10</td><td>La base para datos penales, o
+<code>null</code>.</td></tr>
+<tr><th scope="row"><code>legalReference</code></th><td>6.3</td>
+<td>La ley en la que descansan las bases, como texto libre.</td></tr>
+<tr><th scope="row"><code>retention</code></th><td>30.1.f</td><td>El plazo previsto para la supresión, como texto
+libre.</td></tr>
+<tr><th scope="row"><code>recipients</code></th><td>30.1.d</td><td>Las categorías de destinatarios.</td></tr>
+<tr><th scope="row"><code>transfers</code></th><td>30.1.e</td><td>Las transferencias, cada una un
+<code>Transfer</code>.</td></tr>
+<tr><th scope="row"><code>impactAssessment</code></th><td>35</td>
+<td>Una referencia a la EIPD: su identificador o su ubicación.</td></tr>
+<tr><th scope="row"><code>riskFactors</code></th><td>35</td>
+<td>Los factores de riesgo que conoce el DPD y el código no, como la escala del tratamiento.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>Governance.builder()</code> declara una gobernanza con los mismos métodos de gobernanza que el builder de la
+actividad, más su propio <code>riskFactors(...)</code>: el de los factores que declara el DPD. La gobernanza del
+servicio de apoyo al aprendizaje, tal como la guarda el DPD, es la del Ejemplo 11.3.</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 11.3. Una gobernanza declarada por separado</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">Governance stored = Governance.builder()
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, arts. 12 and 31")
+        .retention("Until the end of the studies")
+        .impactAssessment("DPIA-2026-07")
+        .build();
+</code></pre>
+</figure>
+
+<p><code>Governance.NONE</code> es la gobernanza sin nada declarado, la de una actividad a la que no se dio ninguna.
+<code>toBuilder()</code> devuelve un builder que parte de una gobernanza existente, para cambiar una parte de ella. El
+constructor normaliza los textos opcionales: uno en blanco se guarda como <code>null</code>, de modo que
+<code>retention("   ")</code> equivale a no declarar ningún plazo.</p>
+<p>Los métodos de gobernanza del builder de la actividad (de <code>legalBasis</code> a <code>impactAssessment</code>,
+incluidos <code>recipients</code> y <code>transfer</code>) dan <strong>valores iniciales</strong>.
+<code>governance(Governance)</code> los sustituye todos de golpe, y los métodos que van después modifican la gobernanza
+recibida:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity activity = ProcessingActivity.builder("learning-support", "Learning support")
+        .retention("One year")          // se pierde: governance(stored) sustituye todo lo anterior
+        .governance(stored)
+        .recipients("Auditors")         // se añade a los destinatarios de stored
+        .build();
+</code></pre>
+
+<p>La conservación de <code>activity</code> es la de <code>stored</code>, <code>Until the end of the studies</code>, y
+sus destinatarios son <code>[Auditors]</code>.</p>
+
+<h2 id="alcance-y-gobernanza">Alcance frente a gobernanza</h2>
+<p>En muchas organizaciones el conocimiento está repartido. El equipo de desarrollo conoce con certeza el
+<strong>alcance</strong> de una actividad: sus finalidades, sus interesados, los datos personales que trata y los
+factores de riesgo que dependen del código. El DPD decide la <strong>gobernanza</strong> y la cambia sin que cambie el
+código: una ley nueva, otro plazo de conservación, un proveedor distinto. Si la gobernanza solo pudiera declararse en el
+código, cada decisión del DPD esperaría a una versión nueva de la aplicación.</p>
+<p>Por eso una aplicación puede declarar el alcance en el código, guardar en su propio almacenamiento la gobernanza que
+edita el DPD y combinar ambos con <code>withGovernance</code> antes de comprobar, por ejemplo cada vez que el DPD guarda
+un cambio (Ejemplo 11.4).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 11.4. El alcance en el código y la gobernanza del DPD, combinados</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">// En el código, junto al modelo: lo que la aplicación sabe con certeza.
+ProcessingActivity support = ProcessingActivity.builder("learning-support", "Learning support")
+        .purposes(DataUses.EDUCATION_TEACHING)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_HEALTH_AND_MEDICAL_DISABILITY)
+        .build();
+
+// Leída del almacenamiento de la aplicación: la gobernanza del Ejemplo 11.3.
+CheckedActivity alone = checker.check(support);
+CheckedActivity combined = checker.check(support.withGovernance(stored));   // sin infracciones
+
+alone.violations().forEach(v -&gt; System.out.println(v.element() + " " + v));
+</code></pre>
+</figure>
+
+<p>Sin gobernanza (la suya es <code>Governance.NONE</code>), comprobar solo el alcance da tres problemas, todos de
+gobernanza:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">LEGAL_BASIS ERROR MISSING_LEGAL_BASIS learning-support: Personal data needs a lawful basis (GDPR article 6.1)
+SPECIAL_CATEGORY_CONDITION ERROR MISSING_SPECIAL_CATEGORY_CONDITION learning-support: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+</code></pre>
+<p>No hay ningún aviso sobre una evaluación de impacto: los datos de categorías especiales son un solo criterio del
+cribado, y un criterio solo hace <em>posible</em> una EIPD, no probable.</p>
+<p><code>withGovernance</code> devuelve una actividad nueva (la original no cambia) cuya gobernanza
+<strong>sustituye</strong> a la anterior, sin mezclarse con ella campo a campo: lo que guardó el DPD es la gobernanza
+completa. El alcance se conserva tal cual, incluidos los factores de riesgo que declara el código. El cribado lee la
+unión de ambos conjuntos de factores, que devuelve <code>allRiskFactors()</code>. Con la actividad <code>scoring</code>
+de <a href="#declarar-una-actividad">Declarar una actividad</a>:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">Governance officer = Governance.builder()
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 45")
+        .retention("Five years")
+        .riskFactors(ImpactScreening.Factor.LARGE_SCALE)
+        .build();
+ProcessingActivity withOfficer = scoring.withGovernance(officer);
+
+withOfficer.riskFactors();                                    // [AUTOMATED_DECISIONS]
+withOfficer.governance().riskFactors();                       // [LARGE_SCALE]
+withOfficer.allRiskFactors();                                 // [AUTOMATED_DECISIONS, LARGE_SCALE]
+withOfficer.withGovernance(Governance.NONE).allRiskFactors(); // [AUTOMATED_DECISIONS]
+</code></pre>
+
+<p>De ahí la regla: una gobernanza guardada antes de que cambiara el código nunca rebaja lo que el código declara. Si el
+código empieza a decidir solo, el cribado lo ve aunque el DPD no haya tocado su gobernanza. Para vaciar la gobernanza,
+pasa <code>Governance.NONE</code>; <code>withGovernance(null)</code> lanza una <code>NullPointerException</code>.</p>
+
+<h2 id="el-comprobador">El comprobador</h2>
+
+<h3>Crear un comprobador</h3>
+<p><code>ProcessingChecker</code> comprueba actividades frente a una taxonomía y a la clasificación de sus entidades.
+Crea su propio <code>Classifier</code> para esa taxonomía, y sus instancias son inmutables y seguras entre hilos. Tiene
+tres constructores:</p>
+<ul>
+<li><code>new ProcessingChecker(taxonomy)</code> aplica solo el RGPD, como <code>Jurisdiction.EU</code>;</li>
+<li><code>new ProcessingChecker(taxonomy, jurisdiction)</code> aplica además las reglas nacionales de esa jurisdicción
+(<a href="#jurisdiccion-espanola">La jurisdicción española</a>);</li>
+<li><code>new ProcessingChecker(taxonomy, jurisdiction, inventory)</code> resuelve también los <code>objects</code> de
+las actividades en un inventario de datos; <code>inventory</code> puede ser <code>null</code>.</li>
+</ul>
+<p>Crea la taxonomía con <code>Taxonomy.load()</code>, como en el <a href="06-verificacion.html">capítulo 6</a>, para
+que se conozcan los términos de las extensiones que registra tu aplicación. Con <code>Taxonomy.standard()</code>, una
+clave de una extensión es <code>UNKNOWN_KEY</code>.</p>
+
+<h3><code>check</code>, <code>checkAll</code> y <code>verify</code></h3>
+<p>El comprobador ofrece tres formas de comprobar, según lo que necesites (Tabla 11.7).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-7">
+<table>
+<caption id="tabla-11-7">Tabla 11.7. Métodos de <code>ProcessingChecker</code></caption>
+<thead>
+<tr><th scope="col">Método</th><th scope="col">Devuelve</th><th scope="col">Comportamiento</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>check(ProcessingActivity)</code></th><td><code>CheckedActivity</code></td>
+<td>Comprueba una actividad. Nunca lanza una excepción por un problema de la actividad.</td></tr>
+<tr><th scope="row"><code>checkAll(Collection&lt;ProcessingActivity&gt;)</code></th>
+<td><code>List&lt;CheckedActivity&gt;</code></td>
+<td>Un resultado por actividad, en el mismo orden. Añade el error <code>DUPLICATE_ACTIVITY</code> a cada actividad cuya
+clave ya usó una anterior, y clasifica cada entidad una sola vez para todas las actividades.</td></tr>
+<tr><th scope="row"><code>verify(Collection&lt;ProcessingActivity&gt;)</code>,
+<code>verify(ProcessingActivity...)</code></th><td><code>ProcessingRecord</code></td>
+<td>Ejecuta <code>checkAll</code>. Si alguna actividad tiene un error, lanza una <code>ProcessingException</code> con
+todos los errores de todas; si no, devuelve el registro (<a href="12-registro.html">capítulo 12</a>).</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Qué comprueba, y en qué orden</h3>
+<p>Para cada actividad, el comprobador sigue tres pasos, y las infracciones de una <code>CheckedActivity</code> siguen
+ese orden:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Finalidades e interesados</span> Busca cada clave en la taxonomía. Una clave desconocida
+es el error <code>UNKNOWN_KEY</code> y se descarta. Una clave obsoleta es el aviso <code>DEPRECATED_KEY</code> y se
+sustituye por su término <code>replaced_by</code>, siguiendo la cadena de sustituciones. Los términos quedan en orden de
+clave, así que el resultado no depende del orden de la declaración.</li>
+<li><span class="flujo-titulo">Datos personales</span> Reúne las categorías de las claves, de las entidades y de los
+objetos, cada una una sola vez y en orden de clave. Si no hay ninguna y nada quedó sin resolver, el error es
+<code>MISSING_PERSONAL_DATA</code>. La protección requerida es la combinación (<code>join</code>) de todas las
+aportaciones, con los niveles que eleva cada campo.</li>
+<li><span class="flujo-titulo">Licitud</span> Solo si hay datos personales: la base jurídica y el interés legítimo, las
+condiciones del artículo 9.2, la base del artículo 10, la referencia legal, la conservación y la evaluación de impacto,
+en ese orden. Las reglas nacionales se aplican dentro de esos pasos.</li>
+</ol>
+<p>Un ejemplo del primer paso: la finalidad <code>personalize.profiling</code> está obsoleta en la taxonomía estándar.
+Una actividad de recomendaciones de tutoría que la declara con <code>DataUses.PERSONALIZE_PROFILING</code> recibe este
+aviso, y su <code>purposes()</code> resuelto es <code>[personalize.content.profiling]</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING DEPRECATED_KEY tutoring: The data use 'personalize.profiling' is deprecated; checked as 'personalize.content.profiling'
+</code></pre>
+
+<h3>La evaluación de impacto</h3>
+<p>El último paso de la licitud usa <code>ImpactScreening</code>, que criba la necesidad de una EIPD con los criterios
+de las directrices WP248 del Grupo de Trabajo del Artículo 29 (leídos de los rasgos de los términos y de los factores de
+riesgo) y con los casos del artículo 35.3 del RGPD. Si la actividad no cita ninguna EIPD en
+<code>impactAssessment</code>, un caso del artículo 35.3 es el error <code>IMPACT_ASSESSMENT_REQUIRED</code> y dos
+criterios o más son el aviso <code>IMPACT_ASSESSMENT_RECOMMENDED</code>; un criterio solo no genera nada, salvo con la
+regla española de los datos biométricos y genéticos (<a href="#jurisdiccion-espanola">La jurisdicción
+española</a>). Si el DPD declarase <code>Factor.LARGE_SCALE</code> en la gobernanza de <code>learning-support</code>
+sin citar la EIPD, el tratamiento a gran escala de categorías especiales sería un caso del artículo 35.3.b:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR IMPACT_ASSESSMENT_REQUIRED learning-support: GDPR article 35.3.b requires an impact assessment; refer to it. Required (GDPR art. 35.3.b): 4. sensitive data: special category data user.health_and_medical.disability; 5. large scale: declared LARGE_SCALE
+</code></pre>
+<p>El <a href="13-impacto-y-brechas.html">capítulo 13</a> explica los criterios, los factores y los casos del
+cribado.</p>
+
+<h3>Lo que devuelve: <code>CheckedActivity</code></h3>
+<p><code>check</code> devuelve una <code>CheckedActivity</code>. <code>isValid()</code> es <code>true</code> cuando no
+hay ningún error (los avisos se admiten); <code>errors()</code> y <code>warnings()</code> separan las infracciones, y
+<code>violations()</code> las contiene todas. También lleva las finalidades, los interesados y las categorías resueltos
+y la protección requerida, que son el contenido del registro: el <a href="12-registro.html">capítulo 12</a> los
+recorre.</p>
+
+<h2 id="infracciones">Las infracciones</h2>
+
+<h3><code>ProcessingViolation</code></h3>
+<p>Cada problema es un <code>ProcessingViolation</code>, un record con cinco componentes: <code>activity</code> (la
+clave de la actividad), <code>severity</code> (<code>ERROR</code> o <code>WARNING</code>), <code>code</code> (qué tipo
+de problema es), <code>element</code> (en qué parte de la actividad está) y <code>message</code>, un texto en inglés que
+nombra la clave o la disposición implicada. <code>isError()</code> es <code>true</code> para un error, y
+<code>toString()</code> tiene la forma <code>&lt;SEVERITY&gt; &lt;CODE&gt; &lt;activity&gt;: &lt;message&gt;</code>, sin
+el elemento.</p>
+
+<h3>Errores y avisos</h3>
+<p>La Tabla 11.8 enumera todos los códigos, primero los errores, con el elemento en el que se informan.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-8">
+<table>
+<caption id="tabla-11-8">Tabla 11.8. Códigos de <code>ProcessingViolation.Code</code></caption>
+<thead>
+<tr><th scope="col">Código</th><th scope="col">Gravedad</th><th scope="col">Elemento</th>
+<th scope="col">Cuándo se produce</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>UNKNOWN_KEY</code></th><td>Error</td>
+<td><code>PURPOSES</code>, <code>DATA_SUBJECTS</code> o <code>PERSONAL_DATA</code></td>
+<td>Una clave no está en la taxonomía; un objeto no está en el inventario, o no hay inventario; un campo de un objeto
+tiene una clave desconocida.</td></tr>
+<tr><th scope="row"><code>MISSING_PURPOSE</code></th><td>Error</td><td><code>PURPOSES</code></td>
+<td>No hay ninguna finalidad.</td></tr>
+<tr><th scope="row"><code>MISSING_DATA_SUBJECTS</code></th><td>Error</td><td><code>DATA_SUBJECTS</code></td>
+<td>No hay ninguna categoría de interesados.</td></tr>
+<tr><th scope="row"><code>MISSING_PERSONAL_DATA</code></th><td>Error</td><td><code>PERSONAL_DATA</code></td>
+<td>No hay ningún dato personal, y ninguna clave, entidad u objeto sin resolver que lo explique.</td></tr>
+<tr><th scope="row"><code>ENTITY_NOT_CLASSIFIED</code></th><td>Error</td><td><code>PERSONAL_DATA</code></td>
+<td>Una entidad de la lista tiene errores de clasificación.</td></tr>
+<tr><th scope="row"><code>MISSING_LEGAL_BASIS</code></th><td>Error</td><td><code>LEGAL_BASIS</code></td>
+<td>Datos personales sin base jurídica.</td></tr>
+<tr><th scope="row"><code>MISSING_SPECIAL_CATEGORY_CONDITION</code></th><td>Error</td>
+<td><code>SPECIAL_CATEGORY_CONDITION</code></td><td>Categorías especiales sin condición del artículo 9.2.</td></tr>
+<tr><th scope="row"><code>MISSING_CRIMINAL_DATA_BASIS</code></th><td>Error</td><td><code>CRIMINAL_DATA_BASIS</code></td>
+<td>Datos penales sin base del artículo 10.</td></tr>
+<tr><th scope="row"><code>CONSENT_NOT_SUFFICIENT</code></th><td>Error o aviso</td>
+<td><code>SPECIAL_CATEGORY_CONDITION</code></td>
+<td>Solo con <code>Jurisdiction.SPAIN</code>; consulta <a href="#jurisdiccion-espanola">La jurisdicción
+española</a>.</td></tr>
+<tr><th scope="row"><code>IMPACT_ASSESSMENT_REQUIRED</code></th><td>Error</td><td><code>IMPACT_ASSESSMENT</code></td>
+<td>El cribado encuentra un caso del artículo 35.3 y la actividad no cita ninguna EIPD.</td></tr>
+<tr><th scope="row"><code>DUPLICATE_ACTIVITY</code></th><td>Error</td><td><code>KEY</code></td>
+<td>Una actividad anterior de la misma lista tiene la misma clave (<code>checkAll</code> y
+<code>verify</code>).</td></tr>
+<tr><th scope="row"><code>DEPRECATED_KEY</code></th><td>Aviso</td>
+<td><code>PURPOSES</code>, <code>DATA_SUBJECTS</code> o <code>PERSONAL_DATA</code></td>
+<td>Una clave está obsoleta; la actividad se comprueba con su sustituta.</td></tr>
+<tr><th scope="row"><code>NOT_PERSONAL_DATA</code></th><td>Aviso</td><td><code>PERSONAL_DATA</code></td>
+<td>Una categoría declarada no es un dato personal; queda fuera del registro.</td></tr>
+<tr><th scope="row"><code>UNNEEDED_CONDITION</code></th><td>Aviso</td>
+<td><code>SPECIAL_CATEGORY_CONDITION</code>, <code>CRIMINAL_DATA_BASIS</code> o <code>LEGITIMATE_INTEREST</code></td>
+<td>Una condición o una base para datos que la actividad no trata, o un interés legítimo con otra base.</td></tr>
+<tr><th scope="row"><code>MISSING_LEGAL_REFERENCE</code></th><td>Aviso</td><td><code>LEGAL_REFERENCE</code></td>
+<td>Una base que descansa en una ley y ninguna <code>legalReference</code>; en España, también los datos de sanciones
+administrativas.</td></tr>
+<tr><th scope="row"><code>MISSING_LEGITIMATE_INTEREST</code></th><td>Aviso</td><td><code>LEGITIMATE_INTEREST</code></td>
+<td>La base es el interés legítimo y no se indica el interés perseguido.</td></tr>
+<tr><th scope="row"><code>MISSING_RETENTION</code></th><td>Aviso</td><td><code>RETENTION</code></td>
+<td>Datos personales sin plazo de conservación.</td></tr>
+<tr><th scope="row"><code>IMPACT_ASSESSMENT_RECOMMENDED</code></th><td>Aviso</td><td><code>IMPACT_ASSESSMENT</code></td>
+<td>El cribado cumple dos criterios o más y la actividad no cita ninguna EIPD; en España, también los datos biométricos
+o genéticos.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>La gravedad sigue la regla que ya conoces. Es un <strong>error</strong> lo que haría la actividad ilícita tal como
+está declarada (sin base, sin condición, sin base penal, un caso obligatorio de EIPD sin citarla) o lo que impide
+comprobarla (una clave desconocida, una entidad mal clasificada, una clave de actividad repetida). Es un
+<strong>aviso</strong> un hueco del registro o algo que debe revisarse. <code>verify</code> solo falla con errores; los
+avisos viajan con la actividad y aparecen en el registro como <strong>puntos abiertos</strong>.</p>
+
+<div class="recuadro recuadro-importante" role="note">
+<p class="recuadro-titulo">Importante</p>
+<p>Un aviso no es ruido. Cada uno es una pregunta que el DPD hará al revisar el registro: ¿cuánto tiempo se conservan
+estos datos?, ¿qué ley ampara esta base?, ¿dónde está la evaluación de impacto? Ciérralos declarando lo que falta, no
+desactivándolos: no hay forma de desactivarlos.</p>
+</div>
+
+<h3>El elemento: quién corrige cada problema</h3>
+<p>El <code>element()</code> de una infracción dice en qué parte de la actividad está el problema y, con ello, quién
+debe corregirlo. <code>ProcessingViolation.Element.isGovernance()</code> separa los elementos del alcance, declarados en
+el código, de los de la gobernanza (Tabla 11.9).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-9">
+<table>
+<caption id="tabla-11-9">Tabla 11.9. Constantes de <code>ProcessingViolation.Element</code></caption>
+<thead>
+<tr><th scope="col">Elemento</th><th scope="col"><code>isGovernance()</code></th><th scope="col">Parte de la
+actividad</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>KEY</code></th><td><code>false</code></td><td>La clave que identifica la actividad.</td></tr>
+<tr><th scope="row"><code>PURPOSES</code></th><td><code>false</code></td><td>Las finalidades.</td></tr>
+<tr><th scope="row"><code>DATA_SUBJECTS</code></th><td><code>false</code></td><td>Los interesados.</td></tr>
+<tr><th scope="row"><code>PERSONAL_DATA</code></th><td><code>false</code></td>
+<td>Los datos personales: categorías, entidades y objetos.</td></tr>
+<tr><th scope="row"><code>LEGAL_BASIS</code></th><td><code>true</code></td><td>La base jurídica.</td></tr>
+<tr><th scope="row"><code>LEGITIMATE_INTEREST</code></th><td><code>true</code></td><td>El interés legítimo
+perseguido.</td></tr>
+<tr><th scope="row"><code>SPECIAL_CATEGORY_CONDITION</code></th><td><code>true</code></td>
+<td>Las condiciones del artículo 9.2.</td></tr>
+<tr><th scope="row"><code>CRIMINAL_DATA_BASIS</code></th><td><code>true</code></td><td>La base del artículo
+10.</td></tr>
+<tr><th scope="row"><code>LEGAL_REFERENCE</code></th><td><code>true</code></td><td>La ley en la que descansan las
+bases.</td></tr>
+<tr><th scope="row"><code>RETENTION</code></th><td><code>true</code></td><td>El plazo de conservación.</td></tr>
+<tr><th scope="row"><code>IMPACT_ASSESSMENT</code></th><td><code>true</code></td><td>La evaluación de impacto.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>No hay elemento para los destinatarios ni para las transferencias, porque el comprobador no los examina. Un problema
+del alcance es de los desarrolladores y debe hacer fallar la compilación; un hueco de la gobernanza corresponde a la
+pantalla donde el DPD edita la gobernanza, junto al campo afectado:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">CheckedActivity edited = checker.check(support.withGovernance(stored));
+Map&lt;ProcessingViolation.Element, List&lt;ProcessingViolation&gt;&gt; gaps = edited.violations().stream()
+        .filter(violation -&gt; violation.element().isGovernance())
+        .collect(Collectors.groupingBy(ProcessingViolation::element));
+List&lt;ProcessingViolation&gt; besideRetention = gaps.getOrDefault(ProcessingViolation.Element.RETENTION, List.of());
+</code></pre>
+
+<h2 id="jurisdiccion-espanola">La jurisdicción española</h2>
+<p>El RGPD deja margen a los Estados miembros. <code>Jurisdiction</code> dice qué derecho nacional aplica el comprobador
+además del RGPD: <code>EU</code>, solo el RGPD, que es el valor por defecto, o <code>SPAIN</code>, el RGPD y la Ley
+Orgánica 3/2018 (LOPDGDD). La documentación de la enumeración indica el texto consolidado de 27 de diciembre de
+2025.</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingChecker spain = new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN);
+spain.jurisdiction();   // SPAIN
+</code></pre>
+
+<p>La Tabla 11.10 resume las reglas que añade <code>SPAIN</code>. Las subsecciones siguientes muestran cada una con su
+salida real.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-10">
+<table>
+<caption id="tabla-11-10">Tabla 11.10. Las reglas de <code>Jurisdiction.SPAIN</code></caption>
+<thead>
+<tr><th scope="col">Disposición</th><th scope="col">Regla</th><th scope="col">Qué informa Linneo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Art. 9.1 LOPDGDD</th>
+<td>El consentimiento explícito solo no levanta la prohibición para la ideología, la afiliación sindical, la religión,
+la orientación sexual, las creencias o el origen racial o étnico.</td>
+<td><code>CONSENT_NOT_SUFFICIENT</code>: error si <code>EXPLICIT_CONSENT</code> es la única condición; aviso si hay
+otras.</td></tr>
+<tr><th scope="row">Arts. 8, 9.2 y 10 LOPDGDD</th>
+<td>Una obligación legal o una misión de interés público, las condiciones de las letras g, h e i del artículo 9.2 del
+RGPD y los datos penales autorizados por ley descansan en una norma con rango de ley.</td>
+<td>El aviso <code>MISSING_LEGAL_REFERENCE</code> nombra esas disposiciones.</td></tr>
+<tr><th scope="row">Art. 27 LOPDGDD</th>
+<td>Los datos sobre infracciones y sanciones administrativas necesitan el consentimiento o una norma con rango de ley,
+salvo que el responsable sea el órgano competente.</td>
+<td>El mismo aviso <code>MISSING_LEGAL_REFERENCE</code>: uno solo por actividad.</td></tr>
+<tr><th scope="row">Art. 32 LOPDGDD</th>
+<td>Los datos suprimidos o rectificados se bloquean antes de borrarse.</td>
+<td>Lo dice <code>SubjectRights</code> (<a href="14-derechos.html">capítulo 14</a>); el comprobador no.</td></tr>
+<tr><th scope="row">Lista de la <abbr title="Agencia Española de Protección de Datos">AEPD</abbr> (art. 35.4 RGPD)</th>
+<td>Los datos biométricos de identificación y los genéticos cuentan como criterio propio.</td>
+<td><code>IMPACT_ASSESSMENT_RECOMMENDED</code>, aunque el cribado no sea probable.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>El consentimiento explícito no basta (artículo 9.1)</h3>
+<p>La capellanía universitaria guarda la confesión religiosa de los estudiantes que participan en sus actividades, con
+su consentimiento explícito (Ejemplo 11.5).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 11.5. Una actividad con datos del artículo 9.1 de la LOPDGDD</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity.Builder chaplaincy = ProcessingActivity.builder("chaplaincy", "University chaplaincy")
+        .purposes(DataUses.EDUCATION_TEACHING)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_DEMOGRAPHIC_RELIGIOUS_BELIEF)
+        .legalBasis(LegalBasis.CONSENT)
+        .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .retention("While the student takes part in the chaplaincy activities")
+        .impactAssessment("DPIA-2026-08");
+
+checker.check(chaplaincy.build()).violations();                // []
+spain.check(chaplaincy.build()).violations().forEach(System.out::println);
+</code></pre>
+</figure>
+
+<p>Con el RGPD solo no hay ninguna infracción. Con <code>Jurisdiction.SPAIN</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CONSENT_NOT_SUFFICIENT chaplaincy: Explicit consent alone does not lift the prohibition of processing user.demographic.religious_belief (LOPDGDD article 9.1); declare another condition of GDPR article 9.2
+</code></pre>
+<p>Si la actividad declara otra condición junto al consentimiento (aquí <code>NOT_FOR_PROFIT_BODIES</code>, solo para
+mostrar el mecanismo), el error pasa a ser un aviso:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING CONSENT_NOT_SUFFICIENT chaplaincy: Explicit consent alone does not lift the prohibition of processing user.demographic.religious_belief (LOPDGDD article 9.1); confirm that another declared condition of GDPR article 9.2 covers it
+</code></pre>
+<p>Es una decisión de diseño de Linneo. Las condiciones se declaran para la actividad, no para cada categoría: con el
+consentimiento como única condición la regla es segura; con otra condición al lado, el comprobador no sabe cuál cubre la
+confesión religiosa y pide al DPD que lo confirme. Si esa otra condición es la adecuada lo decide el DPD.</p>
+
+<h3>Norma con rango de ley (artículos 8, 9.2 y 10)</h3>
+<p>En España, varias bases deben apoyarse en una norma con rango de ley. Con <code>SPAIN</code>, el aviso
+<code>MISSING_LEGAL_REFERENCE</code> añade las disposiciones de la LOPDGDD que lo exigen: el artículo 8 para una
+obligación legal o una misión de interés público, el 9.2 para las condiciones <code>SUBSTANTIAL_PUBLIC_INTEREST</code>,
+<code>HEALTH_OR_SOCIAL_CARE</code> y <code>PUBLIC_HEALTH</code>, y el 10 para los datos penales autorizados por ley. La
+admisión y la verificación de antecedentes, sin referencia legal:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING MISSING_LEGAL_REFERENCE admissions: GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference (LOPDGDD article(s) 8, 9.2: a law with the rank of statute)
+WARNING MISSING_LEGAL_REFERENCE staff-screening: GDPR article(s) 6.1.c, 10 rest on Union or Member State law; name it as the legal reference (LOPDGDD article(s) 8, 10: a law with the rank of statute)
+</code></pre>
+
+<h3>Sanciones administrativas (artículo 27)</h3>
+<p>Los datos sobre infracciones y sanciones administrativas (<code>user.administrative_sanction</code> y sus
+descendientes) solo pueden tratarlos los órganos competentes, con el consentimiento de la persona o cuando una norma con
+rango de ley lo permite. El comprobador no puede saber si la universidad es el órgano competente, así que, cuando la
+base no es el consentimiento y no hay referencia legal, pide que se nombre la ley. Una referencia que falta es
+<strong>un solo</strong> aviso: si otra base ya la pedía, la regla se añade al mismo mensaje.</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity.Builder discipline = ProcessingActivity.builder("staff-discipline",
+                "Staff disciplinary proceedings")
+        .purposes(DataUses.EMPLOYMENT)
+        .dataSubjects(DataSubjects.EMPLOYEE)
+        .dataCategories(USER_NAME, USER_ADMINISTRATIVE_SANCTION)
+        .legalBasis(LegalBasis.LEGAL_OBLIGATION)
+        .retention("As the statute of limitations of the infringements requires")
+        .impactAssessment("DPIA-2026-06");
+spain.check(discipline.build()).violations().forEach(System.out::println);
+spain.check(discipline.legalBasis(LegalBasis.CONTRACT).build()).violations().forEach(System.out::println);
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING MISSING_LEGAL_REFERENCE staff-discipline: GDPR article(s) 6.1.c rest on Union or Member State law; name it as the legal reference (LOPDGDD article(s) 8: a law with the rank of statute); and data on administrative infringements and sanctions may only be processed by the bodies competent for the sanctioning procedure, with the consent of the person, or as a law with the rank of statute allows (LOPDGDD article 27)
+WARNING MISSING_LEGAL_REFERENCE staff-discipline: Name the law as the legal reference: data on administrative infringements and sanctions may only be processed by the bodies competent for the sanctioning procedure, with the consent of the person, or as a law with the rank of statute allows (LOPDGDD article 27)
+</code></pre>
+<p>La primera línea es la actividad con obligación legal: un único aviso que cita los artículos 8 y 27. La segunda, con
+contrato, solo tiene el motivo del artículo 27. Con <code>LegalBasis.CONSENT</code> no hay aviso, y con
+<code>Jurisdiction.EU</code> solo queda el aviso del artículo 6.1.c de la primera.</p>
+
+<h3>Datos biométricos y genéticos (lista de la AEPD)</h3>
+<p>La lista de la AEPD del artículo 35.4 del RGPD cuenta los datos biométricos de identificación y los genéticos como un
+criterio propio, además del de categorías especiales. Con <code>SPAIN</code>, una actividad que trata términos con los
+rasgos <code>BIOMETRIC</code> o <code>GENETIC</code> y no cita ninguna EIPD recibe el aviso
+<code>IMPACT_ASSESSMENT_RECOMMENDED</code> aunque su cribado solo sea posible. El control de acceso al centro deportivo
+por huella dactilar:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity sportsAccess = ProcessingActivity.builder("sports-centre-access", "Sports centre access")
+        .purposes(DataUses.ESSENTIAL_SERVICE_SECURITY)
+        .dataSubjects(DataSubjects.STUDENT)
+        .dataCategories(USER_NAME, USER_BIOMETRIC_FINGERPRINT)
+        .legalBasis(LegalBasis.CONSENT)
+        .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .retention("Until the student leaves the sports centre")
+        .build();
+spain.check(sportsAccess).violations().forEach(System.out::println);
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING IMPACT_ASSESSMENT_RECOMMENDED sports-centre-access: The AEPD's list under GDPR article 35.4 counts biometric data for identification and genetic data as a criterion besides special category data, so an impact assessment is required in most cases: user.biometric.fingerprint. Possible (1 criterion of WP248): 4. sensitive data: special category data user.biometric.fingerprint
+</code></pre>
+<p>Con <code>Jurisdiction.EU</code> la misma actividad no tiene infracciones: un criterio solo hace la EIPD posible.</p>
+
+<h3>El bloqueo de los datos (artículo 32)</h3>
+<p>La última regla española no la aplica el comprobador: los datos suprimidos o rectificados se bloquean antes de
+borrarse, y <code>SubjectRights</code> lo dice en sus explicaciones cuando se crea con <code>Jurisdiction.SPAIN</code>.
+Lo verás en el <a href="14-derechos.html">capítulo 14</a>.</p>
+
+<h2 id="actividades-de-la-universidad">Las cuatro actividades de la universidad</h2>
+<p>La universidad declara cuatro actividades, y cada una ilustra una parte de lo visto: datos ordinarios a partir de una
+entidad, categorías especiales, datos penales y mercadotecnia directa.</p>
+
+<h3>Matrícula: datos ordinarios desde una entidad</h3>
+<p>La matrícula registra a los estudiantes admitidos en una titulación y un curso, y cobra las tasas. Incluye la entidad
+<code>Enrollment</code> y declara como claves el nombre, el número de identificación nacional y el correo del
+estudiante. La base es una misión de interés público, con su ley, y el banco que cobra las tasas es un destinatario. La
+actividad se deja a propósito sin plazo de conservación: el aviso <code>MISSING_RETENTION</code> no impide generar el
+registro, y en el <a href="12-registro.html">capítulo 12</a> lo verás como punto abierto.</p>
+
+<h3>Admisión: categorías especiales</h3>
+<p>Los solicitantes pueden pedir las plazas reservadas a estudiantes con discapacidad, así que la admisión trata
+<code>user.health_and_medical.disability</code>, una categoría especial. El primer borrador declara la base jurídica y
+olvida la condición:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity admissionsDraft = ProcessingActivity.builder("admissions", "Admissions")
+        .purposes(DataUses.EDUCATION_ADMISSION)
+        .dataSubjects(DataSubjects.APPLICANT)
+        .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_EDUCATION_PREVIOUS_EDUCATION,
+                USER_EDUCATION_TEST_SCORE, USER_HEALTH_AND_MEDICAL_DISABILITY)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .legalReference("Higher Education Act, art. 12")
+        .retention("Until the end of the admission cycle")
+        .build();
+checker.check(admissionsDraft).violations().forEach(System.out::println);
+</code></pre>
+
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_SPECIAL_CATEGORY_CONDITION admissions: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+</code></pre>
+<p>La ley de educación superior (ficticia) de la universidad reserva esas plazas, así que el DPD elige
+<code>SUBSTANTIAL_PUBLIC_INTEREST</code> (artículo 9.2.g). Esa condición, como la base del artículo 6.1.e, descansa en
+una ley, y la referencia legal pasa a nombrar los dos artículos de la ley. El cribado solo hace posible una EIPD, pero
+el DPD hizo una de todos modos, y la actividad la cita.</p>
+
+<h3>Verificación de antecedentes del personal: datos penales</h3>
+<p>Antes de contratar a alguien para un puesto en contacto con menores, la universidad comprueba que no tiene condenas
+por delitos sexuales. <code>user.criminal_history</code> son datos penales. El borrador, con la obligación legal como
+base y ya con la referencia a su EIPD, da un error y un aviso:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_CRIMINAL_DATA_BASIS staff-screening: Criminal offence data (user.criminal_history) needs a basis of GDPR article 10
+WARNING MISSING_LEGAL_REFERENCE staff-screening: GDPR article(s) 6.1.c rest on Union or Member State law; name it as the legal reference
+</code></pre>
+<p>La verificación la exige la (ficticia) Child Protection Act, así que la base del artículo 10 es
+<code>AUTHORISED_BY_LAW</code> y esa ley es la referencia legal. Hay un detalle más: la taxonomía marca a los candidatos
+(<code>job_applicant</code>) con el rasgo <code>VULNERABLE</code>, como a los empleados, de modo que los datos penales y
+los interesados vulnerables suman dos criterios y la EIPD es probable. Sin una referencia a ella, la actividad tendría
+este aviso:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING IMPACT_ASSESSMENT_RECOMMENDED staff-screening: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 4. sensitive data: criminal offence data user.criminal_history; 7. vulnerable subjects: data subjects job_applicant
+</code></pre>
+<p>La actividad definitiva cita <code>DPIA-2026-02</code>.</p>
+
+<h3>Boletín de antiguos alumnos: mercadotecnia directa</h3>
+<p>El boletín es el del Ejemplo 11.1, completo. Su finalidad, <code>marketing.communications.email</code>, hereda de
+<code>marketing</code> el rasgo <code>DIRECT_MARKETING</code>: la mercadotecnia directa, a la que el interesado puede
+oponerse en cualquier momento (artículo 21.2 del RGPD). Ese rasgo no cambia lo que comprueba el comprobador, pero sí los
+derechos que <code>SubjectRights</code> deduce para los antiguos alumnos (<a href="14-derechos.html">capítulo 14</a>).
+La base es el interés legítimo, con el interés indicado, y el proveedor de correo guarda la lista en un tercer país con
+cláusulas contractuales tipo.</p>
+
+<h3>La clase de las actividades</h3>
+<p>Las cuatro actividades viven en una clase junto al modelo (Ejemplo 11.6).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 11.6. Las actividades de tratamiento de la universidad</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.DataSubjects;
+import io.github.devbpm.linneo.DataUses;
+import io.github.devbpm.linneo.processing.CriminalDataBasis;
+import io.github.devbpm.linneo.processing.LegalBasis;
+import io.github.devbpm.linneo.processing.ProcessingActivity;
+import io.github.devbpm.linneo.processing.SpecialCategoryCondition;
+import io.github.devbpm.linneo.processing.TransferSafeguard;
+import java.util.List;
+
+import static io.github.devbpm.linneo.Categories.*;
+
+/** Las actividades de tratamiento de la universidad. */
+public final class UniversityActivities {
+
+    private UniversityActivities() {
+    }
+
+    public static final ProcessingActivity ENROLLMENT = ProcessingActivity.builder("enrollment", "Student enrollment")
+            .description("Registers admitted students in a programme and an academic year, and charges the fees.")
+            .purposes(DataUses.EDUCATION_ENROLLMENT)
+            .dataSubjects(DataSubjects.STUDENT)
+            .entities(Enrollment.class)
+            .dataCategories(USER_NAME, USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER, USER_CONTACT_EMAIL)
+            .legalBasis(LegalBasis.PUBLIC_INTEREST)
+            .legalReference("Higher Education Act, art. 12")
+            .recipients("Bank that collects the tuition fees")
+            .build();
+
+    public static final ProcessingActivity ADMISSIONS = ProcessingActivity.builder("admissions", "Admissions")
+            .description("Receives and assesses applications, including requests for the disability quota.")
+            .purposes(DataUses.EDUCATION_ADMISSION)
+            .dataSubjects(DataSubjects.APPLICANT)
+            .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_EDUCATION_PREVIOUS_EDUCATION,
+                    USER_EDUCATION_TEST_SCORE, USER_HEALTH_AND_MEDICAL_DISABILITY)
+            .legalBasis(LegalBasis.PUBLIC_INTEREST)
+            .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+            .legalReference("Higher Education Act, arts. 12 and 31")
+            .retention("Until the end of the admission cycle; admitted applicants move to the student record")
+            .recipients("Admissions board")
+            .impactAssessment("DPIA-2026-01")
+            .build();
+
+    public static final ProcessingActivity STAFF_SCREENING = ProcessingActivity.builder("staff-screening",
+                    "Staff screening")
+            .description("Checks that candidates for posts in contact with minors have no sexual offence convictions.")
+            .purposes(DataUses.EMPLOYMENT_RECRUITMENT)
+            .dataSubjects(DataSubjects.JOB_APPLICANT)
+            .dataCategories(USER_NAME, USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER, USER_CRIMINAL_HISTORY)
+            .legalBasis(LegalBasis.LEGAL_OBLIGATION)
+            .criminalDataBasis(CriminalDataBasis.AUTHORISED_BY_LAW)
+            .legalReference("Child Protection Act, art. 13")
+            .retention("Until the hiring decision; afterwards only whether the certificate was clear")
+            .impactAssessment("DPIA-2026-02")
+            .build();
+
+    public static final ProcessingActivity ALUMNI_NEWSLETTER = ProcessingActivity.builder("alumni-newsletter",
+                    "Alumni newsletter")
+            .purposes(DataUses.MARKETING_COMMUNICATIONS_EMAIL)
+            .dataSubjects(DataSubjects.ALUMNUS)
+            .dataCategories(USER_NAME, USER_CONTACT_EMAIL)
+            .legitimateInterest("Keeping former students informed about university events and alumni services")
+            .retention("Until the alumnus unsubscribes")
+            .recipients("Email delivery provider (processor)")
+            .transfer("United States", TransferSafeguard.STANDARD_CONTRACTUAL_CLAUSES)
+            .build();
+
+    public static List&lt;ProcessingActivity&gt; all() {
+        return List.of(ENROLLMENT, ADMISSIONS, STAFF_SCREENING, ALUMNI_NEWSLETTER);
+    }
+}
+</code></pre>
+</figure>
+
+<p>La Tabla 11.11 resume lo que el comprobador obtiene de cada una. Con <code>Jurisdiction.SPAIN</code> el resultado es
+el mismo: las tres actividades cuyas bases descansan en una ley la nombran, ninguna trata datos del artículo 9.1 de la
+LOPDGDD y ninguna trata datos biométricos ni genéticos.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-11-11">
+<table>
+<caption id="tabla-11-11">Tabla 11.11. Resultado de comprobar las cuatro actividades</caption>
+<thead>
+<tr><th scope="col">Actividad</th><th scope="col">Datos personales</th><th scope="col">Naturalezas</th>
+<th scope="col">Protección requerida</th><th scope="col">Cribado</th><th scope="col">Infracciones</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>enrollment</code></th><td>9 categorías, 6 de ellas de <code>Enrollment</code></td>
+<td><code>ORDINARY</code></td><td>Confidencialidad <code>MEDIUM</code>, integridad <code>HIGH</code></td>
+<td><code>POSSIBLE</code></td><td>Aviso <code>MISSING_RETENTION</code></td></tr>
+<tr><th scope="row"><code>admissions</code></th><td>5 categorías</td>
+<td><code>ORDINARY</code>, <code>SPECIAL_CATEGORY</code></td><td><code>HIGH</code>, <code>HIGH</code></td>
+<td><code>POSSIBLE</code></td><td>Ninguna</td></tr>
+<tr><th scope="row"><code>staff-screening</code></th><td>3 categorías</td>
+<td><code>ORDINARY</code>, <code>CRIMINAL_OFFENCE</code></td><td><code>HIGH</code>, <code>HIGH</code></td>
+<td><code>LIKELY</code></td><td>Ninguna: cita su EIPD</td></tr>
+<tr><th scope="row"><code>alumni-newsletter</code></th><td>2 categorías</td><td><code>ORDINARY</code></td>
+<td><code>LOW</code>, <code>MEDIUM</code></td><td><code>NOT_INDICATED</code></td><td>Ninguna</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="verificar-en-un-test">Verificar las actividades en un test</h2>
+<p>Como con el clasificador, lo importante es comprobar las actividades en cada compilación. <code>verify</code> lo hace
+en una línea: devuelve el registro si ninguna actividad tiene errores y, si alguna los tiene, lanza una
+<code>ProcessingException</code> con todos los errores de todas las actividades. Junto a él, un segundo test puede
+fallar solo con los errores del alcance (Ejemplo 11.7).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 11.7. Tests de las actividades de tratamiento</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">package edu.example.university;
+
+import io.github.devbpm.linneo.Taxonomy;
+import io.github.devbpm.linneo.processing.ProcessingChecker;
+import io.github.devbpm.linneo.processing.ProcessingRecord;
+import io.github.devbpm.linneo.processing.ProcessingViolation;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class UniversityActivitiesTest {
+
+    private final ProcessingChecker checker = new ProcessingChecker(Taxonomy.load());
+
+    @Test
+    void activitiesAreLawfulAsDeclared() {
+        ProcessingRecord record = checker.verify(UniversityActivities.all());
+        assertEquals(4, record.activities().size());
+    }
+
+    @Test
+    void scopeHasNoErrors() {
+        List&lt;ProcessingViolation&gt; scopeErrors = checker.checkAll(UniversityActivities.all()).stream()
+                .flatMap(checked -&gt; checked.errors().stream())
+                .filter(violation -&gt; !violation.element().isGovernance())
+                .toList();
+        assertTrue(scopeErrors.isEmpty(), () -&gt; "Fix the scope of the activities: " + scopeErrors);
+    }
+}
+</code></pre>
+</figure>
+
+<p>Con los borradores de la admisión y de la verificación de antecedentes en la lista, en lugar de las actividades
+definitivas, el primer test falla con este mensaje:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">io.github.devbpm.linneo.processing.ProcessingException: 2 processing error(s):
+ - ERROR MISSING_SPECIAL_CATEGORY_CONDITION admissions: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+ - ERROR MISSING_CRIMINAL_DATA_BASIS staff-screening: Criminal offence data (user.criminal_history) needs a basis of GDPR article 10
+</code></pre>
+<p>Cada línea tiene el formato de <code>ProcessingViolation.toString()</code>. Solo se enumeran los errores; los avisos
+siguen en la <code>CheckedActivity</code> de cada actividad. El segundo test pasa con esos mismos borradores, porque los
+dos errores son de gobernanza: el alcance está bien declarado.</p>
+<p>Elige según quién mantenga la gobernanza. Si todo se declara en el código, como en el Ejemplo 11.6, basta el primer
+test. Si el DPD mantiene la gobernanza en otro sitio, haz fallar la compilación solo con el segundo, y comprueba la
+gobernanza donde el DPD la edita (<a href="12-registro.html">capítulo 12</a>).</p>
+
+<h2 id="reglas-fijas-y-citadas">Reglas fijas, citadas y proporcionadas</h2>
+<p>Las reglas del comprobador están en el código y cada mensaje cita el artículo en el que se apoya. No son
+configurables: no hay ninguna opción para desactivar una regla ni para cambiar su gravedad. Es una decisión de diseño de
+Linneo: una regla que cada proyecto pudiera apagar dejaría de servir para demostrar nada, y así el mismo modelo, la
+misma taxonomía y la misma jurisdicción dan siempre el mismo resultado, en cualquier máquina.</p>
+<p>Las reglas son también proporcionadas. Cierran los huecos en los que un modelo bien escrito podría caer: datos
+personales sin base, una categoría especial sin condición, datos penales sin base del artículo 10, una ley que no se
+nombra. No exigen declaraciones para casos a los que solo llega un mal uso de la biblioteca.</p>
+<p>Lo que el código no puede ver <strong>se declara, nunca se adivina</strong>. El comprobador no deduce la escala de un
+tratamiento a partir del número de filas, ni la ley a partir de la base, ni la existencia de una EIPD a partir de la
+protección de los datos: el código declara sus factores de riesgo, y el DPD, la gobernanza. Las personas responsables
+siguen siendo el equipo de desarrollo, para el alcance, y el DPD, para la gobernanza.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Un registro que pasa <code>verify</code> significa que cada actividad declara lo que el RGPD pide y que sus claves y
+entidades son correctas. No significa que el tratamiento sea lícito: si las declaraciones son ciertas y las bases
+adecuadas es la evaluación del responsable y de su DPD. Linneo ayuda a demostrar el cumplimiento y a no olvidar nada; no
+lo garantiza.</p>
+</div>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Esperar que Linneo elija la base jurídica.</dt>
+<dd>El comprobador verifica que hay una declarada y que están las condiciones que necesitan los datos, no que sean las
+adecuadas. La elección es del responsable y de su DPD.</dd>
+<dt>Incluir una entidad que contiene más de lo que trata la actividad.</dt>
+<dd><code>Student.class</code> en la matrícula arrastra el grado de discapacidad y las notas de orientación. Declara las
+categorías por clave o divide la entidad.</dd>
+<dt>Llamar a <code>legalBasis(...)</code> después de <code>legitimateInterest(...)</code>.</dt>
+<dd>Gana la última llamada: la base cambia y el interés se queda, lo que da el aviso <code>UNNEEDED_CONDITION</code>.
+Declara una sola de las dos.</dd>
+<dt>Declarar una condición «por si acaso».</dt>
+<dd><code>EXPLICIT_CONSENT</code> en una actividad sin categorías especiales es el aviso
+<code>UNNEEDED_CONDITION</code>. El registro debe reflejar lo que se aplica, no lo que podría aplicarse.</dd>
+<dt>Hacer fallar la compilación con <code>verify</code> cuando la gobernanza la mantiene el DPD en otro sitio.</dt>
+<dd><code>verify</code> falla con todos los errores, también los de gobernanza. Filtra los errores de
+<code>checkAll</code> por <code>element().isGovernance()</code> para fallar solo con los del alcance.</dd>
+<dt>Comprobar con <code>Taxonomy.standard()</code> actividades que usan términos de una extensión.</dt>
+<dd>Las claves de la extensión son <code>UNKNOWN_KEY</code>. Usa <code>Taxonomy.load()</code>, o la taxonomía construida
+con tus extensiones.</dd>
+<dt>Reutilizar la clave de una actividad para otra.</dt>
+<dd>La segunda recibe el error <code>DUPLICATE_ACTIVITY</code>. Las claves identifican las actividades en el registro y
+en las herramientas que leen su JSON; dale a cada una la suya y mantenla estable.</dd>
+<dt>Creer que <code>withGovernance</code> mezcla las dos gobernanzas.</dt>
+<dd>La sustituye entera. Si el DPD guarda solo una parte, parte de la gobernanza actual con <code>toBuilder()</code> y
+cambia lo necesario.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li>Una <code>ProcessingActivity</code> une las tres dimensiones de la taxonomía: finalidades, interesados y datos
+personales, declarados como claves, entidades u objetos de un inventario.</li>
+<li>La base jurídica (<code>LegalBasis</code>), las condiciones del artículo 9.2
+(<code>SpecialCategoryCondition</code>), la base del artículo 10 (<code>CriminalDataBasis</code>) y las garantías de las
+transferencias (<code>TransferSafeguard</code>) llevan su artículo y, salvo la tercera, su nombre en fideslang.</li>
+<li>El alcance es del código; la gobernanza (<code>Governance</code>) es del DPD. <code>withGovernance</code> sustituye
+la gobernanza y conserva el alcance, incluidos los factores de riesgo del código.</li>
+<li><code>ProcessingChecker</code> resuelve las claves contra la taxonomía, clasifica las entidades y comprueba la
+licitud. Un error es algo ilícito tal como está declarado; un aviso, un hueco del registro.</li>
+<li>Cada <code>ProcessingViolation</code> lleva un código, una gravedad y un elemento que dice si el problema es del
+alcance o de la gobernanza.</li>
+<li><code>Jurisdiction.SPAIN</code> añade las reglas de la LOPDGDD: el consentimiento que no basta, la norma con rango
+de ley, las sanciones administrativas y la lista de la AEPD.</li>
+<li><code>verify</code> en un test hace fallar la compilación con todos los errores; filtrar por elemento la hace fallar
+solo con los del alcance.</li>
+<li>Las reglas son fijas y citadas. Lo que el código no ve se declara, y Linneo ayuda a demostrar el cumplimiento sin
+garantizarlo.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Predice.</strong> La universidad añade una actividad de evaluación. Sin ejecutarla, di qué infracciones
+informa <code>check</code>, si la actividad es válida y qué protección requiere. Después ejecútala.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity grading = ProcessingActivity.builder("grading", "Assessment and grading")
+        .purposes(DataUses.EDUCATION_ASSESSMENT)
+        .dataSubjects(DataSubjects.STUDENT, DataSubjects.FACULTY_MEMBER)
+        .entities(Enrollment.class, Grade.class)
+        .legalBasis(LegalBasis.PUBLIC_INTEREST)
+        .retention("Permanently, as part of the academic record")
+        .build();
+</code></pre>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>Dos avisos, así que la actividad es válida:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING MISSING_LEGAL_REFERENCE grading: GDPR article(s) 6.1.e rest on Union or Member State law; name it as the legal reference
+WARNING IMPACT_ASSESSMENT_RECOMMENDED grading: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 4. sensitive data: highly personal data user.financial.fee; highly personal data user.financial.scholarship; 7. vulnerable subjects: data subjects faculty_member
+</code></pre>
+<p>La misión de interés público descansa en una ley que la actividad no nombra. Los datos personales vienen de las dos
+entidades (ocho categorías, entre ellas <code>user.account.username</code> de <code>AuditedEntity</code>), todas
+ordinarias, así que no hace falta ninguna condición. La protección requerida es confidencialidad <code>MEDIUM</code> e
+integridad <code>HIGH</code>. El segundo aviso es el cribado: la tasa y la beca son datos financieros (criterio 4), y el
+profesorado, como empleados, tiene el rasgo <code>VULNERABLE</code> (criterio 7). Añade
+<code>.legalReference("Higher Education Act, art. 12")</code> y cita la EIPD con <code>.impactAssessment(...)</code>
+cuando el DPD la haga.</p>
+</details>
+</li>
+<li>
+<p><strong>Lee y corrige.</strong> La rama de un compañero hace fallar el test de las actividades con este mensaje. Para
+cada línea, di qué está mal y cómo corregirlo. La tercera línea viene de una actividad nueva, «Student enrollment
+(fees)», que trata el cobro de las tasas.</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">3 processing error(s):
+ - ERROR UNKNOWN_KEY staff-screening: Unknown data subject 'job_applicants'
+ - ERROR MISSING_CRIMINAL_DATA_BASIS staff-screening: Criminal offence data (user.criminal_history) needs a basis of GDPR article 10
+ - ERROR DUPLICATE_ACTIVITY enrollment: Another activity of the record has the key 'enrollment'
+</code></pre>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<ul>
+<li><code>job_applicants</code> no es una clave: el interesado es <code>job_applicant</code>. Usa
+<code>DataSubjects.JOB_APPLICANT</code> y el compilador detectará las erratas.</li>
+<li>La verificación ha perdido su <code>.criminalDataBasis(CriminalDataBasis.AUTHORISED_BY_LAW)</code>. Sin ella, tratar
+datos penales es ilícito tal como está declarado.</li>
+<li>La actividad de tasas reutiliza la clave <code>enrollment</code>. Dale la suya, por ejemplo
+<code>tuition-fees</code>. El error se informa en la segunda actividad con esa clave; la primera no se toca.</li>
+</ul>
+</details>
+</li>
+<li>
+<p><strong>Administración de personal.</strong> Declara una actividad <code>staff-administration</code> con la finalidad
+<code>DataUses.EMPLOYMENT</code>, los interesados <code>EMPLOYEE</code> y <code>STAFF_MEMBER</code>, la entidad
+<code>Staff</code>, la base <code>CONTRACT</code> y un plazo de conservación. Predice qué informa el comprobador,
+teniendo en cuenta los campos de <code>Staff</code>, y decide cómo corregirlo.</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_CRIMINAL_DATA_BASIS staff-administration: Criminal offence data (user.criminal_history) needs a basis of GDPR article 10
+WARNING IMPACT_ASSESSMENT_RECOMMENDED staff-administration: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 4. sensitive data: criminal offence data user.criminal_history; highly personal data user.financial.bank_account; 7. vulnerable subjects: data subjects employee; data subjects staff_member
+</code></pre>
+<p><code>Staff.sexOffenceCertificateClear</code> es un dato penal, así que incluir <code>Staff</code> lo lleva a la
+administración de personal. La actividad requiere confidencialidad e integridad <code>HIGH</code> e incluye secretos
+(<code>passwordHash</code>). Hay dos correcciones posibles: si la administración de personal guarda de verdad el
+resultado de la verificación, declara la base del artículo 10, la referencia legal y la EIPD; si no, declara por clave
+las categorías que sí trata y deja los datos penales a <code>staff-screening</code>. La segunda limita cada actividad a
+lo que necesita, pero la cuenta bancaria y los empleados siguen sumando dos criterios, así que el aviso permanece hasta
+que la actividad cite una EIPD.</p>
+</details>
+</li>
+<li>
+<p><strong>Alcance y gobernanza.</strong> El DPD guarda esta gobernanza para la actividad <code>learning-support</code>
+del Ejemplo 11.4. ¿Qué infracciones informa <code>checker.check(support.withGovernance(saved))</code>, con sus
+elementos? ¿Es válida la actividad? ¿Cuáles mostrarías en la pantalla del DPD y cuáles harían fallar la compilación?</p>
+<pre class="codigo" tabindex="0"><code class="language-java">Governance saved = Governance.builder()
+        .legalBasis(LegalBasis.CONSENT)
+        .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .build();
+</code></pre>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<p>Un aviso, y la actividad es válida:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+</code></pre>
+<p>El consentimiento explícito es una condición del artículo 9.2 para los datos de discapacidad, y ninguno de los dos
+consentimientos descansa en una ley, así que no se pide referencia legal. Con <code>Jurisdiction.SPAIN</code> el
+resultado es el mismo, porque la discapacidad no es una de las categorías del artículo 9.1 de la LOPDGDD. El aviso tiene
+un elemento de gobernanza (<code>RETENTION</code>): va a la pantalla del DPD, junto al plazo de conservación. Nada hace
+fallar la compilación, porque no hay errores del alcance.</p>
+</details>
+</li>
+<li>
+<p><strong>España.</strong> Añade al test del Ejemplo 11.7 un tercer método que verifique las cuatro actividades con
+<code>new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)</code> y compruebe que ninguna tiene más avisos que con
+<code>Jurisdiction.EU</code>. Antes de ejecutarlo, explica por qué debería pasar.</p>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">@Test
+void spanishRulesAddNothing() {
+    List&lt;CheckedActivity&gt; eu = new ProcessingChecker(Taxonomy.load()).checkAll(UniversityActivities.all());
+    List&lt;CheckedActivity&gt; spain = new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)
+            .checkAll(UniversityActivities.all());
+    for (int i = 0; i &lt; eu.size(); i++) {
+        assertEquals(eu.get(i).violations().size(), spain.get(i).violations().size());
+    }
+}
+</code></pre>
+<p>Pasa: las únicas infracciones son el aviso <code>MISSING_RETENTION</code> de la matrícula, igual en ambas
+jurisdicciones. Las actividades cuyas bases descansan en una ley la nombran, así que la regla de la norma con rango de
+ley no se activa; ninguna trata datos del artículo 9.1 de la LOPDGDD, sanciones administrativas ni datos biométricos o
+genéticos.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué hace <code>checker.check(activity)</code> con una actividad que trata datos personales sin base jurídica?</p>
+<ol>
+<li>Lanza una <code>ProcessingException</code>.</li>
+<li>Devuelve una <code>CheckedActivity</code> con el error <code>MISSING_LEGAL_BASIS</code>.</li>
+<li>Devuelve una <code>CheckedActivity</code> con el aviso <code>MISSING_LEGAL_BASIS</code>.</li>
+<li>Asigna la base <code>LEGITIMATE_INTERESTS</code> por defecto.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La b. <code>check</code> nunca lanza una excepción por un problema de la actividad: la excepción es de
+<code>verify</code> (a). La falta de base hace la actividad ilícita tal como está declarada, así que es un error y no un
+aviso (c). Linneo nunca elige una base (d): lo que no se declara es un error, no un valor por defecto.</p>
+</details>
+</li>
+<li>
+<p>Un builder llama a <code>legitimateInterest("...")</code> y después a <code>legalBasis(LegalBasis.CONSENT)</code>.
+¿Qué ocurre?</p>
+<ol>
+<li>La base es <code>LEGITIMATE_INTERESTS</code>, porque <code>legitimateInterest</code> tiene prioridad.</li>
+<li><code>build()</code> lanza una <code>IllegalStateException</code>.</li>
+<li>La base es <code>CONSENT</code>, el interés se conserva y el comprobador da el aviso
+<code>UNNEEDED_CONDITION</code>.</li>
+<li>La base es <code>CONSENT</code> y el interés se borra sin aviso.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La c. Los métodos que fijan un valor sustituyen el anterior, así que gana la última llamada (no la a) y no hay
+ninguna excepción (b). <code>legalBasis</code> solo cambia la base: el interés sigue declarado (no la d), y el
+comprobador avisa de que sobra.</p>
+</details>
+</li>
+<li>
+<p>Una actividad declara en el código <code>riskFactors(Factor.AUTOMATED_DECISIONS)</code>. ¿Qué devuelve
+<code>activity.withGovernance(Governance.NONE).allRiskFactors()</code>?</p>
+<ol>
+<li>Un conjunto vacío, porque la gobernanza se ha vaciado.</li>
+<li><code>[AUTOMATED_DECISIONS]</code>, porque los factores del código forman parte del alcance.</li>
+<li>Lanza una <code>NullPointerException</code>.</li>
+<li>Los factores de la gobernanza anterior.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La b. <code>withGovernance</code> sustituye la gobernanza y conserva el alcance, con sus factores de riesgo. Por eso
+no es la a ni la d. <code>Governance.NONE</code> no es <code>null</code>, así que no hay excepción (c); la lanzaría
+<code>withGovernance(null)</code>.</p>
+</details>
+</li>
+<li>
+<p>Con <code>Jurisdiction.SPAIN</code>, una actividad trata la afiliación sindical y declara
+<code>EXPLICIT_CONSENT</code> y <code>EMPLOYMENT_AND_SOCIAL_SECURITY</code>. ¿Cómo informa el comprobador de
+<code>CONSENT_NOT_SUFFICIENT</code>?</p>
+<ol>
+<li>Como un error, porque el consentimiento nunca basta para la afiliación sindical.</li>
+<li>No lo informa, porque hay dos condiciones.</li>
+<li>Como un aviso, para que el DPD confirme que la otra condición cubre la afiliación sindical.</li>
+<li>Solo lo informa con <code>Jurisdiction.EU</code>.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La c. El error solo aparece cuando el consentimiento explícito es la única condición (no la a). Con otra condición,
+el comprobador no sabe cuál cubre cada categoría y lo deja como aviso, no lo calla (b). La regla es de la LOPDGDD, así
+que solo se aplica con <code>SPAIN</code> (d).</p>
+</details>
+</li>
+<li>
+<p>¿Para qué elemento es <code>isGovernance()</code> igual a <code>false</code>?</p>
+<ol>
+<li><code>RETENTION</code></li>
+<li><code>LEGAL_REFERENCE</code></li>
+<li><code>PERSONAL_DATA</code></li>
+<li><code>IMPACT_ASSESSMENT</code></li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La c. Los datos personales son parte del alcance que declara el código, como la clave, las finalidades y los
+interesados. La conservación, la referencia legal y la evaluación de impacto son elementos de la gobernanza que mantiene
+el DPD.</p>
+</details>
+</li>
+<li>
+<p>¿Qué significa que <code>verify</code> devuelva un registro sin lanzar ninguna excepción?</p>
+<ol>
+<li>Que el tratamiento es lícito.</li>
+<li>Que ninguna actividad tiene avisos.</li>
+<li>Que ninguna actividad tiene errores tal como está declarada.</li>
+<li>Que la autoridad de control ha aprobado el registro.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 6</summary>
+<p>La c. <code>verify</code> solo falla con errores; los avisos viajan con cada actividad como puntos abiertos (no la
+b). Que las declaraciones sean ciertas y las bases adecuadas lo evalúan el responsable y su DPD (no la a), y Linneo no
+tiene relación con ninguna autoridad de control (d).</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="12-registro.html">Capítulo 12. El registro de actividades</a>: el registro que devuelve
+<code>verify</code>, su huella y sus diferencias.</li>
+<li><a href="13-impacto-y-brechas.html">Capítulo 13. Evaluación de impacto y brechas</a>: el cribado que usa el
+comprobador.</li>
+<li><a href="14-derechos.html">Capítulo 14. Derechos de los interesados</a>: lo que el registro dice a quien ejerce sus
+derechos.</li>
+<li><a href="../../reference/processing/">Referencia: actividades de tratamiento</a>, la portada del paquete.</li>
+<li><a href="../../reference/processing/activity.html">Referencia: <code>ProcessingActivity</code> y
+<code>Governance</code></a>.</li>
+<li><a href="../../reference/processing/bases.html">Referencia: las bases jurídicas</a>, con cada constante.</li>
+<li><a href="../../reference/processing/checker.html">Referencia: <code>ProcessingChecker</code></a>, con el mensaje
+exacto de cada código.</li>
+<li><a href="../../reference/classify/inventory.html">Referencia: el inventario de datos</a>, para los
+<code>objects</code>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="10-versiones.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 10. Versiones de la taxonomía</a></li>
+<li><a href="12-registro.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 12. El registro de actividades</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

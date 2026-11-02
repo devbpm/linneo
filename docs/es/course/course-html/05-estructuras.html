@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/annotation/CategoryByRow.java
+  - src/main/java/io/github/devbpm/linneo/annotation/DerivedFrom.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Composite.java
+  - src/main/java/io/github/devbpm/linneo/annotation/Exempt.java
+  - src/main/java/io/github/devbpm/linneo/classify/Classifier.java
+  - src/main/java/io/github/devbpm/linneo/classify/FieldClassification.java
+  - src/main/java/io/github/devbpm/linneo/classify/ClassClassification.java
+  - src/main/java/io/github/devbpm/linneo/Protection.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 5. Filas, derivados, compuestos y referencias · Curso de Linneo</title>
+<meta name="description" content="Clasifica campos cuya categoría cambia por fila, valores calculados, objetos embebidos, referencias a otros registros y tipos que el clasificador no ve.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html" aria-current="page"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 5. Filas, derivados, compuestos y referencias</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 5</span> Filas, derivados, compuestos y referencias</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>90 minutos</dd></div>
+<div><dt>Parte II:</dt><dd>Clasificar el modelo de datos</dd></div>
+</dl>
+<p class="entradilla">Los modelos reales no son listas planas de campos: hay columnas cuyo contenido cambia de una fila
+a otra, valores calculados, direcciones embebidas, colecciones, relaciones con otras entidades y campos de tipo
+genérico. Este capítulo explica cómo se declara cada estructura y qué reglas aplica el clasificador para que ninguna
+deje datos personales fuera de la clasificación.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#categoria-por-fila">@CategoryByRow: cuando la categoría depende de la fila</a></li>
+<li><a href="#derivados">@DerivedFrom: valores calculados</a></li>
+<li><a href="#compuestos">@Composite: clases que forman parte de otro registro</a></li>
+<li><a href="#referencias">Referencias a otros registros del modelo</a></li>
+<li><a href="#tipos-opacos">Tipos cuyo contenido el clasificador no ve</a></li>
+<li><a href="#proporcionalidad">Proporcionalidad: qué cierran estas reglas</a></li>
+<li><a href="#modelo-universidad">El modelo de la universidad hasta este punto</a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>clasificar con <code>@CategoryByRow</code> un campo cuya categoría depende de cada fila y elegir su techo;</li>
+<li>declarar con <code>@DerivedFrom</code> un valor calculado, en la misma clase o a partir de otra, y reconocer los
+errores de derivación, incluidos los ciclos;</li>
+<li>marcar con <code>@Composite</code> un objeto embebido y predecir las rutas <code>campo.parte</code> que produce a
+través de arrays, colecciones, <code>Optional</code> y variables de tipo;</li>
+<li>declarar un compuesto guardado como un solo valor y corregir un error <code>WEAKER_THAN_PARTS</code>;</li>
+<li>declarar una referencia a otro registro del modelo que contiene datos personales;</li>
+<li>explicar por qué un campo de tipo <code>Object</code>, <code>Serializable</code> o una variable de tipo sin enlazar
+nunca toma el valor por defecto de la clase.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Necesitas el <a href="04-anotaciones.html">capítulo 4</a>: <code>@Category</code>, <code>@DefaultCategory</code>,
+<code>@Exempt</code> y el modelo de la universidad que allí se construye. La comparación de protecciones
+(<code>Protection.covers</code>) se explica en el <a href="02-proteccion.html">capítulo 2</a>: una protección
+<dfn>cubre</dfn> a otra cuando es al menos igual de estricta en todo, es decir, cubre cada naturaleza jurídica de la
+otra, no tiene niveles inferiores y conserva el carácter secreto.</p>
+<p>En este capítulo la <dfn>ruta</dfn> de un campo deja de ser siempre su nombre: un campo de un objeto embebido se
+identifica como <code>campo.parte</code>, por ejemplo <code>home.city</code>.</p>
+<p>Las salidas se obtienen como en el capítulo 4: se clasifica la clase, se imprime cada
+<code>FieldClassification</code> (su <code>toString</code> muestra la ruta, la clave y el origen), seguida de su
+protección cuando importa, y después cada infracción. Cuando una salida muestra otro dato, como las fuentes de un campo
+derivado, el texto indica qué se imprime.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ClassClassification result = classifier.classify(Attachment.class);
+for (FieldClassification field : result.fields()) {
+    System.out.println(field + " " + field.protection());
+}
+result.violations().forEach(System.out::println);
+</code></pre>
+
+<h2 id="categoria-por-fila">@CategoryByRow: cuando la categoría depende de la fila</h2>
+<p>La universidad permite a los estudiantes subir documentos: un certificado de matrícula en una fila, un informe médico
+que justifica una ausencia en la siguiente, un formulario de beca en otra. La columna con el contenido del archivo no
+tiene una sola categoría honesta. <code>@CategoryByRow</code> declara dos cosas: qué decide la categoría de cada fila
+(<code>declaredBy</code>) y el <dfn>techo</dfn> (<code>ceiling</code>), la categoría más protectora que puede tener una
+fila.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 5.1. Los adjuntos de un documento, con contenido variable</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Attachment extends AuditedEntity {
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long id;
+
+    @Category(USER_CONTENT_PRIVATE)
+    private String fileName;
+
+    @CategoryByRow(declaredBy = "el documentType del Document al que pertenece", ceiling = USER_HEALTH_AND_MEDICAL)
+    private byte[] content;
+
+    @Category(SYSTEM_INTEGRITY)         // SHA-256 del contenido, para detectar manipulaciones
+    private String sha256;
+}
+</code></pre>
+</figure>
+<p>Donde hace falta una sola categoría para todo el campo (un inventario, una etiqueta en un catálogo) se usa el techo.
+El campo recibe la protección del techo, con el origen <code>BY_ROW</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">content = user.health_and_medical (BY_ROW) Protection[natures=[SPECIAL_CATEGORY], confidentiality=HIGH, integrity=HIGH, secret=false]
+</code></pre>
+<p>Si el techo es personal, la identificabilidad es <code>IDENTIFIED</code>, y <code>reason()</code> devuelve el texto
+de <code>declaredBy</code>. Imprimir <code>content.identifiability() + " | " + content.reason()</code> da:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">IDENTIFIED | el documentType del Document al que pertenece
+</code></pre>
+<p><code>@CategoryByRow</code> no tiene elementos de nivel ni de identificabilidad. Si necesitas más protección, elige
+un techo más estricto.</p>
+
+<h3 id="techo">Elegir el techo</h3>
+<p>El techo debe cubrir todo lo que pueda contener cualquier fila, no lo que contienen las filas de hoy. Para elegirlo,
+enumera los tipos de documento que la aplicación acepta y toma la categoría que cubra a todos. En la universidad, el
+peor caso es un informe médico, así que el techo es <code>user.health_and_medical</code>.</p>
+<p>Hay un límite que conviene conocer. Los datos de categoría especial y los datos penales son más estrictos que los
+datos personales ordinarios, pero no son comparables entre sí: ninguna de las dos naturalezas cubre a la otra, y una
+categoría tiene una sola naturaleza. Si un mismo campo pudiera recibir un informe médico en una fila y un certificado de
+antecedentes penales en otra, ningún techo cubriría ambas filas. Guarda esos contenidos en campos distintos, cada uno
+con su techo.</p>
+
+<h3 id="por-fila-reglas">Reglas que comprueba el clasificador</h3>
+<p>Estas son las cuatro formas de equivocarse con <code>@CategoryByRow</code> y los mensajes que producen:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@CategoryByRow(declaredBy = "", ceiling = USER_HEALTH_AND_MEDICAL)
+private byte[] blank;
+
+@Category(USER_NAME)
+@CategoryByRow(declaredBy = "el tipo", ceiling = USER_HEALTH_AND_MEDICAL)
+private byte[] both;
+
+@CategoryByRow(declaredBy = "el tipo", ceiling = "user.health")
+private byte[] unknownCeiling;
+
+@CategoryByRow(declaredBy = "el tipo", ceiling = USER_HEALTH_AND_MEDICAL)
+@DerivedFrom("id")
+private byte[] derivedToo;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR MISSING_REASON edu.example.university.Attachment.blank: @CategoryByRow needs declaredBy
+ERROR CONFLICTING_ANNOTATIONS edu.example.university.Attachment.both: @CategoryByRow cannot be combined with @Category or @DerivedFrom
+ERROR UNKNOWN_CATEGORY edu.example.university.Attachment.unknownCeiling: unknown data category 'user.health'
+ERROR CONFLICTING_ANNOTATIONS edu.example.university.Attachment.derivedToo: @CategoryByRow cannot be combined with @Category or @DerivedFrom
+</code></pre>
+<p>Un <code>declaredBy</code> en blanco no impide clasificar el campo: <code>blank</code> recibe la protección del techo
+y el error se informa igualmente. En los otros tres casos el campo queda sin clasificar.</p>
+
+<h3 id="comprobar-fila">Comprobar cada fila al escribirla</h3>
+<p>El clasificador nunca lee valores, así que no puede saber qué contiene cada fila. Cuando la aplicación guarda una,
+puede comprobar que la categoría elegida para ella queda por debajo del techo con
+<code>FieldClassification.covers</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">FieldClassification content = classifier.classify(Attachment.class).field("content").orElseThrow();
+boolean allowed = content.covers(taxonomy.requireCategory(USER_HEALTH_AND_MEDICAL_DISABILITY));
+</code></pre>
+<p>Con el techo <code>user.health_and_medical</code>, repite la comprobación para varias categorías:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">for (String key : List.of(USER_EDUCATION_ENROLLMENT, USER_FINANCIAL_SCHOLARSHIP, USER_HEALTH_AND_MEDICAL,
+        USER_HEALTH_AND_MEDICAL_DISABILITY, USER_CRIMINAL_HISTORY, USER_AUTHORIZATION_PASSWORD)) {
+    System.out.println("covers " + key + " -&gt; " + content.covers(taxonomy.requireCategory(key)));
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">covers user.education.enrollment -&gt; true
+covers user.financial.scholarship -&gt; true
+covers user.health_and_medical -&gt; true
+covers user.health_and_medical.disability -&gt; true
+covers user.criminal_history -&gt; false
+covers user.authorization.password -&gt; false
+</code></pre>
+<p>Un certificado penal no cabe bajo el techo, por lo explicado arriba, y tampoco una contraseña, porque es un secreto y
+el techo no lo es. El <a href="07-uso.html">capítulo 7</a> desarrolla este uso en tiempo de ejecución.</p>
+
+<h2 id="derivados">@DerivedFrom: valores calculados</h2>
+<p>Algunos campos no se capturan: se calculan. La edad se calcula a partir de la fecha de nacimiento; el nombre
+completo, a partir del nombre y los apellidos. Un valor calculado a partir de datos es esos datos, o los revela: la edad
+de un estudiante es un dato personal. <code>@DerivedFrom</code> nombra los campos de los que se calcula el valor, y el
+clasificador mantiene coherentes las dos clasificaciones.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-5-1">
+<table>
+<caption id="tabla-5-1">Tabla 5.1. Elementos de @DerivedFrom</caption>
+<thead>
+<tr><th scope="col">Elemento</th><th scope="col">Tipo</th><th scope="col">Si no se indica</th>
+<th scope="col">Significado</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>value</code></th><td><code>String[]</code></td><td>obligatorio</td><td>Las rutas de los campos
+de los que se calcula el valor. Al menos una.</td></tr>
+<tr><th scope="row"><code>type</code></th><td><code>Class&lt;?&gt;</code></td><td><code>void.class</code></td><td>La
+clase que declara las fuentes, cuando no es la que se clasifica: una vista, un objeto de transferencia o una fila de
+informe construidos a partir de una entidad. <code>void.class</code> significa la clase que se clasifica.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Una <dfn>fuente</dfn> es cada uno de los campos que nombra <code>value</code>. El Ejemplo 5.2 muestra una tarjeta
+impresa para el estudiante con dos valores calculados.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 5.2. Valores calculados en la tarjeta del estudiante</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class StudentCard {
+
+    @Category(USER_NAME_FIRST)
+    private String firstName;
+
+    @Category(USER_NAME_LAST)
+    private String lastName;
+
+    @Category(USER_DEMOGRAPHIC_DATE_OF_BIRTH)
+    private LocalDate dateOfBirth;
+
+    @DerivedFrom("dateOfBirth")               // toma la clasificación de su fuente
+    private int age;
+
+    @Category(USER_NAME)                      // declara la suya, que debe proteger al menos tanto
+    @DerivedFrom({"firstName", "lastName"})
+    private String fullName;
+}
+</code></pre>
+</figure>
+<p>Este extracto muestra los dos campos derivados y, en la última línea, el resultado de imprimir el
+<code>derivedFrom()</code> de cada uno:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">age = user.demographic.date_of_birth (DERIVED) Protection[natures=[ORDINARY], confidentiality=MEDIUM, integrity=MEDIUM, secret=false]
+fullName = user.name (DERIVED) Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+[dateOfBirth] [firstName, lastName]
+</code></pre>
+<p>Los dos campos tienen el origen <code>DERIVED</code>, y <code>derivedFrom()</code> lista sus fuentes. Si mañana la
+fecha de nacimiento recibe una protección más estricta, la edad la sigue sin que nadie la toque.</p>
+
+<h3 id="derivado-sin-categoria">Sin @Category: la clasificación de la fuente</h3>
+<p>Un campo derivado sin <code>@Category</code> toma la clasificación completa de su fuente: categoría, niveles e
+identificabilidad. Con varias fuentes, todas deben coincidir en categoría, confidencialidad, integridad e
+identificabilidad; si no, el campo tiene que declarar su propia categoría. Sin el <code>@Category(USER_NAME)</code> del
+Ejemplo 5.2, <code>fullName</code> sería un error, porque el nombre y los apellidos son categorías distintas:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR AMBIGUOUS_DERIVATION edu.example.university.StudentCard.fullName: its sources [firstName, lastName] have different classifications; declare the category of the derived value with @Category
+</code></pre>
+
+<h3 id="derivado-con-categoria">Con @Category: proteger al menos tanto como cada fuente</h3>
+<p>Con <code>@Category</code>, el campo declara su categoría y debe proteger al menos tanto como cada una de sus
+fuentes. Puede proteger más: un correo enmascarado que se muestra en pantalla puede elevar la confidencialidad. Supón
+que la tarjeta guarda también el correo del estudiante, en un campo <code>email</code> anotado con
+<code>@Category(USER_CONTACT_EMAIL)</code>, y dos valores calculados a partir de él:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_CONTACT_EMAIL, confidentiality = Confidentiality.HIGH)
+@DerivedFrom("email")
+private String maskedEmail;
+
+@Category(SYSTEM_OPERATIONS)                  // «un dominio no es un dato personal»
+@DerivedFrom("email")
+private String emailDomain;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">maskedEmail = user.contact.email (DERIVED) Protection[natures=[ORDINARY], confidentiality=HIGH, integrity=MEDIUM, secret=false]
+ERROR WEAKER_THAN_SOURCE edu.example.university.StudentCard.emailDomain: 'system.operations' protects less than its source(s) [email]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature
+</code></pre>
+<p>El argumento del comentario no convence al clasificador, y con razón: el dominio del correo de una persona, guardado
+junto a su registro, sigue diciendo algo de ella. Calcular un valor a partir de datos personales no lo hace menos
+personal.</p>
+
+<h3 id="anonimizado">La única forma explícita de proteger menos</h3>
+<p>Un valor derivado solo puede proteger menos que su fuente si se declara anonimizado o agregado: una categoría
+personal con <code>identifiability</code> igual a <code>ANONYMIZED</code> o <code>AGGREGATED</code>. Así lo hace la edad
+media de una cohorte, que resume a muchas personas:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(value = USER_DEMOGRAPHIC_DATE_OF_BIRTH, identifiability = Identifiability.AGGREGATED)
+@DerivedFrom("dateOfBirth")
+private double cohortAverageAge;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">cohortAverageAge = user.demographic.date_of_birth (DERIVED) Protection[natures=[NONE], confidentiality=MEDIUM, integrity=MEDIUM, secret=false]
+</code></pre>
+<p>La naturaleza es <code>NONE</code> porque el valor es agregado; los niveles son los de la fecha de nacimiento. La
+declaración es visible en el código y en la clasificación, y una revisión puede discutirla. Pero solo permite perder la
+naturaleza personal. La confidencialidad, la integridad y el secreto de las fuentes se conservan. En <code>Staff</code>,
+una pista de contraseña declarada anonimizada no puede rebajar la protección de un secreto:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(USER_AUTHORIZATION_PASSWORD)
+private String passwordHash;
+
+@Category(value = USER_NAME, identifiability = Identifiability.ANONYMIZED)
+@DerivedFrom("passwordHash")
+private String passwordHint;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR WEAKER_THAN_SOURCE edu.example.university.Staff.passwordHint: 'user.name' protects less than its source(s) [passwordHash]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature
+</code></pre>
+
+<h3 id="fuentes">Qué puede ser una fuente</h3>
+<p>Una fuente es una ruta de campo. Puede ser:</p>
+<ul>
+<li>un campo de la clase, incluidos los heredados y los declarados después del campo derivado;</li>
+<li>otro campo derivado, siempre que ninguna derivación dependa de sí misma;</li>
+<li>la ruta de una parte de un compuesto que contiene la clase, como <code>"home.city"</code>;</li>
+<li>la ruta del propio compuesto, como <code>"home"</code>, que representa todas sus partes.</li>
+</ul>
+<p>La última forma tiene una consecuencia: un compuesto suele tener partes de categorías distintas, así que un campo
+derivado de él entero necesita <code>@Category</code>. Con la dirección de la sección
+<a href="#compuestos">@Composite</a>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Letter {
+
+    private Address home;
+
+    @DerivedFrom("home.city")
+    private String city;
+
+    @DerivedFrom("home")
+    private String undecided;
+
+    @Category(USER_CONTACT_ADDRESS)
+    @DerivedFrom("home")
+    private String formatted;
+}
+</code></pre>
+<p>Además de los campos y las infracciones, la salida muestra las fuentes de cada campo derivado, impresas como
+<code>field.path() + " &lt;- " + field.derivedFrom()</code>. Es un extracto sin las partes de <code>home</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">city = user.contact.address.city (DERIVED)
+formatted = user.contact.address (DERIVED)
+ERROR AMBIGUOUS_DERIVATION edu.example.university.Letter.undecided: its sources [home.street, home.city, home.postalCode] have different classifications; declare the category of the derived value with @Category
+city &lt;- [home.city]
+formatted &lt;- [home.street, home.city, home.postalCode]
+</code></pre>
+<p>Una fuente tiene que ser un campo clasificado. Si no existe, si está exenta o si no se nombra ninguna, el campo
+derivado es un error <code>UNKNOWN_SOURCE</code>. Con estos campos en la tarjeta:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@DerivedFrom("nickname")
+private String greeting;
+
+@DerivedFrom({})
+private String none;
+
+@Exempt("caché de la tarjeta renderizada")
+private String rendered;
+
+@DerivedFrom("rendered")
+private String thumbnail;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNKNOWN_SOURCE edu.example.university.StudentCard.greeting: the source 'nickname' is not a classified field of StudentCard
+ERROR UNKNOWN_SOURCE edu.example.university.StudentCard.none: @DerivedFrom needs at least one source
+ERROR UNKNOWN_SOURCE edu.example.university.StudentCard.thumbnail: the source 'rendered' is not a classified field of StudentCard
+</code></pre>
+<p>En el tercer caso, <code>rendered</code> existe pero lleva <code>@Exempt</code>: un campo exento no tiene
+clasificación que transmitir. Un campo cuya propia anotación tiene un error tampoco la tiene, y se informa con el mismo
+mensaje.</p>
+
+<h3 id="entre-clases">Derivación entre clases</h3>
+<p>Con <code>type</code>, las fuentes son campos de otra clase, clasificados como los clasifica esa clase. Así una vista
+o un informe se mantienen coherentes con la entidad de la que salen. El resumen de una asignatura deriva su nota media
+de <code>Grade.mark</code> y la declara agregada:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 5.3. Un resumen que deriva de otra clase</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public record CourseSummary(
+        @Category(REFERENCE_PUBLIC) String courseCode,
+        @Category(value = USER_EDUCATION_GRADE, identifiability = Identifiability.AGGREGATED)
+        @DerivedFrom(type = Grade.class, value = "mark") BigDecimal averageMark) {
+}
+</code></pre>
+</figure>
+<p>La segunda línea es el <code>derivedFrom()</code> de <code>averageMark</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">averageMark = user.education.grade (DERIVED) Protection[natures=[NONE], confidentiality=MEDIUM, integrity=HIGH, secret=false]
+[edu.example.university.Grade#mark]
+</code></pre>
+<p>En <code>derivedFrom()</code>, una fuente de otra clase aparece como <code>NombreBinarioDeLaClase#ruta</code>. Si
+alguien diera a <code>Grade.mark</code> una categoría más estricta, el resumen se comprobaría contra ella. Una vista sin
+<code>@Category</code> sigue simplemente la clasificación de la entidad:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public record StudentView(@DerivedFrom(type = Student.class, value = "email") String email,
+                          @DerivedFrom(type = Student.class, value = "firstName") String firstName) {
+}
+</code></pre>
+<p>Las fuentes se resuelven campo a campo, de modo que dos clases pueden derivar de los otros campos de la otra: si
+<code>Enrollment</code> tuviera un <code>studentLastName</code> derivado de <code>Student.lastName</code> y
+<code>Student</code> un <code>lastTuitionFee</code> derivado de <code>Enrollment.tuitionFee</code>, no habría ciclo.
+Indicar como <code>type</code> la propia clase que se clasifica equivale a omitirlo.</p>
+
+<h3 id="ciclos">Ciclos</h3>
+<p>Un <dfn>ciclo</dfn> aparece cuando unos campos derivados dependen unos de otros: ninguno tiene entonces una
+clasificación de partida. El clasificador informa de <code>CYCLE</code> en cada campo del ciclo, y de
+<code>UNKNOWN_SOURCE</code> en los campos que dependen del ciclo sin formar parte de él:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Nicknames {
+    @DerivedFrom("shortName") private String displayName;
+    @DerivedFrom("displayName") private String shortName;
+    @DerivedFrom("displayName") private String initials;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CYCLE edu.example.university.Nicknames.displayName: is derived from itself through other derived fields
+ERROR CYCLE edu.example.university.Nicknames.shortName: is derived from itself through other derived fields
+ERROR UNKNOWN_SOURCE edu.example.university.Nicknames.initials: the source 'displayName' has an error
+</code></pre>
+<p>Los ciclos también se detectan entre clases. Si <code>Student.lastEnrollment</code> deriva de
+<code>Enrollment.reference</code> y esta a su vez de <code>Student.lastEnrollment</code>, cada clase informa de su
+campo:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CYCLE edu.example.university.Student.lastEnrollment: is derived from itself through other derived fields
+ERROR CYCLE edu.example.university.Enrollment.reference: is derived from itself through other derived fields
+</code></pre>
+<p>El resultado no depende del orden en que se clasifiquen las clases. Todas las derivaciones de una llamada forman una
+única búsqueda en profundidad en la que el algoritmo de Tarjan marca exactamente los campos que están en un ciclo, así
+que se encuentran los mismos campos empiece donde empiece la búsqueda. Clasificar <code>Student</code> y
+<code>Enrollment</code> en un orden o en el inverso da las mismas infracciones para cada clase. Para corregir un ciclo,
+haz que uno de los campos declare su categoría con <code>@Category</code> en lugar de derivarla, o elimina la
+dependencia que lo cierra.</p>
+
+<h2 id="compuestos">@Composite: clases que forman parte de otro registro</h2>
+<p>Los modelos <abbr title="Jakarta Persistence API">JPA</abbr> embeben objetos de valor pequeños, como una dirección,
+en varias entidades (<code>@Embeddable</code>). El clasificador lee los campos de la clase que recibe; para que un campo
+de tipo
+<code>Address</code> se clasifique por lo que contiene la dirección, marca la clase con <code>@Composite</code>. Un
+<dfn>compuesto</dfn> es una clase así marcada.</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 5.4. Una dirección compuesta y una solicitud de beca que la usa</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@Composite                                         // con JPA, junto a @Embeddable
+public class Address {
+
+    @Category(USER_CONTACT_ADDRESS_STREET)
+    private String street;
+
+    @Category(USER_CONTACT_ADDRESS_CITY)
+    private String city;
+
+    @Category(USER_CONTACT_ADDRESS_POSTAL_CODE)
+    private String postalCode;
+}
+
+public class ScholarshipApplication {
+
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE)
+    private Long id;
+
+    private Address home;                          // home.street, home.city, home.postalCode
+
+    private List&lt;Address&gt; previous;                // previous.street, previous.city, previous.postalCode
+
+    @Category(USER_CONTACT_ADDRESS)                // guardada como un solo valor, por ejemplo como JSON
+    private Address billing;
+}
+</code></pre>
+</figure>
+<p>Al clasificar <code>ScholarshipApplication</code> se obtiene una entrada por cada campo de cada dirección
+embebida:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">id = user.unique_id.record_reference (DECLARED)
+home.street = user.contact.address.street (DECLARED)
+home.city = user.contact.address.city (DECLARED)
+home.postalCode = user.contact.address.postal_code (DECLARED)
+previous.street = user.contact.address.street (DECLARED)
+previous.city = user.contact.address.city (DECLARED)
+previous.postalCode = user.contact.address.postal_code (DECLARED)
+billing = user.contact.address (DECLARED)
+</code></pre>
+<p>Cuatro reglas describen lo que ocurre:</p>
+<ul>
+<li>Un campo <strong>sin anotación propia</strong> cuyo tipo es un compuesto concreto se clasifica por los campos del
+compuesto, con la ruta <code>campo.parte</code>. Para <code>home.city</code>, <code>declaringClass()</code> es
+<code>Address</code> y <code>fieldName()</code> es <code>city</code>.</li>
+<li>Los campos del compuesto se resuelven con <strong>sus propias</strong> anotaciones y su propia
+<code>@DefaultCategory</code>; el valor por defecto de la clase que lo contiene nunca les llega.</li>
+<li>Un campo <strong>con</strong> <code>@Category</code>, <code>@CategoryByRow</code> o <code>@DerivedFrom</code>, como
+<code>billing</code>, guarda el compuesto como un solo valor y es una sola entrada.</li>
+<li><code>ClassClassification.ceilingOf("home")</code> devuelve la protección que cubre todo lo que contiene el
+compuesto: aquí <code>Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]</code>.</li>
+</ul>
+<p>El marcador es propio de Linneo, no de un framework, para que la biblioteca no tenga dependencias. Se hereda: una
+subclase de un compuesto es un compuesto. Y no hace falta pasar los compuestos a la verificación por separado: se
+comprueban como parte de cada clase que los contiene (<a href="06-verificacion.html">capítulo 6</a>).</p>
+
+<h3 id="recorrido">Arrays, colecciones y Optional a cualquier profundidad</h3>
+<p>El clasificador entra en un compuesto aunque esté envuelto: en un array, en una colección (cualquier
+<code>Iterable</code>, también una subclase propia de <code>ArrayList</code>) o en un <code>Optional</code>, anidados a
+cualquier profundidad. La ruta es siempre <code>campo.parte</code>, sin índices. El registro de antiguos alumnos lo
+muestra:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 5.5. Compuestos envueltos de varias formas</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">public class InternationalAddress extends Address {      // @Composite se hereda
+    @Category(USER_CONTACT_ADDRESS_COUNTRY) private String country;
+}
+
+public class AddressHistory extends ArrayList&lt;Address&gt; {
+    private static final long serialVersionUID = 1L;
+}
+
+public class Alumnus {
+    @Category(USER_UNIQUE_ID) private Long id;
+    private Optional&lt;Address&gt; mailing;
+    private Address[] previous;
+    private List&lt;List&lt;Address&gt;&gt; byYear;
+    private InternationalAddress abroad;
+    private AddressHistory moves;
+}
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">id = user.unique_id (DECLARED)
+mailing.street = user.contact.address.street (DECLARED)
+mailing.city = user.contact.address.city (DECLARED)
+mailing.postalCode = user.contact.address.postal_code (DECLARED)
+previous.street = user.contact.address.street (DECLARED)
+previous.city = user.contact.address.city (DECLARED)
+previous.postalCode = user.contact.address.postal_code (DECLARED)
+byYear.street = user.contact.address.street (DECLARED)
+byYear.city = user.contact.address.city (DECLARED)
+byYear.postalCode = user.contact.address.postal_code (DECLARED)
+abroad.street = user.contact.address.street (DECLARED)
+abroad.city = user.contact.address.city (DECLARED)
+abroad.postalCode = user.contact.address.postal_code (DECLARED)
+abroad.country = user.contact.address.country (DECLARED)
+moves.street = user.contact.address.street (DECLARED)
+moves.city = user.contact.address.city (DECLARED)
+moves.postalCode = user.contact.address.postal_code (DECLARED)
+</code></pre>
+<p>Para <code>moves</code>, el tipo de los elementos sale de la superclase <code>ArrayList&lt;Address&gt;</code>. Para
+<code>abroad</code>, <code>InternationalAddress</code> es compuesto por herencia y aporta su campo <code>country</code>.
+En cambio, un campo declarado como <code>Address</code> que en ejecución contenga una <code>InternationalAddress</code>
+solo produce las rutas de <code>Address</code>: el clasificador ve tipos declarados, no valores. Declara el campo con el
+tipo más concreto que pueda contener.</p>
+
+<h3 id="variables-de-tipo">Variables de tipo resueltas por las superclases</h3>
+<p>Un campo cuyo tipo es una variable de tipo se resuelve a través de las superclases de la clase que se clasifica. La
+universidad guarda versiones de la dirección de cada estudiante con una clase base genérica:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public abstract class Versioned&lt;T&gt; {
+    private T current;
+    private List&lt;T&gt; history;
+}
+
+public class AddressVersions extends Versioned&lt;Address&gt; {
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE) private Long studentId;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">current.street = user.contact.address.street (DECLARED)
+current.city = user.contact.address.city (DECLARED)
+current.postalCode = user.contact.address.postal_code (DECLARED)
+history.street = user.contact.address.street (DECLARED)
+history.city = user.contact.address.city (DECLARED)
+history.postalCode = user.contact.address.postal_code (DECLARED)
+studentId = user.unique_id.record_reference (DECLARED)
+</code></pre>
+<p>Al clasificar <code>AddressVersions</code>, <code>T</code> es <code>Address</code>. Si clasificas una clase que no
+enlaza su variable de tipo, el clasificador no sabe qué contiene el campo, y lo dice:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Draft&lt;T&gt; {
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE) private Long id;
+    private T value;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Draft.value: it holds values typed by the type variable T, which the class does not bind: no class default applies. Declare its category with @Category or @CategoryByRow
+</code></pre>
+
+<h3 id="guardado-entero">Un compuesto guardado como un solo valor: WEAKER_THAN_PARTS</h3>
+<p>Un campo que guarda el compuesto como un solo valor, por ejemplo como
+<abbr title="JavaScript Object Notation">JSON</abbr> en una columna, declara su categoría con <code>@Category</code> o
+<code>@CategoryByRow</code>. Ese valor contiene todos los campos del compuesto, así que su protección debe cubrirlos. Si
+no, el clasificador informa de <code>WEAKER_THAN_PARTS</code> y muestra la protección que se necesitaba:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Composite
+public class MedicalCertificate {
+    @Category(USER_HEALTH_AND_MEDICAL) private String condition;
+    @Category(USER_NAME) private String issuer;
+}
+
+public class ScholarshipApplication {
+    @Category(USER_UNIQUE_ID_RECORD_REFERENCE) private Long id;
+    @Category(SYSTEM_OPERATIONS) private Address billing;
+    @Category(USER_CONTENT_PRIVATE) private MedicalCertificate certificate;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR WEAKER_THAN_PARTS edu.example.university.ScholarshipApplication.billing: 'system.operations' protects less than the fields of [Address] need ([ORDINARY], LOW, MEDIUM)
+ERROR WEAKER_THAN_PARTS edu.example.university.ScholarshipApplication.certificate: 'user.content.private' protects less than the fields of [MedicalCertificate] need ([SPECIAL_CATEGORY], HIGH, HIGH)
+</code></pre>
+<p>El paréntesis final enumera las naturalezas, la confidencialidad, la integridad y, si procede, el secreto que se
+necesitan. Corrige el campo con una categoría que cubra todo: <code>USER_CONTACT_ADDRESS</code> para la dirección,
+<code>USER_HEALTH_AND_MEDICAL</code> para el certificado. A diferencia de otros errores, en este el campo se sigue
+clasificando con la categoría declarada; el error se informa igualmente. La misma comprobación se aplica a un campo
+derivado que guarda un compuesto.</p>
+
+<h3 id="compuestos-con-errores">Compuestos con errores y ciclos</h3>
+<p>Los problemas de un compuesto se informan en cada clase que lo contiene, en la ruta <code>campo.parte</code>, con esa
+clase como <code>type()</code> de la infracción. Si el compuesto tiene un error, un campo que lo guarda como un solo
+valor no tiene con qué compararse, y eso también es un error:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Composite
+public class EmergencyContact {
+    @Category(USER_NAME) private String name;
+    private String phone;
+}
+
+public class StudentFile {
+    @Category(USER_UNIQUE_ID) private Long id;
+    private EmergencyContact emergency;
+    @Category(USER_CONTACT_EMERGENCY_CONTACT) private EmergencyContact backup;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.StudentFile.emergency.phone: no @Category on the field and no @DefaultCategory on EmergencyContact
+ERROR WEAKER_THAN_PARTS edu.example.university.StudentFile.backup: the fields of [EmergencyContact] have errors, so what 'user.contact.emergency_contact' must protect is unknown
+</code></pre>
+<p>Un problema de una anotación de clase del compuesto, como un <code>@DefaultCategory</code> defectuoso, no tiene ruta
+propia y se informa en la ruta del campo que lo contiene.</p>
+<p>Un compuesto que se contiene a sí mismo, como un hilo de comentarios con respuestas, no puede expandirse: las rutas
+serían infinitas. El error <code>CYCLE</code> se informa en el campo que cierra el bucle, y los demás campos se
+clasifican con normalidad. Si <code>Document</code> guarda un hilo así en un campo <code>private CommentThread
+comments;</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Composite
+public class CommentThread {
+    @Category(USER_CONTENT_PRIVATE) private String text;
+    private List&lt;CommentThread&gt; replies;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CYCLE edu.example.university.Document.comments.replies: the composite CommentThread contains itself; classify the field as one value with @Category or @CategoryByRow
+</code></pre>
+<p>La corrección es la que propone el mensaje: guardar las respuestas como un solo valor.</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Category(USER_CONTENT_PRIVATE)                      // un solo valor: corta el bucle
+private List&lt;CommentThread&gt; replies;
+</code></pre>
+<p>La clasificación de <code>Document</code> incluye entonces estas dos entradas (extracto):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">comments.text = user.content.private (DECLARED)
+comments.replies = user.content.private (DECLARED)
+</code></pre>
+<p>El campo <code>replies</code> se comprueba entonces contra las partes de <code>CommentThread</code>, él incluido, y
+<code>user.content.private</code> las cubre. El campo en el que se informa un ciclo de contención es lo único que puede
+depender del orden en que se clasifican las clases; qué clases tienen errores, no.</p>
+
+<h3 id="abstractos-genericos">Compuestos abstractos y genéricos</h3>
+<p>Marca con <code>@Composite</code> clases concretas y records. El clasificador no ve los campos de las
+implementaciones de una interfaz o de una clase abstracta, así que un campo de ese tipo no se expande y no toma el valor
+por defecto de la clase:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Composite
+public abstract class IdentityDocument {
+    @Category(USER_GOVERNMENT_ID) private String number;
+}
+
+public class IdentityHolder {
+    @Category(USER_UNIQUE_ID) private Long id;
+    private IdentityDocument identity;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.IdentityHolder.identity: it holds the abstract composite IdentityDocument, whose implementations may have fields it does not declare: no class default applies. Declare its category with @Category or @CategoryByRow
+</code></pre>
+<p>Un compuesto genérico plantea otro problema. Si <code>IdentityHolder</code> tiene un campo <code>private
+Dated&lt;Address&gt; currentAddress;</code>, el campo menciona dos compuestos, <code>Dated</code> y
+<code>Address</code>, y las partes de uno quedarían dentro de las del otro sin una ruta clara. El clasificador no lo
+divide:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Composite
+public class Dated&lt;T&gt; {
+    @Category(SYSTEM_OPERATIONS) private LocalDate since;
+    private T value;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.IdentityHolder.currentAddress: it holds [Address, Dated] in a way that cannot be split into the composites' fields (a map, a type argument of a class that is not a collection, or several composites): no class default applies. Declare its category with @Category or @CategoryByRow
+</code></pre>
+<p>En ambos casos, declara el campo como un solo valor con <code>@Category</code>. En el caso genérico, la categoría se
+comprueba contra los campos de <code>Dated</code> y de <code>Address</code>. En el abstracto no hay comprobación, porque
+el clasificador no conoce los campos de las implementaciones: elige una categoría que cubra cualquiera de ellas.</p>
+
+<h3 id="mapas">Mapas de compuestos</h3>
+<p>El clasificador nunca entra en un <code>Map</code> ni en un <code>Map.Entry</code>: sus claves también son datos, y
+una ruta <code>campo.parte</code> no diría nada de ellas. Un mapa que contiene compuestos se declara como un valor. En
+una variante de <code>ScholarshipApplication</code>:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">private Map&lt;String, Address&gt; undeclaredMap;
+
+@Category(USER_CONTACT_ADDRESS)
+private Map&lt;String, Address&gt; addressesByType;
+
+@Category(SYSTEM_OPERATIONS)
+private Map&lt;String, Address&gt; weakMap;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">addressesByType = user.contact.address (DECLARED)
+ERROR WEAKER_THAN_PARTS edu.example.university.ScholarshipApplication.weakMap: 'system.operations' protects less than the fields of [Address] need ([ORDINARY], LOW, MEDIUM)
+ERROR UNCLASSIFIED_FIELD edu.example.university.ScholarshipApplication.undeclaredMap: it holds [Address] in a way that cannot be split into the composites' fields (a map, a type argument of a class that is not a collection, or several composites): no class default applies. Declare its category with @Category or @CategoryByRow
+</code></pre>
+<p>La categoría declarada debe cubrir los campos del compuesto, igual que un compuesto guardado como JSON. Si las claves
+del mapa son en sí mismas un dato más sensible que los valores (por ejemplo, el nombre de una persona), elige una
+categoría que también las cubra: el clasificador no puede saber qué contienen.</p>
+
+<h2 id="referencias">Referencias a otros registros del modelo</h2>
+<p>Un campo sin anotación propia cuyo tipo es otra clase del modelo <dfn>se refiere</dfn> a ese registro. Para el
+clasificador, una clase es «del modelo» cuando declara alguna clasificación: un <code>@DefaultCategory</code>, un campo
+anotado o un campo de un tipo compuesto. Un tipo sellado se lee a través de sus subclases permitidas, y también se leen
+los argumentos de tipo (<code>List&lt;Building&gt;</code>). En JPA, son las asociaciones <code>@ManyToOne</code>,
+<code>@OneToMany</code> y similares.</p>
+<p>Una referencia guarda, en la práctica, la clave del registro. La pregunta es si esa clave es un dato personal, y la
+respuesta depende del registro.</p>
+
+<h3 id="referencia-sin-datos">Registros sin datos personales</h3>
+<p>Si el registro referido no contiene datos personales, como un edificio de un catálogo, el campo toma el valor por
+defecto de la clase como cualquier otro:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 5.6. Un aula con una referencia a un catálogo y otra a una persona</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = ORG_LOCATION, reason = "catálogo de edificios del campus")
+public class Building {
+
+    private String code;
+    private String name;
+}
+
+@DefaultCategory(value = ORG_LOCATION, reason = "aulas y espacios del campus")
+public class Room {
+
+    private Long id;
+    private String code;
+    private int capacity;
+
+    private Building building;                         // catálogo sin datos personales: valor por defecto
+
+    @DerivedFrom(type = Staff.class, value = "id")     // una persona: guarda la clave de un Staff
+    private Staff responsible;
+}
+</code></pre>
+</figure>
+<p>Extracto de la salida, con el <code>derivedFrom()</code> de <code>responsible</code> en la última línea:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">building = org.location (CLASS_DEFAULT) Protection[natures=[NONE], confidentiality=LOW, integrity=MEDIUM, secret=false]
+responsible = user.unique_id (DERIVED) Protection[natures=[ORDINARY], confidentiality=LOW, integrity=MEDIUM, secret=false]
+[edu.example.university.Staff#id]
+</code></pre>
+
+<h3 id="referencia-con-datos">Registros con datos personales</h3>
+<p>Una referencia al registro de una persona es en sí misma un dato personal: una clave seudónima que permite llegar a
+ella. Por eso el valor por defecto no personal de la clase no puede representarla. Sin la anotación de
+<code>responsible</code>, el clasificador rechaza el valor por defecto y propone la corrección:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Room.responsible: the class default 'org.location' does not apply: the field refers to Staff that holds personal data, and a reference to a person's record is personal data: declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Staff.class, value = "id")
+</code></pre>
+<p>Tienes dos formas de declararla:</p>
+<ul>
+<li><code>@DerivedFrom(type = Staff.class, value = "id")</code>: el campo toma la clasificación de la clave del
+registro, como en el Ejemplo 5.6. Si la clave de <code>Staff</code> cambia de categoría, la referencia la sigue. Es la
+forma recomendada, y la que usa <code>Document.attachments</code> en el <a href="04-anotaciones.html">capítulo
+4</a>.</li>
+<li><code>@Category</code> con la clave que describa lo que guarda el campo, normalmente
+<code>USER_UNIQUE_ID_RECORD_REFERENCE</code>. El clasificador acepta la declaración tal como está, sin compararla con el
+registro: es una decisión explícita que la revisión del código puede ver, y por eso conviene preferir la primera
+forma.</li>
+</ul>
+<p>Una referencia así tampoco se puede eximir, porque sí contiene datos del modelo:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@Exempt("relación con el responsable, se carga bajo demanda")
+private Staff deputy;
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR CONFLICTING_ANNOTATIONS edu.example.university.Room.deputy: @Exempt is for a field that holds no data of the model, and this one refers to Staff that holds personal data, and a reference to a person's record is personal data: declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Staff.class, value = "id")
+</code></pre>
+<p>Si la clase que contiene la referencia no tiene valor por defecto, el mensaje es el habitual de un campo sin
+clasificar, porque no hay valor por defecto que rechazar. Así ocurre con una asociación <code>private Student
+student;</code> en <code>Enrollment</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Enrollment.student: no @Category on the field and no @DefaultCategory on Enrollment
+</code></pre>
+<p>La comprobación se hace al final de clasificar la clase, cuando ya se sabe si el registro referido contiene datos
+personales, y funciona igual aunque dos registros se refieran el uno al otro. Si los campos del registro referido tienen
+errores, la comprobación de la referencia espera a que se corrijan; el
+<a href="06-verificacion.html#todas-a-la-vez">capítulo 6</a> explica por qué eso obliga a verificar todas las
+clases.</p>
+
+<h3 id="olvidar-composite">Olvidar @Composite es seguro</h3>
+<p>Una clase embebible sin <code>@Composite</code> no se expande: para el clasificador es una referencia a otro
+registro. Como tiene campos personales, ningún valor por defecto la cubre, y la verificación falla hasta que marques la
+clase o declares el campo:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class PostalAddress {                                  // sin @Composite
+    @Category(USER_CONTACT_ADDRESS_STREET) private String street;
+}
+
+@DefaultCategory(value = ORG_BUSINESS_RECORDS, reason = "envíos del boletín de antiguos alumnos")
+public class NewsletterShipment {
+    private Long batch;
+    private PostalAddress recipient;
+}
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">batch = org.business_records (CLASS_DEFAULT)
+ERROR UNCLASSIFIED_FIELD edu.example.university.NewsletterShipment.recipient: the class default 'org.business_records' does not apply: the field refers to PostalAddress that holds personal data, and a reference to a person's record is personal data: declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = PostalAddress.class, value = "id")
+</code></pre>
+<p>El mensaje sugiere <code>@DerivedFrom(type = PostalAddress.class, value = "id")</code> porque no sabe que
+<code>PostalAddress</code> es un objeto embebido sin clave. La corrección adecuada aquí es añadir
+<code>@Composite</code> a la clase. Lo importante es que el olvido no deja pasar datos personales con una categoría no
+personal.</p>
+
+<h2 id="tipos-opacos">Tipos cuyo contenido el clasificador no ve</h2>
+<p>Un valor por defecto de clase es una afirmación sobre lo que el clasificador ve. Hay tipos de campo que pueden
+contener cualquier cosa: un <code>Object</code>, un <code>Serializable</code>, una variable de tipo que la clase no
+enlaza, una colección sin parametrizar. Si el valor por defecto se aplicara a ellos, envolver un dato personal en un
+<code>Object</code> bastaría para clasificarlo como no personal. Por eso el clasificador nunca aplica el valor por
+defecto a esos campos: si no llevan anotación, son un error <code>UNCLASSIFIED_FIELD</code>. La clase técnica de lotes
+de importación lo muestra:</p>
+<figure class="ejemplo">
+<figcaption>Ejemplo 5.7. Campos opacos y campos corrientes bajo un valor por defecto</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@DefaultCategory(value = SYSTEM_OPERATIONS, reason = "lotes técnicos de importación")
+public class ImportBatch&lt;T&gt; {
+    private Long id;
+    private Object payload;
+    private Serializable snapshot;
+    private Comparable&lt;String&gt; sortKey;
+    private T row;
+    @SuppressWarnings("rawtypes") private List rawRows;
+    private List&lt;?&gt; rows;
+    private Supplier&lt;Address&gt; lazyAddress;
+    private Map&lt;String, Object&gt; attributes;
+    private Class&lt;?&gt; kind;
+    private List&lt;String&gt; tags;
+    private Map&lt;String, Integer&gt; counters;
+}
+</code></pre>
+</figure>
+<pre class="codigo salida" tabindex="0"><code class="language-text">id = system.operations (CLASS_DEFAULT)
+kind = system.operations (CLASS_DEFAULT)
+tags = system.operations (CLASS_DEFAULT)
+counters = system.operations (CLASS_DEFAULT)
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.payload: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.snapshot: it holds values typed Serializable, which may be anything: no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.sortKey: it holds values typed Comparable, which may be anything: no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.row: it holds values typed by the type variable T, which the class does not bind: no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.rawRows: it holds values typed by the type variable E, which the class does not bind: no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.rows: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.lazyAddress: it holds [Address] in a way that cannot be split into the composites' fields (a map, a type argument of a class that is not a collection, or several composites): no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.attributes: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
+</code></pre>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-5-2">
+<table>
+<caption id="tabla-5-2">Tabla 5.2. Qué tipos toman el valor por defecto de la clase</caption>
+<thead>
+<tr><th scope="col">Tipo del campo</th><th scope="col">¿Toma el valor por defecto?</th><th scope="col">Por qué</th>
+</tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Object</code>, <code>List&lt;?&gt;</code>, <code>Map&lt;String,
+Object&gt;</code></th><td>No</td> <td>Puede contener cualquier valor, también datos personales.</td></tr>
+<tr><th scope="row"><code>Serializable</code>, <code>Comparable</code>, <code>Cloneable</code></th><td>No</td> <td>Son
+interfaces que cualquier valor puede implementar.</td></tr>
+<tr><th scope="row">Variable de tipo sin enlazar (<code>T</code>), colección sin parametrizar (<code>List</code>)</th>
+<td>No</td><td>La clase no dice qué contiene. En una colección sin parametrizar, el mensaje nombra la variable de tipo
+de la colección (<code>E</code>).</td></tr>
+<tr><th scope="row">Compuesto como argumento de una clase que no es una colección
+(<code>Supplier&lt;Address&gt;</code>), en un mapa, abstracto o genérico</th><td>No</td><td>Sus campos no pueden ser
+rutas, o el clasificador no los conoce todos.</td></tr>
+<tr><th scope="row">Referencia a un registro con datos personales</th><td>No</td><td>La referencia es un dato
+personal.</td></tr>
+<tr><th scope="row"><code>Class&lt;?&gt;</code>, <code>List&lt;String&gt;</code>, <code>Map&lt;String,
+Integer&gt;</code>, <code>Optional&lt;String&gt;</code></th><td>Sí</td><td>Su contenido está determinado y no incluye
+compuestos ni registros del modelo.</td></tr>
+<tr><th scope="row">Enumerados y clases de valor sin anotaciones de Linneo (un record
+<code>Money</code>)</th><td>Sí</td> <td>No declaran nada que el clasificador lea; el valor por defecto los cubre como un
+valor.</td></tr>
+<tr><th scope="row">Referencia a un registro sin datos personales</th><td>Sí</td><td>Como un elemento de un catálogo.
+</td></tr>
+</tbody>
+</table>
+</div>
+<p>Para corregir un campo opaco, haz una de estas tres cosas: estrecha su tipo (un <code>List&lt;String&gt;</code> en
+lugar de un <code>List</code>), declara su categoría con <code>@Category</code> o <code>@CategoryByRow</code>, o, si de
+verdad no contiene datos del modelo, exímelo con su motivo, como el <code>Object fileStore</code> de
+<code>Document</code>.</p>
+
+<h2 id="proporcionalidad">Proporcionalidad: qué cierran estas reglas</h2>
+<p>Las reglas de este capítulo pueden parecer muchas. Responden a un criterio de diseño de Linneo: la biblioteca es un
+clasificador y una herramienta de ayuda. Sus reglas cierran los huecos en los que puede caer un modelo bien escrito, sin
+exigir anotaciones para casos a los que solo se llega con un mal uso.</p>
+<p>Un modelo correcto puede, sin que nadie lo pretenda, envolver una dirección en una lista, guardar un certificado como
+JSON, olvidar el marcador de un embebible, enlazar una entidad con la de una persona o declarar un campo como
+<code>Object</code> en una clase técnica. En todos esos casos, sin las reglas, un valor por defecto no personal acabaría
+cubriendo datos personales. La Tabla 5.3 relaciona cada hueco con la regla que lo cierra.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-5-3">
+<table>
+<caption id="tabla-5-3">Tabla 5.3. Huecos de un modelo correcto y reglas que los cierran</caption>
+<thead>
+<tr><th scope="col">Hueco</th><th scope="col">Regla</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Un compuesto dentro de un array, una colección o un <code>Optional</code></th><td>Se recorre a
+cualquier profundidad.</td></tr>
+<tr><th scope="row">Un compuesto guardado como JSON con una categoría débil</th><td><code>WEAKER_THAN_PARTS</code>.
+</td></tr>
+<tr><th scope="row">Un valor calculado declarado con una categoría débil</th><td><code>WEAKER_THAN_SOURCE</code>; solo
+la anonimización o la agregación declaradas permiten perder la naturaleza personal.</td></tr>
+<tr><th scope="row">Una relación JPA con la entidad de una persona en una clase con valor por defecto</th><td>La
+referencia rechaza el valor por defecto y no admite <code>@Exempt</code>.</td></tr>
+<tr><th scope="row">Un embebible sin <code>@Composite</code></th><td>Se trata como referencia y no toma el valor por
+defecto.</td></tr>
+<tr><th scope="row">Un campo <code>Object</code>, <code>Serializable</code> o <code>T</code> en una clase técnica</th>
+<td>Nunca toma el valor por defecto.</td></tr>
+<tr><th scope="row">Un compuesto en un mapa, abstracto o genérico</th><td>Nunca toma el valor por defecto; se declara
+como un valor y se comprueba contra sus partes.</td></tr>
+</tbody>
+</table>
+</div>
+<p>A la vez, Linneo no pide anotaciones donde un modelo correcto no corre riesgo. Un <code>List&lt;String&gt;</code>, un
+<code>Map&lt;String, Integer&gt;</code>, un enumerado o una clase de valor sin anotaciones toman el valor por defecto de
+la clase, porque esa afirmación ya la hizo alguien con un motivo escrito. Si una persona guarda un nombre en un campo
+<code>String</code> de una clase declarada sin datos personales, el clasificador no puede saberlo, porque no lee
+valores; lo detecta la revisión del motivo del valor por defecto. Tampoco sigue los campos de una subclase de un
+compuesto guardada en un campo de la superclase: se documenta el límite y se recomienda declarar el tipo concreto.</p>
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>Estas reglas ayudan a no olvidar datos personales y a demostrar qué se ha clasificado y por qué, pero no garantizan
+el cumplimiento del <abbr title="Reglamento General de Protección de Datos">RGPD</abbr>. Lo que el código no puede ver
+(qué contienen de verdad las filas, si una agregación permite reidentificar, si un motivo de exención es cierto) lo
+declaran y revisan las personas responsables: el equipo de desarrollo y el delegado de protección de datos.</p>
+</div>
+
+<h2 id="modelo-universidad">El modelo de la universidad hasta este punto</h2>
+<p>El modelo suma ahora a las clases del <a href="04-anotaciones.html">capítulo 4</a> la dirección <code>Address</code>
+y la solicitud <code>ScholarshipApplication</code> (Ejemplo 5.4), <code>Document</code> (Ejemplo 4.6) y
+<code>Attachment</code> (Ejemplo 5.1), el resumen <code>CourseSummary</code> (Ejemplo 5.3), la tarjeta
+<code>StudentCard</code> (Ejemplo 5.2) y el catálogo de espacios <code>Building</code> y <code>Room</code> (Ejemplo
+5.6). Las trece clases pasan la verificación sin errores, y también <code>AuditedEntity</code> y <code>Address</code>,
+que se comprueban como parte de las clases que las usan. La Tabla 5.4 resume las nuevas.</p>
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-5-4">
+<table>
+<caption id="tabla-5-4">Tabla 5.4. Clases añadidas en el capítulo 5</caption>
+<thead>
+<tr><th scope="col">Clase</th><th scope="col">Campos clasificados</th><th scope="col">Personales</th>
+<th scope="col">Exentos</th><th scope="col">Estructuras que usa</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Document</code></th><td>9</td><td>6</td><td>1</td><td>referencia declarada con
+<code>@DerivedFrom</code></td></tr>
+<tr><th scope="row"><code>Attachment</code></th><td>8</td><td>4</td><td>0</td><td><code>@CategoryByRow</code></td></tr>
+<tr><th scope="row"><code>ScholarshipApplication</code></th><td>8</td><td>8</td><td>0</td><td>compuesto embebido, en
+lista y guardado como un valor</td></tr>
+<tr><th scope="row"><code>CourseSummary</code></th><td>2</td><td>0</td><td>0</td><td>derivación entre clases,
+agregada</td></tr>
+<tr><th scope="row"><code>StudentCard</code></th><td>5</td><td>5</td><td>0</td><td>derivaciones en la misma
+clase</td></tr>
+<tr><th scope="row"><code>Building</code></th><td>2</td><td>0</td><td>0</td><td>valor por defecto</td></tr>
+<tr><th scope="row"><code>Room</code></th><td>5</td><td>1</td><td>0</td><td>referencias a un catálogo y a una
+persona</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Los recuentos de <code>Document</code> y <code>Attachment</code> incluyen los cuatro campos heredados de
+<code>AuditedEntity</code>. <code>Address</code> no se cuenta aparte: sus campos aparecen en cada clase que la
+contiene.</p>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Elegir el techo de <code>@CategoryByRow</code> por las filas de hoy</dt>
+<dd>El techo debe cubrir cualquier fila posible. Enumera los tipos de contenido que la aplicación acepta y toma la
+categoría que cubra a todos.</dd>
+<dt>Declarar un valor calculado con una categoría no personal</dt>
+<dd><code>WEAKER_THAN_SOURCE</code>. Quita <code>@Category</code> para heredar la de la fuente o elige una que la cubra.
+Solo un valor declarado anonimizado o agregado puede perder la naturaleza personal.</dd>
+<dt>Derivar un valor de varias fuentes sin declarar su categoría</dt>
+<dd><code>AMBIGUOUS_DERIVATION</code> si las fuentes difieren. Añade <code>@Category</code> con una categoría que cubra
+todas.</dd>
+<dt>Usar como fuente un campo exento o con un error</dt>
+<dd><code>UNKNOWN_SOURCE</code>. Una fuente debe ser un campo clasificado.</dd>
+<dt>Olvidar <code>@Composite</code> en un embebible</dt>
+<dd>El campo se trata como referencia a un registro y falla con <code>UNCLASSIFIED_FIELD</code>. Marca la clase; no
+eximas el campo.</dd>
+<dt>Guardar un compuesto como JSON con una categoría técnica</dt>
+<dd><code>WEAKER_THAN_PARTS</code>. La categoría del valor debe cubrir todos los campos del compuesto.</dd>
+<dt>Dejar sin anotar una relación con la entidad de una persona</dt>
+<dd>La referencia rechaza el valor por defecto. Declárala con <code>@DerivedFrom(type = X.class, value = "id")</code>.
+</dd>
+<dt>Usar <code>Object</code> o un tipo genérico sin enlazar para ahorrarse una decisión</dt>
+<dd>Nunca toma el valor por defecto. Estrecha el tipo o declara la categoría.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li><code>@CategoryByRow</code> declara qué decide la categoría de cada fila y su techo; el campo recibe la protección
+del techo, y la aplicación comprueba cada fila con <code>FieldClassification.covers</code>.</li>
+<li><code>@DerivedFrom</code> hace que un valor calculado tome la clasificación de sus fuentes o declare una que la
+cubra; solo la anonimización o la agregación declaradas permiten perder la naturaleza personal, nunca los niveles ni el
+secreto.</li>
+<li>Las fuentes pueden ser campos heredados, partes de compuestos, otros campos derivados o campos de otra clase
+(<code>type</code>); los ciclos se detectan en una clase y entre clases, con independencia del orden.</li>
+<li>Un compuesto se expande en rutas <code>campo.parte</code> a través de arrays, colecciones y <code>Optional</code> a
+cualquier profundidad, y de variables de tipo resueltas por las superclases.</li>
+<li>Un compuesto guardado como un valor (también en un mapa) debe cubrir sus partes (<code>WEAKER_THAN_PARTS</code>);
+uno que se contiene a sí mismo es un <code>CYCLE</code>.</li>
+<li>Una referencia a un registro con datos personales es un dato personal: se declara y no se exime.</li>
+<li>Los tipos opacos nunca toman el valor por defecto de la clase.</li>
+<li>Estas reglas cierran los huecos de un modelo correcto sin pedir anotaciones para casos que solo alcanza un mal uso;
+lo que el código no ve lo declaran las personas responsables.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Calculado y embebido.</strong> Anota la clase <code>Contact</code> e indica qué rutas produce el campo
+<code>office</code>. ¿Podría declararse <code>emailDomain</code> como <code>@Category(SYSTEM_OPERATIONS)</code>?</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Contact {
+    @Category(USER_NAME)
+    private String name;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    private Address office;
+    private String officeCity;       // la ciudad de la oficina, guardada para las búsquedas
+    private String initials;         // calculado a partir de name
+    private String emailDomain;      // calculado a partir de email
+}
+</code></pre>
+<details><summary>Solución del ejercicio 1</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Contact {
+    @Category(USER_NAME)
+    private String name;
+
+    @Category(USER_CONTACT_EMAIL)
+    private String email;
+
+    private Address office;                              // office.street, office.city, office.postalCode
+
+    @DerivedFrom("office.city")                          // user.contact.address.city
+    private String officeCity;
+
+    @DerivedFrom("name")                                 // user.name
+    private String initials;
+
+    @DerivedFrom("email")                                // user.contact.email
+    private String emailDomain;
+}
+</code></pre>
+<p><code>office</code> no es una entrada propia: produce <code>office.street</code>, <code>office.city</code> y
+<code>office.postalCode</code>. <code>emailDomain</code> no puede ser <code>system.operations</code>: sería un
+<code>WEAKER_THAN_SOURCE</code>, porque un valor calculado a partir de datos personales debe protegerlos al menos
+tanto.</p>
+</details>
+</li>
+<li>
+<p><strong>Predice las rutas.</strong> <code>Address</code> es el compuesto del Ejemplo 5.4. ¿Qué entradas o errores
+produce cada campo de esta clase, que no tiene valor por defecto?</p>
+<pre class="codigo" tabindex="0"><code class="language-java">public class Mailing {
+    private Optional&lt;List&lt;Address&gt;&gt; recipients;
+    private Address[][] grid;
+    private Map&lt;String, Address&gt; byCampus;
+    @Category(USER_CONTACT_ADDRESS) private Address returnAddress;
+}
+</code></pre>
+<details><summary>Solución del ejercicio 2</summary>
+<p><code>recipients</code> produce <code>recipients.street</code>, <code>recipients.city</code> y
+<code>recipients.postalCode</code>; <code>grid</code>, las mismas tres partes con el prefijo <code>grid</code>.
+<code>byCampus</code> es un <code>UNCLASSIFIED_FIELD</code>, porque el clasificador no entra en mapas: declara su
+categoría, por ejemplo <code>@Category(USER_CONTACT_ADDRESS)</code>. <code>returnAddress</code> es una sola entrada,
+<code>user.contact.address</code>, que cubre las partes de <code>Address</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Corrige el valor guardado.</strong> La salida de un compañero contiene esta línea. Explica qué significa cada
+parte del paréntesis y propone dos correcciones.</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR WEAKER_THAN_PARTS edu.example.university.ScholarshipApplication.certificate: 'user.content.private' protects less than the fields of [MedicalCertificate] need ([SPECIAL_CATEGORY], HIGH, HIGH)
+</code></pre>
+<details><summary>Solución del ejercicio 3</summary>
+<p>Los campos de <code>MedicalCertificate</code> necesitan, juntos, la naturaleza de categoría especial y
+confidencialidad e integridad <code>HIGH</code>; <code>user.content.private</code> es ordinaria y <code>MEDIUM</code>.
+Primera corrección: <code>@Category(USER_HEALTH_AND_MEDICAL)</code> en <code>certificate</code>. Segunda: si el
+certificado no tiene por qué guardarse como un solo valor, quita la anotación y deja que el campo se expanda en
+<code>certificate.condition</code> y <code>certificate.issuer</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Una asociación JPA.</strong> <code>Enrollment</code> pasa a tener una asociación <code>private Student
+student;</code> además de <code>studentId</code>. ¿Qué informa el clasificador? Escribe la corrección recomendada.
+¿Cambiaría el mensaje si <code>Enrollment</code> tuviera un <code>@DefaultCategory</code>?</p>
+<details><summary>Solución del ejercicio 4</summary>
+<p>Como <code>Enrollment</code> no tiene valor por defecto, el mensaje es <code>no @Category on the field and no
+@DefaultCategory on Enrollment</code>. La corrección recomendada es:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">@DerivedFrom(type = Student.class, value = "id")
+private Student student;
+</code></pre>
+<p>Con un valor por defecto, el mensaje cambiaría a <code>the class default '…' does not apply: the field refers to
+Student that holds personal data, …</code>: el clasificador rechaza el valor por defecto porque <code>Student</code>
+contiene datos personales.</p>
+</details>
+</li>
+<li>
+<p><strong>¿Ciclo o fuente desconocida?</strong> En una clase, <code>a</code> deriva de <code>b</code>, <code>b</code>
+de <code>c</code>, <code>c</code> de <code>a</code>, y <code>d</code> de <code>b</code>. Además, <code>e</code> deriva
+de <code>f</code>, que está declarado con <code>@Category(USER_NAME)</code>. ¿Qué código recibe cada campo?</p>
+<details><summary>Solución del ejercicio 5</summary>
+<p><code>a</code>, <code>b</code> y <code>c</code> forman un ciclo: cada uno recibe <code>CYCLE</code>. <code>d</code>
+depende del ciclo sin formar parte de él: <code>UNKNOWN_SOURCE</code> con <code>the source 'b' has an error</code>.
+<code>e</code> toma <code>user.name</code> de <code>f</code> y no tiene errores. El resultado es el mismo sea cual sea
+el orden de declaración de los campos.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>¿Qué protección recibe un campo <code>@CategoryByRow(declaredBy = "…", ceiling = USER_HEALTH_AND_MEDICAL)</code>?</p>
+<ol>
+<li>La de la categoría de cada fila, que el clasificador lee al guardar.</li>
+<li>La del techo: categoría especial, <code>HIGH</code>, <code>HIGH</code>, e identificabilidad
+<code>IDENTIFIED</code>.</li>
+<li>La de <code>user</code>, la raíz de las categorías personales.</li>
+<li>Ninguna hasta que se declare <code>confidentiality</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 1</summary>
+<p>La b. El clasificador nunca lee filas (a), y <code>@CategoryByRow</code> no tiene elementos de nivel (d). Se usa el
+techo, no la raíz (c).</p>
+</details>
+</li>
+<li>
+<p>Un campo declara <code>@Category(value = USER_NAME, identifiability = Identifiability.ANONYMIZED)</code> y deriva de
+una contraseña. ¿Por qué falla?</p>
+<ol>
+<li>Porque un valor anonimizado nunca puede derivarse.</li>
+<li>Porque la anonimización solo permite perder la naturaleza personal; el secreto y los niveles de la fuente se
+conservan.</li>
+<li>Porque <code>USER_NAME</code> no admite <code>identifiability</code>.</li>
+<li>Porque falta <code>type</code> en <code>@DerivedFrom</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 2</summary>
+<p>La b. La contraseña es <code>HIGH</code>, <code>HIGH</code> y secreta; <code>user.name</code> no lo es, y el
+resultado es <code>WEAKER_THAN_SOURCE</code>. Un valor anonimizado sí puede derivarse (a), <code>user.name</code> es
+personal y admite identificabilidad (c), y <code>type</code> solo hace falta para fuentes de otra clase (d).</p>
+</details>
+</li>
+<li>
+<p>¿Qué produce un campo <code>private Map&lt;String, Address&gt; byType;</code> sin anotación en una clase con valor
+por defecto?</p>
+<ol>
+<li>Las rutas <code>byType.street</code>, <code>byType.city</code> y <code>byType.postalCode</code>.</li>
+<li>Una entrada con el valor por defecto de la clase.</li>
+<li>Un error <code>UNCLASSIFIED_FIELD</code>.</li>
+<li>Un error <code>CYCLE</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 3</summary>
+<p>La c. El clasificador no entra en mapas, porque sus claves también son datos (a), y un campo con compuestos que no
+puede dividir nunca toma el valor por defecto (b). No hay ningún bucle (d).</p>
+</details>
+</li>
+<li>
+<p><code>Room</code> tiene un valor por defecto no personal y un campo <code>private Staff responsible;</code>. ¿Cuál es
+la mejor corrección?</p>
+<ol>
+<li><code>@Exempt("relación JPA")</code>.</li>
+<li><code>@DerivedFrom(type = Staff.class, value = "id")</code>.</li>
+<li>Marcar <code>Staff</code> con <code>@Composite</code>.</li>
+<li>Cambiar el valor por defecto de <code>Room</code> a <code>USER_UNIQUE_ID</code>.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 4</summary>
+<p>La b: el campo toma la clasificación de la clave de <code>Staff</code>. Eximirlo (a) es un
+<code>CONFLICTING_ANNOTATIONS</code>. <code>Staff</code> es una entidad con su propia clave, no un objeto embebido (c).
+Un valor por defecto personal (d) es un <code>PERSONAL_DEFAULT</code>.</p>
+</details>
+</li>
+<li>
+<p>¿Por qué un campo <code>Object payload</code> nunca toma el valor por defecto de la clase?</p>
+<ol>
+<li>Porque los campos <code>Object</code> se excluyen siempre.</li>
+<li>Porque el valor por defecto solo cubre tipos primitivos.</li>
+<li>Porque puede contener cualquier valor, también datos personales, y el valor por defecto solo afirma algo sobre lo
+que el clasificador ve.</li>
+<li>Porque <code>Object</code> no es serializable.</li>
+</ol>
+<details><summary>Respuesta a la pregunta 5</summary>
+<p>La c. Es una regla de fallo seguro. Los campos <code>Object</code> no se excluyen (a): son un error si no se anotan.
+El valor por defecto cubre muchos tipos no primitivos (b), y la serialización no interviene (d).</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li>Capítulo anterior: <a href="04-anotaciones.html">Anotar campos y clases</a>.</li>
+<li>Capítulo siguiente: <a href="06-verificacion.html">Verificar en los tests</a>, con la lista completa de
+infracciones.
+</li>
+<li><a href="07-uso.html">Capítulo 7. Usar la clasificación</a>: <code>ceilingOf</code>, <code>covers</code> y la
+protección de un campo y de una clase.</li>
+<li>Referencia: <a href="../../reference/annotations/category-by-row.html">@CategoryByRow</a>,
+<a href="../../reference/annotations/derived-from.html">@DerivedFrom</a> y
+<a href="../../reference/annotations/composite.html">@Composite</a>, con las referencias a otros registros.</li>
+<li>Referencia: <a href="../../reference/classify/violations.html">infracciones</a> y
+<a href="../../reference/protection-levels.html">niveles de protección</a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="04-anotaciones.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 4. Anotar campos y clases</a></li>
+<li><a href="06-verificacion.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 6. Verificar en los tests</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>

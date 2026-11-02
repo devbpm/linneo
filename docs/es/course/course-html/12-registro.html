@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<!--
+doc-sources:
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingRecord.java
+  - src/main/java/io/github/devbpm/linneo/processing/CheckedActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/RecordDiff.java
+  - src/main/java/io/github/devbpm/linneo/processing/ActivityChange.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingException.java
+  - src/main/java/io/github/devbpm/linneo/processing/ProcessingActivity.java
+  - src/main/java/io/github/devbpm/linneo/processing/Governance.java
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Capítulo 12. El registro de actividades · Curso de Linneo</title>
+<meta name="description" content="Genera el registro del artículo 30 en Markdown y JSON, compara dos versiones con RecordDiff y llévalo a la aprobación del DPD.">
+<link rel="stylesheet" href="recursos/curso.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido principal</a>
+<header class="cabecera">
+<div class="cabecera-interior">
+<p class="marca"><a href="index.html">Curso de Linneo</a><span class="marca-subtitulo">Clasificación de datos y RGPD en Java</span></p>
+<nav aria-label="Secciones del curso">
+<ul>
+<li><a href="index.html">Índice</a></li>
+<li><a href="anexo-a-referencia-rapida.html">Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html">Glosario</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="marco">
+<nav class="lateral" aria-labelledby="lateral-titulo">
+<div class="lateral-interior">
+<p class="lateral-titulo" id="lateral-titulo">Capítulos del curso</p>
+<ol>
+<li><a href="01-introduccion.html"><span class="numero" aria-hidden="true">1</span><span class="visualmente-oculto">Capítulo 1. </span>Qué es Linneo</a></li>
+<li><a href="02-proteccion.html"><span class="numero" aria-hidden="true">2</span><span class="visualmente-oculto">Capítulo 2. </span>Naturaleza jurídica y protección</a></li>
+<li><a href="03-taxonomia.html"><span class="numero" aria-hidden="true">3</span><span class="visualmente-oculto">Capítulo 3. </span>La taxonomía</a></li>
+<li><a href="04-anotaciones.html"><span class="numero" aria-hidden="true">4</span><span class="visualmente-oculto">Capítulo 4. </span>Anotar campos y clases</a></li>
+<li><a href="05-estructuras.html"><span class="numero" aria-hidden="true">5</span><span class="visualmente-oculto">Capítulo 5. </span>Filas, derivados, compuestos y referencias</a></li>
+<li><a href="06-verificacion.html"><span class="numero" aria-hidden="true">6</span><span class="visualmente-oculto">Capítulo 6. </span>Verificar en los tests</a></li>
+<li><a href="07-uso.html"><span class="numero" aria-hidden="true">7</span><span class="visualmente-oculto">Capítulo 7. </span>Usar la clasificación</a></li>
+<li><a href="08-inventario.html"><span class="numero" aria-hidden="true">8</span><span class="visualmente-oculto">Capítulo 8. </span>El inventario de datos</a></li>
+<li><a href="09-extensiones.html"><span class="numero" aria-hidden="true">9</span><span class="visualmente-oculto">Capítulo 9. </span>Ampliar la taxonomía</a></li>
+<li><a href="10-versiones.html"><span class="numero" aria-hidden="true">10</span><span class="visualmente-oculto">Capítulo 10. </span>Versiones de la taxonomía</a></li>
+<li><a href="11-actividades.html"><span class="numero" aria-hidden="true">11</span><span class="visualmente-oculto">Capítulo 11. </span>Actividades de tratamiento</a></li>
+<li><a href="12-registro.html" aria-current="page"><span class="numero" aria-hidden="true">12</span><span class="visualmente-oculto">Capítulo 12. </span>El registro de actividades</a></li>
+<li><a href="13-impacto-y-brechas.html"><span class="numero" aria-hidden="true">13</span><span class="visualmente-oculto">Capítulo 13. </span>Evaluación de impacto y brechas</a></li>
+<li><a href="14-derechos.html"><span class="numero" aria-hidden="true">14</span><span class="visualmente-oculto">Capítulo 14. </span>Derechos de los interesados</a></li>
+<li><a href="15-ens.html"><span class="numero" aria-hidden="true">15</span><span class="visualmente-oculto">Capítulo 15. </span>Categoría ENS del sistema</a></li>
+<li><a href="16-exportadores.html"><span class="numero" aria-hidden="true">16</span><span class="visualmente-oculto">Capítulo 16. </span>Exportar a PostgreSQL, OpenAPI y ODCS</a></li>
+<li><a href="17-catalogos.html"><span class="numero" aria-hidden="true">17</span><span class="visualmente-oculto">Capítulo 17. </span>Catálogos de datos</a></li>
+<li><a href="18-ciclo-de-vida.html"><span class="numero" aria-hidden="true">18</span><span class="visualmente-oculto">Capítulo 18. </span>Linneo en el ciclo de vida</a></li>
+</ol>
+<p class="lateral-titulo seccion-lateral" id="lateral-anexos">Anexos</p>
+<ol aria-labelledby="lateral-anexos">
+<li><a href="anexo-a-referencia-rapida.html"><span class="numero" aria-hidden="true">A</span><span class="visualmente-oculto">Anexo A. </span>Referencia rápida</a></li>
+<li><a href="anexo-b-glosario.html"><span class="numero" aria-hidden="true">B</span><span class="visualmente-oculto">Anexo B. </span>Glosario</a></li>
+</ol>
+</div>
+</nav>
+<main id="contenido" tabindex="-1">
+<nav class="migas" aria-label="Ruta de navegación">
+<ol>
+<li><a href="index.html">Curso de Linneo</a></li>
+<li><span aria-current="page">Capítulo 12. El registro de actividades</span></li>
+</ol>
+</nav>
+<h1><span class="etiqueta-capitulo">Capítulo 12</span> El registro de actividades</h1>
+<dl class="ficha">
+<div><dt>Duración estimada:</dt><dd>75 minutos</dd></div>
+<div><dt>Parte IV:</dt><dd>Cumplimiento normativo</dd></div>
+</dl>
+<p class="entradilla">El comprobador del capítulo 11 dice si cada actividad es lícita tal como está declarada. Cuando
+todas lo son, <code>verify</code> devuelve el registro de actividades de tratamiento del artículo 30 del
+<abbr title="Reglamento General de Protección de Datos">RGPD</abbr>, listo para las personas y para las herramientas. En
+este capítulo lo generas, aprendes a saber si sigue siendo el que aprobó el delegado de protección de datos y qué ha
+cambiado desde entonces.</p>
+
+<nav class="indice-capitulo" aria-labelledby="indice-capitulo-titulo">
+<h2 id="indice-capitulo-titulo">En este capítulo</h2>
+<ol>
+<li><a href="#objetivos">Objetivos de aprendizaje</a></li>
+<li><a href="#antes-de-empezar">Antes de empezar</a></li>
+<li><a href="#del-comprobador-al-registro">Del comprobador al registro</a></li>
+<li><a href="#checkedactivity">Cada actividad del registro: <code>CheckedActivity</code></a></li>
+<li><a href="#el-registro-en-markdown">El registro en Markdown</a></li>
+<li><a href="#el-registro-en-json">El registro en JSON</a></li>
+<li><a href="#puntos-abiertos">Los puntos abiertos</a></li>
+<li><a href="#la-huella">La huella del registro</a></li>
+<li><a href="#comparar-registros">Comparar dos registros: <code>RecordDiff</code></a></li>
+<li><a href="#ciclo-de-aprobacion">El ciclo de aprobación con el DPD</a></li>
+<li><a href="#actividades-desde-registros-guardados">Actividades desde registros guardados</a></li>
+<li><a href="#processingexception">Cuando <code>verify</code> falla: <code>ProcessingException</code></a></li>
+<li><a href="#errores-frecuentes">Errores frecuentes</a></li>
+<li><a href="#resumen">Resumen</a></li>
+<li><a href="#ejercicios">Ejercicios</a></li>
+<li><a href="#autoevaluacion">Autoevaluación</a></li>
+<li><a href="#para-saber-mas">Para saber más</a></li>
+</ol>
+</nav>
+<h2 id="objetivos">Objetivos de aprendizaje</h2>
+<p>Al terminar este capítulo serás capaz de:</p>
+<ul>
+<li>obtener el registro con <code>ProcessingChecker.verify</code> y explicar qué garantiza: actividades sin errores y
+con claves únicas;</li>
+<li>leer el contenido de cada actividad en su <code>CheckedActivity</code> y generar el registro en Markdown
+(<code>toMarkdown</code>) y en <abbr title="JavaScript Object Notation">JSON</abbr> (<code>toJson</code>);</li>
+<li>tratar los avisos de las actividades como los puntos abiertos del registro;</li>
+<li>usar <code>fingerprint()</code> para saber si el registro sigue siendo el aprobado, y explicar por qué dos huellas
+iguales implican siempre un diff vacío;</li>
+<li>comparar dos registros con <code>RecordDiff</code> e interpretar los aspectos, la dirección e
+<code>isGovernance()</code> de cada <code>ActivityChange</code>;</li>
+<li>organizar el ciclo de aprobación con el delegado de protección de datos, reconstruyendo el registro aprobado a
+partir de lo que guardó la aplicación.</li>
+</ul>
+
+<h2 id="antes-de-empezar">Antes de empezar</h2>
+<p>Necesitas el <a href="11-actividades.html">capítulo 11</a>: las cuatro actividades de la universidad
+(<code>UniversityActivities</code>), la gobernanza y el comprobador. Las secciones sobre el ciclo de aprobación usan
+además el inventario de datos guardado (<a href="08-inventario.html">capítulo 8</a>) y la taxonomía como texto,
+<code>toTsv()</code> y <code>fromTsv()</code> (<a href="10-versiones.html">capítulo 10</a>).</p>
+
+<h2 id="del-comprobador-al-registro">Del comprobador al registro</h2>
+<p>El <strong>registro de actividades de tratamiento</strong>
+(<abbr title="registro de actividades de tratamiento">RAT</abbr>) es el documento que el artículo 30.1 del RGPD pide al
+responsable del tratamiento: una entrada por actividad con sus fines, sus categorías de interesados y de datos
+personales, sus destinatarios, sus transferencias, sus plazos de supresión y una descripción de las medidas de
+seguridad. En Linneo es un record, <code>ProcessingRecord</code>, que solo contiene una lista de actividades
+comprobadas.</p>
+<p>No se construye a mano: lo devuelve <code>ProcessingChecker.verify</code>, que comprueba las actividades y lanza una
+<code>ProcessingException</code> si alguna tiene un error. El test del capítulo anterior ya lo obtenía:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
+record.activities();                   // las cuatro CheckedActivity, en el orden de la lista
+record.activity("enrollment");         // Optional con la matrícula
+record.activity("payroll");            // Optional.empty()
+</code></pre>
+
+<p>Un registro garantiza dos cosas, que su constructor comprueba:</p>
+<ul>
+<li><strong>Solo contiene actividades válidas.</strong> Una actividad con un error no puede entrar en el registro; los
+avisos se admiten y viajan con ella.</li>
+<li><strong>Cada clave aparece una sola vez</strong>, porque la clave identifica la actividad en el registro, en su JSON
+y en las comparaciones entre registros.</li>
+</ul>
+<p>Si construyes un <code>ProcessingRecord</code> directamente con actividades que no cumplen esas reglas, el
+constructor lanza una <code>IllegalArgumentException</code>. Para una actividad sin base jurídica y para la misma
+actividad repetida, los mensajes son:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">The processing activity 'support' has errors and cannot go in the record: [ERROR MISSING_LEGAL_BASIS support: Personal data needs a lawful basis (GDPR article 6.1)]
+Two processing activities of the record have the key 'alumni-newsletter'
+</code></pre>
+<p>Usa <code>verify</code>, que informa de todos los errores de todas las actividades a la vez en lugar de detenerse en
+el primero.</p>
+<p>La Tabla 12.1 relaciona el contenido del registro con su origen. Lo que el registro no puede saber, como el nombre y
+los datos de contacto del responsable, lo completa el delegado de protección de datos
+(<abbr title="delegado de protección de datos">DPD</abbr>).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-12-1">
+<table>
+<caption id="tabla-12-1">Tabla 12.1. De dónde sale cada parte del registro</caption>
+<thead>
+<tr><th scope="col">Parte del registro</th><th scope="col">Disposición</th><th scope="col">Origen en Linneo</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">Fines del tratamiento</th><td>Art. 30.1.b</td>
+<td><code>purposes</code>, resueltos contra la taxonomía</td></tr>
+<tr><th scope="row">Categorías de interesados y de datos personales</th><td>Art. 30.1.c</td>
+<td><code>dataSubjects</code>; <code>dataCategories</code>, <code>entities</code> y <code>objects</code></td></tr>
+<tr><th scope="row">Destinatarios</th><td>Art. 30.1.d</td><td><code>Governance.recipients</code></td></tr>
+<tr><th scope="row">Transferencias</th><td>Art. 30.1.e</td><td><code>Governance.transfers</code></td></tr>
+<tr><th scope="row">Plazo de supresión</th><td>Art. 30.1.f</td><td><code>Governance.retention</code></td></tr>
+<tr><th scope="row">Protección requerida</th><td>Art. 30.1.g</td>
+<td><code>CheckedActivity.protection()</code>, calculada a partir de la clasificación</td></tr>
+<tr><th scope="row">Bases jurídicas y referencia legal</th><td>Arts. 6.1, 9.2 y 10</td>
+<td>La gobernanza de la actividad</td></tr>
+<tr><th scope="row">Evaluación de impacto
+(<abbr title="evaluación de impacto relativa a la protección de datos">EIPD</abbr>) y su cribado</th><td>Art. 35</td>
+<td><code>Governance.impactAssessment</code> y <code>CheckedActivity.screening()</code></td></tr>
+<tr><th scope="row">Puntos abiertos</th><td>—</td><td>Los avisos de cada actividad</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="checkedactivity">Cada actividad del registro: <code>CheckedActivity</code></h2>
+<p>Cada actividad del registro es la <code>CheckedActivity</code> que produjo el comprobador: la actividad tal como se
+declaró, más lo que el comprobador resolvió a partir de ella (Tabla 12.2).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-12-2">
+<table>
+<caption id="tabla-12-2">Tabla 12.2. Componentes y métodos de <code>CheckedActivity</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Contenido</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>activity()</code></th><td>La <code>ProcessingActivity</code> tal como se declaró, con su
+gobernanza.</td></tr>
+<tr><th scope="row"><code>purposes()</code>, <code>dataSubjects()</code></th>
+<td>Los usos y los sujetos de datos, sin las claves desconocidas, con las obsoletas sustituidas y en orden de
+clave.</td></tr>
+<tr><th scope="row"><code>dataCategories()</code></th>
+<td>Las categorías de datos personales, de las claves, las entidades y los objetos, una vez cada una y en orden de
+clave.</td></tr>
+<tr><th scope="row"><code>protection()</code></th>
+<td>La menor <code>Protection</code> que cubre todos esos datos, con las elevaciones de cada campo;
+<code>Protection.LOWEST</code> si no hay ninguno.</td></tr>
+<tr><th scope="row"><code>violations()</code>, <code>errors()</code>, <code>warnings()</code></th>
+<td>Todas las infracciones, solo los errores o solo los avisos.</td></tr>
+<tr><th scope="row"><code>isValid()</code></th><td><code>true</code> si no hay ningún error.</td></tr>
+<tr><th scope="row"><code>natures()</code></th>
+<td>Todas las naturalezas jurídicas de los datos, sin <code>NONE</code>.</td></tr>
+<tr><th scope="row"><code>processesSpecialCategories()</code>, <code>processesCriminalOffenceData()</code></th>
+<td>Si algún dato es de categoría especial (artículo 9) o un dato penal (artículo 10).</td></tr>
+<tr><th scope="row"><code>screening()</code></th>
+<td>El cribado de la necesidad de una evaluación de impacto, calculado cada vez a partir de la actividad.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Para la admisión de la universidad:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">CheckedActivity admissions = record.activity("admissions").orElseThrow();
+admissions.natures();                       // [ORDINARY, SPECIAL_CATEGORY]
+admissions.protection().natures();          // [SPECIAL_CATEGORY]
+admissions.processesSpecialCategories();    // true
+admissions.processesCriminalOffenceData();  // false
+admissions.protection().confidentiality();  // HIGH
+admissions.screening().outcome();           // POSSIBLE
+admissions.warnings();                      // []
+</code></pre>
+<p>Observa la diferencia entre <code>natures()</code>, que enumera todas las naturalezas de los datos, y
+<code>protection().natures()</code>, que conserva solo las más estrictas, como hace el orden de <code>Protection</code>
+del <a href="02-proteccion.html">capítulo 2</a>.</p>
+
+<h2 id="el-registro-en-markdown">El registro en Markdown</h2>
+<p><code>toMarkdown(title)</code> genera el registro para las personas. Escribe el título como encabezado de nivel 1
+(por ejemplo, el nombre del responsable) y, para cada actividad, en el orden de la lista:</p>
+<ol>
+<li>un encabezado de nivel 2 con su nombre;</li>
+<li>una línea con su clave, como código, y su descripción si la tiene;</li>
+<li>una tabla de dos columnas, <code>Record item</code> y <code>Content</code>;</li>
+<li>si la actividad tiene avisos, la lista <code>Open points:</code> con sus mensajes.</li>
+</ol>
+<p>La Tabla 12.3 enumera las filas de la tabla de cada actividad.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-12-3">
+<table>
+<caption id="tabla-12-3">Tabla 12.3. Filas de cada actividad en <code>toMarkdown</code></caption>
+<thead>
+<tr><th scope="col">Fila</th><th scope="col">Cuándo aparece</th><th scope="col">Contenido</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>Purposes (art. 30.1.b)</code></th><td>Siempre</td>
+<td>Nombre y clave de cada finalidad, en orden de clave, o <code>None</code>.</td></tr>
+<tr><th scope="row"><code>Lawful basis (art. 6.1)</code></th><td>Si se declara</td>
+<td><code>Art. &lt;article&gt;: &lt;fideslang name&gt;</code>.</td></tr>
+<tr><th scope="row"><code>Legitimate interest</code></th><td>Si la base es <code>LEGITIMATE_INTERESTS</code> y hay
+interés</td>
+<td>El interés perseguido.</td></tr>
+<tr><th scope="row"><code>Special categories (art. 9.2)</code></th><td>Si se declaran</td>
+<td>Cada condición como <code>Art. &lt;article&gt;: &lt;fideslang name&gt;</code>.</td></tr>
+<tr><th scope="row"><code>Criminal offence data (art. 10)</code></th><td>Si se declara</td>
+<td><code>Art. 10: Official authority</code> o <code>Art. 10: Authorised by law</code>.</td></tr>
+<tr><th scope="row"><code>Legal reference</code></th><td>Si se declara</td><td>La referencia legal.</td></tr>
+<tr><th scope="row"><code>Data subjects (art. 30.1.c)</code></th><td>Siempre</td><td>Como las finalidades.</td></tr>
+<tr><th scope="row"><code>Personal data (art. 30.1.c)</code></th><td>Siempre</td>
+<td>Como las finalidades, con <code>special category</code> o <code>criminal offence data</code> tras la clave cuando
+procede.</td></tr>
+<tr><th scope="row"><code>Recipients (art. 30.1.d)</code></th><td>Siempre</td>
+<td>Los destinatarios, o <code>None declared</code>.</td></tr>
+<tr><th scope="row"><code>Transfers (art. 30.1.e)</code></th><td>Siempre</td>
+<td><code>&lt;destination&gt; (art. &lt;article&gt;: &lt;fideslang name&gt;)</code>, o
+<code>None declared</code>.</td></tr>
+<tr><th scope="row"><code>Retention (art. 30.1.f)</code></th><td>Siempre</td>
+<td>El plazo, o <code>Not declared</code>.</td></tr>
+<tr><th scope="row"><code>Required protection (art. 30.1.g)</code></th><td>Siempre</td>
+<td>Confidencialidad e integridad requeridas, y <code>includes secrets</code> si algún dato es un secreto.</td></tr>
+<tr><th scope="row"><code>Impact assessment (art. 35)</code></th><td>Siempre</td>
+<td>La referencia a la EIPD, o <code>None</code>.</td></tr>
+<tr><th scope="row"><code>Impact assessment screening</code></th><td>Siempre</td>
+<td>El resumen del cribado, <code>ImpactScreening.summary()</code>.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><strong>Los textos que añade el registro están en inglés</strong>: las etiquetas de las filas,
+<code>None declared</code>, <code>Open points:</code> y los mensajes de los puntos abiertos, sea cual sea el idioma de
+tu aplicación. Los nombres de las finalidades, los interesados y las categorías vienen de la taxonomía, y el resto se
+escribe tal como lo declaraste. Por eso las actividades del curso declaran sus textos en inglés.</p>
+<p>La fila <code>Required protection</code> indica la protección que los datos <strong>requieren</strong>, los niveles
+más altos de sus categorías y campos, como punto de partida para la descripción de las medidas de seguridad del artículo
+30.1.g. No describe las medidas: eso lo completa el responsable. La fila <code>Impact assessment screening</code>
+aparece tanto si la actividad cita una EIPD como si no, para que el DPD vea lo que dicen los criterios junto a lo
+declarado (<a href="13-impacto-y-brechas.html">capítulo 13</a>).</p>
+
+<h3>Un test que escribe el registro</h3>
+<p>El test del capítulo anterior puede escribir el registro en los dos formatos cada vez que se ejecuta (Ejemplo
+12.1).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 12.1. Un test que genera el registro</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">@Test
+void recordOfProcessingActivities() throws IOException {
+    ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
+
+    Files.createDirectories(Path.of("target"));
+    Files.writeString(Path.of("target/record-of-processing.md"), record.toMarkdown("Example University"));
+    Files.writeString(Path.of("target/record-of-processing.json"), record.toJson());
+}
+</code></pre>
+</figure>
+
+<p>El principio de <code>record-of-processing.md</code>, con la matrícula y su punto abierto (extracto):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-markdown"># Example University
+
+## Student enrollment
+
+`enrollment`: Registers admitted students in a programme and an academic year, and charges the fees.
+
+| Record item | Content |
+|---|---|
+| Purposes (art. 30.1.b) | Enrollment (`education.enrollment`) |
+| Lawful basis (art. 6.1) | Art. 6.1.e: Public interest |
+| Legal reference | Higher Education Act, art. 12 |
+| Data subjects (art. 30.1.c) | Student (`student`) |
+| Personal data (art. 30.1.c) | Account Username (`user.account.username`); User Contact Email (`user.contact.email`); Enrollment (`user.education.enrollment`); Program (`user.education.program`); Fee (`user.financial.fee`); Scholarship (`user.financial.scholarship`); National Identification Number (`user.government_id.national_identification_number`); Name (`user.name`); Record Reference (`user.unique_id.record_reference`) |
+| Recipients (art. 30.1.d) | Bank that collects the tuition fees |
+| Transfers (art. 30.1.e) | None declared |
+| Retention (art. 30.1.f) | Not declared |
+| Required protection (art. 30.1.g) | Confidentiality Medium, integrity High |
+| Impact assessment (art. 35) | None |
+| Impact assessment screening | Possible (1 criterion of WP248): 4. sensitive data: highly personal data user.financial.fee; highly personal data user.financial.scholarship |
+
+Open points:
+
+- Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+</code></pre>
+<p>Y la sección de la verificación de antecedentes del personal, con la base del artículo 10 y los datos penales
+marcados:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-markdown">## Staff screening
+
+`staff-screening`: Checks that candidates for posts in contact with minors have no sexual offence convictions.
+
+| Record item | Content |
+|---|---|
+| Purposes (art. 30.1.b) | Employment Recruitment (`employment.recruitment`) |
+| Lawful basis (art. 6.1) | Art. 6.1.c: Legal obligations |
+| Criminal offence data (art. 10) | Art. 10: Authorised by law |
+| Legal reference | Child Protection Act, art. 13 |
+| Data subjects (art. 30.1.c) | Job Applicant (`job_applicant`) |
+| Personal data (art. 30.1.c) | Criminal History (`user.criminal_history`, criminal offence data); National Identification Number (`user.government_id.national_identification_number`); Name (`user.name`) |
+| Recipients (art. 30.1.d) | None declared |
+| Transfers (art. 30.1.e) | None declared |
+| Retention (art. 30.1.f) | Until the hiring decision; afterwards only whether the certificate was clear |
+| Required protection (art. 30.1.g) | Confidentiality High, integrity High |
+| Impact assessment (art. 35) | DPIA-2026-02 |
+| Impact assessment screening | Likely required (2 criteria of WP248): 4. sensitive data: criminal offence data user.criminal_history; 7. vulnerable subjects: data subjects job_applicant |
+</code></pre>
+<p>La fila <code>Lawful basis</code> muestra el nombre de fideslang de la base (<code>Legal obligations</code>). El
+cribado dice que una EIPD es probable, y la fila anterior muestra que la actividad cita la suya, así que no hay punto
+abierto.</p>
+
+<h3>Texto escrito como texto</h3>
+<p>Todo lo que el registro escribe a partir de las declaraciones (título, nombres, descripciones y celdas) se escribe
+como texto, para que un valor no rompa la tabla ni se convierta en un enlace o en HTML donde se muestre el Markdown.
+<code>\</code>, <code>|</code>, <code>[</code> y <code>]</code> se escapan con una barra invertida; <code>&amp;</code>,
+<code>&lt;</code> y <code>&gt;</code> pasan a sus referencias de carácter; y los saltos de línea, con los espacios que
+los rodean, se reducen a un espacio. La clave de la actividad se escribe como código, sin escapar. Una actividad llamada
+<code>Library | loans</code> cuya descripción tiene una etiqueta, unos corchetes y un salto de línea empieza así:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-markdown">## Library \| loans
+
+`library-loans`: Lends books and &amp;lt;b&amp;gt;e-books&amp;lt;/b&amp;gt;, including \[inter-library\] loans.
+</code></pre>
+
+<h2 id="el-registro-en-json">El registro en JSON</h2>
+<p><code>toJson()</code> genera el mismo contenido para las herramientas: un objeto con un único miembro,
+<code>activities</code>, que es un array con un objeto por actividad en el orden de la lista. Los miembros opcionales se
+omiten cuando la actividad no los declara; las listas están siempre (Tabla 12.4).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-12-4">
+<table>
+<caption id="tabla-12-4">Tabla 12.4. Miembros de cada actividad en <code>toJson</code></caption>
+<thead>
+<tr><th scope="col">Miembro</th><th scope="col">Presente</th><th scope="col">Valor</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>key</code>, <code>name</code></th><td>Siempre</td><td>Cadenas.</td></tr>
+<tr><th scope="row"><code>description</code></th><td>Si se declara</td><td>Cadena, con sus saltos de línea.</td></tr>
+<tr><th scope="row"><code>purposes</code>, <code>dataSubjects</code>, <code>dataCategories</code></th><td>Siempre</td>
+<td>Arrays de claves resueltas, en orden de clave.</td></tr>
+<tr><th scope="row"><code>legalBasis</code></th><td>Si se declara</td>
+<td>Objeto con <code>code</code>, <code>article</code> y <code>fideslang</code>.</td></tr>
+<tr><th scope="row"><code>legitimateInterest</code></th><td>Si la base es <code>LEGITIMATE_INTERESTS</code> y hay
+interés</td>
+<td>Cadena.</td></tr>
+<tr><th scope="row"><code>specialCategoryConditions</code></th><td>Si se declaran</td>
+<td>Array de objetos como <code>legalBasis</code>.</td></tr>
+<tr><th scope="row"><code>criminalDataBasis</code></th><td>Si se declara</td>
+<td>Objeto con <code>code</code> y <code>article</code>, sin <code>fideslang</code>.</td></tr>
+<tr><th scope="row"><code>legalReference</code>, <code>retention</code>, <code>impactAssessment</code></th>
+<td>Si se declaran</td><td>Cadenas.</td></tr>
+<tr><th scope="row"><code>recipients</code></th><td>Siempre</td><td>Array de cadenas.</td></tr>
+<tr><th scope="row"><code>transfers</code></th><td>Siempre</td>
+<td>Array de objetos con <code>destination</code> y <code>safeguard</code>.</td></tr>
+<tr><th scope="row"><code>screening</code></th><td>Siempre</td>
+<td>Objeto con <code>outcome</code>, <code>criteria</code> y, si hay un caso del artículo 35.3,
+<code>mandatoryCase</code>.</td></tr>
+<tr><th scope="row"><code>protection</code></th><td>Siempre</td>
+<td>Objeto con <code>natures</code>, <code>confidentiality</code>, <code>integrity</code> y
+<code>secret</code>.</td></tr>
+<tr><th scope="row"><code>openPoints</code></th><td>Siempre</td><td>Array con los mensajes de los avisos.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><code>toJson()</code> escribe todo en una sola línea, sin sangría. Para la verificación de antecedentes, con la
+sangría y los saltos de línea añadidos para leerlo:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{
+  "activities": [
+    {
+      "key": "staff-screening",
+      "name": "Staff screening",
+      "description": "Checks that candidates for posts in contact with minors have no sexual offence convictions.",
+      "purposes": [
+        "employment.recruitment"
+      ],
+      "dataSubjects": [
+        "job_applicant"
+      ],
+      "dataCategories": [
+        "user.criminal_history",
+        "user.government_id.national_identification_number",
+        "user.name"
+      ],
+      "legalBasis": {
+        "code": "LEGAL_OBLIGATION",
+        "article": "6.1.c",
+        "fideslang": "Legal obligations"
+      },
+      "criminalDataBasis": {
+        "code": "AUTHORISED_BY_LAW",
+        "article": "10"
+      },
+      "legalReference": "Child Protection Act, art. 13",
+      "recipients": [],
+      "transfers": [],
+      "retention": "Until the hiring decision; afterwards only whether the certificate was clear",
+      "impactAssessment": "DPIA-2026-02",
+      "screening": {
+        "outcome": "LIKELY",
+        "criteria": [
+          "SENSITIVE_DATA",
+          "VULNERABLE_SUBJECTS"
+        ]
+      },
+      "protection": {
+        "natures": [
+          "ORDINARY",
+          "CRIMINAL_OFFENCE"
+        ],
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "secret": false
+      },
+      "openPoints": []
+    }
+  ]
+}
+</code></pre>
+<p>La transferencia del boletín de antiguos alumnos aparece así en su array <code>transfers</code>:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-json">{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}
+</code></pre>
+<p>Los miembros <code>code</code> son los nombres de las constantes, así que una herramienta escrita en Java puede
+recuperarlas con <code>LegalBasis.valueOf(...)</code>, <code>TransferSafeguard.valueOf(...)</code> y similares. Los
+miembros <code>fideslang</code> rellenan los campos correspondientes de una declaración de privacidad de fideslang.</p>
+
+<h2 id="puntos-abiertos">Los puntos abiertos</h2>
+<p>Los avisos de una actividad son los <strong>puntos abiertos</strong> del registro: aparecen en la lista
+<code>Open points:</code> del Markdown y en el array <code>openPoints</code> del JSON. No impiden generar el registro,
+pero cada uno es algo que el DPD preguntará. En la universidad solo hay uno, la conservación de la matrícula, que se
+dejó sin declarar a propósito en el <a href="11-actividades.html">capítulo 11</a>.</p>
+<p>Un test puede enumerarlos, con su elemento, para que quien revise la compilación sepa a quién corresponde cada
+uno:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">record.activities().stream()
+        .flatMap(activity -&gt; activity.warnings().stream())
+        .forEach(warning -&gt; System.out.println(warning.element() + " " + warning));
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">RETENTION WARNING MISSING_RETENTION enrollment: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+</code></pre>
+<p>Hacer fallar la compilación con los puntos abiertos es una decisión de cada organización: Linneo los separa de los
+errores para que el registro pueda generarse mientras se completan. El ejercicio 3 lo plantea.</p>
+
+<h2 id="la-huella">La huella del registro</h2>
+<p>Un registro es un valor que la aplicación calcula, no un documento que guarda. Para saber si el registro de hoy es el
+mismo que aprobó el DPD, <code>fingerprint()</code> devuelve su <strong>huella</strong>: el SHA-256 de su contenido,
+como 64 dígitos hexadecimales en minúscula. La aplicación guarda la huella junto a la aprobación; si la del registro
+actual coincide, nada ha cambiado.</p>
+<p>La huella resume el contenido actividad a actividad, en orden de clave, y aspecto a aspecto, exactamente como los
+compara <code>RecordDiff</code>. Las dos usan la misma función interna, <code>ActivityChange.content</code>, que da el
+contenido de cada aspecto de una actividad como una lista ordenada de textos. De ahí la propiedad que hace útil la
+huella: <strong>dos registros tienen la misma huella exactamente cuando <code>RecordDiff</code> no encuentra ningún
+cambio entre ellos</strong>. Dos huellas iguales implican siempre un diff vacío, y un diff vacío, dos huellas
+iguales.</p>
+<p>Ese contenido tiene tres consecuencias que conviene conocer:</p>
+<ul>
+<li><strong>El orden no importa.</strong> Las actividades se resumen por orden de clave y las listas se ordenan, así que
+el registro de las cuatro actividades en orden inverso tiene la misma huella, y <code>RecordDiff</code> no encuentra
+diferencias.</li>
+<li><strong>El cribado forma parte del contenido.</strong> Su resultado, su caso obligatorio y sus criterios dependen de
+los rasgos de los términos, así que una taxonomía que añade un rasgo puede cambiar la huella sin que cambie ninguna
+declaración.</li>
+<li><strong>Los puntos abiertos se comparan por código y elemento, no por su texto.</strong> Un cambio en la redacción
+de un mensaje no es un cambio del registro. Por ejemplo, el aviso <code>MISSING_LEGAL_REFERENCE</code> es más largo con
+<code>Jurisdiction.SPAIN</code> que con <code>Jurisdiction.EU</code>:</li>
+</ul>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING MISSING_LEGAL_REFERENCE enrollment: GDPR article(s) 6.1.e rest on Union or Member State law; name it as the legal reference
+WARNING MISSING_LEGAL_REFERENCE enrollment: GDPR article(s) 6.1.e rest on Union or Member State law; name it as the legal reference (LOPDGDD article(s) 8: a law with the rank of statute)
+</code></pre>
+<p>Los dos registros de la matrícula sin referencia legal, uno con cada jurisdicción, tienen la misma huella.</p>
+<p>La huella dice <em>que</em> algo cambió, no <em>qué</em>. Tampoco es una firma: no identifica a quien aprobó el
+registro ni impide modificar nada. Es un resumen del contenido que permite saltarse la comparación cuando nada ha
+cambiado, y saber cuándo hace falta.</p>
+
+<h2 id="comparar-registros">Comparar dos registros: <code>RecordDiff</code></h2>
+<p><code>RecordDiff.between(before, after)</code> compara dos registros actividad a actividad, emparejándolas por clave.
+<code>before</code> es el anterior, como el que aprobó el DPD. El resultado es inmutable:</p>
+<ul>
+<li><code>changes()</code> devuelve un <code>ActivityChange</code> por cada actividad añadida, eliminada o modificada,
+en orden de clave;</li>
+<li><code>change(key)</code> devuelve el cambio de una actividad, o un <code>Optional</code> vacío si es igual en los
+dos registros o no está en ninguno;</li>
+<li><code>isEmpty()</code> es <code>true</code> si no se añadió, eliminó ni modificó ninguna actividad.</li>
+</ul>
+
+<h3><code>ActivityChange</code></h3>
+<p>Un <code>ActivityChange</code> es un record con cinco componentes: <code>activity</code> (la clave),
+<code>before</code> y <code>after</code> (la <code>CheckedActivity</code> en cada registro, <code>null</code> si la
+actividad se añadió o se eliminó), <code>aspects</code> (qué cambió, nunca vacío) y <code>direction</code>. Su
+<code>toString()</code> tiene la forma <code>activity '&lt;key&gt;': [&lt;aspects&gt;]</code>, seguida de la dirección
+salvo que sea <code>SAME</code>. Cuando el DPD declara por fin la conservación de la matrícula:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingActivity closed = UniversityActivities.ENROLLMENT.withGovernance(
+        UniversityActivities.ENROLLMENT.governance().toBuilder()
+                .retention("Six years after the student leaves")
+                .build());
+RecordDiff diff = RecordDiff.between(checker.verify(UniversityActivities.ENROLLMENT), checker.verify(closed));
+ActivityChange change = diff.change("enrollment").orElseThrow();
+System.out.println(change + " " + change.isGovernance());
+change.before().activity().governance().retention();   // null
+change.after().activity().governance().retention();    // "Six years after the student leaves"
+</code></pre>
+<pre class="codigo salida" tabindex="0"><code class="language-text">activity 'enrollment': [RETENTION, OPEN_POINTS] true
+</code></pre>
+<p>Cambió la conservación y, con ella, los puntos abiertos: el aviso <code>MISSING_RETENTION</code> desapareció.</p>
+
+<h3>Los aspectos</h3>
+<p><code>ActivityChange.Aspect</code> nombra lo que puede cambiar en una actividad, y su <code>isGovernance()</code>
+dice si el aspecto pertenece a la gobernanza o al alcance y a los datos que alcanza (Tabla 12.5).</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-12-5">
+<table>
+<caption id="tabla-12-5">Tabla 12.5. Constantes de <code>ActivityChange.Aspect</code></caption>
+<thead>
+<tr><th scope="col">Aspecto</th><th scope="col"><code>isGovernance()</code></th><th scope="col">Qué cambió</th></tr>
+</thead>
+<tbody>
+<tr><th scope="row"><code>ADDED</code></th><td><code>false</code></td><td>La actividad es nueva en el
+registro.</td></tr>
+<tr><th scope="row"><code>REMOVED</code></th><td><code>false</code></td><td>La actividad ya no está en el
+registro.</td></tr>
+<tr><th scope="row"><code>NAME</code></th><td><code>false</code></td><td>El nombre.</td></tr>
+<tr><th scope="row"><code>DESCRIPTION</code></th><td><code>false</code></td><td>La descripción.</td></tr>
+<tr><th scope="row"><code>PURPOSES</code></th><td><code>false</code></td>
+<td>Las finalidades, con las claves obsoletas sustituidas.</td></tr>
+<tr><th scope="row"><code>DATA_SUBJECTS</code></th><td><code>false</code></td>
+<td>Las categorías de interesados, con las claves obsoletas sustituidas.</td></tr>
+<tr><th scope="row"><code>PERSONAL_DATA</code></th><td><code>false</code></td>
+<td>Las categorías de datos personales, declaradas o alcanzadas a través de entidades y objetos.</td></tr>
+<tr><th scope="row"><code>PROTECTION</code></th><td><code>false</code></td>
+<td>La protección que requieren los datos; consulta <code>direction</code>.</td></tr>
+<tr><th scope="row"><code>LEGAL_BASIS</code></th><td><code>true</code></td><td>La base jurídica.</td></tr>
+<tr><th scope="row"><code>LEGITIMATE_INTEREST</code></th><td><code>true</code></td><td>El interés legítimo.</td></tr>
+<tr><th scope="row"><code>SPECIAL_CATEGORY_CONDITION</code></th><td><code>true</code></td>
+<td>Las condiciones del artículo 9.2.</td></tr>
+<tr><th scope="row"><code>CRIMINAL_DATA_BASIS</code></th><td><code>true</code></td><td>La base del artículo
+10.</td></tr>
+<tr><th scope="row"><code>LEGAL_REFERENCE</code></th><td><code>true</code></td><td>La referencia legal.</td></tr>
+<tr><th scope="row"><code>RECIPIENTS</code></th><td><code>true</code></td><td>Los destinatarios.</td></tr>
+<tr><th scope="row"><code>TRANSFERS</code></th><td><code>true</code></td><td>Las transferencias.</td></tr>
+<tr><th scope="row"><code>RETENTION</code></th><td><code>true</code></td><td>El plazo de conservación.</td></tr>
+<tr><th scope="row"><code>IMPACT_ASSESSMENT</code></th><td><code>true</code></td><td>La referencia a la EIPD.</td></tr>
+<tr><th scope="row"><code>RISK_FACTORS</code></th><td><code>true</code></td>
+<td>Los factores de riesgo que declara el DPD en la gobernanza.</td></tr>
+<tr><th scope="row"><code>DECLARED_RISK_FACTORS</code></th><td><code>false</code></td>
+<td>Los factores de riesgo que declara el código: parte del alcance.</td></tr>
+<tr><th scope="row"><code>SCREENING</code></th><td><code>false</code></td>
+<td>El cribado de la EIPD: su resultado, su caso obligatorio y sus criterios.</td></tr>
+<tr><th scope="row"><code>OPEN_POINTS</code></th><td><code>false</code></td>
+<td>Los puntos abiertos, comparados por código y elemento.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Tres aspectos merecen atención. <code>SCREENING</code> cambia con los rasgos de los términos aunque no cambie ninguna
+declaración. <code>RISK_FACTORS</code> y <code>DECLARED_RISK_FACTORS</code> separan los factores del DPD, que son
+gobernanza, de los del código, que son alcance. <code>OPEN_POINTS</code> sigue a los avisos, que cambian como
+consecuencia de casi cualquier otro aspecto.</p>
+
+<h3>¿Cambio del DPD o del código?</h3>
+<p><code>ActivityChange.isGovernance()</code> responde a la primera pregunta de quien revisa: ¿es un cambio que hizo la
+función de protección de datos? Es <code>true</code> si cambió algún aspecto de la gobernanza y nada más, salvo los
+puntos abiertos y el cribado, que pueden cambiar como consecuencia. Si además cambiaron los datos o el alcance, es
+<code>false</code>: el cambio del DPD forma parte de uno mayor.</p>
+<p><code>direction()</code> responde a la segunda: ¿cómo cambió la protección que requieren los datos de la actividad?
+Es el <code>Protection.Direction</code> de comparar la protección posterior con la anterior: <code>TIGHTENED</code>,
+<code>LOOSENED</code>, <code>MIXED</code> o <code>SAME</code>, y <code>SAME</code> para una actividad añadida o
+eliminada. <code>TIGHTENED</code> significa que la actividad trata ahora datos que necesitan más protección: justo el
+caso en que la base jurídica, una condición del artículo 9.2 o una EIPD pueden dejar de bastar.</p>
+<p>La Tabla 12.6 recoge cambios reales sobre las actividades de la universidad, con el <code>toString()</code> de cada
+<code>ActivityChange</code>.</p>
+
+<div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-12-6">
+<table>
+<caption id="tabla-12-6">Tabla 12.6. Cambios en el registro de la universidad y cómo los informa
+<code>RecordDiff</code></caption>
+<thead>
+<tr><th scope="col">Qué ocurrió</th><th scope="col"><code>ActivityChange</code></th>
+<th scope="col"><code>isGovernance()</code></th></tr>
+</thead>
+<tbody>
+<tr><th scope="row">El DPD declara la conservación de la matrícula</th>
+<td><code>activity 'enrollment': [RETENTION, OPEN_POINTS]</code></td><td><code>true</code></td></tr>
+<tr><th scope="row">El DPD cambia los destinatarios de la matrícula</th>
+<td><code>activity 'enrollment': [RECIPIENTS]</code></td><td><code>true</code></td></tr>
+<tr><th scope="row">El DPD borra la referencia legal de la matrícula</th>
+<td><code>activity 'enrollment': [LEGAL_REFERENCE, OPEN_POINTS]</code></td><td><code>true</code></td></tr>
+<tr><th scope="row">El DPD declara <code>LARGE_SCALE</code> en el boletín</th>
+<td><code>activity 'alumni-newsletter': [RISK_FACTORS, SCREENING]</code></td><td><code>true</code></td></tr>
+<tr><th scope="row">El código declara <code>AUTOMATED_DECISIONS</code> en la matrícula</th>
+<td><code>activity 'enrollment': [DECLARED_RISK_FACTORS, SCREENING, OPEN_POINTS]</code></td>
+<td><code>false</code></td></tr>
+<tr><th scope="row">La taxonomía marca <code>applicant</code> con el rasgo <code>VULNERABLE</code></th>
+<td><code>activity 'admissions': [SCREENING]</code></td><td><code>false</code></td></tr>
+<tr><th scope="row">Se renombra el boletín</th><td><code>activity 'alumni-newsletter': [NAME]</code></td>
+<td><code>false</code></td></tr>
+<tr><th scope="row">Un registro tiene la matrícula y la admisión; otro, la admisión y el boletín</th>
+<td><code>activity 'alumni-newsletter': [ADDED]</code> y <code>activity 'enrollment': [REMOVED]</code></td>
+<td><code>false</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Fíjate en la cuarta y la quinta fila. El factor <code>LARGE_SCALE</code> del DPD es un cambio de gobernanza: el
+cribado del boletín pasa de <code>Not indicated</code> a
+<code>Possible (1 criterion of WP248): 5. large scale: declared LARGE_SCALE</code>, sin aviso. El factor
+<code>AUTOMATED_DECISIONS</code> del código es un cambio del alcance: suma un segundo criterio al de los datos
+financieros de la matrícula, la EIPD pasa a ser probable y aparece un punto abierto:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">WARNING IMPACT_ASSESSMENT_RECOMMENDED enrollment: GDPR article 35 likely requires an impact assessment. Likely required (2 criteria of WP248): 2. automated decisions: declared AUTOMATED_DECISIONS; 4. sensitive data: highly personal data user.financial.fee; highly personal data user.financial.scholarship
+</code></pre>
+<p>En la sexta, ninguna declaración cambió: la admisión ya citaba su EIPD, así que solo cambia el cribado, que pasa a
+<code>Likely required (2 criteria of WP248)</code>. Sin la huella y el diff, un cambio así pasaría inadvertido.</p>
+
+<h2 id="ciclo-de-aprobacion">El ciclo de aprobación con el DPD</h2>
+<p>El registro que importa es el que firma el DPD. Después de la firma, el código, la taxonomía y la gobernanza siguen
+cambiando: un campo nuevo, una versión de Linneo con una categoría más estricta, una decisión del propio DPD. Antes de
+volver a firmar, el DPD necesita saber qué cambió, y para eso hay que comparar el registro aprobado con el actual.</p>
+<p>Los dos registros se calculan, así que el aprobado se <strong>reconstruye</strong> a partir de lo que la aplicación
+guardó al aprobarlo. Linneo compara y nunca persiste: guardar, leer y auditar esas copias es trabajo de la aplicación.
+El ciclo tiene estos pasos:</p>
+<ol class="flujo">
+<li><span class="flujo-titulo">Aprobar</span> Al firmar el DPD, guarda la huella del registro, la taxonomía aplicada
+(<code>taxonomy.toTsv()</code>), el inventario de datos (<code>inventory.toTsv()</code>) y la gobernanza de cada
+actividad.</li>
+<li><span class="flujo-titulo">Calcular el actual</span> En cada compilación o arranque, verifica las actividades con
+la taxonomía, el inventario y la gobernanza que rigen ahora.</li>
+<li><span class="flujo-titulo">Comparar huellas</span> Si la huella actual es la guardada, el registro sigue siendo el
+aprobado y no hay nada más que hacer.</li>
+<li><span class="flujo-titulo">Reconstruir y comparar</span> Si difiere, reconstruye el registro aprobado con
+<code>Taxonomy.fromTsv</code>, <code>DataInventory.fromTsv</code> y la gobernanza guardada, y compáralo con el actual
+mediante <code>RecordDiff</code>.</li>
+<li><span class="flujo-titulo">Revisar</span> Presenta al DPD cada <code>ActivityChange</code>, con su
+<code>isGovernance()</code> y su <code>direction()</code>.</li>
+<li><span class="flujo-titulo">Volver a firmar</span> Cuando el DPD aprueba el registro actual, guarda su huella y sus
+datos, y el ciclo empieza de nuevo.</li>
+</ol>
+<p>Para poder reconstruir el registro aprobado, sus datos personales deben poder resolverse con lo guardado. Por eso el
+ciclo declara los datos de las actividades como <code>objects</code> de un inventario guardado, no como
+<code>entities</code>: las clases cambian con el código y no conservan su versión anterior.</p>
+
+<h3>Un cambio que llega desde el código</h3>
+<p>El DPD aprobó un registro con la matrícula declarada sobre el objeto <code>enrollments</code>. Después, una
+desarrolladora añade a <code>Enrollment</code> un campo <code>disabilityQuota</code> anotado con
+<code>@Category(USER_HEALTH_AND_MEDICAL_DISABILITY)</code>, que indica si el estudiante entró por el cupo de
+discapacidad. La compilación pasa, porque la clasificación es correcta. Pero la matrícula trata ahora una categoría
+especial, y su gobernanza no tiene ninguna condición del artículo 9.2, así que el registro actual ni siquiera puede
+construirse:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">1 processing error(s):
+ - ERROR MISSING_SPECIAL_CATEGORY_CONDITION enrollment: Special categories of data (user.health_and_medical.disability) need a condition of GDPR article 9.2
+</code></pre>
+<p>El elemento de ese error es <code>SPECIAL_CATEGORY_CONDITION</code>, de la gobernanza: le corresponde al DPD. El DPD
+declara <code>SUBSTANTIAL_PUBLIC_INTEREST</code> y amplía la referencia legal. Antes de firmar, la aplicación compara
+(Ejemplo 12.2).</p>
+
+<figure class="ejemplo">
+<figcaption>Ejemplo 12.2. Comparar el registro aprobado con el actual</figcaption>
+<pre class="codigo" tabindex="0"><code class="language-java">// El alcance, en el código: los datos personales como objetos del inventario.
+ProcessingActivity scope = ProcessingActivity.builder("enrollment", "Student enrollment")
+        .description("Registers admitted students in a programme and an academic year, and charges the fees.")
+        .purposes(DataUses.EDUCATION_ENROLLMENT)
+        .dataSubjects(DataSubjects.STUDENT)
+        .objects("enrollments")
+        .dataCategories(USER_NAME, USER_GOVERNMENT_ID_NATIONAL_IDENTIFICATION_NUMBER, USER_CONTACT_EMAIL)
+        .build();
+
+// Lo que rige ahora: el inventario del código y la gobernanza actual del DPD.
+DataInventory declared = classifier.inventory(List.of(Enrollment.class), type -&gt; "enrollments");
+ProcessingRecord current = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, declared)
+        .verify(scope.withGovernance(governanceTable.read("enrollment")));
+
+if (!current.fingerprint().equals(approval.fingerprint())) {
+    // Lo que se guardó al aprobar: la taxonomía, el inventario y la gobernanza de entonces.
+    ProcessingRecord approved = new ProcessingChecker(Taxonomy.fromTsv(approval.taxonomy()), Jurisdiction.SPAIN,
+            DataInventory.fromTsv(approval.inventory()))
+            .verify(scope.withGovernance(approval.governance("enrollment")));
+    for (ActivityChange change : RecordDiff.between(approved, current).changes()) {
+        System.out.println(change + (change.isGovernance() ? " (governance only)" : ""));
+    }
+}
+</code></pre>
+</figure>
+
+<p><code>governanceTable</code> y <code>approval</code> representan el almacenamiento de la aplicación. La salida:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">activity 'enrollment': [PERSONAL_DATA, PROTECTION, SPECIAL_CATEGORY_CONDITION, LEGAL_REFERENCE] TIGHTENED
+</code></pre>
+<p>El DPD ve en una línea lo que debe revisar: hay una categoría nueva (<code>PERSONAL_DATA</code>), la protección
+requerida subió (<code>TIGHTENED</code>) y su propia gobernanza cambió en consecuencia. <code>isGovernance()</code> es
+<code>false</code>, porque no es solo un cambio del DPD: también cambiaron los datos. <code>SCREENING</code> no aparece,
+porque la discapacidad cae en el mismo criterio de datos sensibles que ya cumplían la tasa y la beca.</p>
+
+<div class="recuadro recuadro-atencion" role="note">
+<p class="recuadro-titulo">Atención</p>
+<p>Reconstruye el registro aprobado con la taxonomía, el inventario y la gobernanza <strong>guardados al
+aprobarlo</strong>. Si lo reconstruyes con los datos actuales, obtienes el mismo registro que el actual: la misma huella
+y un diff vacío por construcción, y el cambio pasa sin revisión.</p>
+</div>
+
+<p>El alcance declarado en el código (el mismo <code>scope</code> en los dos registros) no se compara así: ambos
+registros usan el código actual. Un cambio del alcance, como una finalidad nueva, se revisa antes, en la solicitud de
+cambios: guarda la salida de <code>record.toMarkdown(title)</code> bajo control de versiones, y cada cambio del registro
+aparecerá en la diferencia del fichero.</p>
+
+<div class="recuadro recuadro-rgpd" role="note">
+<p class="recuadro-titulo">Protección de datos</p>
+<p>El diff orienta la revisión; no la sustituye. Un cambio <code>TIGHTENED</code> pide comprobar que la base y las
+condiciones siguen bastando, y un cambio de <code>SCREENING</code>, que la decisión sobre la EIPD sigue siendo válida.
+Firmar o no el registro es decisión del DPD.</p>
+</div>
+
+<h2 id="actividades-desde-registros-guardados">Actividades desde registros guardados</h2>
+<p>El mismo reparto sirve para la aplicación de gestión en la que el DPD edita la gobernanza. Esa aplicación no tiene
+las clases del modelo, pero tiene el inventario guardado y la gobernanza de cada actividad. El alcance se declara en el
+código con <code>objects</code>, la gobernanza se lee del almacenamiento y el comprobador se crea con el inventario:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">Governance governance = governanceTable.read("enrollment");   // lo que mantiene el DPD
+ProcessingChecker backOffice = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN, storedInventory);
+CheckedActivity checked = backOffice.check(scope.withGovernance(governance));
+for (ProcessingViolation violation : checked.violations()) {
+    if (violation.element().isGovernance()) {
+        form.error(violation.element(), violation.message());   // junto al campo que edita el DPD
+    } else {
+        throw new IllegalStateException(violation.toString());  // un error del código, no del DPD
+    }
+}
+</code></pre>
+
+<p>Linneo no define cómo se guarda una gobernanza: las columnas son de la aplicación. Las constantes se guardan por su
+nombre y se recuperan con <code>valueOf</code>, y los textos tal cual. Una fila de la aplicación puede convertirse en
+<code>Governance</code> así:</p>
+
+<pre class="codigo" tabindex="0"><code class="language-java">record GovernanceRow(String legalBasis, String legalReference, String retention, List&lt;String&gt; recipients,
+                     String impactAssessment) {
+
+    Governance toGovernance() {
+        Governance.Builder builder = Governance.builder()
+                .legalReference(legalReference)
+                .retention(retention)
+                .recipients(recipients.toArray(String[]::new))
+                .impactAssessment(impactAssessment);
+        if (legalBasis != null) {
+            builder.legalBasis(LegalBasis.valueOf(legalBasis));
+        }
+        return builder.build();
+    }
+}
+</code></pre>
+
+<p>Los textos en blanco se normalizan a <code>null</code>, de modo que una columna vacía equivale a no declarar el
+valor. Con la gobernanza del ejercicio 4 del <a href="11-actividades.html#ejercicios">capítulo 11</a> (consentimiento y
+consentimiento explícito, sin conservación), la pantalla del DPD mostraría un solo problema, junto al plazo de
+conservación:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">RETENTION WARNING MISSING_RETENTION learning-support: Declare the envisaged time limit for erasure (GDPR article 30.1.f)
+</code></pre>
+
+<h2 id="processingexception">Cuando <code>verify</code> falla: <code>ProcessingException</code></h2>
+<p><code>verify</code> lanza una <code>ProcessingException</code>, una excepción no comprobada, cuando alguna actividad
+tiene un error. Su mensaje empieza con el número de errores y sigue con una línea por error, con el formato de
+<code>ProcessingViolation.toString()</code>, en el orden de las actividades. Lista los 50 primeros; si hay más, una
+última línea dice cuántos quedaron fuera y cuenta todos por código, en orden alfabético. Veinte borradores vacíos, con
+tres errores cada uno, dan este mensaje (extracto: <code>[…]</code> sustituye las líneas omitidas):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">60 processing error(s):
+ - ERROR MISSING_PURPOSE draft-1: No data use declared
+ - ERROR MISSING_DATA_SUBJECTS draft-1: No data subject declared
+ - ERROR MISSING_PERSONAL_DATA draft-1: The activity processes no personal data
+[…]
+ - ERROR MISSING_DATA_SUBJECTS draft-17: No data subject declared
+ ... and 10 more; all of them by code: MISSING_DATA_SUBJECTS 20, MISSING_PERSONAL_DATA 20, MISSING_PURPOSE 20
+</code></pre>
+<p><code>errors()</code> devuelve siempre todos los errores, aquí 60, todos de gravedad <code>ERROR</code>. La lista se
+guarda en un campo <code>transient</code>, así que no se conserva si la excepción se serializa. En un test que debe
+fallar por una razón concreta, comprueba los códigos en lugar del texto:</p>
+<pre class="codigo" tabindex="0"><code class="language-java">ProcessingException failure = assertThrows(ProcessingException.class,
+        () -&gt; checker.verify(UniversityActivities.ENROLLMENT, UniversityActivities.ENROLLMENT));
+assertEquals(List.of(ProcessingViolation.Code.DUPLICATE_ACTIVITY),
+        failure.errors().stream().map(ProcessingViolation::code).toList());
+</code></pre>
+
+<h2 id="errores-frecuentes">Errores frecuentes</h2>
+<dl class="definiciones">
+<dt>Reconstruir el registro aprobado con los datos actuales.</dt>
+<dd>El diff sale vacío por construcción. Reconstrúyelo con la taxonomía, el inventario y la gobernanza guardados al
+aprobarlo.</dd>
+<dt>Guardar solo la huella del registro aprobado.</dt>
+<dd>La huella dice que algo cambió, no qué. Guarda también lo necesario para reconstruirlo: la taxonomía, el inventario
+y la gobernanza.</dd>
+<dt>Declarar como <code>entities</code> los datos de unas actividades cuyo registro aprobado hay que reconstruir.</dt>
+<dd>Las clases cambian con el código y no conservan su versión anterior. Usa <code>objects</code> de un inventario
+guardado.</dd>
+<dt>Esperar el registro en el idioma de la aplicación.</dt>
+<dd>Los textos que añade el registro están en inglés. Declara en inglés los nombres y descripciones de las actividades
+para que el registro quede en un solo idioma.</dd>
+<dt>Construir un <code>ProcessingRecord</code> a mano.</dt>
+<dd>El constructor rechaza la primera actividad con errores o con una clave repetida. <code>verify</code> informa de
+todos los errores a la vez.</dd>
+<dt>Leer <code>isGovernance()</code> como «el DPD cambió algo».</dt>
+<dd>Es <code>true</code> solo si no cambió nada más que la gobernanza (y los puntos abiertos y el cribado que se siguen
+de ella). Un cambio de gobernanza junto a uno de datos da <code>false</code>.</dd>
+<dt>Tomar la huella por una firma.</dt>
+<dd>Es un resumen del contenido para detectar cambios. Quién aprobó y cuándo lo registra la aplicación.</dd>
+<dt>Comparar el texto del mensaje de <code>ProcessingException</code> en los tests.</dt>
+<dd>El mensaje solo lista 50 errores y su redacción puede cambiar. Comprueba los códigos de <code>errors()</code>.</dd>
+</dl>
+
+<h2 id="resumen">Resumen</h2>
+<ul>
+<li><code>verify</code> devuelve un <code>ProcessingRecord</code> solo si ninguna actividad tiene errores; el registro
+contiene actividades válidas, cada clave una vez, en el orden de la lista.</li>
+<li>Cada actividad del registro es una <code>CheckedActivity</code>: lo declarado, lo resuelto, la protección requerida,
+el cribado y los avisos.</li>
+<li><code>toMarkdown(title)</code> genera el registro para las personas y <code>toJson()</code> para las herramientas;
+sus textos están en inglés y lo declarado se escribe como texto.</li>
+<li>Los avisos son los puntos abiertos del registro: no impiden generarlo, pero el DPD preguntará por cada uno.</li>
+<li><code>fingerprint()</code> y <code>RecordDiff</code> usan el mismo contenido, <code>ActivityChange.content</code>:
+dos huellas iguales implican siempre un diff vacío, sea cual sea el orden de las actividades.</li>
+<li>Cada <code>ActivityChange</code> dice qué aspectos cambiaron, si el cambio es solo de gobernanza
+(<code>isGovernance()</code>) y cómo se movió la protección (<code>direction()</code>).</li>
+<li>Para el ciclo de aprobación, guarda la huella y lo necesario para reconstruir el registro aprobado, y compara antes
+de volver a firmar.</li>
+<li><code>ProcessingException</code> lista los 50 primeros errores y cuenta todos por código; <code>errors()</code> los
+contiene todos.</li>
+</ul>
+
+<h2 id="ejercicios">Ejercicios</h2>
+<ol class="ejercicios">
+<li>
+<p><strong>Predice las filas.</strong> Un compañero añade <code>.legalBasis(LegalBasis.CONSENT)</code> después de
+<code>legitimateInterest(...)</code> en el boletín y cambia la conservación a
+<code>Until the alumnus withdraws consent</code>. ¿Qué filas de la tabla del boletín cambian o desaparecen en
+<code>toMarkdown</code>, y qué punto abierto aparece?</p>
+<details>
+<summary>Solución del ejercicio 1</summary>
+<p>La fila <code>Lawful basis (art. 6.1)</code> pasa a <code>Art. 6.1.a: Consent</code>, la fila
+<code>Legitimate interest</code> desaparece (solo se muestra cuando la base es el interés legítimo) y la conservación
+cambia. El interés sigue declarado, así que aparece un punto abierto. Extracto, en el que <code>[…]</code> sustituye las
+filas omitidas:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-markdown">| Lawful basis (art. 6.1) | Art. 6.1.a: Consent |
+| Data subjects (art. 30.1.c) | Alumnus (`alumnus`) |
+[…]
+| Retention (art. 30.1.f) | Until the alumnus withdraws consent |
+[…]
+
+Open points:
+
+- A legitimate interest is stated but the lawful basis is article 6.1.a
+</code></pre>
+<p>En el JSON, el miembro <code>legitimateInterest</code> también desaparece y <code>openPoints</code> contiene ese
+mensaje. La corrección es sustituir <code>legitimateInterest(...)</code> por
+<code>legalBasis(LegalBasis.CONSENT)</code>.</p>
+</details>
+</li>
+<li>
+<p><strong>Predice el diff.</strong> La universidad deja de reservar plazas por discapacidad y la admisión declara sus
+datos sin <code>USER_HEALTH_AND_MEDICAL_DISABILITY</code>, pero conserva su gobernanza, con la condición
+<code>SUBSTANTIAL_PUBLIC_INTEREST</code>. ¿Qué aspectos tiene el <code>ActivityChange</code> de la admisión, cuál es su
+dirección y es <code>isGovernance()</code> verdadero?</p>
+<details>
+<summary>Solución del ejercicio 2</summary>
+<pre class="codigo salida" tabindex="0"><code class="language-text">activity 'admissions': [PERSONAL_DATA, PROTECTION, SCREENING, OPEN_POINTS] LOOSENED
+</code></pre>
+<p>Desaparece una categoría (<code>PERSONAL_DATA</code>) y la protección requerida baja de <code>HIGH</code>,
+<code>HIGH</code> a <code>MEDIUM</code>, <code>HIGH</code> (<code>LOOSENED</code>). El cribado pierde su único criterio
+y pasa a <code>NOT_INDICATED</code>. La condición del artículo 9.2 ya no hace falta, así que aparece el punto abierto
+<code>UNNEEDED_CONDITION</code>. <code>isGovernance()</code> es <code>false</code>, porque cambiaron los datos; la
+gobernanza no cambió, y el DPD debería retirar la condición.</p>
+</details>
+</li>
+<li>
+<p><strong>Sin puntos abiertos.</strong> Escribe un test que falle si el registro de la universidad tiene algún punto
+abierto, con un mensaje que los enumere. ¿Qué tienes que cambiar en <code>UniversityActivities</code> para que pase?</p>
+<details>
+<summary>Solución del ejercicio 3</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">@Test
+void noOpenPoints() {
+    ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
+    List&lt;ProcessingViolation&gt; openPoints = record.activities().stream()
+            .flatMap(activity -&gt; activity.warnings().stream())
+            .toList();
+    assertTrue(openPoints.isEmpty(), () -&gt; "Close the open points of the record: " + openPoints);
+}
+</code></pre>
+<p>Falla con el aviso <code>MISSING_RETENTION</code> de la matrícula. Añade
+<code>.retention("Six years after the student leaves")</code> a <code>ENROLLMENT</code> y la lista queda vacía.</p>
+</details>
+</li>
+<li>
+<p><strong>El registro aprobado.</strong> Escribe un test que lea la huella aprobada de
+<code>src/test/resources/approved-record.sha256</code> y falle si el registro actual tiene otra, con un mensaje que
+indique al DPD que debe revisarlo. ¿Por qué este test no puede decir qué cambió?</p>
+<details>
+<summary>Solución del ejercicio 4</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">@Test
+void recordIsTheApprovedOne() throws IOException {
+    ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
+    String approved = Files.readString(Path.of("src/test/resources/approved-record.sha256")).strip();
+    assertEquals(approved, record.fingerprint(),
+            "The record of processing activities changed: the DPO must review and approve it again");
+}
+</code></pre>
+<p>La huella solo dice que el contenido es otro. Para saber qué cambió hace falta el registro aprobado, y este test no
+lo tiene: necesitaría la taxonomía, el inventario y la gobernanza guardados al aprobarlo para reconstruirlo y compararlo
+con <code>RecordDiff</code>. Como alternativa barata, guarda también <code>record.toMarkdown(title)</code> bajo control
+de versiones y revisa la diferencia del fichero.</p>
+</details>
+</li>
+<li>
+<p><strong>Consultar el registro.</strong> Escribe una expresión que devuelva las claves de las actividades del registro
+que tratan categorías especiales de datos. ¿Qué devuelve para la universidad?</p>
+<details>
+<summary>Solución del ejercicio 5</summary>
+<pre class="codigo" tabindex="0"><code class="language-java">List&lt;String&gt; special = record.activities().stream()
+        .filter(CheckedActivity::processesSpecialCategories)
+        .map(checked -&gt; checked.activity().key())
+        .toList();
+</code></pre>
+<p>Devuelve <code>[admissions]</code>. La verificación de antecedentes trata datos penales, que tienen su propia
+naturaleza y su propio método, <code>processesCriminalOffenceData()</code>.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="autoevaluacion">Autoevaluación</h2>
+<ol class="cuestionario">
+<li>
+<p>Dos registros tienen la misma huella. ¿Qué devuelve <code>RecordDiff.between(a, b).isEmpty()</code>?</p>
+<ol>
+<li>Normalmente <code>true</code>, salvo colisiones de nombres.</li>
+<li>Siempre <code>true</code>.</li>
+<li>Depende del orden de las actividades.</li>
+<li><code>false</code> si los mensajes de los avisos cambiaron.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 1</summary>
+<p>La b. La huella y el diff usan el mismo contenido, <code>ActivityChange.content</code>, así que coinciden siempre. El
+orden de las actividades no forma parte del contenido (c), y los puntos abiertos se comparan por código y elemento, no
+por su texto (d). La opción a no tiene sentido: el diff empareja las actividades por clave.</p>
+</details>
+</li>
+<li>
+<p>Un <code>ActivityChange</code> tiene los aspectos <code>[RETENTION, OPEN_POINTS]</code>. ¿Qué devuelve
+<code>isGovernance()</code>?</p>
+<ol>
+<li><code>true</code>, porque solo cambió la gobernanza y lo que se sigue de ella.</li>
+<li><code>false</code>, porque <code>OPEN_POINTS</code> no es un aspecto de gobernanza.</li>
+<li><code>false</code>, porque cambió más de un aspecto.</li>
+<li>Depende de la dirección del cambio.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 2</summary>
+<p>La a. <code>isGovernance()</code> exige que cambie algún aspecto de gobernanza y admite, además, los puntos abiertos
+y el cribado, que cambian como consecuencia. Por eso no es la b ni la c. La dirección no interviene (d).</p>
+</details>
+</li>
+<li>
+<p>¿Qué aspecto pertenece al alcance y no a la gobernanza?</p>
+<ol>
+<li><code>RISK_FACTORS</code></li>
+<li><code>DECLARED_RISK_FACTORS</code></li>
+<li><code>RECIPIENTS</code></li>
+<li><code>IMPACT_ASSESSMENT</code></li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 3</summary>
+<p>La b. Los factores que declara el código con <code>riskFactors(...)</code> del builder de la actividad son alcance.
+<code>RISK_FACTORS</code> son los factores de la gobernanza, que declara el DPD, y los destinatarios y la EIPD también
+son gobernanza.</p>
+</details>
+</li>
+<li>
+<p>¿Con qué se debe reconstruir el registro aprobado antes de compararlo con el actual?</p>
+<ol>
+<li>Con la taxonomía, el inventario y la gobernanza actuales.</li>
+<li>Con la huella guardada.</li>
+<li>Con la taxonomía, el inventario y la gobernanza guardados al aprobarlo.</li>
+<li>Con el Markdown guardado, leído de nuevo por Linneo.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 4</summary>
+<p>La c. Con los datos actuales el registro reconstruido es el actual y el diff sale vacío (a). Una huella no se puede
+invertir (b), y Linneo no lee el Markdown que genera (d).</p>
+</details>
+</li>
+<li>
+<p><code>verify</code> encuentra 60 errores. ¿Qué contienen el mensaje y <code>errors()</code> de la
+<code>ProcessingException</code>?</p>
+<ol>
+<li>El mensaje y <code>errors()</code> contienen los 60.</li>
+<li>El mensaje lista 50 y cuenta todos por código; <code>errors()</code> contiene los 60.</li>
+<li>Ambos contienen solo los 50 primeros.</li>
+<li>El mensaje contiene el primero; <code>errors()</code>, los 60.</li>
+</ol>
+<details>
+<summary>Respuesta a la pregunta 5</summary>
+<p>La b. El mensaje lista los 50 primeros, uno por línea, y una última línea cuenta todos por código.
+<code>errors()</code> devuelve siempre todos.</p>
+</details>
+</li>
+</ol>
+
+<h2 id="para-saber-mas">Para saber más</h2>
+<ul>
+<li><a href="11-actividades.html">Capítulo 11. Actividades de tratamiento</a>: las actividades, la gobernanza y el
+comprobador.</li>
+<li><a href="13-impacto-y-brechas.html">Capítulo 13. Evaluación de impacto y brechas</a>: el cribado que muestra el
+registro.</li>
+<li><a href="14-derechos.html">Capítulo 14. Derechos de los interesados</a>: <code>SubjectRights</code> lee el registro
+para responder a quien ejerce sus derechos.</li>
+<li><a href="08-inventario.html">Capítulo 8. El inventario de datos</a> y <a href="10-versiones.html">capítulo 10.
+Versiones de la taxonomía</a>: lo que se guarda para reconstruir un registro.</li>
+<li><a href="18-ciclo-de-vida.html">Capítulo 18. Linneo en el ciclo de vida</a>: la integración continua y los
+roles.</li>
+<li><a href="../../reference/processing/record.html">Referencia: <code>ProcessingRecord</code>, <code>RecordDiff</code>
+y <code>ActivityChange</code></a>.</li>
+<li><a href="../../reference/processing/checker.html">Referencia: <code>ProcessingChecker</code>,
+<code>CheckedActivity</code> y <code>ProcessingException</code></a>.</li>
+</ul>
+<nav class="paginacion" aria-label="Capítulo anterior y siguiente">
+<ul>
+<li><a href="11-actividades.html" rel="prev"><span class="rumbo">Anterior</span>Capítulo 11. Actividades de tratamiento</a></li>
+<li><a href="13-impacto-y-brechas.html" rel="next"><span class="rumbo">Siguiente</span>Capítulo 13. Evaluación de impacto y brechas</a></li>
+</ul>
+</nav>
+</main>
+</div>
+<footer class="pie">
+<div class="pie-interior">
+<p>Curso de Linneo, edición HTML en español, para la versión 0.1.0 de la biblioteca. También está disponible el
+<a href="../">curso en formato Markdown</a> y la <a href="../../reference/">referencia de la API</a>.</p>
+<p>Estas páginas siguen las Pautas de Accesibilidad para el Contenido Web (WCAG) 2.2, nivel AA. Si encuentras una
+barrera de accesibilidad o un error, comunícalo en las
+<a href="https://github.com/devbpm/linneo/issues">incidencias del proyecto en GitHub</a>.</p>
+<p>Linneo se distribuye con la licencia Apache, versión 2.0, e incluye la taxonomía por defecto de fideslang, de
+Ethyca, Inc., con licencia CC BY 4.0.</p>
+</div>
+</footer>
+</body>
+</html>
