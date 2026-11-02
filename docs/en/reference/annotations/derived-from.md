@@ -43,6 +43,11 @@ With `type`, the paths name fields of that class, classified as that class is. G
 `@Category` it follows the entity's classification, and with `@Category` it must keep up if the entity's field is
 later given a stricter one.
 
+The same idiom declares a **reference to another record** that holds personal data, which takes no class default and
+cannot be exempted: `@DerivedFrom(type = Customer.class, value = "id")` on the field that refers to a `Customer` makes
+it take the classification of the record's key. See
+[References to other records](composite.md#references-to-other-records).
+
 Sources are resolved field by field, so two classes may derive from each other's *other* fields: `Order.customerName`
 from `Customer.name` and `Customer.lastOrderTotal` from `Order.total` is not a cycle, and a
 [`@Composite`](composite.md) may derive from a class that holds it. Only derived fields that depend on each other are a

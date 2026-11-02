@@ -118,6 +118,8 @@ Lee tu tabla y construye con ella el inventario guardado. Solo entran las column
 toca.
 
 ```java
+import io.github.devbpm.linneo.classify.FieldClassification.Basis;
+
 DataInventory.Builder stored = DataInventory.builder();
 for (FieldRow row : fieldTable.activeRows()) {               // la consulta de la aplicación, una por tabla
     stored.field(new InventoryField(row.object(), row.path(), row.categoryKey(), Basis.valueOf(row.basis()),
@@ -279,10 +281,12 @@ if (!current.fingerprint().equals(approval.fingerprint())) {
 
 Cada `ActivityChange` nombra la actividad y sus `aspects`: `ADDED` o `REMOVED`, el alcance (`PURPOSES`,
 `DATA_SUBJECTS`), los datos (`PERSONAL_DATA`, `PROTECTION`), cada elemento del gobierno (`LEGAL_BASIS`, `RETENTION`,
-`RECIPIENTS`…) y los `OPEN_POINTS`. Dos de sus respuestas orientan la revisión:
+`RECIPIENTS`…), el cribado de la evaluación de impacto `SCREENING` (que sigue los rasgos de los términos, así que una
+taxonomía que añade un rasgo puede cambiarlo sin que cambie ninguna declaración) y los `OPEN_POINTS`, comparados por
+código y elemento. Dos de sus respuestas orientan la revisión:
 
-- `isGovernance()`: solo cambió el gobierno (con los puntos abiertos que se siguen de él), así que el delegado está
-  viendo su propio cambio;
+- `isGovernance()`: solo cambió el gobierno (con los puntos abiertos y el cribado que se siguen de él), así que el
+  delegado está viendo su propio cambio;
 - `direction()`: `TIGHTENED` indica que la actividad trata ahora datos que necesitan más protección, justo el caso en
   que la base jurídica, una condición del artículo 9 o una evaluación de impacto pueden dejar de bastar.
 
@@ -424,7 +428,8 @@ mutuamente excluyentes, así que el servidor rechaza un segundo nivel mientras e
 **Ejercicio 10.6.** `PERSONAL_DATA` (una categoría nueva), `PROTECTION` y `SPECIAL_CATEGORY_CONDITION`, más
 `OPEN_POINTS` solo si aparece o desaparece un aviso. La recomendación de evaluación de impacto no es uno de ellos aquí:
 el cribado cuenta los datos de categoría especial y los financieros como un solo criterio, los datos sensibles, así
-que la discapacidad no añade ningún criterio a una actividad que ya trata la tasa. La dirección es `TIGHTENED`: la
+que la discapacidad no añade ningún criterio a una actividad que ya trata la tasa, y `SCREENING` tampoco está entre los
+aspectos. La dirección es `TIGHTENED`: la
 actividad trata ahora datos de categoría especial. `isGovernance()` es falso, porque también cambiaron los datos; el
 cambio del delegado forma parte del mismo cambio. Fíjate en el orden: hasta que se añadió la condición, el registro
 actual ni siquiera podía construirse, porque datos de categoría especial sin condición del artículo 9 son un error.

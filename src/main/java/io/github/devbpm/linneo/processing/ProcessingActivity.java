@@ -17,8 +17,11 @@ package io.github.devbpm.linneo.processing;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -46,12 +49,15 @@ import java.util.regex.Pattern;
  * @param dataCategories keys of the categories of personal data it processes beyond those of {@code entities}
  * @param entities classified model classes whose personal fields it processes
  * @param objects keys of objects of the data inventory the checker is given, whose personal fields it processes
+ * @param riskFactors what the code knows the activity does that the impact screening cannot see from its terms, such
+ *        as automated decisions: a floor the governance adds to and cannot remove
  * @param governance the lawful bases, retention, recipients, transfers and impact assessment
  * @since 0.1.0
  */
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 List<String> objects, Governance governance) {
+                                 List<String> objects, Set<ImpactScreening.Factor> riskFactors,
+                                 Governance governance) {
 
     private static final Pattern KEY_PATTERN = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]*+");
 
@@ -85,6 +91,8 @@ public record ProcessingActivity(String key, String name, String description, Li
         dataCategories = List.copyOf(dataCategories);
         entities = List.copyOf(entities);
         objects = objects == null ? List.of() : List.copyOf(objects);
+        riskFactors = riskFactors == null || riskFactors.isEmpty() ? Set.of()
+                : Collections.unmodifiableSet(EnumSet.copyOf(riskFactors));
         governance = governance == null ? Governance.NONE : governance;
     }
 
@@ -101,20 +109,28 @@ public record ProcessingActivity(String key, String name, String description, Li
 
     /**
      * The same activity with another governance, such as the one the data protection officer keeps up to date. The
-     * scope declared in code is kept as is, and so are the {@linkplain Governance#riskFactors() risk factors} of
-     * this activity: what the code declares it does, such as automated decisions, is a minimum the stored governance
-     * adds to and cannot drop, so a governance saved before the code changed never lifts an impact assessment.
-     * Call it on the activity as the code declares it.
+     * scope declared in code is kept as is, its {@linkplain #riskFactors() risk factors} included: the screening
+     * joins them with those of the governance, so a governance saved before the code changed never lifts what the
+     * code declares.
      *
-     * @param governance the governance that replaces the current one, its risk factors joined to this activity's
+     * @param governance the governance that replaces the current one
      * @return a new activity
      */
     public ProcessingActivity withGovernance(Governance governance) {
-        Governance merged = Objects.requireNonNull(governance, "governance").riskFactors()
-                .containsAll(this.governance.riskFactors()) ? governance : governance.toBuilder()
-                .riskFactors(this.governance.riskFactors().toArray(ImpactScreening.Factor[]::new)).build();
         return new ProcessingActivity(key, name, description, purposes, dataSubjects, dataCategories, entities,
-                objects, merged);
+                objects, riskFactors, Objects.requireNonNull(governance, "governance"));
+    }
+
+    /**
+     * The risk factors the screening reads: those the code declares and those of the governance.
+     *
+     * @return their union, immutable
+     */
+    public Set<ImpactScreening.Factor> allRiskFactors() {
+        Set<ImpactScreening.Factor> all = EnumSet.noneOf(ImpactScreening.Factor.class);
+        all.addAll(riskFactors);
+        all.addAll(governance.riskFactors());
+        return Collections.unmodifiableSet(all);
     }
 
     /**
@@ -134,6 +150,7 @@ public record ProcessingActivity(String key, String name, String description, Li
         private final List<String> dataCategories = new ArrayList<>();
         private final List<Class<?>> entities = new ArrayList<>();
         private final List<String> objects = new ArrayList<>();
+        private final Set<ImpactScreening.Factor> riskFactors = EnumSet.noneOf(ImpactScreening.Factor.class);
         private Governance.Builder governance = Governance.builder();
 
         private Builder(String key, String name) {
@@ -322,13 +339,14 @@ public record ProcessingActivity(String key, String name, String description, Li
         }
 
         /**
-         * Adds initial risk factors of the governance; see {@link Governance.Builder#riskFactors}.
+         * Adds risk factors the code knows of, such as {@link ImpactScreening.Factor#AUTOMATED_DECISIONS} when the
+         * code decides on its own. They are part of the scope: the governance adds its own and cannot remove these.
          *
          * @param factors the factors
          * @return this builder
          */
         public Builder riskFactors(ImpactScreening.Factor... factors) {
-            governance.riskFactors(factors);
+            riskFactors.addAll(Arrays.asList(factors));
             return this;
         }
 
@@ -339,7 +357,7 @@ public record ProcessingActivity(String key, String name, String description, Li
          */
         public ProcessingActivity build() {
             return new ProcessingActivity(key, name, description, purposes, dataSubjects, dataCategories, entities,
-                    objects, governance.build());
+                    objects, riskFactors, governance.build());
         }
     }
 }

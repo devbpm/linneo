@@ -83,6 +83,8 @@ class DocumentationSamplesTest {
     private static final Pattern DECLARED_TYPE = Pattern.compile(
             "\\b(class|interface|enum|record|@interface)\\s+([A-Z]\\w*)");
     // A capitalized name with a lower-case letter: a type, not a constant such as ENTITIES.
+    private static final Pattern NESTED_IMPORT = Pattern.compile(
+            "import\\s+(?:static\\s+)?(io\\.github\\.devbpm\\.linneo[\\w.]*\\.[A-Z]\\w*)\\.([A-Z]\\w*|\\*)\\s*;");
     private static final Pattern MISSING_TYPE = Pattern.compile("kindname\\.(class|variable), ([A-Z]\\w*[a-z]\\w*),");
     /**
      * Types the pages use without declaring them: frameworks' and the JDK's types the samples do not import, and
@@ -127,7 +129,9 @@ class DocumentationSamplesTest {
             new Sample("canary", 2, List.of("@Category(USER_NO_SUCH_KEY) private String field;")),
             new Sample("canary", 3, List.of("taxonomy.requireCategory(1);")),
             new Sample("canary", 5, List.of("OpenMetadataExporter exporter = new OpenMetadataExporter(taxonomy);")),
-            new Sample("canary", 6, List.of("PostgresMasker.of(DisclosurePolicy.forLogs());")));
+            new Sample("canary", 6, List.of("PostgresMasker.of(DisclosurePolicy.forLogs());")),
+            new Sample("canary", 7, List.of("OldPolicy.Treatment treatment = null;")),
+            new Sample("canary", 8, List.of("@Categry(USER_CONTACT_EMAIL) private String field;")));
     /** ...and this one, which only uses names of its page, must pass. */
     private static final Sample CANARY_PASSING = new Sample("canary", 4,
             List.of("undefinedVariable.anything(Customer.CONSTANT, ENTITIES, student.email());"));
@@ -354,11 +358,28 @@ class DocumentationSamplesTest {
      */
     private static Set<String> declaredTypes(List<Sample> samples, Map<String, List<Class<?>>> types) {
         Set<String> declared = new TreeSet<>(CONTEXT_TYPES);
-        declared.addAll(types.keySet());
-        // The library's nested types, such as FieldClassification.Basis, which a page imports once for all samples.
-        types.values().stream().flatMap(List::stream)
-                .flatMap(type -> java.util.Arrays.stream(type.getClasses()))
-                .forEach(nested -> declared.add(nested.getSimpleName()));
+        // The top-level types of the library, imported by every sample.
+        types.forEach((name, classes) -> {
+            if (classes.stream().anyMatch(type -> type.getEnclosingClass() == null)) {
+                declared.add(name);
+            }
+        });
+        // A nested type, such as FieldClassification.Basis, only where some sample imports it, as a page does once.
+        Map<String, Class<?>> topLevel = new HashMap<>();
+        types.values().stream().flatMap(List::stream).filter(type -> type.getEnclosingClass() == null)
+                .forEach(type -> topLevel.put(type.getName(), type));
+        for (Sample sample : samples) {
+            Matcher imported = NESTED_IMPORT.matcher(sample.text());
+            while (imported.find()) {
+                Class<?> outer = topLevel.get(imported.group(1));
+                if (outer != null) {
+                    java.util.Arrays.stream(outer.getClasses())
+                            .filter(nested -> imported.group(2).equals("*")
+                                    || nested.getSimpleName().equals(imported.group(2)))
+                            .forEach(nested -> declared.add(nested.getSimpleName()));
+                }
+            }
+        }
         Matcher context = DECLARED_TYPE.matcher(CONTEXT);
         while (context.find()) {
             declared.add(context.group(2));
@@ -379,8 +400,12 @@ class DocumentationSamplesTest {
      */
     private static boolean undeclaredType(String code, String arguments, Set<String> declared) {
         Matcher missing = MISSING_TYPE.matcher(arguments);
-        return code.startsWith("compiler.err.cant.resolve") && missing.lookingAt()
-                && !declared.contains(missing.group(2));
+        if (code.startsWith("compiler.err.cant.resolve") && missing.lookingAt()) {
+            return !declared.contains(missing.group(2));
+        }
+        // OldName.Nested: javac reports the package OldName that does not exist.
+        return code.equals("compiler.err.doesnt.exist") && arguments.matches("[A-Z]\\w*[a-z]\\w*")
+                && !declared.contains(arguments);
     }
 
     /** Checks a module declaration: the library's own against module-info.java, others' references to it. */

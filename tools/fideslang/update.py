@@ -34,6 +34,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import sys
 import tarfile
 import urllib.request
@@ -89,7 +90,12 @@ def download_sources(version):
     for member in archive.getmembers():
         for module, _ in MODULES:
             if member.name.endswith(f"src/fideslang/default_taxonomy/{module}.py"):
+                if module in sources:
+                    sys.exit(f"The release has two files for {module}")
                 sources[module] = archive.extractfile(member).read().decode("utf-8")
+    missing = [module for module, _ in MODULES if module not in sources]
+    if missing:
+        sys.exit(f"The release has no file for {missing}")
     return sources
 
 
@@ -103,6 +109,8 @@ def parse(source):
         keywords = {keyword.arg: keyword.value for keyword in node.keywords if keyword.arg}
         if "fides_key" not in keywords:
             continue
+        if node.args or any(keyword.arg is None for keyword in node.keywords):
+            sys.exit(f"Line {node.lineno}: a term defined with positional or ** arguments cannot be read safely")
         item = {"_line": (node.lineno, node.col_offset)}
         for field in FIELDS:
             if field in keywords:
@@ -135,8 +143,19 @@ def rows(name):
 
 
 def javadoc(text):
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("@", "&#64;") \
-        .replace("*/", "*&#47;")
+    # A backslash first: javac reads unicode escapes such as \u002a\u002f anywhere, comments included, so text from
+    # the release must never reach the source with one.
+    return text.replace("&", "&amp;").replace("\\", "&#92;").replace("<", "&lt;").replace(">", "&gt;") \
+        .replace("@", "&#64;").replace("*/", "*&#47;")
+
+
+KEY = re.compile(r"[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*")
+
+
+def checked_key(key):
+    if not KEY.fullmatch(key):
+        sys.exit(f"Not a valid key, refusing to write it into Java: {key!r}")
+    return key
 
 
 def write_constants(cls, what, version, fideslang_rows, linneo_rows):
@@ -149,7 +168,7 @@ def write_constants(cls, what, version, fideslang_rows, linneo_rows):
     for title, data in ((f"fideslang {version}", fideslang_rows), ("Linneo extensions", linneo_rows)):
         lines += [f"    // {title}", ""]
         for row in data:
-            key, name, description = row[0], row[2], row[3]
+            key, name, description = checked_key(row[0]), row[2], row[3]
             lines.append(f"    /** {javadoc(name)}: {javadoc(description)} */")
             lines.append(f"    public static final String {key.upper().replace('.', '_')} = \"{key}\";")
             lines.append("")

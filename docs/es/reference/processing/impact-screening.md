@@ -39,8 +39,9 @@ lo usa para notificar la necesidad de una evaluación que la actividad no cita, 
 
 ## Qué puede ver el código y qué solo sabe el delegado
 
-Algunos criterios se ven en lo que declara la actividad. Los demás son hechos que solo conoce la función de protección
-de datos, como la escala del tratamiento, y el delegado los declara como **factores de riesgo**.
+Algunos criterios se ven en lo que declara la actividad. Los demás son hechos que los términos no dicen, como la escala
+del tratamiento o las decisiones automatizadas: el código declara los que conoce y el delegado el resto, como **factores
+de riesgo**.
 
 Los criterios que el código puede ver se leen de los [rasgos](../terms.md#trait) de los términos de la actividad, no de
 listas de claves, así que un término de una extensión o propio cuenta en cuanto declara sus rasgos.
@@ -64,26 +65,31 @@ que la actividad enumera sus términos.
 
 La taxonomía estándar declara los rasgos en [`linneo-traits.tsv`](../standard-taxonomy.md#rasgos-de-los-términos-estándar):
 las finalidades con `EVALUATION` son `marketing.advertising.profiling`, `marketing.advertising.first_party.targeted`,
-`marketing.advertising.third_party.targeted`, `personalize.content.profiling`, `personalize.content.profiled` y la
-obsoleta `personalize.profiling` (cribada como `personalize.content.profiling`); `employee`, `staff_member`,
-`faculty_member`, `trainee`, `patient` y `job_applicant` son `VULNERABLE`, igual que la categoría `user.childrens`;
-`user.financial` es `FINANCIAL`, `user.behavior` y `user.location` son `BEHAVIOURAL`, y `user.content.private` es
-`PRIVATE_LIFE`. La taxonomía estándar no tiene ningún término `MONITORING`: vienen de las
-[extensiones](../extensions/README.md#rasgos), como `employment.monitoring` y `user.employment.monitoring` de la
-[extensión de recursos humanos](../extensions/human-resources.md) o `education.financial_aid.means_assessment`, una
-finalidad `EVALUATION` de la [extensión de universidad](../extensions/university.md); con la taxonomía estándar sola,
-esas filas no encuentran nada. Una extensión o una aplicación que declara los rasgos de sus propios términos se lee
-igual que las estándar.
+`marketing.advertising.third_party.targeted`, `personalize.content.profiling`, `personalize.content.profiled`,
+`essential.fraud_detection` y la obsoleta `personalize.profiling` (cribada como `personalize.content.profiling`);
+`employee`, `staff_member`, `faculty_member`, `trainee`, `patient` y `job_applicant` son `VULNERABLE`, igual que las
+categorías `user.childrens`, `user.victim_status` y `user.government_id.immigration`; `user.financial` y `user.payment`
+son `FINANCIAL`, `user.behavior` y `user.location` son `BEHAVIOURAL`, y `user.content.private` es `PRIVATE_LIFE`. La
+taxonomía estándar tiene dos categorías `MONITORING`, `user.telemetry` y `user.sensor`, y ninguna finalidad
+`MONITORING`: esas vienen de las [extensiones](../extensions/README.md#rasgos), como `employment.monitoring` y
+`user.employment.monitoring` de la [extensión de recursos humanos](../extensions/human-resources.md); con la taxonomía
+estándar sola, ninguna finalidad cumple el criterio 3. `education.financial_aid.means_assessment` es una finalidad
+`EVALUATION` de la [extensión de universidad](../extensions/university.md). Una extensión o una aplicación que declara
+los rasgos de sus propios términos se lee igual que las estándar. En España, los datos `BIOMETRIC` y `GENETIC` cuentan
+como un criterio propio para el comprobador; véase
+[En el comprobador y en el registro](#en-el-comprobador-y-en-el-registro).
 
 `Criterion.number()` es el número del criterio en las directrices, de 1 a 9. Un `Factor` tiene un `criterion()`: el que
 cumple.
 
 ### Declarar factores de riesgo
 
-Los factores de riesgo pertenecen a la [gobernanza](activity.md#governance) de la actividad, que mantiene el delegado:
-son su componente `riskFactors`, un `Set<ImpactScreening.Factor>`, que se fija con el método `riskFactors(...)` del
-builder de `Governance` y del de `ProcessingActivity`. El método **añade** los factores que recibe a los declarados
-antes.
+Los factores de riesgo tienen dos sitios, ambos un `Set<ImpactScreening.Factor>` que se fija con un método
+`riskFactors(...)` que **añade** los factores que recibe a los declarados antes. Lo que el código sabe que hace la
+actividad, como `Factor.AUTOMATED_DECISIONS` cuando el código decide por sí solo, forma parte de su alcance: el
+componente `riskFactors` de la [`ProcessingActivity`](activity.md#componentes), que se fija con su builder. Lo que solo
+sabe el delegado, como la escala del tratamiento, pertenece a la [gobernanza](activity.md#governance) que él mantiene:
+`Governance.riskFactors()`.
 
 ```java
 Governance declared = Governance.builder()
@@ -91,10 +97,18 @@ Governance declared = Governance.builder()
         .riskFactors(ImpactScreening.Factor.LARGE_SCALE, ImpactScreening.Factor.DATASET_MATCHING)
         .build();
 declared.riskFactors();   // [LARGE_SCALE, DATASET_MATCHING]
+
+ProcessingActivity scoring = ProcessingActivity.builder("scoring", "Applicant scoring")
+        .riskFactors(ImpactScreening.Factor.AUTOMATED_DECISIONS)
+        .build();
+scoring.riskFactors();                                // [AUTOMATED_DECISIONS]
+scoring.withGovernance(declared).allRiskFactors();    // [AUTOMATED_DECISIONS, LARGE_SCALE, DATASET_MATCHING]
 ```
 
-Un cambio de los factores de riesgo entre dos registros es el aspecto de gobernanza `RISK_FACTORS` de un
-[`ActivityChange`](record.md#aspect).
+El cribado lee la unión, `ProcessingActivity.allRiskFactors()`. `withGovernance` solo sustituye la gobernanza, así que
+una gobernanza guardada antes de que cambie el código nunca levanta lo que el código declara. Un cambio de los factores
+de riesgo entre dos registros es el aspecto de gobernanza `RISK_FACTORS` de un [`ActivityChange`](record.md#aspect)
+cuando cambia la gobernanza, y el aspecto de alcance `DECLARED_RISK_FACTORS` cuando cambia el código.
 
 ## Outcome
 
@@ -161,10 +175,18 @@ Con `Jurisdiction.SPAIN` el aviso cita la lista de la autoridad de control espa�
 `GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases
 that meet two criteria or more). <summary>`.
 
-Ambas se notifican en el elemento `IMPACT_ASSESSMENT`, que pertenece a la gobernanza, y el error hace fallar a `verify`
-como cualquier otro. Una actividad que cita una evaluación no recibe ninguna infracción, sea cual sea el resultado. El
-[registro](record.md) muestra el cribado de cada actividad en cualquier caso, en una fila del Markdown y en un objeto
-`screening` del JSON.
+Con `Jurisdiction.SPAIN` el comprobador añade un caso más. La lista de la AEPD del artículo 35.4 cuenta los datos
+biométricos de identificación y los datos genéticos, las categorías con el rasgo `BIOMETRIC` o `GENETIC`, como criterios
+propios, además de los datos de categorías especiales. Cuando el cribado no es ya `LIKELY` ni `REQUIRED` y la actividad
+no cita ninguna evaluación, emite el aviso `IMPACT_ASSESSMENT_RECOMMENDED`: `The AEPD's list under GDPR article 35.4
+counts biometric data for identification and genetic data as a criterion besides special category data, so an impact
+assessment is required in most cases: <keys>. <summary>`. El cribado en sí, y por tanto el registro, muestra los
+criterios de las directrices como antes.
+
+El error y los avisos se notifican en el elemento `IMPACT_ASSESSMENT`, que pertenece a la gobernanza, y el error hace
+fallar a `verify` como cualquier otro. Una actividad que cita una evaluación no recibe ninguna infracción, sea cual sea
+el resultado. El [registro](record.md) muestra el cribado de cada actividad en cualquier caso, en una fila del Markdown
+y en un objeto `screening` del JSON.
 
 ## Ejemplo
 

@@ -56,7 +56,8 @@ class LegalRulesTest {
     @DisplayName("pay is financial data in a breach, as a bank account is")
     void payroll() {
         Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new HumanResourcesTaxonomy()).build();
-        InventoryField salary = new InventoryField("staff", "salary", HumanResourcesCategories.USER_EMPLOYMENT_COMPENSATION,
+        InventoryField salary = new InventoryField("staff", "salary",
+                HumanResourcesCategories.USER_EMPLOYMENT_COMPENSATION,
                 Basis.DECLARED, null, null, null, null);
         BreachAssessment assessment = BreachAssessment.builder().affected(List.of(salary), taxonomy)
                 .confidentiality(Exposure.UNKNOWN_RECIPIENTS).build();
@@ -127,8 +128,8 @@ class LegalRulesTest {
         SubjectRights.ActivityRights rights = SubjectRights.of(record, standard, DataSubjects.STUDENT)
                 .activities().getFirst();
         assertAll(
-                () -> assertEquals(Availability.CONDITIONAL, rights.entitlement(Right.PORTABILITY).availability()),
-                () -> assertTrue(rights.entitlement(Right.PORTABILITY).explanation().contains("20.1.a")),
+                () -> assertEquals(Availability.NO, rights.entitlement(Right.PORTABILITY).availability()),
+                () -> assertTrue(rights.entitlement(Right.PORTABILITY).explanation().contains("20.3")),
                 () -> assertEquals(Availability.CONDITIONAL, rights.entitlement(Right.ERASURE).availability()),
                 () -> assertTrue(rights.entitlement(Right.ERASURE).explanation().contains("17.1.b")));
     }
@@ -153,8 +154,11 @@ class LegalRulesTest {
                 .retention("1 year").riskFactors(ImpactScreening.Factor.LARGE_SCALE).build());
         CheckedActivity checked = new ProcessingChecker(standard).check(stored);
         assertAll(
-                () -> assertTrue(stored.governance().riskFactors().contains(ImpactScreening.Factor.AUTOMATED_DECISIONS)),
-                () -> assertTrue(stored.governance().riskFactors().contains(ImpactScreening.Factor.LARGE_SCALE)),
+                () -> assertTrue(stored.riskFactors().contains(ImpactScreening.Factor.AUTOMATED_DECISIONS)),
+                () -> assertTrue(stored.allRiskFactors().contains(ImpactScreening.Factor.LARGE_SCALE)),
+                () -> assertEquals(stored.allRiskFactors(), stored.withGovernance(stored.governance())
+                        .withGovernance(Governance.builder().legalBasis(LegalBasis.CONTRACT)
+                                .riskFactors(ImpactScreening.Factor.LARGE_SCALE).build()).allRiskFactors()),
                 () -> assertEquals("35.3.a", checked.screening().mandatoryCase()),
                 () -> assertFalse(checked.isValid()));
     }
@@ -215,6 +219,113 @@ class LegalRulesTest {
         assertAll(
                 () -> assertFalse(lone.fingerprint().equals(question.fingerprint())),
                 () -> assertEquals(lone, DataInventory.fromTsv(lone.toTsv())),
-                () -> assertTrue(lone.toTsv().contains("lock \\ud800")));
+                () -> assertTrue(lone.toTsv().contains("lock \\ud800")),
+                () -> assertThrows(IllegalArgumentException.class, () -> DataInventory.fromTsv(lone.toTsv()
+                        .replace("\\ud800", "\\u0041"))));
+    }
+
+    @Test
+    @DisplayName("payment data is financial, biometric credentials identify, other personal data identifies with"
+            + " effort")
+    void breachTraits() {
+        InventoryField card = new InventoryField("o", "card", Categories.USER_PAYMENT, Basis.DECLARED, null, null,
+                null, null);
+        InventoryField template = new InventoryField("o", "template", Categories.USER_AUTHORIZATION_BIOMETRIC,
+                Basis.DECLARED, null, null, null, null);
+        InventoryField diagnosis = new InventoryField("o", "diagnosis", Categories.USER_HEALTH_AND_MEDICAL,
+                Basis.DECLARED, null, null, null, null);
+        InventoryField pseudonymous = new InventoryField("o", "diagnosis", Categories.USER_HEALTH_AND_MEDICAL,
+                Basis.DECLARED, null, null, Identifiability.PSEUDONYMIZED, null);
+        assertAll(
+                () -> assertEquals(3, breach(card).dataProcessingContext()),
+                () -> assertEquals(Identification.MAXIMUM, breach(template).identification()),
+                () -> assertEquals(Identification.LIMITED, breach(diagnosis).identification()),
+                () -> assertEquals(breach(pseudonymous).score(), breach(diagnosis).score()));
+    }
+
+    private BreachAssessment breach(InventoryField field) {
+        return BreachAssessment.builder().affected(List.of(field), standard)
+                .confidentiality(Exposure.UNKNOWN_RECIPIENTS).build();
+    }
+
+    @Test
+    @DisplayName("in Spain, consent beside another condition is a point to confirm, and sanctions share one warning")
+    void spanishDetails() {
+        ProcessingChecker spain = new ProcessingChecker(standard, Jurisdiction.SPAIN);
+        CheckedActivity faith = spain.check(ProcessingActivity.builder("faith", "Faith").purposes(DataUses.ESSENTIAL)
+                .dataSubjects(DataSubjects.CUSTOMER).dataCategories(Categories.USER_DEMOGRAPHIC_RELIGIOUS_BELIEF)
+                .legalBasis(LegalBasis.CONSENT).specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT,
+                        SpecialCategoryCondition.VITAL_INTERESTS).retention("1 year").impactAssessment("D").build());
+        CheckedActivity sanctions = spain.check(ProcessingActivity.builder("sanctions", "Sanctions")
+                .purposes(DataUses.ESSENTIAL).dataSubjects(DataSubjects.EMPLOYEE)
+                .dataCategories(Categories.USER_ADMINISTRATIVE_SANCTION).legalBasis(LegalBasis.PUBLIC_INTEREST)
+                .retention("Five years").impactAssessment("D").build());
+        CheckedActivity fingerprints = spain.check(ProcessingActivity.builder("access", "Access control")
+                .purposes(DataUses.ESSENTIAL_SERVICE_SECURITY).dataSubjects(DataSubjects.CUSTOMER)
+                .dataCategories(Categories.USER_BIOMETRIC_FINGERPRINT).legalBasis(LegalBasis.CONSENT)
+                .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT).retention("1 year").build());
+        assertAll(
+                () -> assertTrue(faith.isValid(), faith::toString),
+                () -> assertTrue(faith.warnings().stream().anyMatch(w -> w.code()
+                        == ProcessingViolation.Code.CONSENT_NOT_SUFFICIENT)),
+                () -> assertEquals(1, sanctions.warnings().stream().filter(w -> w.code()
+                        == ProcessingViolation.Code.MISSING_LEGAL_REFERENCE).count()),
+                () -> assertTrue(fingerprints.warnings().stream().anyMatch(w -> w.code()
+                        == ProcessingViolation.Code.IMPACT_ASSESSMENT_RECOMMENDED
+                        && w.message().contains("AEPD"))));
+    }
+
+    @Test
+    @DisplayName("automated decisions, research and marketing beside other purposes give their own rights")
+    void moreRights() {
+        Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
+        ProcessingChecker checker = new ProcessingChecker(taxonomy);
+        ProcessingRecord record = checker.verify(List.of(
+                ProcessingActivity.builder("scoring", "Scoring").purposes(DataUses.ESSENTIAL_SERVICE)
+                        .dataSubjects(DataSubjects.CUSTOMER).dataCategories(Categories.USER_CONTACT_EMAIL)
+                        .legalBasis(LegalBasis.CONTRACT).retention("1 year").impactAssessment("D")
+                        .riskFactors(ImpactScreening.Factor.AUTOMATED_DECISIONS).build(),
+                ProcessingActivity.builder("study", "Study").purposes(UniversityDataUses.RESEARCH_PARTICIPATION)
+                        .dataSubjects(DataSubjects.CUSTOMER).dataCategories(Categories.USER_CONTACT_EMAIL)
+                        .legalBasis(LegalBasis.CONSENT).retention("1 year").build(),
+                ProcessingActivity.builder("shop", "Shop").dataSubjects(DataSubjects.CUSTOMER)
+                        .purposes(DataUses.ESSENTIAL_SERVICE, DataUses.MARKETING_COMMUNICATIONS)
+                        .dataCategories(Categories.USER_CONTACT_EMAIL).legalBasis(LegalBasis.CONTRACT)
+                        .retention("1 year").build()));
+        SubjectRights rights = SubjectRights.of(record, taxonomy, DataSubjects.CUSTOMER);
+        assertAll(
+                () -> assertEquals(Availability.CONDITIONAL, rights.activity("scoring").orElseThrow()
+                        .entitlement(Right.AUTOMATED_DECISION).availability()),
+                () -> assertTrue(rights.activity("scoring").orElseThrow().entitlement(Right.ACCESS).explanation()
+                        .contains("15.1.h")),
+                () -> assertEquals(Availability.CONDITIONAL, rights.activity("study").orElseThrow()
+                        .entitlement(Right.OBJECTION).availability()),
+                () -> assertTrue(rights.activity("study").orElseThrow().entitlement(Right.ERASURE).explanation()
+                        .contains("17.3.d")),
+                () -> assertEquals(Availability.CONDITIONAL, rights.activity("shop").orElseThrow()
+                        .entitlement(Right.ERASURE).availability()),
+                () -> assertEquals(Availability.NO, rights.activity("shop").orElseThrow()
+                        .entitlement(Right.AUTOMATED_DECISION).availability()));
+    }
+
+    @Test
+    @DisplayName("a change of the screening changes the fingerprint, and the record lists terms in key order")
+    void screeningAndOrder() {
+        Taxonomy marked = Taxonomy.builder().withStandard()
+                .refineDataSubject(DataSubjects.CUSTOMER, s -> s.traits(io.github.devbpm.linneo.Trait.VULNERABLE))
+                .build();
+        ProcessingActivity.Builder activity = ProcessingActivity.builder("x", "X").dataSubjects(DataSubjects.CUSTOMER)
+                .purposes(DataUses.ESSENTIAL_SERVICE, DataUses.ANALYTICS).dataCategories(Categories.USER_NAME)
+                .legalBasis(LegalBasis.CONTRACT).retention("1 year").impactAssessment("D");
+        ProcessingActivity.Builder permuted = ProcessingActivity.builder("x", "X")
+                .dataSubjects(DataSubjects.CUSTOMER).purposes(DataUses.ANALYTICS, DataUses.ESSENTIAL_SERVICE)
+                .dataCategories(Categories.USER_NAME).legalBasis(LegalBasis.CONTRACT).retention("1 year")
+                .impactAssessment("D");
+        ProcessingRecord plain = new ProcessingChecker(standard).verify(List.of(activity.build()));
+        assertAll(
+                () -> assertFalse(plain.fingerprint().equals(new ProcessingChecker(marked)
+                        .verify(List.of(activity.build())).fingerprint())),
+                () -> assertEquals(plain.toMarkdown("R"), new ProcessingChecker(standard)
+                        .verify(List.of(permuted.build())).toMarkdown("R")));
     }
 }

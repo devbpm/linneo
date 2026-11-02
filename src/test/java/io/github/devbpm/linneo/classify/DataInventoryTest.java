@@ -148,7 +148,8 @@ class DataInventoryTest {
     }
 
     @Test
-    @DisplayName("the diff from the stored copy to the code tells added, removed and changed fields and their direction")
+    @DisplayName("the diff from the stored copy to the code tells added, removed and changed fields and their"
+            + " direction")
     void diff() {
         DataInventory stored = DataInventory.builder()
                 .field("student", "email", Categories.USER_CONTACT_EMAIL, Basis.DECLARED)
@@ -249,7 +250,7 @@ class DataInventoryTest {
     @Test
     @DisplayName("a change of a replacement reaches the fields that still declare the deprecated key")
     void replacementChange() {
-        String legacy = Categories.USER_NAME + ".legacy";
+        String legacy = Categories.USER_CONTACT + ".legacy";
         Taxonomy before = Taxonomy.builder().withStandard().category(legacy, "Legacy name", "Replaced",
                 c -> c.deprecated("0.1.0", Categories.USER_CONTACT_EMAIL)).build();
         Taxonomy after = Taxonomy.builder().withStandard().category(legacy, "Legacy name", "Replaced",

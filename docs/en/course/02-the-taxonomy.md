@@ -168,10 +168,12 @@ Module 5 uses it for fields and whole classes.
 Protection says how a field must be treated; some of Linneo's legal rules need to know *what kind* of term they are
 looking at. A **trait** (`Trait`) is a property of a term of any of the three hierarchies that those rules read:
 `FINANCIAL`, `BEHAVIOURAL` and `PRIVATE_LIFE` mark data of a highly personal nature; `DIRECT_IDENTIFIER`,
-`CONTACT_IDENTIFIER` and `INDIRECT_IDENTIFIER` say how a category identifies a person; `EVALUATION`, `MONITORING`,
-`VULNERABLE` and `DIRECT_MARKETING` mark purposes and data subjects that the impact screening and the subject rights
-treat specially. Linneo's own terms declare theirs, a child inherits those of its parent, and each trait applies to some
-hierarchies only. Module 9 shows the rules that read them.
+`CONTACT_IDENTIFIER` and `INDIRECT_IDENTIFIER` say how a category identifies a person; `BIOMETRIC` and `GENETIC` mark
+the data of articles 4.14 and 4.13 of the GDPR; `EVALUATION`, `MONITORING`, `VULNERABLE`, `DIRECT_MARKETING` and
+`RESEARCH` mark purposes and data subjects that the impact screening and the subject rights treat specially. Linneo's
+own terms declare theirs, a child inherits those of its parent, and each trait applies to some hierarchies only. Traits
+are an aid, not a verdict: they let the rules see what a key cannot tell, and the data protection officer still reviews
+each result. Module 9 shows the rules that read them.
 
 ```java
 DataCategory email = Taxonomy.standard().requireCategory(Categories.USER_CONTACT_EMAIL);

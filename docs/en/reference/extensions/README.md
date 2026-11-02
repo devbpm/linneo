@@ -30,7 +30,7 @@ constants for its keys.
 
 | Extension | Class | `name()` | Adds | Page |
 |---|---|---|---|---|
-| Higher education | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 32 data categories, 27 data uses, 12 data subjects | [University](university.md) |
+| Higher education | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 32 data categories, 28 data uses, 12 data subjects | [University](university.md) |
 | Finance and accounting | `io.github.devbpm.linneo.extension.finance.FinanceTaxonomy` | `"finance"` | 19 data categories, 13 data uses, 3 data subjects | [Finance](finance.md) |
 | Supply chain management | `io.github.devbpm.linneo.extension.supplychain.SupplyChainTaxonomy` | `"supply_chain"` | 16 data categories, 12 data uses, 3 data subjects | [Supply chain](supply-chain.md) |
 | Project operations | `io.github.devbpm.linneo.extension.projectoperations.ProjectOperationsTaxonomy` | `"project_operations"` | 11 data categories, 6 data uses, 2 data subjects | [Project operations](project-operations.md) |
@@ -65,9 +65,9 @@ import io.github.devbpm.linneo.extension.university.UniversityTaxonomy;
 Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
 ```
 
-`taxonomy.toString()` prints `Taxonomy[158 data categories, 90 data uses, 34 data subjects]`, against
+`taxonomy.toString()` prints `Taxonomy[158 data categories, 91 data uses, 34 data subjects]`, against
 `Taxonomy[126 data categories, 63 data uses, 22 data subjects]` for the standard taxonomy. With the five shipped
-extensions applied it prints `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Keep the result and use
+extensions applied it prints `Taxonomy[225 data categories, 137 data uses, 48 data subjects]`. Keep the result and use
 it everywhere: in the [`Classifier`](../classify/classifier.md), the [`ProcessingChecker`](../processing/checker.md) and
 the catalogue exporters. A `Classifier` built on `Taxonomy.standard()` reports every key of the extension as
 `UNKNOWN_CATEGORY`.
@@ -81,7 +81,7 @@ hang from `user.financial` or `user.contact` inherit those traits; the extension
 
 | Extension | Traits it declares |
 |---|---|
-| University | data uses: `advancement` `DIRECT_MARKETING`; `advancement.prospect_research` and `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` and `MONITORING` |
+| University | data uses: `advancement.alumni_relations`, `advancement.fundraising` and `advancement.prospect_research` `DIRECT_MARKETING`; `advancement.prospect_research` and `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` and `MONITORING`; `research` `RESEARCH` |
 | Finance | data uses: `finance.credit_management` and `finance.anti_money_laundering` `EVALUATION` |
 | Supply chain | data use: `operations.logistics.fleet_management` `MONITORING`; data subject: `driver` `VULNERABLE` |
 | Human resources | categories: `user.employment.compensation`, `user.employment.benefit` and `user.employment.payroll` `FINANCIAL`, `user.employment.monitoring` `MONITORING`; data uses: `employment.monitoring` `MONITORING`, `employment.performance` and `employment.recruitment.background_check` `EVALUATION`; data subjects: `dependant`, `reporting_person`, `temporary_agency_worker` and `worker_representative` `VULNERABLE` |

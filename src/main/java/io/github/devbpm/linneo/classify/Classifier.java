@@ -65,19 +65,26 @@ import java.util.function.Function;
  *   <li>the field's {@link Category @Category}, or the ceiling of its {@link CategoryByRow @CategoryByRow};</li>
  *   <li>for a field marked {@link DerivedFrom @DerivedFrom} without a category, the classification of its
  *       source;</li>
- *   <li>for a field whose type, or the element type of whose collection, array, {@link Optional} or map values, at
- *       any depth, is a {@link Composite @Composite} class, the classification of that class's fields, one entry per
+ *   <li>for a field whose type, or the element type of whose collection, array or {@link Optional}, at any depth,
+ *       is a concrete {@link Composite @Composite} class, the classification of that class's fields, one entry per
  *       field with the path {@code field.part};</li>
  *   <li>the {@link DefaultCategory @DefaultCategory} of the class that declares the field;</li>
  *   <li>the {@link DefaultCategory @DefaultCategory} of the class being classified;</li>
  *   <li>none: an {@link Code#UNCLASSIFIED_FIELD} error.</li>
  * </ol>
- * A class default never applies to a field that may hold data the classifier cannot see: a composite it cannot
- * split into fields (a map key, a type argument of a class that is not a collection, or two composites), or a value
- * typed {@code Object} or by a type variable that the class does not bind. Such a field without a category is an
- * {@link Code#UNCLASSIFIED_FIELD} error, so a composite never takes a non-personal default by being wrapped. Type
- * variables are resolved through the superclasses of the class being classified, and a subclass of a composite is a
- * composite. A {@code transient} field is not classified unless it carries one of Linneo's field annotations.
+ * A class default never applies to a field that may hold data the classifier cannot see: composites it cannot split
+ * into fields (in a map, whose keys are data too, as a type argument of a class that is not a collection, or two of
+ * them), an abstract composite, or a value typed {@code Object}, {@code Serializable} or by a type variable the class
+ * does not bind. Such a field without a category is an {@link Code#UNCLASSIFIED_FIELD} error, so a composite never
+ * takes a non-personal default by being wrapped. Type variables are resolved through the superclasses of the class
+ * being classified, and a subclass of a composite is a composite.
+ * <p>
+ * A field whose type is another record of the model, a class with a classification of its own, refers to it: the
+ * class default applies when that record holds no personal data, as a catalogue entry does, while a reference to a
+ * person's record is personal data itself, a pseudonymous key, and the field declares what it stores, typically with
+ * {@code @DerivedFrom(type = Customer.class, value = "id")}; it cannot be exempted either. A {@code transient} field
+ * is not classified unless it carries one of Linneo's field annotations, and the lock fields of Lombok's
+ * {@code @Synchronized} are ignored like other generated fields.
  * Fields marked {@link Exempt @Exempt} are not classified, and {@link ClassClassification#exempted()} lists them.
  * A field is identified by its path, so a field that hides a superclass field of the same name is an
  * {@link Code#DUPLICATE_FIELD} error. A deprecated key still classifies the field, with its replacement, and is
@@ -87,11 +94,15 @@ import java.util.function.Function;
  * Protection never drops silently: a derived field must protect at least as much as each of its sources
  * ({@link Code#WEAKER_THAN_SOURCE}); a value declared anonymized or aggregated may drop the personal nature of its
  * sources, never their levels or secrecy. A field that stores composites as one value, declared or derived, must
- * protect at least as much as everything the composites contain ({@link Code#WEAKER_THAN_PARTS}). A composite that contains itself, and derived fields that depend on each other,
- * in one class or across classes, are a {@link Code#CYCLE}; a field that derives from a field with an error is an
+ * protect at least as much as everything the composites contain ({@link Code#WEAKER_THAN_PARTS}), and a composite
+ * with an error leaves it nothing to compare with, which is an error too. A composite that contains itself, and
+ * derived fields that depend on each other, in one class or across classes, are a {@link Code#CYCLE}; a field that
+ * derives from a field with an error is an
  * {@link Code#UNKNOWN_SOURCE}. Sources are resolved field by field, so classes may derive from each other's other
- * fields and a composite from a class that holds it, and the result does not depend on the order in which classes
- * are classified.
+ * fields and a composite from a class that holds it, and the problems found do not depend on the order in which
+ * classes are classified; only the field a composite containment cycle is reported on may. Each class reports its
+ * own problems, such as a field stored as one value that protects less than its composite, so verify every class of
+ * the model ({@link ModelClasses}) rather than some of them.
  * <p>
  * Fields that bytecode tools generate are ignored: synthetic fields and fields whose name starts with {@code $$_}, as
  * Hibernate's enhancement adds. A Hibernate proxy class ({@code Entity$HibernateProxy$...}) is classified as the
@@ -329,8 +340,22 @@ public final class Classifier {
     private record Embedded(String name, ClassRun run) {
     }
 
-    /** A field that stores composites as one value, checked against the composites' fields at the end. */
-    private record Whole(String name, Set<Class<?>> composites) {
+    /**
+     * A field checked at the end against what it holds: composites stored as one value, whose fields it must
+     * protect, and references to other records, which a class default or an exemption may not stand for when the
+     * records hold personal data.
+     */
+    private record Whole(String name, Set<Class<?>> composites, Set<Class<?>> references, HowClassified basis) {
+    }
+
+    /** How a checked field is classified. */
+    private enum HowClassified {
+        /** By its own annotation or derivation: references hold what the field declares. */
+        DECLARED,
+        /** By a class default. */
+        DEFAULT,
+        /** Not at all: exempted. */
+        EXEMPT
     }
 
     /** The classification of one class. */
@@ -349,6 +374,12 @@ public final class Classifier {
         private boolean collected;
         // Resolving every derived field, to build the unit.
         private boolean finishing;
+        // Errors of the fields themselves, found collecting and deriving; checking what fields hold adds none, so
+        // whether a class has field errors does not depend on whether it was finished.
+        private int fieldErrors;
+        private boolean checkingWholes;
+        // Fields whose class default a reference refused: left out of the unit, though other classes saw the default.
+        private final Set<String> refused = new HashSet<>();
         private Unit unit;
 
         // What the type variables of the superclasses stand for in this class.
@@ -402,9 +433,11 @@ public final class Classifier {
                     derive(entry.getKey());
                 }
             }
+            checkingWholes = true;
             for (Whole whole : wholes) {
                 checkParts(whole);
             }
+            checkingWholes = false;
             for (Embedded part : embedded) {
                 Unit inner = part.run().finish();
                 for (Violation violation : inner.classification().violations()) {
@@ -418,7 +451,7 @@ public final class Classifier {
             List<FieldClassification> fields = new ArrayList<>();
             Map<String, Declared> declared = new HashMap<>();
             slots.forEach((path, slot) -> {
-                if (slot.result != null) {
+                if (slot.result != null && !refused.contains(path)) {
                     fields.add(slot.result);
                     declared.put(path, slot.declared);
                 }
@@ -443,12 +476,20 @@ public final class Classifier {
             Exempt exempt = field.getDeclaredAnnotation(Exempt.class);
             DerivedFrom derived = field.getDeclaredAnnotation(DerivedFrom.class);
             String name = field.getName();
+            Holding holding = new Holding(bindings).of(field.getGenericType());
             if (exempt != null) {
                 if (category != null || byRow != null || derived != null) {
                     error(name, Code.CONFLICTING_ANNOTATIONS,
                             "@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom");
+                } else if (!holding.composites.isEmpty()) {
+                    error(name, Code.CONFLICTING_ANNOTATIONS, "@Exempt is for a field that holds no data of the"
+                            + " model, and this one holds " + names(holding.composites) + ": classify it as one"
+                            + " value with @Category or @CategoryByRow");
                 } else {
                     exempted.add(new Exemption(field.getDeclaringClass(), name, exempt.value()));
+                    if (!holding.references.isEmpty()) {
+                        wholes.add(new Whole(name, Set.of(), holding.references, HowClassified.EXEMPT));
+                    }
                 }
                 if (exempt.value().isBlank()) {
                     error(name, Code.MISSING_REASON, "@Exempt needs a reason");
@@ -460,7 +501,6 @@ public final class Classifier {
                         "@CategoryByRow cannot be combined with @Category or @DerivedFrom");
                 return;
             }
-            Holding holding = new Holding(bindings).of(field.getGenericType());
             if (derived != null) {
                 slots.put(name, Slot.pending(field));
                 stores(name, holding);
@@ -478,20 +518,26 @@ public final class Classifier {
                     return;
                 }
                 if (holding.hidesData()) {
-                    error(name, Code.UNCLASSIFIED_FIELD, holding.explain() + ", so no class default applies;"
-                            + " declare its category with @Category or @CategoryByRow");
+                    error(name, Code.UNCLASSIFIED_FIELD, holding.explain() + ": no class default applies. Declare"
+                            + " its category with @Category or @CategoryByRow");
                     return;
                 }
                 classified = byDefault(field);
+                classified.ifPresent(c -> slots.put(name, Slot.done(c.classification(), c.declared())));
+                if (classified.isPresent() && !holding.references.isEmpty()) {
+                    wholes.add(new Whole(name, Set.of(), holding.references, HowClassified.DEFAULT));
+                }
+                return;
             }
             classified.ifPresent(c -> slots.put(name, Slot.done(c.classification(), c.declared())));
             stores(name, holding);
         }
 
-        // A field classified as one value whose type holds composites: it must protect what they contain.
+        // A field classified as one value whose type holds composites: it must protect what they contain. What a
+        // declared reference to another record holds is what the field declares, such as the record's key.
         private void stores(String name, Holding holding) {
             if (!holding.composites.isEmpty()) {
-                wholes.add(new Whole(name, holding.composites));
+                wholes.add(new Whole(name, holding.composites, Set.of(), HowClassified.DECLARED));
             }
         }
 
@@ -590,31 +636,71 @@ public final class Classifier {
             embedded.add(new Embedded(name, inner));
         }
 
-        // A field that stores composites as one value: its classification must cover the composites' fields. Their
-        // fields are derived, not finished, so a composite that holds itself, and two that hold each other, are
-        // checked too, whichever class is classified first.
+        // A field that stores composites as one value: its classification must cover the composites' fields, and a
+        // composite with an error leaves nothing to compare with. A reference to another record that holds personal
+        // data is personal data itself, a pseudonymous key, which a class default or an exemption cannot stand for.
+        // Fields are derived, not finished, so a composite that holds itself, and records that refer to each other,
+        // are checked too, whichever class is classified first.
         private void checkParts(Whole whole) {
             Slot slot = slots.get(whole.name());
             FieldClassification classification = slot == null ? null : slot.result;
-            if (classification == null) {
+            if (whole.basis() != HowClassified.EXEMPT && classification == null) {
                 return;
             }
+            if (!whole.composites().isEmpty()) {
+                Optional<Protection> ceiling = ceilingOf(whole.composites());
+                if (ceiling.isEmpty()) {
+                    error(whole.name(), Code.WEAKER_THAN_PARTS, "the fields of " + names(whole.composites())
+                            + " have errors, so what '" + classification.category().key() + "' must protect is"
+                            + " unknown");
+                } else if (!classification.protection().covers(ceiling.get())) {
+                    error(whole.name(), Code.WEAKER_THAN_PARTS, "'" + classification.category().key()
+                            + "' protects less than the fields of " + names(whole.composites()) + " need ("
+                            + describe(ceiling.get()) + ")");
+                }
+            }
+            List<Class<?>> personal = whole.references().stream()
+                    .filter(reference -> ceilingOf(Set.of(reference)).map(Protection::isPersonal).orElse(false))
+                    .toList();
+            if (personal.isEmpty()) {
+                return;
+            }
+            String referred = personal.getFirst().getSimpleName();
+            String advice = " that holds personal data, and a reference to a person's record is personal data:"
+                    + " declare what the field stores with @Category, or take the classification of the record's"
+                    + " key with @DerivedFrom(type = " + referred + ".class, value = \"id\")";
+            if (whole.basis() == HowClassified.EXEMPT) {
+                error(whole.name(), Code.CONFLICTING_ANNOTATIONS, "@Exempt is for a field that holds no data of the"
+                        + " model, and this one refers to " + referred + advice);
+            } else {
+                refused.add(whole.name());
+                error(whole.name(), Code.UNCLASSIFIED_FIELD, "the class default '"
+                        + classification.category().key() + "' does not apply: the field refers to " + referred
+                        + advice);
+            }
+        }
+
+        // The protection the fields of some classes need together, or empty if a field of one of them has an error.
+        private Optional<Protection> ceilingOf(Set<Class<?>> classes) {
             List<Protection> parts = new ArrayList<>();
-            for (Class<?> composite : whole.composites()) {
-                ClassRun inner = run.collectedNow(composite);
+            for (Class<?> type : classes) {
+                ClassRun inner = run.collectedNow(type);
                 for (String path : List.copyOf(inner.slots.keySet())) {
                     FieldClassification part = inner.derive(path);
                     if (part != null) {
                         parts.add(part.protection());
                     }
                 }
+                if (inner.hasFieldErrors()) {
+                    return Optional.empty();
+                }
             }
-            Protection ceiling = Protection.joinAll(parts);
-            if (!classification.protection().covers(ceiling)) {
-                error(whole.name(), Code.WEAKER_THAN_PARTS, "'" + classification.category().key()
-                        + "' protects less than the fields of " + whole.composites().stream()
-                        .map(Class::getSimpleName).sorted().toList() + " need (" + describe(ceiling) + ")");
-            }
+            return Optional.of(Protection.joinAll(parts));
+        }
+
+        // Whether a field of this class, or of a composite it embeds, has an error.
+        private boolean hasFieldErrors() {
+            return fieldErrors > 0 || embedded.stream().anyMatch(part -> part.run().hasFieldErrors());
         }
 
         // Resolves a derived field after its sources; a source may be a derived field itself, here or in another
@@ -856,6 +942,9 @@ public final class Classifier {
 
         private void error(String field, Code code, String message) {
             violations.add(new Violation(type, field, Severity.ERROR, code, message));
+            if (!checkingWholes) {
+                fieldErrors++;
+            }
         }
     }
 
@@ -885,18 +974,19 @@ public final class Classifier {
 
     /**
      * What the declared type of a field may hold, as far as the classifier can tell: the composite classes it
-     * mentions, whether each is reached only as an element (so that it can be embedded), and whether a value it holds
-     * is typed {@code Object} or by an unbound type variable, which may be anything.
+     * mentions and whether each is reached only as an element of an array, a collection or an optional (so that it
+     * can be embedded), the other records it refers to (classes with a classification of their own), and why it cannot
+     * tell, when a value may be anything: typed {@code Object}, {@code Serializable} or by a type variable the class
+     * does not bind, an abstract composite, or a class whose fields cannot be read.
      */
     private static final class Holding {
 
         private final Map<TypeVariable<?>, Type> bindings;
         private final Set<Class<?>> composites = new LinkedHashSet<>();
-        // Classes with classified fields that are not composites, such as another entity or a forgotten marker.
-        private final Set<Class<?>> classified = new LinkedHashSet<>();
+        private final Set<Class<?>> references = new LinkedHashSet<>();
         private final Set<TypeVariable<?>> visiting = new HashSet<>();
         private boolean embeddable = true;
-        private boolean unknown;
+        private String unknown;
 
         Holding(Map<TypeVariable<?>, Type> bindings) {
             this.bindings = bindings;
@@ -907,27 +997,29 @@ public final class Classifier {
             return this;
         }
 
-        // The composite whose fields the field holds, when it holds exactly one, only as elements, and nothing unknown.
+        // The composite whose fields the field holds, when it holds exactly one, only as elements, and nothing else.
         Class<?> embeddable() {
-            return composites.size() == 1 && embeddable && !unknown ? composites.iterator().next() : null;
+            return composites.size() == 1 && embeddable && unknown == null && references.isEmpty()
+                    ? composites.iterator().next() : null;
         }
 
+        // Whether the field may hold data no class default can stand for.
         boolean hidesData() {
-            return unknown || !composites.isEmpty() || !classified.isEmpty();
+            return unknown != null || !composites.isEmpty();
         }
 
         String explain() {
-            if (unknown) {
-                return "its type holds values typed Object or by a type variable, which may be personal data";
+            if (unknown != null) {
+                return "it holds " + unknown;
             }
-            if (!classified.isEmpty()) {
-                return "it holds " + classified.stream().map(Class::getSimpleName).sorted().toList() + ", whose"
-                        + " fields are classified: mark the class @Composite to classify its fields here or, for a"
-                        + " reference to another record, declare what the field stores (such as the record's key)";
+            return "it holds " + names(composites) + " in a way that cannot be split into the composites' fields (a"
+                    + " map, a type argument of a class that is not a collection, or several composites)";
+        }
+
+        private void unknown(String why) {
+            if (unknown == null) {
+                unknown = why;
             }
-            return "it holds " + composites.stream().map(Class::getSimpleName).sorted().toList()
-                    + " in a way that cannot be split into the composite's fields (a map key, a type argument of a"
-                    + " class that is not a collection, or several composites)";
         }
 
         private void walk(Type type, Position position) {
@@ -937,7 +1029,9 @@ public final class Classifier {
                 case ParameterizedType p -> walkClass((Class<?>) p.getRawType(), p, position);
                 case GenericArrayType g -> walk(g.getGenericComponentType(), position);
                 case WildcardType w -> {
-                    Arrays.stream(w.getUpperBounds()).forEach(bound -> walk(bound, position));
+                    // Class<?> says nothing about what the field holds; List<?> may hold anything.
+                    Arrays.stream(w.getUpperBounds()).filter(b -> position != Position.ARGUMENT || b != Object.class)
+                            .forEach(bound -> walk(bound, position));
                     Arrays.stream(w.getLowerBounds()).forEach(bound -> walk(bound, position));
                 }
                 case TypeVariable<?> v -> {
@@ -945,50 +1039,136 @@ public final class Classifier {
                     if (bound != null) {
                         walk(bound, position);
                     } else if (visiting.add(v)) {
-                        Arrays.stream(v.getBounds()).forEach(b -> walk(b, position));
+                        if (position != Position.ARGUMENT) {
+                            unknown("values typed by the type variable " + v.getName() + ", which the class does"
+                                    + " not bind");
+                        }
+                        Arrays.stream(v.getBounds()).forEach(b -> walk(b, Position.ARGUMENT));
                         visiting.remove(v);
                     }
                 }
-                default -> unknown |= position != Position.ARGUMENT;
+                default -> {
+                    if (position != Position.ARGUMENT) {
+                        unknown("values of a type the classifier cannot read: " + type);
+                    }
+                }
             }
         }
 
         private void walkClass(Class<?> raw, Type type, Position position) {
             if (raw.isAnnotationPresent(Composite.class)) {
+                if (raw.isInterface() || Modifier.isAbstract(raw.getModifiers())) {
+                    unknown("the abstract composite " + raw.getSimpleName() + ", whose implementations may have"
+                            + " fields it does not declare");
+                    return;
+                }
                 composites.add(raw);
                 embeddable &= position == Position.ELEMENT;
+                arguments(type);
             } else if (raw == Object.class) {
-                unknown |= position != Position.ARGUMENT;
+                unknown("values typed Object, which may be personal data");
+            } else if (ANY_VALUE.contains(raw)) {
+                if (position != Position.ARGUMENT) {
+                    unknown("values typed " + raw.getSimpleName() + ", which may be anything");
+                }
             } else if (Map.class.isAssignableFrom(raw) || raw == Map.Entry.class) {
+                // The keys of a map are data too, so its contents are never paths.
                 Class<?> container = raw == Map.Entry.class ? Map.Entry.class : Map.class;
-                walk(argumentOf(type, container, 0), position == Position.ARGUMENT ? position : Position.KEY);
-                walk(argumentOf(type, container, 1), position);
+                Position inner = position == Position.ARGUMENT ? position : Position.KEY;
+                walk(argumentOf(type, container, 0), inner);
+                walk(argumentOf(type, container, 1), inner);
             } else if (Iterable.class.isAssignableFrom(raw)) {
                 walk(argumentOf(type, Iterable.class, 0), position);
             } else if (raw == Optional.class) {
                 walk(argumentOf(type, Optional.class, 0), position);
             } else {
-                if (position != Position.ARGUMENT && isClassified(raw)) {
-                    classified.add(raw);
-                }
-                if (type instanceof ParameterizedType p) {
-                    for (Type argument : p.getActualTypeArguments()) {
-                        walk(argument, Position.ARGUMENT);
+                if (raw.isSealed()) {
+                    for (Class<?> permitted : raw.getPermittedSubclasses()) {
+                        walk(permitted, position);
                     }
+                }
+                switch (KNOWN.get(raw)) {
+                    case CLASSIFIED -> references.add(raw);
+                    case UNREADABLE -> unknown("values of " + raw.getName() + ", whose fields cannot be read");
+                    case PLAIN -> {
+                        // A value class of the application or a library, which declares nothing of its own.
+                    }
+                }
+                arguments(type);
+            }
+        }
+
+        // The type arguments of a class that is not a container, and of its owner: values it may or may not hold.
+        private void arguments(Type type) {
+            if (type instanceof ParameterizedType p) {
+                for (Type argument : p.getActualTypeArguments()) {
+                    walk(argument, Position.ARGUMENT);
+                }
+                if (p.getOwnerType() instanceof ParameterizedType owner) {
+                    arguments(owner);
                 }
             }
         }
     }
 
-    // Whether a class declares a classification of its own: a class default or an annotated field.
-    private static boolean isClassified(Class<?> type) {
-        for (Class<?> c : hierarchyOf(type)) {
-            if (c.isAnnotationPresent(DefaultCategory.class) || Arrays.stream(c.getDeclaredFields())
-                    .anyMatch(f -> FIELD_ANNOTATIONS.stream().anyMatch(f::isAnnotationPresent))) {
-                return true;
+    // Interfaces any value may implement: a field of such a type may hold anything.
+    private static final Set<Class<?>> ANY_VALUE = Set.of(java.io.Serializable.class, Comparable.class,
+            Cloneable.class);
+
+    /** What the classifier knows of a class used as the type of a field. */
+    private enum Known {
+        /** The class declares a classification: a class default, an annotated field or a field of a composite. */
+        CLASSIFIED,
+        /** The class declares nothing Linneo reads, as a value class does. */
+        PLAIN,
+        /** The fields of the class cannot be read, such as when a class they need is missing. */
+        UNREADABLE
+    }
+
+    // Per class, once: whether it is another record of the model. JDK classes declare nothing.
+    private static final ClassValue<Known> KNOWN = new ClassValue<>() {
+        @Override
+        protected Known computeValue(Class<?> type) {
+            if (type.isPrimitive() || type.getName().startsWith("java.") || type.getName().startsWith("javax.")) {
+                return Known.PLAIN;
+            }
+            try {
+                for (Class<?> c : hierarchyOf(type)) {
+                    if (c.isAnnotationPresent(DefaultCategory.class)) {
+                        return Known.CLASSIFIED;
+                    }
+                    for (Field field : c.getDeclaredFields()) {
+                        if (!isExcluded(field) && (FIELD_ANNOTATIONS.stream().anyMatch(field::isAnnotationPresent)
+                                || mentionsComposite(field.getGenericType(), new HashSet<>()))) {
+                            return Known.CLASSIFIED;
+                        }
+                    }
+                }
+                return Known.PLAIN;
+            } catch (LinkageError e) {
+                return Known.UNREADABLE;
             }
         }
-        return false;
+    };
+
+    // Whether a type names a composite anywhere, as itself, an element or a type argument.
+    private static boolean mentionsComposite(Type type, Set<TypeVariable<?>> visiting) {
+        return switch (type) {
+            case Class<?> c when c.isArray() -> mentionsComposite(c.getComponentType(), visiting);
+            case Class<?> c -> c.isAnnotationPresent(Composite.class);
+            case ParameterizedType p -> mentionsComposite(p.getRawType(), visiting)
+                    || Arrays.stream(p.getActualTypeArguments()).anyMatch(a -> mentionsComposite(a, visiting));
+            case GenericArrayType g -> mentionsComposite(g.getGenericComponentType(), visiting);
+            case WildcardType w -> Arrays.stream(w.getUpperBounds()).anyMatch(b -> mentionsComposite(b, visiting))
+                    || Arrays.stream(w.getLowerBounds()).anyMatch(b -> mentionsComposite(b, visiting));
+            case TypeVariable<?> v -> visiting.add(v)
+                    && Arrays.stream(v.getBounds()).anyMatch(b -> mentionsComposite(b, visiting));
+            default -> false;
+        };
+    }
+
+    private static List<String> names(Set<Class<?>> classes) {
+        return classes.stream().map(Class::getSimpleName).sorted().toList();
     }
 
     // What the type variables of the superclasses of a class stand for in it. A subclass binds before its superclass,
@@ -1110,11 +1290,14 @@ public final class Classifier {
 
     private static final List<Class<? extends Annotation>> FIELD_ANNOTATIONS =
             List.of(Category.class, CategoryByRow.class, DerivedFrom.class, Exempt.class);
+    // The lock fields Lombok's @Synchronized generates.
+    private static final Set<String> GENERATED_LOCKS = Set.of("$lock", "$LOCK");
 
     // A transient field is not stored, so it is skipped, unless an annotation says it holds data to classify.
     private static boolean isExcluded(Field field) {
         int modifiers = field.getModifiers();
         return Modifier.isStatic(modifiers) || field.isSynthetic() || field.getName().startsWith(GENERATED_FIELD_PREFIX)
+                || GENERATED_LOCKS.contains(field.getName())
                 || Modifier.isTransient(modifiers) && FIELD_ANNOTATIONS.stream().noneMatch(field::isAnnotationPresent);
     }
 

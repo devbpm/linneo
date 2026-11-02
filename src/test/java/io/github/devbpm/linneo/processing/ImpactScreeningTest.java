@@ -80,7 +80,8 @@ class ImpactScreeningTest {
                 () -> assertEquals(Outcome.LIKELY, payroll.screening().outcome()),
                 () -> assertEquals(EnumSet.of(Criterion.SENSITIVE_DATA, Criterion.VULNERABLE_SUBJECTS),
                         payroll.screening().criteria()),
-                () -> assertEquals(List.of("highly personal data user.financial.bank_account", "data subjects employee"),
+                () -> assertEquals(List.of("highly personal data user.financial.bank_account",
+                                "data subjects employee"),
                         payroll.screening().findings().stream().map(ImpactScreening.Finding::evidence).toList()),
                 () -> assertNull(payroll.screening().mandatoryCase()));
     }
@@ -122,19 +123,25 @@ class ImpactScreeningTest {
     }
 
     @Test
-    @DisplayName("the record shows the screening of each activity, and a change of risk factors is a governance change")
+    @DisplayName("the record shows the screening of each activity; risk factors change the governance or the scope")
     void recordAndDiff() {
-        ProcessingRecord before = checker.verify(payroll().build());
-        ProcessingRecord after = checker.verify(payroll().riskFactors(Factor.DATASET_MATCHING).build());
+        ProcessingActivity declared = payroll().build();
+        ProcessingRecord before = checker.verify(declared);
+        ProcessingRecord after = checker.verify(declared.withGovernance(declared.governance().toBuilder()
+                .riskFactors(Factor.DATASET_MATCHING).build()));
+        ProcessingRecord inCode = checker.verify(payroll().riskFactors(Factor.DATASET_MATCHING).build());
         ActivityChange change = RecordDiff.between(before, after).change("payroll").orElseThrow();
+        ActivityChange codeChange = RecordDiff.between(before, inCode).change("payroll").orElseThrow();
         assertAll(
                 () -> assertTrue(before.toMarkdown("U").contains("| Impact assessment screening | Likely required (2"
                         + " criteria of WP248): 4. sensitive data:"), () -> before.toMarkdown("U")),
                 () -> assertTrue(before.toJson().contains("\"screening\":{\"outcome\":\"LIKELY\",\"criteria\":["
                         + "\"SENSITIVE_DATA\",\"VULNERABLE_SUBJECTS\"]}"), before::toJson),
-                // The warning names the criteria, so the open points change with the factor.
-                () -> assertEquals(EnumSet.of(Aspect.RISK_FACTORS, Aspect.OPEN_POINTS), change.aspects()),
+                // The screening is part of what the record says, so a new criterion changes it.
+                () -> assertEquals(EnumSet.of(Aspect.RISK_FACTORS, Aspect.SCREENING), change.aspects()),
                 () -> assertTrue(change.isGovernance()),
+                () -> assertEquals(EnumSet.of(Aspect.DECLARED_RISK_FACTORS, Aspect.SCREENING), codeChange.aspects()),
+                () -> assertFalse(codeChange.isGovernance()),
                 () -> assertFalse(after.activities().getFirst().screening().criteria().isEmpty()));
     }
 }

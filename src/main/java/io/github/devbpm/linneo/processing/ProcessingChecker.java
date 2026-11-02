@@ -23,6 +23,7 @@ import io.github.devbpm.linneo.LegalNature;
 import io.github.devbpm.linneo.Protection;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.Term;
+import io.github.devbpm.linneo.Trait;
 import io.github.devbpm.linneo.classify.ClassClassification;
 import io.github.devbpm.linneo.classify.Classifier;
 import io.github.devbpm.linneo.classify.DataInventory;
@@ -64,7 +65,9 @@ import java.util.function.Function;
  * Gaps in the record are warnings: a deprecated key, a non-personal category, a condition that is not needed, a
  * basis resting on law without naming the law, legitimate interests without the interest pursued, no retention,
  * and an activity whose {@linkplain ImpactScreening screening} makes an impact assessment likely and that refers to
- * none. A case of GDPR article 35.3 that refers to no impact assessment is an error.
+ * none. A case of GDPR article 35.3 that refers to no impact assessment is an error. The checker reads what the
+ * activity declares and the traits of its terms; it does not judge the facts behind them, which the data protection
+ * officer reviews.
  * <p>
  * A checker created for a {@link Jurisdiction} other than {@link Jurisdiction#EU EU} also applies that country's
  * rules; see {@link Jurisdiction#SPAIN}.
@@ -246,9 +249,10 @@ public final class ProcessingChecker {
             this.classified = classified;
         }
 
+        // In key order, so the record does not depend on the order in which the activity lists its terms.
         <T extends Term> List<T> terms(List<String> keys, String kind, Element element, Code missing,
                                        Function<String, Optional<T>> lookup, Function<String, T> require) {
-            Map<String, T> resolved = new LinkedHashMap<>();
+            Map<String, T> resolved = new TreeMap<>();
             for (String key : keys) {
                 Optional<T> found = lookup.apply(key);
                 if (found.isEmpty()) {
@@ -378,17 +382,24 @@ public final class ProcessingChecker {
                         .forEach(condition -> resting.add(condition.article()));
             }
             // With explicit consent alone; another condition declared beside it covers the data consent cannot.
-            if (special && conditions.equals(Set.of(SpecialCategoryCondition.EXPLICIT_CONSENT))
+            // Conditions are declared per activity, not per category: with explicit consent alone the rule is
+            // certain; beside other conditions the officer confirms which one covers these categories.
+            if (special && conditions.contains(SpecialCategoryCondition.EXPLICIT_CONSENT)
                     && jurisdiction == Jurisdiction.SPAIN) {
                 String keys = String.join(", ", categories.keySet().stream()
                         .filter(key -> CONSENT_INSUFFICIENT_IN_SPAIN.stream()
                                 .anyMatch(k -> key.equals(k) || key.startsWith(k + ".")))
                         .toList());
-                if (!keys.isEmpty()) {
+                if (!keys.isEmpty() && conditions.size() == 1) {
                     error(Element.SPECIAL_CATEGORY_CONDITION, Code.CONSENT_NOT_SUFFICIENT,
                             "Explicit consent alone does not lift the prohibition of"
                             + " processing " + keys + " (LOPDGDD article 9.1); declare another condition of GDPR"
                             + " article 9.2");
+                } else if (!keys.isEmpty()) {
+                    warning(Element.SPECIAL_CATEGORY_CONDITION, Code.CONSENT_NOT_SUFFICIENT,
+                            "Explicit consent alone does not lift the prohibition of processing " + keys
+                            + " (LOPDGDD article 9.1); confirm that another declared condition of GDPR article 9.2"
+                            + " covers it");
                 }
             }
 
@@ -406,6 +417,13 @@ public final class ProcessingChecker {
                 resting.add(criminalBasis.article());
             }
 
+            // One warning for one missing reference, citing every provision that asks for it.
+            boolean sanctions = jurisdiction == Jurisdiction.SPAIN && governance.legalBasis() != LegalBasis.CONSENT
+                    && categories.keySet().stream().anyMatch(key -> key.equals(Categories.USER_ADMINISTRATIVE_SANCTION)
+                    || key.startsWith(Categories.USER_ADMINISTRATIVE_SANCTION + "."));
+            String sanctionRule = "data on administrative infringements and sanctions may only be processed by the"
+                    + " bodies competent for the sanctioning procedure, with the consent of the person, or as a law"
+                    + " with the rank of statute allows (LOPDGDD article 27)";
             if (!resting.isEmpty() && governance.legalReference() == null) {
                 List<String> statute = jurisdiction == Jurisdiction.SPAIN
                         ? statuteArticles(governance, special, criminal) : List.of();
@@ -413,23 +431,18 @@ public final class ProcessingChecker {
                         + String.join(", ", resting)
                         + " rest on Union or Member State law; name it as the legal reference"
                         + (statute.isEmpty() ? "" : " (LOPDGDD article(s) " + String.join(", ", statute)
-                        + ": a law with the rank of statute)"));
-            }
-            if (jurisdiction == Jurisdiction.SPAIN && governance.legalReference() == null
-                    && governance.legalBasis() != LegalBasis.CONSENT
-                    && categories.keySet().stream().anyMatch(key -> key.equals(Categories.USER_ADMINISTRATIVE_SANCTION)
-                    || key.startsWith(Categories.USER_ADMINISTRATIVE_SANCTION + "."))) {
-                warning(Element.LEGAL_REFERENCE, Code.MISSING_LEGAL_REFERENCE, "Data on administrative"
-                        + " infringements and sanctions may only be processed by the bodies competent for the"
-                        + " sanctioning procedure, with the consent of the person, or as a law with the rank of statute"
-                        + " allows (LOPDGDD article 27); name that law as the legal reference");
+                        + ": a law with the rank of statute)") + (sanctions ? "; and " + sanctionRule : ""));
+            } else if (sanctions && governance.legalReference() == null) {
+                warning(Element.LEGAL_REFERENCE, Code.MISSING_LEGAL_REFERENCE, "Name the law as the legal"
+                        + " reference: " + sanctionRule);
             }
             if (governance.retention() == null) {
                 warning(Element.RETENTION, Code.MISSING_RETENTION,
                         "Declare the envisaged time limit for erasure (GDPR article"
                         + " 30.1.f)");
             }
-            ImpactScreening screening = ImpactScreening.of(purposes, subjects, categories.values(), governance);
+            ImpactScreening screening = ImpactScreening.of(purposes, subjects, categories.values(),
+                    activity.allRiskFactors());
             if (governance.impactAssessment() == null) {
                 if (screening.outcome() == ImpactScreening.Outcome.REQUIRED) {
                     error(Element.IMPACT_ASSESSMENT, Code.IMPACT_ASSESSMENT_REQUIRED, "GDPR article "
@@ -440,6 +453,18 @@ public final class ProcessingChecker {
                             + " requires an impact assessment" + (jurisdiction == Jurisdiction.SPAIN ? " (the AEPD's"
                             + " list under article 35.4 requires one in most cases that meet two criteria or more)"
                             : "") + ". " + screening.summary());
+                } else if (jurisdiction == Jurisdiction.SPAIN) {
+                    // The AEPD's list counts biometric data for identification and genetic data as criteria of their
+                    // own, besides special category data: two criteria with nothing else declared.
+                    List<String> aepd = categories.values().stream()
+                            .filter(c -> c.has(Trait.BIOMETRIC) || c.has(Trait.GENETIC))
+                            .map(DataCategory::key).toList();
+                    if (!aepd.isEmpty()) {
+                        warning(Element.IMPACT_ASSESSMENT, Code.IMPACT_ASSESSMENT_RECOMMENDED, "The AEPD's list"
+                                + " under GDPR article 35.4 counts biometric data for identification and genetic data"
+                                + " as a criterion besides special category data, so an impact assessment is required"
+                                + " in most cases: " + String.join(", ", aepd) + ". " + screening.summary());
+                    }
                 }
             }
         }

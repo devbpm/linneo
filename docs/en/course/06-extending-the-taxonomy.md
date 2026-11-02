@@ -77,8 +77,9 @@ public final class CampusTaxonomy implements TaxonomyExtension {
 ### `name()`
 
 A short, stable name. It is recorded as the **origin** of every term the extension adds, so reports can tell "campus"
-terms from "fideslang" and "linneo" ones. Those two names are reserved: an extension called `"fideslang"` or `"linneo"`
-(or with a blank name) is refused with `Invalid extension name 'linneo' in edu.example.university.CampusTaxonomy`.
+terms from "fideslang" and "linneo" ones. Three names are reserved: an extension called `"fideslang"`, `"linneo"` or
+`"application"` (the origin of the terms the application adds itself), or with a blank name, is refused with
+`Invalid extension name 'linneo' in edu.example.university.CampusTaxonomy`.
 Applying the same extension class twice has no effect the second time, but two different classes with the same name are
 refused (see below). The name `"university"` is taken by the
 [extension shipped with Linneo](#the-university-extension-shipped-with-linneo); do not reuse it.
@@ -98,6 +99,10 @@ refused (see below). The name `"university"` is taken by the
 | `traits(Trait...)` | traits that Linneo's legal rules read, inherited by children (see [below](#traits)) |
 | `since(version)` | the version of your extension that introduced the term |
 | `deprecated(sinceVersion, replacedBy)` | deprecates the term; `replacedBy` may be `null` |
+
+A draft can only be changed inside the customizer that received it: keep it and call a method later, and the builder
+throws `TaxonomyException`. An extension can change the lifecycle (`since`, `deprecated`) only of the terms it added,
+which the builder checks when each change is made.
 
 With this extension, `user.education.lab_notebook` is:
 
@@ -142,8 +147,9 @@ traits or a deprecation to one that exists.
 
 A **trait** is a property of a term that Linneo's legal rules read, so that they follow the taxonomy and not lists of
 keys: `EVALUATION` marks a purpose that scores people, `MONITORING` one that observes them, `VULNERABLE` a data subject
-in a weaker position than the controller, `DIRECT_MARKETING` a purpose the data subject may always object to, and so on
-(the [reference](../reference/terms.md#trait) lists all ten and the hierarchies each one applies to). A term has its own
+in a weaker position than the controller, `DIRECT_MARKETING` a purpose the data subject may always object to,
+`BIOMETRIC` and `GENETIC` data of those kinds, `RESEARCH` a research purpose, and so on (the
+[reference](../reference/terms.md#trait) lists all thirteen and the hierarchies each one applies to). A term has its own
 traits and those of its ancestors. If the university scores applicants, say so on the purpose and the impact screening
 of module 9 sees it:
 
@@ -155,7 +161,8 @@ of module 9 sees it:
 
 A trait can only be declared on a hierarchy it applies to: `Trait.EVALUATION` on a category throws
 `The trait EVALUATION does not apply to the DATA_CATEGORY '<key>'`. Adding a trait to a term makes the rules stricter, so
-it is a minor change of a taxonomy; removing one is a major change.
+it is a minor change of a taxonomy; removing one is a major change. Traits are an aid: they let the rules see what a
+key cannot tell, and the data protection officer still reviews each result.
 
 ### Deprecating your own terms
 
@@ -168,7 +175,8 @@ Suppose the university used `user.education.lab_journal` in a first version and 
 ```
 
 Fields still annotated with the old key keep working, are classified with `user.education.lab_notebook`, and
-produce the warning you saw in module 4:
+produce the warning you saw in module 4. Because they are checked with the replacement, the replacement must carry every
+trait of the term it replaces (`TaxonomyException` otherwise), or a rule that read the old term would stop reading it:
 
 ```
 WARNING DEPRECATED_CATEGORY edu.example.university.LabNotebook.file: data category 'user.education.lab_journal' is deprecated; use 'user.education.lab_notebook'
@@ -241,7 +249,7 @@ Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new CampusTaxonomy(
 Linneo ships optional extensions for several sectors. This module uses the one for higher education,
 `UniversityTaxonomy`, in the package `io.github.devbpm.linneo.extension.university`. It adds 32 data categories
 (attendance, academic standing, accommodations, admission applications and evaluations, final grades, credit
-recognition, degrees, internships, means assessments, fee exemptions, donations…), 27 data uses (including two new
+recognition, degrees, internships, means assessments, fee exemptions, donations…), 28 data uses (including two new
 roots, `advancement` and `research`) and 12 data subjects (prospective student, doctoral candidate, exchange student,
 donor, referee…). The [reference](../reference/extensions/university.md) lists every term with its protection. The four
 other shipped extensions (finance, supply chain, project operations and human resources) work in the same way and share
@@ -258,7 +266,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-`taxonomy.toString()` prints `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: the 126 standard
+`taxonomy.toString()` prints `Taxonomy[160 data categories, 91 data uses, 35 data subjects]`: the 126 standard
 categories, 32 from `university` and 2 from `campus`. Its keys have constants in `UniversityCategories`,
 `UniversityDataUses` and `UniversityDataSubjects`, so they work in annotations like the standard ones:
 
@@ -338,7 +346,8 @@ terms of another extension are only there if that extension's name sorts before 
 - **Declaring no traits on terms the rules should see.** A purpose that scores people without the `EVALUATION` trait is
   invisible to the impact screening.
 - **Renaming a key** instead of deprecating it with a replacement.
-- **Using `"linneo"` or `"fideslang"` as the extension name**, or `"university"`, which the shipped extension uses.
+- **Using `"linneo"`, `"fideslang"` or `"application"` as the extension name**, or `"university"`, which the shipped
+  extension uses.
 - **Adding a key the shipped university extension already has** instead of applying it.
 
 ## Exercises
@@ -463,7 +472,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 126 + 32 + 2 categories, 63 + 27 uses and
+1. `Taxonomy[160 data categories, 91 data uses, 35 data subjects]`: 126 + 32 + 2 categories, 63 + 28 uses and
    22 + 12 + 1 subjects. Applying the two extensions in the other order gives the same taxonomy.
 2. `university` and `campus`.
 3. `extend(new CampusTaxonomy())` throws `TaxonomyException` with `Duplicate key 'user.education.thesis'`.

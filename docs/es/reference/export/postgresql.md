@@ -58,8 +58,8 @@ anonimizador lo convierte en una regla:
 | `String rule(InventoryField field, Taxonomy taxonomy)` | `String` | Lo mismo para un campo guardado, resuelto con la taxonomía; `null` para un campo exento. `TaxonomyException` si la taxonomía no contiene la clave. |
 | `String label(String column, FieldClassification field)` | `String` | La sentencia `SECURITY LABEL FOR anon ON COLUMN ...` de un campo. `IllegalArgumentException` si `column` no es un identificador SQL cualificado. |
 | `String label(String column, InventoryField field, Taxonomy taxonomy)` | `String` | La sentencia de un campo guardado. |
-| `List<String> labels(ClassClassification classification, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de una clase, también los exentos (`IS NULL`), **una por cada columna**, en el orden del primer campo de cada una. `columns` da la columna de la ruta de un campo; `null` omite el campo. `IllegalArgumentException` si la clase tiene errores de clasificación, porque algunos campos no tendrían regla, o si una columna no es un identificador cualificado. |
-| `List<String> labels(DataInventory inventory, String object, Taxonomy taxonomy, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de un objeto de un inventario de datos, también los exentos, una por cada columna, en el orden del primer campo de cada una. `IllegalArgumentException` si el inventario no tiene ese objeto (una clave mal escrita no escribiría ninguna sentencia), o si una columna no es un identificador cualificado. |
+| `List<String> labels(ClassClassification classification, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de una clase, también los exentos (`IS NULL`), **una por cada columna**: primero las que quitan una regla y después los enmascaramientos, cada grupo en el orden del primer campo de su columna. `columns` da la columna de la ruta de un campo; `null` omite el campo. `IllegalArgumentException` si la clase tiene errores de clasificación, porque algunos campos no tendrían regla, o si una columna no es un identificador cualificado. |
+| `List<String> labels(DataInventory inventory, String object, Taxonomy taxonomy, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de un objeto de un inventario de datos, también los exentos, una por cada columna, primero las supresiones y después los enmascaramientos, como arriba. `IllegalArgumentException` si el inventario no tiene ese objeto (una clave mal escrita no escribiría ninguna sentencia), o si una columna no es un identificador cualificado. |
 
 `toString()` es `PostgresAnonymizer[<política>, <n> masks, <n> values]`.
 
@@ -74,6 +74,9 @@ lee PostgreSQL: `students.firstName` pasa a `"students"."firstname"` y `"Student
 funciona una columna con el nombre de una palabra reservada, como `user`, y la sentencia nombra la misma columna que la
 base de datos.
 
+Una parte de más de 63 bytes (en UTF-8, sin sus comillas) se rechaza con `IllegalArgumentException`: PostgreSQL conserva
+solo los 63 primeros bytes de un nombre, así que dos nombres así pueden ser la misma columna.
+
 La etiqueta es una constante de cadena que se lee igual sea cual sea `standard_conforming_strings`: las comillas simples
 dentro de la regla se duplican, y una regla con una barra invertida se escribe como cadena de escape (`E'...'`) con la
 barra duplicada.
@@ -81,9 +84,13 @@ barra duplicada.
 ### Varios campos en una columna
 
 Cuando varios campos se guardan en una misma columna, como un compuesto guardado como JSON, la columna recibe **una**
-sentencia: la regla que comparten sus campos cuando todos tienen la misma y, si no, `MASKED WITH VALUE NULL`, porque un
-valor falso del tipo de un campo no sirve en una columna que contiene varios. Una columna cuyos campos se muestran todos
-tal cual recibe `IS NULL`.
+sentencia: `MASKED WITH VALUE NULL` salvo que todos se muestren tal cual, aunque tengan el mismo enmascaramiento, porque
+un valor falso del tipo de un campo no sirve en una columna que contiene varios. Una columna cuyos campos se muestran
+todos tal cual recibe `IS NULL`.
+
+Las sentencias que quitan una regla (`IS NULL`) van **primero** y los enmascaramientos después, cada grupo en el orden
+del primer campo de cada columna. Si dos grafías nombran una misma columna, la supresión se ejecuta antes que el
+enmascaramiento, así que la regla de enmascaramiento es la que queda.
 
 ### Enmascaramientos estándar
 
@@ -146,13 +153,13 @@ statements.forEach(System.out::println);
 ```
 
 ```text
+SECURITY LABEL FOR anon ON COLUMN "students"."version" IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "students"."cache" IS NULL;
 SECURITY LABEL FOR anon ON COLUMN "students"."firstname" IS 'MASKED WITH FUNCTION anon.dummy_first_name()';
 SECURITY LABEL FOR anon ON COLUMN "students"."email" IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';
 SECURITY LABEL FOR anon ON COLUMN "students"."disabilitydegree" IS 'MASKED WITH VALUE NULL';
 SECURITY LABEL FOR anon ON COLUMN "students"."mark" IS 'MASKED WITH VALUE NULL';
 SECURITY LABEL FOR anon ON COLUMN "students"."passwordhash" IS 'MASKED WITH VALUE NULL';
-SECURITY LABEL FOR anon ON COLUMN "students"."version" IS NULL;
-SECURITY LABEL FOR anon ON COLUMN "students"."cache" IS NULL;
 ```
 
 `mark` es un dato personal, así que la política lo enmascara, pero Linneo no conoce ninguna función para

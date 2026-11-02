@@ -173,10 +173,12 @@ El módulo 5 la usa para campos y clases enteras.
 La protección dice cómo hay que tratar un campo; algunas reglas jurídicas de Linneo necesitan saber *de qué tipo* es el
 término que miran. Un **rasgo** (`Trait`) es una propiedad de un término de cualquiera de las tres jerarquías que esas
 reglas leen: `FINANCIAL`, `BEHAVIOURAL` y `PRIVATE_LIFE` marcan datos de naturaleza muy personal; `DIRECT_IDENTIFIER`,
-`CONTACT_IDENTIFIER` e `INDIRECT_IDENTIFIER` dicen cómo identifica una categoría a una persona; `EVALUATION`,
-`MONITORING`, `VULNERABLE` y `DIRECT_MARKETING` marcan finalidades e interesados que el cribado de impacto y los derechos
-del interesado tratan de forma especial. Los términos propios de Linneo declaran los suyos, una hija hereda los de su
-madre, y cada rasgo se aplica solo a algunas jerarquías. El módulo 9 muestra las reglas que los leen.
+`CONTACT_IDENTIFIER` e `INDIRECT_IDENTIFIER` dicen cómo identifica una categoría a una persona; `BIOMETRIC` y `GENETIC`
+marcan los datos de los artículos 4.14 y 4.13 del RGPD; `EVALUATION`, `MONITORING`, `VULNERABLE`, `DIRECT_MARKETING` y
+`RESEARCH` marcan finalidades e interesados que el cribado de impacto y los derechos del interesado tratan de forma
+especial. Los términos propios de Linneo declaran los suyos, una hija hereda los de su madre, y cada rasgo se aplica
+solo a algunas jerarquías. Los rasgos son una ayuda, no un veredicto: permiten que las reglas vean lo que una clave no
+dice, y el delegado de protección de datos sigue revisando cada resultado. El módulo 9 muestra las reglas que los leen.
 
 ```java
 DataCategory email = Taxonomy.standard().requireCategory(Categories.USER_CONTACT_EMAIL);

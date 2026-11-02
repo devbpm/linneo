@@ -148,7 +148,9 @@ Rows are written in this order: data categories, data uses and data subjects, ea
 category key and name, then the traits of the categories, the uses and the subjects. An empty cell is an absent value.
 A backslash, tab, line feed and carriage return inside a cell are written `\\`, `\t`, `\n` and `\r`, so a row is always
 one line; a lone UTF-16 surrogate, which UTF-8 cannot encode, is written as a backslash, `u` and its four hexadecimal
-digits, so that two different taxonomies never have the same bytes or fingerprint. The nature, confidentiality and
+digits, so that two different taxonomies never have the same bytes or fingerprint; `fromTsv` accepts that escape only
+for a lone surrogate, so a text has a single form (any other `\u` escape, or one that is half of a surrogate pair,
+which is written as it is, is refused). The nature, confidentiality and
 integrity are the names of the constants of [`LegalNature`, `Confidentiality` and `Integrity`](protection-levels.md),
 and the trait is the name of a [`Trait`](terms.md#trait). `fromTsv` reads the rows in any order: parents are checked
 when the taxonomy is built, and the attribute and trait rows are applied after all the terms.

@@ -96,34 +96,44 @@ void everyClassOfTheModelIsClassified() {
   error `DUPLICATE_FIELD`: solo se clasifica el campo de la superclase.
 - Se **excluyen** sin necesidad de anotación los campos `static` y sintéticos (como la referencia a la instancia
   contenedora en una clase interna), los campos cuyo nombre empieza por `$$_` (los añaden herramientas de bytecode, por
-  ejemplo la mejora de Hibernate: `$$_hibernate_interceptor`) y los campos `transient`. Un campo `transient` no se
-  guarda, así que se omite, **salvo que lleve una de las anotaciones de campo de Linneo** (`@Category`,
-  `@CategoryByRow`, `@DerivedFrom` o `@Exempt`): una anotación dice que contiene datos que clasificar, y se clasifica
-  como cualquier otro campo.
+  ejemplo la mejora de Hibernate: `$$_hibernate_interceptor`), los campos de bloqueo de `@Synchronized` de Lombok
+  (`$lock`, `$LOCK`) y los campos `transient`. Un campo `transient` no se guarda, así que se omite, **salvo que lleve
+  una de las anotaciones de campo de Linneo** (`@Category`, `@CategoryByRow`, `@DerivedFrom` o `@Exempt`): una anotación
+  dice que contiene datos que clasificar, y se clasifica como cualquier otro campo.
 - **Proxies de Hibernate.** Una clase cuyo nombre contiene `$HibernateProxy$` se clasifica como la entidad que
   extiende: el `type()` de su [`ClassClassification`](results.md#classclassification) es la entidad, no el proxy.
 - **Se entra en los compuestos.** Un campo sin anotación propia cuyo tipo es una clase
-  [`@Composite`](../annotations/composite.md) (lo es también una subclase de un compuesto: la anotación se hereda), o un
-  array, una colección, un `Optional` o los valores de un `Map` de ella, a cualquier profundidad, se clasifica por los
-  campos del compuesto: una entrada por campo, con la ruta `campo.parte` (`home.street`), con las anotaciones y el
+  [`@Composite`](../annotations/composite.md) concreta (lo es también una subclase de un compuesto: la anotación se
+  hereda), o un array, una colección o un `Optional` de ella, a cualquier profundidad, se clasifica por los campos del
+  compuesto: una entrada por campo, con la ruta `campo.parte` (`home.street`), con las anotaciones y el
   `@DefaultCategory` del propio compuesto, no los de la clase contenedora. Las variables de tipo se resuelven a través
-  de las superclases de la clase que se clasifica.
+  de las superclases de la clase que se clasifica. Nunca se entra en un `Map`: sus claves también son datos.
 - **Datos que el clasificador no ve.** Un campo que puede contener datos que el clasificador no puede dividir en campos
-  nunca toma un valor por defecto de la clase y es un error `UNCLASSIFIED_FIELD` salvo que esté anotado: un compuesto
-  como clave de mapa o como argumento de tipo de una clase que no es una colección, varios compuestos en un mismo tipo,
-  un valor tipado `Object`, una variable de tipo sin enlazar o un contenedor sin parametrizar, y una clase con campos
-  clasificados que no es `@Composite`, como una entidad referenciada o una clase `@Embedded` de JPA. En el último caso,
-  marca la clase `@Composite` en lugar de pasarla a `verify` por separado, o declara lo que guarda el campo (como la
-  clave del registro). Un valor por defecto de la clase clasificaría, si no, como no personal lo que envuelve datos
-  personales.
+  nunca toma un valor por defecto de la clase y es un error `UNCLASSIFIED_FIELD` salvo que esté anotado: compuestos en
+  un `Map` o un `Map.Entry` (declara la categoría con `@Category` o `@CategoryByRow`; se comprueba entonces contra los
+  campos de los compuestos), un compuesto como argumento de tipo de una clase que no es una colección o de un tipo
+  propietario, varios compuestos en un mismo tipo (un compuesto genérico como `Box<Address>` menciona dos, así que se
+  declara como un solo valor), una interfaz o una clase abstracta marcada `@Composite` (no se incrusta: sus
+  implementaciones pueden tener otros campos), un valor tipado `Object`, `Serializable`, `Comparable` o `Cloneable`, una
+  variable de tipo sin enlazar o un contenedor sin parametrizar. Un valor por defecto de la clase clasificaría, si no,
+  como no personal lo que envuelve datos personales.
+- **Referencias a otros registros.** Un campo cuyo tipo es otro registro del modelo (una clase con un
+  `@DefaultCategory`, un campo anotado o un campo de tipo compuesto; un tipo sellado se lee a través de sus subclases
+  permitidas) toma el valor por defecto de la clase solo cuando ese registro no contiene datos personales, como un
+  elemento de un catálogo tipo `Country`. Una referencia a un registro que contiene datos personales, como una
+  asociación JPA con un `Customer` o una clase `@Embedded` no marcada `@Composite`, es en sí misma un dato personal, una
+  clave seudónima: el campo es un error `UNCLASSIFIED_FIELD` que aconseja declarar lo que guarda, normalmente con
+  `@DerivedFrom(type = Customer.class, value = "id")`.
 - **Campos derivados.** Un campo marcado con [`@DerivedFrom`](../annotations/derived-from.md) toma la clasificación de
   su fuente, o declara una que protege al menos tanto. Sus fuentes pueden estar declaradas después de él, ser a su vez
   campos derivados, ser partes de un compuesto o pertenecer a otra clase (`type`), que el clasificador también lee.
   Las fuentes se resuelven campo a campo, así que dos clases pueden derivar de los *otros* campos de la otra, y un
-  compuesto de una clase que lo contiene. El resultado no depende del orden en que se clasifiquen las clases.
+  compuesto de una clase que lo contiene. Los problemas encontrados no dependen del orden en que se clasifiquen las
+  clases; solo puede depender el campo en el que se informa un ciclo de contención de compuestos.
 - Los campos marcados con [`@Exempt`](../annotations/exempt.md) no se clasifican tras comprobar su anotación, y
   `ClassClassification.exempted()` los lista con sus motivos. `@Exempt` es para campos técnicos; un valor calculado a
-  partir de otros campos es un dato y usa `@DerivedFrom` o `@Category`.
+  partir de otros campos es un dato y usa `@DerivedFrom` o `@Category`, y un campo que contiene compuestos, o que se
+  refiere a un registro con datos personales, es un error `CONFLICTING_ANNOTATIONS`.
 - Las anotaciones se leen del propio campo (`getDeclaredAnnotation`), así que en un record deben aplicarse al campo
   del componente, cosa que hacen `@Category`, `@CategoryByRow`, `@DerivedFrom` y `@Exempt`.
 
@@ -141,20 +151,28 @@ La protección nunca baja en silencio: un campo derivado debe proteger al menos 
 valor que declara anonimizado o agregado puede perder solo la **naturaleza personal** de sus fuentes, nunca su
 confidencialidad, su integridad ni su carácter secreto. Un campo que guarda compuestos como un solo valor, declarado o
 derivado, debe proteger al menos tanto como los campos de los compuestos, incluidos un compuesto que se contiene a sí
-mismo y dos que se contienen entre sí, sea cual sea el orden de las clases. Un compuesto que se contiene a sí mismo, y
-campos derivados que dependen unos de otros (dentro de una clase o entre clases, también a través de las partes de un
-compuesto), son un `CYCLE`. Las clases que derivan de los otros campos de la otra no lo son. Un campo que deriva de un campo con error, incluso uno en un
-ciclo, pero que no está él mismo en el ciclo, es un `UNKNOWN_SOURCE`.
+mismo y dos que se contienen entre sí, sea cual sea el orden de las clases; un compuesto cuyos campos tienen errores no
+deja nada con lo que comparar, lo que también es un error (`WEAKER_THAN_PARTS`: `the fields of [X] have errors`). Un
+compuesto que se contiene a sí mismo, y campos derivados que dependen unos de otros (dentro de una clase o entre
+clases, también a través de las partes de un compuesto), son un `CYCLE`. Las clases que derivan de los otros campos de
+la otra no lo son. Un campo que deriva de un campo con error, incluso uno en un ciclo, pero que no está él mismo en el
+ciclo, es un `UNKNOWN_SOURCE`.
+
+Cada clase informa de sus propios problemas, como un campo guardado como un solo valor que protege menos que su
+compuesto o una referencia a un registro con datos personales, así que verifica todas las clases del modelo, con
+[`ModelClasses`](#modelclasses), y no solo algunas.
 
 ## Comportamiento cerrado ante fallos (fail-closed)
 
 Nada se clasifica por defecto. Son **errores** (hacen fallar `verify` y ponen `isValid()` a `false`):
 
-- un campo sin anotación y sin valor por defecto de clase aplicable (`UNCLASSIFIED_FIELD`);
+- un campo sin anotación y sin valor por defecto de clase aplicable, o que se refiere a un registro con datos
+  personales (`UNCLASSIFIED_FIELD`);
 - una clave que no está en la taxonomía (`UNKNOWN_CATEGORY`);
 - una categoría personal usada como valor por defecto de clase (`PERSONAL_DEFAULT`);
 - un motivo o un `declaredBy` en blanco (`MISSING_REASON`);
-- anotaciones que se excluyen entre sí (`CONFLICTING_ANNOTATIONS`);
+- anotaciones que se excluyen entre sí, o `@Exempt` en un campo que contiene compuestos o se refiere a un registro con
+  datos personales (`CONFLICTING_ANNOTATIONS`);
 - un nivel inferior al de la categoría (`LOWERED_LEVEL`);
 - más de un valor en un elemento opcional de `@Category` (`AMBIGUOUS_VALUE`);
 - una identificabilidad en una categoría no personal (`IDENTIFIABILITY_NOT_APPLICABLE`);
@@ -163,7 +181,8 @@ Nada se clasifica por defecto. Son **errores** (hacen fallar `verify` y ponen `i
 - un campo derivado sin categoría cuyas fuentes se clasifican de forma distinta (`AMBIGUOUS_DERIVATION`);
 - un campo derivado que protege menos que una fuente, o que se declara anonimizado o agregado y pierde más que la
   naturaleza personal (`WEAKER_THAN_SOURCE`);
-- un campo que guarda compuestos como un solo valor y protege menos que sus campos (`WEAKER_THAN_PARTS`);
+- un campo que guarda compuestos como un solo valor y protege menos que sus campos, o cuyos compuestos tienen errores en
+  sus campos (`WEAKER_THAN_PARTS`);
 - un compuesto que se contiene a sí mismo, o campos derivados que dependen unos de otros (`CYCLE`).
 
 Una clave obsoleta es el único **aviso** (`DEPRECATED_CATEGORY`): el campo se clasifica con la sustituta vigente. Un

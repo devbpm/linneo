@@ -19,35 +19,49 @@ Marca una clase cuyas instancias forman parte de otro registro, como una direcci
 valor, de modo que los campos que la contienen se clasifican por los campos de la propia clase. Es un marcador sin
 elementos. Se **hereda**: una subclase de un compuesto es un compuesto.
 
+Marca clases concretas y records. El clasificador no ve los campos de las implementaciones de una interfaz o de una
+clase abstracta, así que un campo de ese tipo no toma el valor por defecto de la clase, y los campos de una subclase de
+un compuesto concreto son invisibles a través de un campo del tipo de la superclase.
+
 El marcador es propio de Linneo y no una anotación de un framework, para que la biblioteca no necesite ninguna
-dependencia. Olvidarlo es seguro: un campo que contiene una clase cuyos campos están clasificados, sin que la clase sea
-un compuesto, no toma el valor por defecto de la clase, así que no pasa la verificación (`UNCLASSIFIED_FIELD`) hasta
-que se marque la clase o el campo declare su propia categoría.
+dependencia. Olvidarlo es seguro donde importa: un campo que contiene una clase cuyos campos están clasificados, sin que
+la clase sea un compuesto, es una [referencia a otro registro](#referencias-a-otros-registros), que no toma un valor por
+defecto no personal de la clase cuando ese registro contiene datos personales, así que no pasa la verificación
+(`UNCLASSIFIED_FIELD`) hasta que se marque la clase o el campo declare su propia categoría.
 
 ## Qué hace el clasificador
 
-Un campo **sin anotación propia** cuyo tipo es una clase compuesta, o un array, una colección, un `Optional` o un
-**valor** de `Map` de ella, a cualquier profundidad, recibe una clasificación por cada campo del compuesto, con la ruta
-`campo.parte`:
+Un campo **sin anotación propia** cuyo tipo es una clase compuesta concreta, o un array, una colección o un `Optional`
+de ella, a cualquier profundidad, recibe una clasificación por cada campo del compuesto, con la ruta `campo.parte`:
 
 | Campo | Se clasifica como |
 |---|---|
 | `Address home` | `home.street`, `home.city` |
-| `List<Address> previous`, `Address[] previous`, `Optional<Address> previous` | `previous.street`, `previous.city` |
-| `Map<String, Address> byType`, `Map<String, List<Address>> byType` | `byType.street`, `byType.city`: se entra en los valores de un mapa y en los contenedores anidados a cualquier profundidad |
-| un campo que puede contener datos que el clasificador no puede dividir en campos (véase más abajo) | `UNCLASSIFIED_FIELD`, salvo que declare su propia categoría |
+| `List<Address> previous`, `Address[] previous`, `Optional<Address> previous`, `List<List<Address>> history` | `previous.street`, `previous.city`: se entra en los contenedores anidados a cualquier profundidad |
+| un campo que puede contener datos que el clasificador no puede dividir en campos, como `Map<String, Address> byType` (véase más abajo) | `UNCLASSIFIED_FIELD`, salvo que declare su propia categoría |
 | un campo con `@Category`, `@CategoryByRow` o `@DerivedFrom` | una sola entrada: el compuesto se guarda como un solo valor (véase más abajo) |
-| un campo con `@Exempt` | se omite, y se lista en `exempted()` |
+| un campo con `@Exempt` | se omite, y se lista en `exempted()`, salvo que contenga compuestos (`CONFLICTING_ANNOTATIONS`) |
 
 - **Las variables de tipo** se resuelven a través de las superclases de la clase que se clasifica: un `T value` de una
   clase base genérica, clasificado para `Box extends Base<Address>`, es un `Address`.
 - **Un valor por defecto de la clase nunca se aplica a un campo que puede contener datos que el clasificador no ve**,
   así que envolver un compuesto nunca le da un valor por defecto no personal. Estos campos son un error
-  `UNCLASSIFIED_FIELD` salvo que estén anotados: una **clave** de mapa que es un compuesto; un compuesto como argumento
-  de tipo de una clase que no es una colección, como `Wrapper<Address>`; varios compuestos en un mismo tipo, como
-  `Map<Address, Address>`; un valor tipado `Object`, una variable de tipo sin enlazar o un contenedor sin parametrizar;
-  y otra clase con campos clasificados que **no** es un compuesto, como una entidad referenciada (márcala `@Composite`
-  para clasificar aquí sus campos, o declara lo que guarda el campo, como la clave del registro).
+  `UNCLASSIFIED_FIELD` salvo que estén anotados:
+  - compuestos en un `Map` o un `Map.Entry`, en el que **nunca se entra** porque sus claves también son datos:
+    `Map<String, Address>` declara su categoría con `@Category` o `@CategoryByRow`, y se comprueba entonces contra los
+    campos de los compuestos (véase más abajo);
+  - un compuesto como argumento de tipo de una clase que no es una colección, como `Wrapper<Address>`, o de un tipo
+    propietario (`Outer<Address>.Inner`), y varios compuestos en un mismo tipo, como `Map<Address, Address>`. Un
+    compuesto genérico como `Box<Address>` menciona dos compuestos, él mismo y `Address`, así que se declara como un
+    solo valor;
+  - una interfaz o una clase abstracta marcada `@Composite`, que no se incrusta: sus implementaciones pueden tener otros
+    campos;
+  - un valor tipado `Object`, `Serializable`, `Comparable` o `Cloneable`, una variable de tipo que la clase no enlaza o
+    un contenedor sin parametrizar.
+
+  Un campo que se refiere a otro registro del modelo es un caso aparte; véase
+  [Referencias a otros registros](#referencias-a-otros-registros).
+
 - **Las rutas** se anidan: un compuesto dentro de otro da `home.geo.country`. En un campo así,
   `FieldClassification.fieldName()` es el último segmento y `declaringClass()` es la clase compuesta.
 - **Valores por defecto.** Los campos del compuesto se resuelven con las anotaciones del propio compuesto y su propio
@@ -65,26 +79,64 @@ Un campo **sin anotación propia** cuyo tipo es una clase compuesta, o un array,
   del compuesto que está en un ciclo se informa con el compuesto y, en `campo.parte`, con la clase contenedora.
 - Las clases compuestas no hace falta pasarlas por separado a `Classifier.verify`: se clasifican como parte de cada
   clase que las contiene. Clasificar una directamente también funciona, como con cualquier clase.
+- **Independencia del orden.** Los problemas encontrados no dependen del orden en que se clasifican las clases; solo
+  puede depender el campo en el que se informa un ciclo de contención de compuestos. Cada clase informa de sus propios
+  problemas, así que verifica todas las clases del modelo (véase
+  [`ModelClasses`](../classify/classifier.md#modelclasses)), no solo algunas.
 
 ## Un compuesto guardado como un solo valor
 
 Un campo que guarda el compuesto como un solo valor, por ejemplo como JSON en una única columna, o que lo contiene donde
-sus campos no pueden ser rutas (una clave de mapa, o un argumento de tipo de una clase que no es una colección), declara
-su categoría con [`@Category`](category.md) o [`@CategoryByRow`](category-by-row.md). El campo es entonces una sola
-entrada, y su protección debe cubrir la protección de **todos los campos de los compuestos que contiene**: si no, el
-valor quedaría clasificado por debajo de lo que contiene. Lo mismo vale para un campo que guarda compuestos como un solo
-valor y toma su categoría de una fuente de [`@DerivedFrom`](derived-from.md). La comprobación abarca también un
-compuesto que se contiene a sí mismo y compuestos que se contienen entre sí, sea cual sea el orden en que se clasifican
-las clases.
+sus campos no pueden ser rutas (en un `Map`, cuyas claves también son datos, o como argumento de tipo de una clase que
+no es una colección), declara su categoría con [`@Category`](category.md) o [`@CategoryByRow`](category-by-row.md). El
+campo es entonces una sola entrada, y su protección debe cubrir la protección de **todos los campos de los compuestos
+que contiene**: si no, el valor quedaría clasificado por debajo de lo que contiene. Lo mismo vale para un campo que
+guarda compuestos como un solo valor y toma su categoría de una fuente de [`@DerivedFrom`](derived-from.md). Un
+compuesto cuyos propios campos tienen errores no deja nada con lo que comparar, lo que también es un error. La
+comprobación abarca también un compuesto que se contiene a sí mismo y compuestos que se contienen entre sí, sea cual
+sea el orden en que se clasifican las clases.
 
 | Regla | Violación | Gravedad | ¿Se clasifica el campo? |
 |---|---|---|---|
-| La categoría declarada protege al menos tanto como los campos de cada compuesto que contiene el campo | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of [<Composite>, ...] need (<natures>, <confidentiality>, <integrity>[, secret])`) | error | **sí** (el error se informa igualmente) |
+| La categoría declarada protege al menos tanto como los campos de cada compuesto que contiene el campo | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of [<Composite>, ...] need (<natures>, <confidentiality>, <integrity>[, secret])`; o, cuando los campos de un compuesto tienen errores, `the fields of [<Composite>, ...] have errors, so what '<key>' must protect is unknown`) | error | **sí** (el error se informa igualmente) |
 | El compuesto no se contiene a sí mismo, directamente ni a través de otros compuestos | `CYCLE` (`the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow`) | error | no (el campo que cierra el bucle) |
 
 Un compuesto que se contiene a sí mismo (`Node` con un `List<Node> children`) no se puede expandir: el error se
 informa en el campo que cierra el bucle (`tree.children`), y los demás campos del compuesto se clasifican con
 normalidad. Clasifica ese campo como un solo valor para eliminar el error.
+
+## Referencias a otros registros
+
+Un campo sin anotación propia cuyo tipo es otro registro del modelo, una clase que tiene un
+[`@DefaultCategory`](default-category.md), un campo anotado o un campo de un tipo compuesto, **se refiere** a ese
+registro. Un tipo sellado se lee a través de sus subclases permitidas, y también se leen los argumentos de tipo
+(`List<Country>`).
+
+- Si el registro **no contiene datos personales**, como un elemento de un catálogo tipo `Country`, el campo toma el
+  valor por defecto de la clase como cualquier otro.
+- Una referencia a un registro que **contiene datos personales** es en sí misma un dato personal, una clave seudónima,
+  así que se rechaza el valor por defecto de la clase: el campo es un error `UNCLASSIFIED_FIELD` que aconseja declarar
+  lo que guarda, normalmente la clave del registro, con `@DerivedFrom(type = Customer.class, value = "id")`.
+- [`@Exempt`](exempt.md) en un campo que contiene compuestos, o que se refiere a un registro con datos personales, es un
+  error `CONFLICTING_ANNOTATIONS`: una relación no es un campo que no contiene datos.
+
+```java
+@DefaultCategory(value = REFERENCE_PUBLIC, reason = "lista de códigos de países")
+public class Country {
+    private String code;
+}
+
+@DefaultCategory(value = SYSTEM_OPERATIONS, reason = "columnas técnicas de la factura")
+public class Invoice {
+
+    @DerivedFrom(type = Customer.class, value = "id")   // lo que guarda la referencia: la clave de un Customer
+    private Customer customer;
+
+    private Country country;                            // elemento de catálogo, sin datos personales: valor por defecto
+
+    private Long number;                                // valor por defecto de la clase
+}
+```
 
 ## Ejemplo
 

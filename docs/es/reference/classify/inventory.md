@@ -102,6 +102,8 @@ que una aplicación guardó. No tiene constructor público; usa `DataInventory.b
 | `DataInventory build()` | Crea el inventario. El constructor se puede conservar y volver a usar. |
 
 ```java
+import io.github.devbpm.linneo.classify.FieldClassification.Basis;
+
 DataInventory stored = DataInventory.builder()
         .field("student", "email", Categories.USER_CONTACT_EMAIL, Basis.DECLARED)
         .field(new InventoryField("student", "version", Categories.SYSTEM_OPERATIONS, Basis.CLASS_DEFAULT,

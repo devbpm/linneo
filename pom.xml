@@ -280,11 +280,8 @@
                     <!-- A missing or broken Javadoc fails the build, as a lint warning fails the compilation. -->
                     <failOnWarnings>true</failOnWarnings>
                     <quiet>true</quiet>
-                    <links>
-                        <link>https://docs.oracle.com/en/java/javase/21/docs/api/</link>
-                    </links>
                     <!-- The constants' Javadoc reproduces fideslang descriptions: CC BY 4.0 requires attribution. -->
-                    <bottom><![CDATA[Copyright &#169; {inceptionYear}&#x2013;{currentYear} the original author or authors. Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>. Includes the fideslang default taxonomy by Ethyca, Inc., licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; see META-INF/NOTICE.]]></bottom>
+                    <bottom><![CDATA[Copyright &#169; {inceptionYear} the original author or authors. Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>. Includes the fideslang default taxonomy by Ethyca, Inc., licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>; see META-INF/NOTICE.]]></bottom>
                 </configuration>
                 <executions>
                     <execution>

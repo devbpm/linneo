@@ -114,6 +114,8 @@ Read your table and build the stored inventory from it. Only the columns the cod
 the "active" switch your administrators edit stay out, so the comparison never touches them.
 
 ```java
+import io.github.devbpm.linneo.classify.FieldClassification.Basis;
+
 DataInventory.Builder stored = DataInventory.builder();
 for (FieldRow row : fieldTable.activeRows()) {               // the application's own query, one per table
     stored.field(new InventoryField(row.object(), row.path(), row.categoryKey(), Basis.valueOf(row.basis()),
@@ -273,10 +275,12 @@ if (!current.fingerprint().equals(approval.fingerprint())) {
 
 Each `ActivityChange` names the activity and its `aspects`: `ADDED` or `REMOVED`, the scope (`PURPOSES`,
 `DATA_SUBJECTS`), the data (`PERSONAL_DATA`, `PROTECTION`), each element of the governance (`LEGAL_BASIS`,
-`RETENTION`, `RECIPIENTS`…) and the `OPEN_POINTS`. Two of its answers route the review:
+`RETENTION`, `RECIPIENTS`…), the impact assessment `SCREENING` (which follows the traits of the terms, so a taxonomy
+that adds a trait can change it without a declaration changing) and the `OPEN_POINTS`, compared by code and element.
+Two of its answers route the review:
 
-- `isGovernance()`: only the governance changed (with the open points that follow from it), so the officer is
-  looking at their own edit;
+- `isGovernance()`: only the governance changed (with the open points and the screening that follow from it), so the
+  officer is looking at their own edit;
 - `direction()`: `TIGHTENED` means the activity now processes data that needs more protection, the case where the
   lawful basis, an article 9 condition or an impact assessment may no longer be enough.
 
@@ -414,9 +418,9 @@ exclusive, so the server refuses a second level while the first is still on the 
 **Exercise 10.6.** `PERSONAL_DATA` (a new category), `PROTECTION` and `SPECIAL_CATEGORY_CONDITION`, plus
 `OPEN_POINTS` only if a warning appears or goes away. The impact assessment recommendation is not one of them here: the
 screening counts special category and financial data as one criterion, sensitive data, so the disability adds no
-criterion to an activity that already processes the fee. The direction is `TIGHTENED`: the activity now processes
-special category data. `isGovernance()` is false, because the data changed too; the officer's edit is part of the same
-change. Note the order of events: until the condition was added, the current record could not be built at all, because
+criterion to an activity that already processes the fee, and `SCREENING` is not among the aspects either. The
+direction is `TIGHTENED`: the activity now processes special category data. `isGovernance()` is false, because the data
+changed too; the officer's edit is part of the same change. Note the order of events: until the condition was added, the current record could not be built at all, because
 special category data without an article 9 condition is an error.
 
 **Quiz.** 1: Linneo declares, compares and tells the direction; the application reads, writes, locks and audits.

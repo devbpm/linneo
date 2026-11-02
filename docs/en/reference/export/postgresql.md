@@ -55,8 +55,8 @@ anonymizer turns that into a rule:
 | `String rule(InventoryField field, Taxonomy taxonomy)` | `String` | The same for a stored field, resolved with the taxonomy; `null` for an exempted field. `TaxonomyException` if the taxonomy does not contain the key. |
 | `String label(String column, FieldClassification field)` | `String` | The `SECURITY LABEL FOR anon ON COLUMN ...` statement of a field. `IllegalArgumentException` if `column` is not a qualified SQL identifier. |
 | `String label(String column, InventoryField field, Taxonomy taxonomy)` | `String` | The statement of a stored field. |
-| `List<String> labels(ClassClassification classification, Function<String, String> columns)` | immutable list | The statements of every field of a class, exempted ones included (`IS NULL`), **one for each column**, in the order of the first field of each. `columns` gives the column of a field path; `null` leaves the field out. `IllegalArgumentException` if the class has classification errors, because some fields would have no rule, or a column is not a qualified identifier. |
-| `List<String> labels(DataInventory inventory, String object, Taxonomy taxonomy, Function<String, String> columns)` | immutable list | The statements of every field of an object of a data inventory, exempted ones included, one for each column, in the order of the first field of each. `IllegalArgumentException` if the inventory has no such object (a mistyped key would otherwise write no statement), or a column is not a qualified identifier. |
+| `List<String> labels(ClassClassification classification, Function<String, String> columns)` | immutable list | The statements of every field of a class, exempted ones included (`IS NULL`), **one for each column**: first those that remove a rule, then the masks, each in the order of the first field of its column. `columns` gives the column of a field path; `null` leaves the field out. `IllegalArgumentException` if the class has classification errors, because some fields would have no rule, or a column is not a qualified identifier. |
+| `List<String> labels(DataInventory inventory, String object, Taxonomy taxonomy, Function<String, String> columns)` | immutable list | The statements of every field of an object of a data inventory, exempted ones included, one for each column, removals first and masks after, as above. `IllegalArgumentException` if the inventory has no such object (a mistyped key would otherwise write no statement), or a column is not a qualified identifier. |
 
 `toString()` is `PostgresAnonymizer[<policy>, <n> masks, <n> values]`.
 
@@ -70,14 +70,22 @@ The statements always write the parts **quoted**, and an unquoted part is folded
 `students.firstName` becomes `"students"."firstname"` and `"Students"."e-mail"` stays as it is. So a column named after
 a reserved word, such as `user`, works, and the statement names the same column the database does.
 
+A part longer than 63 bytes (in UTF-8, without its quotes) is refused with `IllegalArgumentException`: PostgreSQL keeps
+only the first 63 bytes of a name, so two such names may be the same column.
+
 The label is a string constant that reads the same whatever `standard_conforming_strings` is: quotes inside the rule are
 doubled, and a rule with a backslash is written as an escape string (`E'...'`) with the backslash doubled.
 
 ### Several fields in one column
 
-When several fields are stored in one column, such as a composite kept as JSON, the column gets **one** statement: the
-rule its fields share when they all have the same, and otherwise `MASKED WITH VALUE NULL`, since a fake value of one
-field's kind does not fit a column that holds several. A column whose fields are all shown as they are gets `IS NULL`.
+When several fields are stored in one column, such as a composite kept as JSON, the column gets **one** statement:
+`MASKED WITH VALUE NULL` unless every one of them is shown as it is, even when they have the same mask, since a fake
+value of one field's kind does not fit a column that holds several. A column whose fields are all shown as they are
+gets `IS NULL`.
+
+The statements that remove a rule (`IS NULL`) come **first** and the masks after, each group in the order of the first
+field of each column. If two spellings name one column, the removal runs before the mask, so the masking rule is the one
+that stays.
 
 ### Standard masks
 
@@ -140,13 +148,13 @@ statements.forEach(System.out::println);
 ```
 
 ```text
+SECURITY LABEL FOR anon ON COLUMN "students"."version" IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "students"."cache" IS NULL;
 SECURITY LABEL FOR anon ON COLUMN "students"."firstname" IS 'MASKED WITH FUNCTION anon.dummy_first_name()';
 SECURITY LABEL FOR anon ON COLUMN "students"."email" IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';
 SECURITY LABEL FOR anon ON COLUMN "students"."disabilitydegree" IS 'MASKED WITH VALUE NULL';
 SECURITY LABEL FOR anon ON COLUMN "students"."mark" IS 'MASKED WITH VALUE NULL';
 SECURITY LABEL FOR anon ON COLUMN "students"."passwordhash" IS 'MASKED WITH VALUE NULL';
-SECURITY LABEL FOR anon ON COLUMN "students"."version" IS NULL;
-SECURITY LABEL FOR anon ON COLUMN "students"."cache" IS NULL;
 ```
 
 `mark` is personal data, so the policy masks it, but Linneo knows no function for `user.education.grade` and masks it

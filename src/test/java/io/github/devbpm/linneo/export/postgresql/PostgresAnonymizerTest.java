@@ -65,15 +65,15 @@ class PostgresAnonymizerTest {
     @DisplayName("masked fields get a fake value of their kind or none, omitted ones none, the others no rule")
     void labels() {
         assertEquals(List.of(
+                        "SECURITY LABEL FOR anon ON COLUMN \"students\".\"version\" IS NULL;",
+                        "SECURITY LABEL FOR anon ON COLUMN \"students\".\"cache\" IS NULL;",
                         "SECURITY LABEL FOR anon ON COLUMN \"students\".\"email\" IS 'MASKED WITH FUNCTION"
                                 + " anon.dummy_safe_email()';",
                         "SECURITY LABEL FOR anon ON COLUMN \"students\".\"firstname\" IS 'MASKED WITH FUNCTION"
                                 + " anon.dummy_first_name()';",
                         "SECURITY LABEL FOR anon ON COLUMN \"students\".\"condition\" IS 'MASKED WITH VALUE NULL';",
                         "SECURITY LABEL FOR anon ON COLUMN \"students\".\"mark\" IS 'MASKED WITH VALUE NULL';",
-                        "SECURITY LABEL FOR anon ON COLUMN \"students\".\"password\" IS 'MASKED WITH VALUE NULL';",
-                        "SECURITY LABEL FOR anon ON COLUMN \"students\".\"version\" IS NULL;",
-                        "SECURITY LABEL FOR anon ON COLUMN \"students\".\"cache\" IS NULL;"),
+                        "SECURITY LABEL FOR anon ON COLUMN \"students\".\"password\" IS 'MASKED WITH VALUE NULL';"),
                 anonymizer.labels(classifier.classify(Student.class), path -> "students." + path));
     }
 
@@ -137,8 +137,15 @@ class PostgresAnonymizerTest {
         List<String> labels = anonymizer.labels(classifier.classify(Applicant.class),
                 path -> path.startsWith("home.") ? "applicants.home" : "applicants." + path);
         assertEquals(List.of(
-                "SECURITY LABEL FOR anon ON COLUMN \"applicants\".\"home\" IS 'MASKED WITH VALUE NULL';",
-                "SECURITY LABEL FOR anon ON COLUMN \"applicants\".\"version\" IS NULL;"), labels);
+                "SECURITY LABEL FOR anon ON COLUMN \"applicants\".\"version\" IS NULL;",
+                "SECURITY LABEL FOR anon ON COLUMN \"applicants\".\"home\" IS 'MASKED WITH VALUE NULL';"), labels);
+        List<String> sameKind = anonymizer.labels(classifier.classify(Student.class),
+                path -> path.equals("email") || path.equals("firstName") ? "students.contact" : null);
+        assertAll(
+                () -> assertEquals(List.of("SECURITY LABEL FOR anon ON COLUMN \"students\".\"contact\" IS"
+                        + " 'MASKED WITH VALUE NULL';"), sameKind),
+                () -> assertThrows(IllegalArgumentException.class, () -> anonymizer.label("students."
+                        + "x".repeat(64), classifier.classify(Student.class).field("email").orElseThrow())));
     }
 
     @Test

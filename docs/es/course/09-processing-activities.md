@@ -186,12 +186,14 @@ Por defecto, el comprobador aplica solo el RGPD. Para una institución española
 `new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)`. Entonces informa también del error
 `CONSENT_NOT_SUFFICIENT` cuando el consentimiento explícito es la **única** condición para creencias, afiliación
 sindical u otros datos del artículo 9.1 de la LOPDGDD (una actividad puede declarar varias condiciones, una por cada
-tipo de dato especial, y otra condición junto al consentimiento cubre lo que el consentimiento no puede), y avisa en
+tipo de dato especial; las condiciones se declaran para la actividad, no para cada categoría, así que con otra condición
+junto al consentimiento el comprobador solo avisa para que confirmes que cubre esas categorías), y avisa en
 `MISSING_LEGAL_REFERENCE` de qué disposiciones exigen una norma con rango de ley: el artículo 8 de la LOPDGDD para una
 obligación legal o una misión de interés público, el 9.2 para las condiciones de los artículos 9.2.g, h e i, y el 10
-para datos penales autorizados por ley. Avisa también cuando se tratan datos sobre sanciones administrativas
-(`user.administrative_sanction`) sin consentimiento ni referencia legal (artículo 27 de la LOPDGDD), y su aviso sobre
-una evaluación de impacto cita la lista de la AEPD del artículo 35.4.
+para datos penales autorizados por ley. El mismo aviso añade la regla para los datos sobre sanciones administrativas
+(`user.administrative_sanction`) tratados sin consentimiento ni referencia legal (artículo 27 de la LOPDGDD). Su aviso
+sobre una evaluación de impacto cita la lista de la AEPD del artículo 35.4, y esa lista hace también de los datos
+biométricos y genéticos un motivo para esperar una.
 
 La página de referencia [Bases jurídicas](../reference/processing/bases.md) enumera cada constante con su artículo y
 su nombre en fideslang.
@@ -398,10 +400,11 @@ La [tabla de códigos](../reference/processing/checker.md#códigos) enumera cada
 
 Hasta ahora las actividades lo declaraban todo en el código. En muchas organizaciones no es así como se reparte el
 conocimiento. Los desarrolladores conocen con certeza el **alcance** de una actividad: sus finalidades, sus interesados
-y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). La
-**gobernanza** la decide y la mantiene al día el delegado de protección de datos: las bases jurídicas, la referencia
-legal, el plazo de conservación, los destinatarios, las transferencias y la evaluación de impacto. Es un record propio,
-`Governance`, y una actividad lo guarda en su `governance()`.
+y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`), y los factores
+de riesgo que el código conoce (`riskFactors`). La **gobernanza** la decide y la mantiene al día el delegado de
+protección de datos: las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las
+transferencias y la evaluación de impacto. Es un record propio, `Governance`, y una actividad lo guarda en su
+`governance()`.
 
 Una aplicación puede declarar el alcance en el código, guardar en su propio almacenamiento la gobernanza que edita el
 delegado y combinar ambos con `withGovernance` antes de comprobar, por ejemplo cada vez que se guarda un cambio:
@@ -426,9 +429,10 @@ Governance stored = Governance.builder()
 CheckedActivity checked = checker.check(support.withGovernance(stored));   // válida, sin infracciones
 ```
 
-`withGovernance` conserva lo que el código declara de la actividad: los factores de riesgo que le da el código (por
-ejemplo `Factor.AUTOMATED_DECISIONS`) son un mínimo al que la gobernanza guardada suma y que no puede quitar, así que
-una gobernanza guardada antes de que cambiara el código nunca levanta una evaluación de impacto.
+`withGovernance` conserva lo que el código declara de la actividad: los factores de riesgo que le da el código con el
+`riskFactors(...)` del builder (por ejemplo `Factor.AUTOMATED_DECISIONS`) forman parte del alcance. La gobernanza
+guardada sustituye a la gobernanza y suma los suyos, y el cribado lee ambos, así que una gobernanza guardada antes de
+que cambiara el código nunca levanta una evaluación de impacto.
 
 El alcance en el código todavía no tiene gobernanza, así que su comprobación solo encuentra problemas de gobernanza.
 Cada `ProcessingViolation` lleva el `element()` de la actividad en el que está:
@@ -544,15 +548,18 @@ adecuadas y completa lo que el registro no puede saber, como los datos de contac
 El comprobador también criba cada actividad para saber si necesita una evaluación de impacto relativa a la protección
 de datos (`ImpactScreening`). Cuenta los criterios de las directrices del Comité Europeo de Protección de Datos que
 cumple la actividad, avisa cuando se cumplen dos y no se cita ninguna evaluación, y notifica como error un caso del
-artículo 35.3. Lo que solo sabe la delegada, como la escala del tratamiento, lo declara ella con `riskFactors(...)`:
-`Factor.LARGE_SCALE` en `learning-support` lo convertiría en un error hasta que citara una evaluación. Los criterios que
+artículo 35.3. Lo que los términos no dicen se declara como factores de riesgo: el código, con el `riskFactors(...)` de
+la actividad, lo que conoce (las decisiones automatizadas), y la delegada, en la gobernanza, lo que solo ella sabe, como
+la escala del tratamiento: `Factor.LARGE_SCALE` en `learning-support` lo convertiría en un error hasta que citara una
+evaluación. Los criterios que
 el código puede ver se leen de los **rasgos** de los términos (módulo 2): una finalidad con `EVALUATION` es el criterio
 1, `MONITORING` el criterio 3, una categoría con `FINANCIAL`, `BEHAVIOURAL` o `PRIVATE_LIFE` el criterio 4, y un
 interesado o una categoría con `VULNERABLE` el criterio 7, así que un término de tu propia extensión (módulo 6) cuenta
 en cuanto declara sus rasgos. Cuando ocurre una violación de seguridad, `BreachAssessment` puntúa su gravedad a partir
 de la clasificación de los campos afectados y de los rasgos de sus categorías, como orientación para las primeras
-horas; una violación solo de la confidencialidad de datos que eran ininteligibles, como los fuertemente cifrados, no se
-notifica a la autoridad. Consulta [ImpactScreening](../reference/processing/impact-screening.md) y
+horas; una violación solo de la confidencialidad de datos que eran ininteligibles, como los fuertemente cifrados, ni se
+notifica a la autoridad ni se comunica a los interesados. Consulta
+[ImpactScreening](../reference/processing/impact-screening.md) y
 [BreachAssessment](../reference/processing/breach-assessment.md).
 
 ## Responder a la solicitud de un interesado
@@ -574,7 +581,8 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 ```
 
 `activities()` contiene las actividades cuyos interesados incluyen `alumnus`: aquí, solo el boletín. Para cada una,
-`entitlements()` tiene una entrada por cada derecho de los artículos 15 a 21, decidida por su base jurídica:
+`entitlements()` tiene una entrada por cada derecho de los artículos 15 a 22, decidida por su base jurídica y por lo que
+declara:
 
 | Derecho | Disponibilidad | Por qué |
 |---|---|---|
@@ -584,6 +592,7 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 | `RESTRICTION` | `CONDITIONAL` | El art. 18.1 enumera los casos |
 | `PORTABILITY` | `NO` | Solo en el tratamiento basado en el consentimiento o en un contrato; este se basa en intereses legítimos |
 | `OBJECTION` | `YES` | Art. 21.2: mercadotecnia directa |
+| `AUTOMATED_DECISION` | `NO` | Art. 22: la actividad no declara ninguna decisión basada únicamente en un tratamiento automatizado |
 
 La misma llamada para un estudiante muestra qué cambia la base. La matrícula se basa en una misión de interés público:
 
@@ -605,7 +614,10 @@ Cada `Entitlement` lleva una explicación en inglés que cita los artículos. Pa
 la supresión añaden que los datos se bloquean antes de borrarse (LOPDGDD, art. 32). La clave se resuelve con la
 taxonomía, así que un interesado que no tiene es una `TaxonomyException` y no una respuesta vacía, y una actividad con
 finalidades `DIRECT_MARKETING` y una base de obligación legal o de misión de interés público recibe una supresión
-`CONDITIONAL` en lugar de `YES`: los datos se suprimen salvo lo que conserva el art. 17.3.b.
+`CONDITIONAL` en lugar de `YES`: los datos se suprimen salvo lo que conserva el art. 17.3.b. Lo mismo ocurre con una que
+sirve a otras finalidades además de la de mercadotecnia: los datos se suprimen salvo lo que esas finalidades aún
+necesitan. Declarar `Factor.AUTOMATED_DECISIONS` hace `CONDITIONAL` el derecho `AUTOMATED_DECISION` (art. 22) y añade el
+art. 15.1.h a la explicación del acceso.
 
 Esto es el comienzo de la respuesta, no la respuesta. `CONDITIONAL` significa que el artículo enumera casos, y si esta
 solicitud los cumple lo decide la delegada de protección de datos, como toda solicitud. Linneo lee el registro; dar a la

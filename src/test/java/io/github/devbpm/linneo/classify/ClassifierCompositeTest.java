@@ -79,8 +79,8 @@ class ClassifierCompositeTest {
         private Address serialized;
         @DerivedFrom("home.city")
         private String city;
-        @Exempt("loaded on demand by the framework")
-        private Address lazy;
+        @Exempt("monitor for synchronization")
+        private Object lock;
     }
 
     @Test
@@ -101,8 +101,8 @@ class ClassifierCompositeTest {
                         person.field("technical").orElseThrow().category().key()),
                 () -> assertEquals(Categories.USER_CONTACT_ADDRESS_CITY,
                         person.field("city").orElseThrow().category().key()),
-                () -> assertEquals(List.of(new ClassClassification.Exemption(Person.class, "lazy",
-                        "loaded on demand by the framework")), person.exempted()));
+                () -> assertEquals(List.of(new ClassClassification.Exemption(Person.class, "lock",
+                        "monitor for synchronization")), person.exempted()));
     }
 
     @Test
@@ -162,8 +162,8 @@ class ClassifierCompositeTest {
         }
         ClassClassification holder = classifier.classify(Holder.class);
         assertAll(
-                () -> assertTrue(holder.field("byType.city").isPresent()),
-                () -> assertEquals(List.of("broken.unclassified", "byAddress"), holder.errors().stream()
+                () -> assertTrue(holder.field("byType.city").isEmpty()),
+                () -> assertEquals(List.of("broken.unclassified", "byType", "byAddress"), holder.errors().stream()
                         .filter(v -> v.code() == Code.UNCLASSIFIED_FIELD).map(Violation::path).toList()),
                 () -> assertEquals(List.of("tree.children"), holder.errors().stream()
                         .filter(v -> v.code() == Code.CYCLE).map(Violation::path).toList()),

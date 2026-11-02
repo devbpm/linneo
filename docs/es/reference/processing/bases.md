@@ -113,7 +113,9 @@ WARNING MISSING_LEGAL_REFERENCE screening: GDPR article(s) 6.1.c, 9.2.b, 10 rest
 
 Con `Jurisdiction.SPAIN` el aviso añade `(LOPDGDD article(s) 8, 9.2, 10: a law with the rank of statute)`, con los que
 se aplican: el artículo 8 para una obligación legal o una misión de interés público, el 9.2 para las condiciones de los
-artículos 9.2.g, h e i, y el 10 para datos penales autorizados por ley.
+artículos 9.2.g, h e i, y el 10 para datos penales autorizados por ley. La regla sobre los datos de infracciones y
+sanciones administrativas (artículo 27 de la LOPDGDD) se añade al mismo aviso, o lo genera cuando ninguna otra base pide
+la ley: una referencia que falta es un solo aviso, nunca dos.
 
 `legalReference` es un solo texto para toda la actividad, así que nombra en él todas las leyes implicadas, por
 ejemplo `Higher Education Act, arts. 12 and 31` (una ley ficticia).

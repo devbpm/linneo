@@ -135,11 +135,11 @@ The messages below are the exact ones Linneo produces (with `X` for the class, `
 
 | Code | Severity | Message | Fix |
 |---|---|---|---|
-| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (or `on Superclass or X` for an inherited field) | Add `@Category` (or `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), or a non-personal `@DefaultCategory` if the class holds no personal data; for an embedded class, mark it `@Composite` |
+| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (or `on Superclass or X` for an inherited field) | Add `@Category` (or `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), or a non-personal `@DefaultCategory` if the class holds no personal data; for an embedded class, mark it `@Composite`; for a reference to a record with personal data (the message starts `the class default 'k' does not apply: the field refers to X ...`), declare what the field stores, typically `@DerivedFrom(type = X.class, value = "id")` |
 | `UNKNOWN_CATEGORY` | error | `unknown data category 'k'` | Fix the key (use the `Categories` constants), or make sure the extension that defines it is loaded (`Taxonomy.load()`) |
 | `PERSONAL_DEFAULT` | error | `@DefaultCategory of X names 'k', which is personal data: declare personal fields one by one with @Category` | Remove the default and annotate personal fields individually |
 | `MISSING_REASON` | error | `@DefaultCategory of X needs a reason`, `@Exempt needs a reason` or `@CategoryByRow needs declaredBy` | Write the reason for the reviewer |
-| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom` or `@CategoryByRow cannot be combined with @Category or @DerivedFrom` | Keep only one (`@Category` with `@DerivedFrom` is allowed) |
+| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom`, `@CategoryByRow cannot be combined with @Category or @DerivedFrom` or `@Exempt is for a field that holds no data of the model, and this one ...` | Keep only one (`@Category` with `@DerivedFrom` is allowed); a relationship to a record with personal data is declared with `@DerivedFrom`, not exempted |
 | `LOWERED_LEVEL` | error | `confidentiality LOW is lower than the MEDIUM of 'k'` (or `integrity ...`) | Remove the element or raise it; levels only go up |
 | `AMBIGUOUS_VALUE` | error | `confidentiality must have at most one value` (or `integrity`, `identifiability`) | Give one value |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `'k' is not personal data and has no identifiability` | Remove `identifiability`, or check that the key is right |
@@ -147,7 +147,7 @@ The messages below are the exact ones Linneo produces (with `X` for the class, `
 | `UNKNOWN_SOURCE` | error | `@DerivedFrom needs at least one source` or `the source 's' is not a classified field of X` or `the source 's' has an error` | Name a classified field as the source; an `@Exempt` field or one with an error cannot be a source |
 | `AMBIGUOUS_DERIVATION` | error | `its sources [...] have different classifications; declare the category of the derived value with @Category` | Add `@Category` to the derived field |
 | `WEAKER_THAN_SOURCE` | error | `'k' protects less than its source(s) [...]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature` | Declare a category that protects at least as much, or remove `@Category` to take the source's |
-| `WEAKER_THAN_PARTS` | error | `'k' protects less than the fields of X need (...)` | Declare a category that covers every field of the composite stored as one value |
+| `WEAKER_THAN_PARTS` | error | `'k' protects less than the fields of X need (...)` or `the fields of [X] have errors, so what 'k' must protect is unknown` | Declare a category that covers every field of the composite stored as one value; fix the errors of the composite's fields first |
 | `CYCLE` | error | `the composite X contains itself; classify the field as one value with @Category or @CategoryByRow` or `is derived from itself through other derived fields` | Classify the field that closes the loop as one value, or break the circular derivation |
 | `DEPRECATED_CATEGORY` | **warning** | `data category 'k' is deprecated; use 'r'` | Replace the key with the one suggested |
 
@@ -294,7 +294,7 @@ new Classifier(Taxonomy.load()).verify(model);
   every extension key.
 - **Catching the exception and only logging it.** The point is to fail the build.
 - **Verifying only some entities.** Take them from the metamodel, or with `ModelClasses`, so new entities are covered
-  automatically.
+  automatically. Each class reports its own problems, so a class left out of the list is a class unchecked.
 - **Fixing a violation by adding `@Exempt`** to a field that holds data. Review exemptions like code.
 - **Forgetting `@Composite` on an embeddable.** The embedded field has no category and is reported as
   `UNCLASSIFIED_FIELD`; the fix is the marker on the embeddable class, not an `@Exempt` on the field.
@@ -357,8 +357,11 @@ the solutions of module 3 and prints nothing (no warnings).
 - `Building`: `user.workplace` is personal. A building is organisation data: use
   `@DefaultCategory(value = ORG_LOCATION, reason = "university buildings and rooms")`, and annotate any personal
   field (say, the name of the building manager) with its own `@Category`.
-- `Document.attachments`: carries `@Exempt` together with another classification annotation. A relationship field
-  holds no data itself: keep only `@Exempt("relationship: each Attachment is classified on its own")`.
+- `Document.attachments`: carries `@Exempt` together with another classification annotation, probably
+  `@DerivedFrom`. Keep one. A relationship to `Attachment` is not exempt: `Attachment` holds personal data, so
+  `@Exempt` alone would be a `CONFLICTING_ANNOTATIONS` error as well. Keep
+  `@DerivedFrom(type = Attachment.class, value = "id")`, which declares what the field stores: the keys of the
+  attachments.
 
 **Exercise 4.3**
 

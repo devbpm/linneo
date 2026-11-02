@@ -74,8 +74,8 @@ public record ActivityChange(String activity, CheckedActivity before, CheckedAct
      * @return {@code true} if an aspect of the governance changed and nothing else did but the open points
      */
     public boolean isGovernance() {
-        return aspects.stream().anyMatch(Aspect::isGovernance)
-                && aspects.stream().allMatch(aspect -> aspect.isGovernance() || aspect == Aspect.OPEN_POINTS);
+        return aspects.stream().anyMatch(Aspect::isGovernance) && aspects.stream().allMatch(aspect ->
+                aspect.isGovernance() || aspect == Aspect.OPEN_POINTS || aspect == Aspect.SCREENING);
     }
 
     @Override
@@ -181,7 +181,18 @@ public record ActivityChange(String activity, CheckedActivity before, CheckedAct
         RISK_FACTORS(true),
 
         /**
-         * The open points: the warnings of the activity.
+         * The risk factors the code declares ({@link ProcessingActivity#riskFactors()}).
+         */
+        DECLARED_RISK_FACTORS(false),
+
+        /**
+         * The screening of the need for an impact assessment: its outcome, criteria and mandatory case, which change
+         * with the terms' traits even when nothing else does.
+         */
+        SCREENING(false),
+
+        /**
+         * The open points: the warnings of the activity, by code and element.
          */
         OPEN_POINTS(false);
 
@@ -234,8 +245,15 @@ public record ActivityChange(String activity, CheckedActivity before, CheckedAct
         content.put(Aspect.RETENTION, value(governance.retention()));
         content.put(Aspect.IMPACT_ASSESSMENT, value(governance.impactAssessment()));
         content.put(Aspect.RISK_FACTORS, sorted(governance.riskFactors().stream().map(Enum::name)));
+        content.put(Aspect.DECLARED_RISK_FACTORS, sorted(activity.riskFactors().stream().map(Enum::name)));
+        ImpactScreening screening = checked.screening();
+        List<String> screened = new ArrayList<>(List.of(screening.outcome().name(),
+                "mandatory " + screening.mandatoryCase()));
+        screening.criteria().forEach(criterion -> screened.add(criterion.name()));
+        content.put(Aspect.SCREENING, screened);
+        // By code and element: a change of the library's wording is not a change of the record.
         content.put(Aspect.OPEN_POINTS, sorted(checked.warnings().stream()
-                .map(warning -> warning.code() + " " + warning.element() + " " + warning.message())));
+                .map(warning -> warning.code() + " " + warning.element())));
         return content;
     }
 

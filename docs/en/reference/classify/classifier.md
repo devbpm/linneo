@@ -93,32 +93,43 @@ void everyClassOfTheModelIsClassified() {
   `DUPLICATE_FIELD` error: only the superclass field is classified.
 - **Excluded** without any annotation: `static` and synthetic fields (such as the reference to the enclosing instance
   in an inner class), fields whose name starts with `$$_` (added by bytecode tools, for example Hibernate's
-  enhancement: `$$_hibernate_interceptor`), and `transient` fields. A `transient` field is not stored, so it is skipped,
+  enhancement: `$$_hibernate_interceptor`), the lock fields of Lombok's `@Synchronized` (`$lock`, `$LOCK`), and
+  `transient` fields. A `transient` field is not stored, so it is skipped,
   **unless it carries one of Linneo's field annotations** (`@Category`, `@CategoryByRow`, `@DerivedFrom` or
   `@Exempt`): an annotation says it holds data to classify, and it is classified like any other field.
 - **Hibernate proxies.** A class whose name contains `$HibernateProxy$` is classified as the entity it extends: the
   `type()` of its [`ClassClassification`](results.md#classclassification) is the entity, not the proxy.
-- **Composites are entered.** A field with no annotation of its own whose type is a
+- **Composites are entered.** A field with no annotation of its own whose type is a concrete
   [`@Composite`](../annotations/composite.md) class (which a subclass of a composite also is: the annotation is
-  inherited), or an array, a collection, an `Optional` or the values of a `Map` of one, at any depth, is classified by
-  the composite's fields: one entry per field, with the path `field.part` (`home.street`), under the composite's own
-  annotations and `@DefaultCategory`, not the holder's. Type variables are resolved through the superclasses of the
-  class being classified.
+  inherited), or an array, a collection or an `Optional` of one, at any depth, is classified by the composite's
+  fields: one entry per field, with the path `field.part` (`home.street`), under the composite's own annotations and
+  `@DefaultCategory`, not the holder's. Type variables are resolved through the superclasses of the class being
+  classified. A `Map` is never descended into: its keys are data too.
 - **Data the classifier cannot see.** A field that may hold data the classifier cannot split into fields never takes a
-  class default and is an `UNCLASSIFIED_FIELD` error unless it is annotated: a composite as a map key or as the type
-  argument of a class that is not a collection, several composites in one type, a value typed `Object`, an unbound type
-  variable or a raw container, and a class with classified fields that is not `@Composite`, such as a referenced
-  entity or a JPA `@Embedded` class. For the last, mark the class `@Composite` rather than passing it to `verify`
-  separately, or declare what the field stores (such as the record's key). A class default would otherwise classify
-  as non-personal what wraps personal data.
+  class default and is an `UNCLASSIFIED_FIELD` error unless it is annotated: composites in a `Map` or `Map.Entry`
+  (declare the category with `@Category` or `@CategoryByRow`; it is then checked against the composites' fields), a
+  composite as the type argument of a class that is not a collection or of an owner type, several composites in one
+  type (a generic composite such as `Box<Address>` mentions two, so it is declared as one value), an interface or an
+  abstract class marked `@Composite` (it is not embedded: its implementations may have other fields), a value typed
+  `Object`, `Serializable`, `Comparable` or `Cloneable`, an unbound type variable or a raw container. A class default
+  would otherwise classify as non-personal what wraps personal data.
+- **References to other records.** A field whose type is another record of the model (a class with a
+  `@DefaultCategory`, an annotated field or a field of a composite type; a sealed type is read through its permitted
+  subclasses) takes the class default only when that record holds no personal data, as a catalogue entry such as a
+  `Country` does. A reference to a record that holds personal data, such as a JPA association to a `Customer` or an
+  `@Embedded` class not marked `@Composite`, is personal data itself, a pseudonymous key: the field is an
+  `UNCLASSIFIED_FIELD` error that advises declaring what it stores, typically with
+  `@DerivedFrom(type = Customer.class, value = "id")`.
 - **Derived fields.** A field marked [`@DerivedFrom`](../annotations/derived-from.md) takes the classification of its
   source, or declares one that protects at least as much. Its sources may be declared after it, be derived fields
   themselves, be parts of a composite, or belong to another class (`type`), which the classifier reads as well.
   Sources are resolved field by field, so two classes may derive from each other's *other* fields, and a composite
-  from a class that holds it. The result does not depend on the order the classes are classified in.
+  from a class that holds it. The problems found do not depend on the order the classes are classified in; only the
+  field a composite containment cycle is reported on may.
 - Fields marked [`@Exempt`](../annotations/exempt.md) are not classified after their annotation is checked, and
   `ClassClassification.exempted()` lists them with their reasons. `@Exempt` is for technical fields; a value computed
-  from other fields is data and uses `@DerivedFrom` or `@Category`.
+  from other fields is data and uses `@DerivedFrom` or `@Category`, and a field that holds composites, or refers to a
+  record with personal data, is a `CONFLICTING_ANNOTATIONS` error.
 - Annotations are read from the field itself (`getDeclaredAnnotation`), so on a record they must target the
   component's field, which `@Category`, `@CategoryByRow`, `@DerivedFrom` and `@Exempt` do.
 
@@ -136,20 +147,27 @@ Protection never drops silently: a derived field must protect at least as much a
 declares anonymized or aggregated may drop only the **personal nature** of its sources, never their confidentiality,
 integrity or secrecy. A field that stores composites as one value, declared or derived, must protect at least as much
 as the fields of the composites, a composite that holds itself or two that hold each other included, whatever the order
-of the classes. A composite that contains itself, and derived fields that depend on each other (within one
-class or across classes, also through the parts of a composite), are a `CYCLE`. Classes that derive from each other's
-other fields are not. A field that derives from a field with an error, even one in a cycle, but is not itself in the
-cycle, is an `UNKNOWN_SOURCE`.
+of the classes; a composite whose fields have errors leaves nothing to compare with, which is an error too
+(`WEAKER_THAN_PARTS`: `the fields of [X] have errors`). A composite that contains itself, and derived fields that
+depend on each other (within one class or across classes, also through the parts of a composite), are a `CYCLE`.
+Classes that derive from each other's other fields are not. A field that derives from a field with an error, even one
+in a cycle, but is not itself in the cycle, is an `UNKNOWN_SOURCE`.
+
+Each class reports its own problems, such as a field stored as one value that protects less than its composite or a
+reference to a record with personal data, so verify every class of the model, with [`ModelClasses`](#modelclasses),
+rather than some of them.
 
 ## Fail-closed behaviour
 
 Nothing is classified by default. These are **errors** (they fail `verify` and make `isValid()` false):
 
-- a field with no annotation and no applicable class default (`UNCLASSIFIED_FIELD`);
+- a field with no annotation and no applicable class default, or one that refers to a record with personal data
+  (`UNCLASSIFIED_FIELD`);
 - a key that is not in the taxonomy (`UNKNOWN_CATEGORY`);
 - a personal category used as a class default (`PERSONAL_DEFAULT`);
 - a blank reason or `declaredBy` (`MISSING_REASON`);
-- annotations that exclude each other (`CONFLICTING_ANNOTATIONS`);
+- annotations that exclude each other, or `@Exempt` on a field that holds composites or refers to a record with
+  personal data (`CONFLICTING_ANNOTATIONS`);
 - a level lower than the category's (`LOWERED_LEVEL`);
 - more than one value in an optional element of `@Category` (`AMBIGUOUS_VALUE`);
 - an identifiability on a non-personal category (`IDENTIFIABILITY_NOT_APPLICABLE`);
@@ -158,7 +176,8 @@ Nothing is classified by default. These are **errors** (they fail `verify` and m
 - a derived field without a category whose sources are classified differently (`AMBIGUOUS_DERIVATION`);
 - a derived field that protects less than a source, or that is declared anonymized or aggregated and drops more than
   the personal nature (`WEAKER_THAN_SOURCE`);
-- a field that stores composites as one value and protects less than their fields (`WEAKER_THAN_PARTS`);
+- a field that stores composites as one value and protects less than their fields, or whose composites have field
+  errors (`WEAKER_THAN_PARTS`);
 - a composite that contains itself, or derived fields that depend on each other (`CYCLE`).
 
 A deprecated key is the only **warning** (`DEPRECATED_CATEGORY`): the field is classified with the current

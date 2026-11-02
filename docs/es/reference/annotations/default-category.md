@@ -57,11 +57,17 @@ Si el valor por defecto es desconocido o personal, los campos que cubriría qued
 `reason` en blanco, por sí solo, no impide que los campos se clasifiquen.
 
 El valor por defecto nunca cubre un campo que puede contener datos que el clasificador no ve: un campo tipado `Object`,
-por una variable de tipo sin enlazar o por un contenedor sin parametrizar, uno que contiene un compuesto como clave de
-mapa o como argumento de tipo de una clase que no es una colección, y uno que contiene una clase con campos
-clasificados que no es un [`@Composite`](composite.md#qué-hace-el-clasificador), como una entidad referenciada. Ese
-campo es un error `UNCLASSIFIED_FIELD` salvo que declare su propia categoría: un valor por defecto de la clase
-clasificaría, si no, como no personal lo que envuelve datos personales.
+`Serializable` o por una variable de tipo sin enlazar o un contenedor sin parametrizar, uno que contiene compuestos en
+un mapa o como argumento de tipo de una clase que no es una colección, y un
+[`@Composite`](composite.md#qué-hace-el-clasificador) abstracto. Ese campo es un error `UNCLASSIFIED_FIELD` salvo que
+declare su propia categoría: un valor por defecto de la clase clasificaría, si no, como no personal lo que envuelve
+datos personales.
+
+Un campo que se refiere a otro registro del modelo, una clase con una clasificación propia, toma el valor por defecto
+solo cuando ese registro no contiene datos personales, como un elemento de un catálogo. Una referencia a un registro
+con datos personales es en sí misma un dato personal, así que el campo es un error `UNCLASSIFIED_FIELD` que aconseja
+declarar lo que guarda, normalmente con `@DerivedFrom(type = Customer.class, value = "id")`; consulta
+[Referencias a otros registros](composite.md#referencias-a-otros-registros).
 
 ## FieldClassification resultante
 

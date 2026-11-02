@@ -19,7 +19,8 @@ doc-sources:
 ```java
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 List<String> objects, Governance governance)
+                                 List<String> objects, Set<ImpactScreening.Factor> riskFactors,
+                                 Governance governance)
 ```
 
 A processing activity of the controller, as declared in its record of processing activities (GDPR article 30.1).
@@ -30,7 +31,8 @@ entities or check the bases. That is the job of the [`ProcessingChecker`](checke
 An activity has two parts with different owners:
 
 - its **scope** is what the code of the application knows for certain: the purposes it serves, the data subjects and
-  the personal data it processes (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`);
+  the personal data it processes (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`), and the risk
+  factors the code knows of (`riskFactors`);
 - its [**governance**](#governance) is what the controller's data protection function decides and keeps up to date:
   the lawful bases, the legal reference, the retention, the recipients, the transfers, the impact assessment and the
   risk factors it declares for the [screening](impact-screening.md) of the need for one.
@@ -51,10 +53,11 @@ them keeps the governance in its own storage and combines it with the scope decl
 | `dataCategories` | 30.1.c | empty | Keys of personal data categories processed beyond those of `entities`, preferably `Categories` constants. |
 | `entities` | 30.1.c | empty | Classified model classes; the categories of their personal fields are processed by the activity. |
 | `objects` | 30.1.c | empty | Keys of objects of a [data inventory](../classify/inventory.md); the categories of their personal fields are processed by the activity. The [`ProcessingChecker`](checker.md#methods) must be created with that inventory. |
-| `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | The lawful bases, legal reference, retention, recipients, transfers, impact assessment and risk factors; see [Governance](#governance). `null` means `Governance.NONE`. |
+| `riskFactors` | 35 | empty | What the code knows the activity does that the [screening](impact-screening.md) cannot see from its terms, such as `Factor.AUTOMATED_DECISIONS`: a floor the governance adds to and cannot remove. `null` is an empty set. |
+| `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | The lawful bases, legal reference, retention, recipients, transfers, impact assessment and the risk factors the officer declares; see [Governance](#governance). `null` means `Governance.NONE`. |
 
 The governance components are read through it: `activity.governance().legalBasis()`,
-`activity.governance().retention()`, and so on.
+`activity.governance().retention()`, and so on. The screening reads the risk factors of both, `allRiskFactors()`.
 
 ### Canonical constructor
 
@@ -68,6 +71,7 @@ The governance components are read through it: `activity.governance().legalBasis
   `NullPointerException`. The elements are kept as given; a blank key in a list is reported by the checker as an
   unknown key. The exception is `objects`: a `null` list is an empty one.
 - A blank `description` becomes `null` and any other text is stripped of leading and trailing white space.
+- `riskFactors` is copied into an immutable set; `null` is an empty one.
 - A `null` `governance` becomes [`Governance.NONE`](#governance).
 
 ```java
@@ -82,12 +86,15 @@ activity.governance().retention();    // null
 ### withGovernance
 
 `ProcessingActivity withGovernance(Governance governance)` returns the same activity with another governance, such as
-the one the data protection officer keeps up to date. The scope declared in code is kept as is, and the original
-activity is not changed. So are the **risk factors** the activity declares in code: what the code says the activity
-does, such as automated decisions, is a minimum, so the factors of `governance` are joined to those of the activity and
-a governance saved before the code changed never lifts an impact assessment. Call it on the activity as the code
-declares it, not on one that already took another governance. `NullPointerException` if `governance` is `null`; to
-clear it, pass `Governance.NONE` (the factors the code declares stay).
+the one the data protection officer keeps up to date. The scope declared in code is kept as is, its `riskFactors`
+included, and the original activity is not changed. The governance simply **replaces** the current one, with no
+merging: what the code says the activity does, such as automated decisions, is part of the scope, and the screening
+reads it together with the factors of the governance (`allRiskFactors()`), so a governance saved before the code
+changed never lifts an impact assessment. `NullPointerException` if `governance` is `null`; to clear it, pass
+`Governance.NONE` (the factors the code declares stay).
+
+`Set<ImpactScreening.Factor> allRiskFactors()` returns the risk factors the screening reads: the union of those of the
+scope and those of the governance, immutable.
 
 ## Builder
 
@@ -112,11 +119,11 @@ clear it, pass `Governance.NONE` (the factors the code declares stay).
 | `Builder recipients(String... recipients)` | **Adds** categories of recipients. |
 | `Builder transfer(String destination, TransferSafeguard safeguard)` | **Adds** a `Transfer`. A blank destination throws `IllegalArgumentException` at once, not in `build()`. |
 | `Builder impactAssessment(String reference)` | Sets the reference to the impact assessment. |
-| `Builder riskFactors(ImpactScreening.Factor... factors)` | **Adds** risk factors the officer knows of, for the [screening](impact-screening.md) of the need for an impact assessment. |
+| `Builder riskFactors(ImpactScreening.Factor... factors)` | **Adds** risk factors the code knows of, such as `Factor.AUTOMATED_DECISIONS` when the code decides on its own, for the [screening](impact-screening.md) of the need for an impact assessment. They are part of the scope: the governance adds its own and cannot remove these. |
 | `ProcessingActivity build()` | Creates the activity with the canonical constructor. |
 
-The methods from `legalBasis` to `riskFactors` are those of the [`Governance.Builder`](#governancebuilder): they
-give the initial values of the governance of the activity.
+The methods from `legalBasis` to `impactAssessment` are those of the [`Governance.Builder`](#governancebuilder): they
+give the initial values of the governance of the activity. `riskFactors` is not one of them: it feeds the scope.
 
 Every list method, `specialCategoryConditions` and `riskFactors` add to what was given before
 (`purposes("a").purposes("b", "c")` gives `[a, b, c]`); every other method replaces the previous value, so the last
@@ -216,9 +223,10 @@ sets; `null` is an empty one.
 `Governance.Builder` — `public static final class`, `@since 0.1.0`. It has the same methods, with the same effect, as
 the governance methods of the [`ProcessingActivity.Builder`](#builder): `legalBasis`, `legitimateInterest`,
 `specialCategoryConditions(SpecialCategoryCondition...)`, `criminalDataBasis`, `legalReference`, `retention`,
-`recipients`, `transfer`, `impactAssessment` and `riskFactors(ImpactScreening.Factor...)`, plus `Governance build()`.
-List methods, `specialCategoryConditions` and `riskFactors` add to what was given before and every other method
-replaces the previous value. `build()` can be called more than once.
+`recipients`, `transfer` and `impactAssessment`, plus `Governance build()`. Its own
+`riskFactors(ImpactScreening.Factor...)` declares the risk factors of the governance, those the officer knows of, as
+opposed to the ones the code declares. List methods, `specialCategoryConditions` and `riskFactors` add to what was
+given before and every other method replaces the previous value. `build()` can be called more than once.
 
 ### Scope in code, governance from storage
 

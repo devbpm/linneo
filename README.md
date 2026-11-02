@@ -285,7 +285,7 @@ Linneo ships an optional extension for universities and other higher education i
 transfers, assessment attempts, final grades and averages, credit recognition, programme progress, degrees,
 certificates and language proficiency. It also covers attendance, academic accommodations, discipline, advising,
 admissions, internships and their evaluation, international mobility, means-tested aid, fee exemptions and
-advancement. It adds 27 data uses (certification, credit recognition, examination, internships, mobility, career
+advancement. It adds 28 data uses (certification, credit recognition, examination, internships, mobility, career
 services, means assessment, statutory reporting, and the new roots `advancement` and `research`) and 12 data
 subjects (prospective student, exchange student, doctoral candidate, placement supervisor, external examiner,
 donor…). An academic accommodation reveals a disability, so it is a special category of data. The extension follows

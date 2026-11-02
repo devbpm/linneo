@@ -132,18 +132,28 @@ heredan todos los términos que cuelgan del que los declara.
 
 | Rasgo | Términos que lo declaran |
 |---|---|
-| `FINANCIAL` | `user.financial` |
+| `FINANCIAL` | `user.financial`, `user.payment` |
 | `BEHAVIOURAL` | `user.behavior`, `user.location` |
 | `PRIVATE_LIFE` | `user.content.private` |
-| `DIRECT_IDENTIFIER` | `user.name`, `user.government_id`, `user.biometric`, `user.content.self_image` |
-| `CONTACT_IDENTIFIER` | `user.contact`, `user.account` |
-| `INDIRECT_IDENTIFIER` | `user.unique_id`, `user.device` |
-| `VULNERABLE` | la categoría `user.childrens`; los sujetos de datos `employee`, `staff_member`, `faculty_member`, `trainee`, `patient`, `job_applicant` |
-| `EVALUATION` | los usos de datos `marketing.advertising.first_party.targeted`, `marketing.advertising.profiling`, `marketing.advertising.third_party.targeted`, `personalize.profiling`, `personalize.content.profiling`, `personalize.content.profiled` |
-| `DIRECT_MARKETING` | el uso de datos `marketing` |
+| `DIRECT_IDENTIFIER` | `user.name`, `user.government_id`, `user.biometric`, `user.authorization.biometric`, `user.content.self_image` |
+| `CONTACT_IDENTIFIER` | `user.contact`, `user.account`, `user.authorization.credentials` |
+| `INDIRECT_IDENTIFIER` | `user.unique_id`, `user.device`, `user.health_and_medical.record_id`, `user.health_and_medical.insurance_beneficiary_id` |
+| `BIOMETRIC` | `user.biometric`, `user.authorization.biometric` |
+| `GENETIC` | `user.health_and_medical.genetic` |
+| `MONITORING` | las categorías `user.telemetry`, `user.sensor` |
+| `VULNERABLE` | las categorías `user.childrens`, `user.victim_status`, `user.government_id.immigration`; los sujetos de datos `employee`, `staff_member`, `faculty_member`, `trainee`, `patient`, `job_applicant` |
+| `EVALUATION` | los usos de datos `essential.fraud_detection`, `marketing.advertising.first_party.targeted`, `marketing.advertising.profiling`, `marketing.advertising.third_party.targeted`, `personalize.profiling`, `personalize.content.profiling`, `personalize.content.profiled` |
+| `DIRECT_MARKETING` | los usos de datos `marketing`, `sales` |
 
-Las extensiones incluidas declaran los rasgos de sus propios términos; consulta
-[Extensiones](extensions/README.md#rasgos).
+La taxonomía estándar no declara ningún término `RESEARCH`: lo hace la
+[extensión universitaria](extensions/university.md). Las extensiones incluidas declaran los rasgos de sus propios
+términos; consulta [Extensiones](extensions/README.md#rasgos).
+
+Una prueba, `TraitCoverageTest`, convierte la ausencia de rasgos en una decisión revisada: toda categoría de datos
+personales, uso de datos y sujeto de datos de la taxonomía estándar o bien tiene rasgos, declarados o heredados, o bien
+figura en `src/test/resources/io/github/devbpm/linneo/traits-reviewed.txt` como revisado sin ninguno. Un término que
+añade una nueva versión de fideslang hace fallar la prueba hasta que alguien le da rasgos en `linneo-traits.tsv` o lo
+anota ahí, de modo que la falta de un rasgo nunca vuelve una regla más laxa sin que se note.
 
 ## Raíces de fideslang
 
@@ -217,12 +227,17 @@ y escribe:
   las de los ficheros `linneo-*.tsv` (ver [Constantes de claves](key-constants.md)).
 
 Los módulos descargados **no se ejecutan**: el script los analiza con `ast` y lee solo los valores literales de los
-campos que conserva, y se detiene si alguno no es un literal.
+campos que conserva, y se detiene si alguno no es un literal, si un término se define con argumentos posicionales o
+`**`, si la versión tiene dos ficheros, o ninguno, para un módulo, o si una clave no es una clave válida, que si no
+escribiría en Java. Las barras invertidas de las descripciones se escapan en el Javadoc que escribe, de modo que el
+texto de la versión nunca llega al código fuente como un escape unicode.
 
 Tras añadir un término de Linneo a un fichero `linneo-*.tsv`, vuelve a ejecutar el script para regenerar las
 constantes. Al pasar a otra versión de fideslang, actualiza también `StandardTaxonomy.FIDESLANG_VERSION`, `NOTICE` y
 los recuentos de términos que comprueba `StandardTaxonomyTest`, y asegúrate de que cada nueva categoría raíz tiene
-una fila completa en `linneo-category-policy.tsv` (si no, la taxonomía no se construye).
+una fila completa en `linneo-category-policy.tsv` (si no, la taxonomía no se construye). Un término que añade la nueva
+versión no tiene rasgos hasta que `linneo-traits.tsv` le da algunos: `TraitCoverageTest` falla hasta entonces, o hasta
+que el término figura en `traits-reviewed.txt` como revisado sin ninguno.
 
 Véase también: [Taxonomía](taxonomy.md) · [Niveles de protección](protection-levels.md) ·
 [Constantes de claves](key-constants.md) · [Extender la taxonomía](extending.md) ·

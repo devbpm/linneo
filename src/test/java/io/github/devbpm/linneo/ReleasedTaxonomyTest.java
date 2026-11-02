@@ -59,15 +59,28 @@ class ReleasedTaxonomyTest {
         List<Path> releases = ReleasedTaxonomy.releases();
         Optional<Path> baseline = ReleasedTaxonomy.baseline(releases, current);
         assumeTrue(baseline.isPresent(), "no release recorded yet");
+        // The keys each release removed from the one before, up to this line's baseline.
         Set<String> removed = new TreeSet<>();
+        Set<String> previous = null;
         for (Path release : releases) {
-            if (Arrays.compare(ReleasedTaxonomy.version(release), ReleasedTaxonomy.version(baseline.get())) <= 0) {
-                removed.addAll(ReleasedTaxonomy.keys(Taxonomy.fromTsv(Files.readString(release))));
+            if (Arrays.compare(ReleasedTaxonomy.version(release), ReleasedTaxonomy.version(baseline.get())) > 0) {
+                break;
             }
+            Set<String> keys = ReleasedTaxonomy.keys(Taxonomy.fromTsv(Files.readString(release)));
+            if (previous != null) {
+                previous.stream().filter(key -> !keys.contains(key)).forEach(removed::add);
+                assertEquals(Set.of(), intersection(removed, keys), "keys removed earlier are back in " + release);
+            }
+            previous = keys;
         }
-        removed.removeAll(ReleasedTaxonomy.keys(Taxonomy.fromTsv(Files.readString(baseline.get()))));
-        removed.retainAll(ReleasedTaxonomy.keys(ReleasedTaxonomy.shipped()));
-        assertEquals(Set.of(), removed, "keys removed by an earlier release are back");
+        assertEquals(Set.of(), intersection(removed, ReleasedTaxonomy.keys(ReleasedTaxonomy.shipped())),
+                "keys removed by an earlier release are back");
+    }
+
+    private static Set<String> intersection(Set<String> a, Set<String> b) {
+        Set<String> both = new TreeSet<>(a);
+        both.retainAll(b);
+        return both;
     }
 
     @Test
@@ -79,7 +92,9 @@ class ReleasedTaxonomyTest {
                         ReleasedTaxonomy.baseline(releases, "0.1.1-SNAPSHOT")),
                 () -> assertEquals(Optional.of(Path.of("1.0.0.tsv")),
                         ReleasedTaxonomy.baseline(releases, "1.1.0-SNAPSHOT")),
-                () -> assertEquals(Optional.empty(), ReleasedTaxonomy.baseline(releases, "0.0.9")));
+                () -> assertEquals(Optional.empty(), ReleasedTaxonomy.baseline(releases, "0.0.9")),
+                () -> assertEquals(Optional.of(Path.of("1.0.0.tsv")),
+                        ReleasedTaxonomy.baseline(releases, "1.0.1+build.7")));
     }
 
     @Test

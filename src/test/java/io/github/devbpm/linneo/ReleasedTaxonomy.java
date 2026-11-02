@@ -122,7 +122,7 @@ public final class ReleasedTaxonomy {
     }
 
     static int[] version(String version) {
-        String plain = version.replaceFirst("-.*$", "");
+        String plain = version.replaceFirst("[-+].*$", "");
         return Arrays.stream(plain.split("\\.")).mapToInt(Integer::parseInt).toArray();
     }
 }

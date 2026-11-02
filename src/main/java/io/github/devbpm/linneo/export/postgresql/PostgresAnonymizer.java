@@ -26,15 +26,14 @@ import io.github.devbpm.linneo.classify.DisclosurePolicy.Treatment;
 import io.github.devbpm.linneo.classify.FieldClassification;
 import io.github.devbpm.linneo.classify.InventoryField;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -61,11 +60,13 @@ import java.util.regex.Pattern;
  * {@code IS NULL}, which removes any rule, so running the statements again after a change of the classification
  * brings every column in line.
  * <p>
- * When several fields are stored in one column, such as a composite kept as JSON, the column gets one statement: the
- * rule of its fields when they all have the same, and otherwise {@code MASKED WITH VALUE NULL}, since a fake value of
- * one field's kind does not fit a column that holds several. Column names are written quoted, an unquoted part folded
- * to lower case as PostgreSQL does, so reserved words such as {@code user} work, and the labels are string constants
- * that read the same whatever {@code standard_conforming_strings} is.
+ * When several fields are stored in one column, such as a composite kept as JSON, the column gets one statement:
+ * {@code MASKED WITH VALUE NULL} unless every field is shown as it is, since a fake value of one field's kind does not
+ * fit a column that holds several. Statements that remove a rule come first, so if two spellings name one column the
+ * masking rule is the one applied last. Column names are written quoted, an unquoted part folded to lower case as
+ * PostgreSQL does, so reserved words such as {@code user} work; a name longer than the 63 bytes PostgreSQL keeps is
+ * refused, since two such names may be the same column. The labels are string constants that read the same whatever
+ * {@code standard_conforming_strings} is.
  * <p>
  * Linneo only writes the statements; the application chooses the column of each field and runs them. Instances are
  * immutable and thread-safe.
@@ -90,6 +91,8 @@ public final class PostgresAnonymizer {
     private static final String NULL_VALUE = "MASKED WITH VALUE NULL";
     private static final String PART = "([A-Za-z_][A-Za-z0-9_$]*|\"([^\"]|\"\")+\")";
     private static final Pattern PART_PATTERN = Pattern.compile(PART);
+    // NAMEDATALEN - 1 in a default PostgreSQL build.
+    private static final int MAX_IDENTIFIER = 63;
     private static final Pattern COLUMN = Pattern.compile(PART + "(\\." + PART + "){1,2}");
 
     private final DisclosurePolicy policy;
@@ -224,7 +227,7 @@ public final class PostgresAnonymizer {
             throw new IllegalArgumentException(classification.type().getName() + " has classification errors, so"
                     + " some fields have no rule: " + classification.errors());
         }
-        Map<String, Set<String>> rules = new LinkedHashMap<>();
+        Map<String, List<String>> rules = new LinkedHashMap<>();
         for (FieldClassification field : classification.fields()) {
             add(rules, columns.apply(field.path()), rule(field));
         }
@@ -251,7 +254,7 @@ public final class PostgresAnonymizer {
         if (!inventory.objects().contains(Objects.requireNonNull(object, "object"))) {
             throw new IllegalArgumentException("The inventory has no object '" + object + "'");
         }
-        Map<String, Set<String>> rules = new LinkedHashMap<>();
+        Map<String, List<String>> rules = new LinkedHashMap<>();
         for (InventoryField field : inventory.fields(object)) {
             add(rules, columns.apply(field.path()), rule(field, taxonomy));
         }
@@ -302,17 +305,24 @@ public final class PostgresAnonymizer {
         return text.strip();
     }
 
-    private static void add(Map<String, Set<String>> rules, String column, String rule) {
+    private static void add(Map<String, List<String>> rules, String column, String rule) {
         if (column != null) {
-            rules.computeIfAbsent(column(column), c -> new HashSet<>()).add(rule);
+            rules.computeIfAbsent(column(column), c -> new ArrayList<>()).add(rule);
         }
     }
 
-    // One statement per column: the rule its fields share, or the value left out when they differ.
-    private static List<String> statements(Map<String, Set<String>> rules) {
-        List<String> statements = new ArrayList<>();
-        rules.forEach((column, columnRules) -> statements.add(statement(column,
-                columnRules.size() == 1 ? columnRules.iterator().next() : NULL_VALUE)));
+    // One statement per column: the rule of its only field; for several fields, none if all are shown and the
+    // value left out otherwise. Removals first, masks after, each in the order of the first field of the column.
+    private static List<String> statements(Map<String, List<String>> rules) {
+        List<String> removals = new ArrayList<>();
+        List<String> masks = new ArrayList<>();
+        rules.forEach((column, columnRules) -> {
+            String rule = columnRules.size() == 1 ? columnRules.getFirst()
+                    : columnRules.stream().allMatch(Objects::isNull) ? null : NULL_VALUE;
+            (rule == null ? removals : masks).add(statement(column, rule));
+        });
+        List<String> statements = new ArrayList<>(removals);
+        statements.addAll(masks);
         return List.copyOf(statements);
     }
 
@@ -327,7 +337,13 @@ public final class PostgresAnonymizer {
         for (int at = 0; at < column.length(); at = part.end() + 1) {
             part.region(at, column.length()).lookingAt();
             String text = part.group();
-            parts.add(text.startsWith("\"") ? text : "\"" + text.toLowerCase(Locale.ROOT) + "\"");
+            String name = text.startsWith("\"") ? text.substring(1, text.length() - 1).replace("\"\"", "\"")
+                    : text.toLowerCase(Locale.ROOT);
+            if (name.getBytes(StandardCharsets.UTF_8).length > MAX_IDENTIFIER) {
+                throw new IllegalArgumentException("PostgreSQL keeps the first " + MAX_IDENTIFIER + " bytes of a"
+                        + " name, so '" + text + "' may be another column: " + column);
+            }
+            parts.add(text.startsWith("\"") ? text : "\"" + name + "\"");
         }
         return String.join(".", parts);
     }

@@ -9,22 +9,36 @@
 #   - ENISA, Recommendations for a methodology of the assessment of severity of personal data breaches (2013):
 #     data processing context (simple, behavioural, financial, sensitive) and ease of identification.
 #   - GDPR article 21.2-3: the absolute right to object to direct marketing and the profiling related to it.
+#   - GDPR articles 4.13 and 4.14: genetic and biometric data, which the AEPD's list under article 35.4 counts as
+#     criteria of their own.
 # Columns: kind (category, use or subject), key, traits separated by commas
 kind	key	traits
 category	user.financial	FINANCIAL
+category	user.payment	FINANCIAL
 category	user.behavior	BEHAVIOURAL
 category	user.location	BEHAVIOURAL
 category	user.content.private	PRIVATE_LIFE
 category	user.childrens	VULNERABLE
+category	user.victim_status	VULNERABLE
+category	user.government_id.immigration	VULNERABLE
+category	user.telemetry	MONITORING
+category	user.sensor	MONITORING
 category	user.name	DIRECT_IDENTIFIER
 category	user.government_id	DIRECT_IDENTIFIER
-category	user.biometric	DIRECT_IDENTIFIER
+category	user.biometric	DIRECT_IDENTIFIER, BIOMETRIC
+category	user.authorization.biometric	DIRECT_IDENTIFIER, BIOMETRIC
+category	user.health_and_medical.genetic	GENETIC
 category	user.content.self_image	DIRECT_IDENTIFIER
 category	user.contact	CONTACT_IDENTIFIER
 category	user.account	CONTACT_IDENTIFIER
+category	user.authorization.credentials	CONTACT_IDENTIFIER
 category	user.unique_id	INDIRECT_IDENTIFIER
 category	user.device	INDIRECT_IDENTIFIER
+category	user.health_and_medical.record_id	INDIRECT_IDENTIFIER
+category	user.health_and_medical.insurance_beneficiary_id	INDIRECT_IDENTIFIER
 use	marketing	DIRECT_MARKETING
+use	sales	DIRECT_MARKETING
+use	essential.fraud_detection	EVALUATION
 use	marketing.advertising.first_party.targeted	EVALUATION
 use	marketing.advertising.profiling	EVALUATION
 use	marketing.advertising.third_party.targeted	EVALUATION

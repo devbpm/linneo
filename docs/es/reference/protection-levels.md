@@ -65,7 +65,8 @@ naturaleza en todo el subárbol.
 
 `requiresMaximumProtection()` es la regla que fija los niveles: `TaxonomyBuilder.build()` lanza `TaxonomyException`
 si una categoría `SPECIAL_CATEGORY` o `CRIMINAL_OFFENCE` no resuelve (declarada o heredada) a confidencialidad `HIGH`
-e integridad `HIGH`.
+e integridad `HIGH`, y el constructor de una [`DataCategory`](terms.md#datacategory) lanza `IllegalArgumentException`
+para una construida a mano con niveles inferiores.
 
 `covers` ordena las naturalezas según cuánta protección necesitan sus datos. [`Protection.covers`](#protection)
 compara protecciones con ese orden:

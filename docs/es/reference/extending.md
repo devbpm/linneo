@@ -34,7 +34,7 @@ El único lugar donde se montan y validan las taxonomías. El constructor es de 
 | `TaxonomyBuilder withStandard()` | Añade la [taxonomía estándar](standard-taxonomy.md) con su política de protección (orígenes `fideslang` y `linneo`). Llamarlo de nuevo no tiene efecto. Restaura después el origen vigente. |
 | `TaxonomyBuilder withExtensions()` | Aplica todas las `TaxonomyExtension` que encuentra `ServiceLoader` con el cargador de clases de contexto del hilo, o con el cargador de `TaxonomyBuilder` si no hay ninguno. |
 | `TaxonomyBuilder withExtensions(ClassLoader classLoader)` | Aplica todas las extensiones que `ServiceLoader` encuentra en `classLoader`, **ordenadas por `name()`**, para que el resultado no dependa del orden del class path. |
-| `TaxonomyBuilder extend(TaxonomyExtension extension)` | Aplica una extensión: llama a `contribute(this)` con su `name()` como origen. Aplicar de nuevo la misma **clase** de extensión **no tiene efecto**, de modo que una extensión puede aplicarse de forma explícita y estar además registrada como servicio. Mientras contribuye, el constructor aplica las [reglas para extensiones](#qué-puede-hacer-una-extensión). Lanza `TaxonomyException` si el nombre es `null`, está en blanco, o es `"fideslang"` o `"linneo"`, o si ya se aplicó una clase **distinta** con el mismo nombre (`The extensions <primera clase> and <segunda clase> are both named '<nombre>'`); `NullPointerException` si `extension` es `null`. |
+| `TaxonomyBuilder extend(TaxonomyExtension extension)` | Aplica una extensión: llama a `contribute(this)` con su `name()` como origen. Aplicar de nuevo la misma **clase** de extensión **no tiene efecto**, de modo que una extensión puede aplicarse de forma explícita y estar además registrada como servicio. Mientras contribuye, el constructor aplica las [reglas para extensiones](#qué-puede-hacer-una-extensión). Lanza `TaxonomyException` si el nombre es `null`, está en blanco, o es uno de los reservados `"fideslang"`, `"linneo"` y `"application"` (el origen de los términos añadidos fuera de una extensión), o si ya se aplicó una clase **distinta** con el mismo nombre (`The extensions <primera clase> and <segunda clase> are both named '<nombre>'`); `NullPointerException` si `extension` es `null`. |
 | `TaxonomyBuilder origin(String origin)` | Fija el origen que se registra para los términos que se añadan a partir de ahora (por defecto `"application"`). `NullPointerException` si es `null`; `TaxonomyException` si está en blanco, o si lo llama una extensión (los términos que añade una extensión llevan su nombre). |
 | `TaxonomyBuilder category(String key, String name, String description)` | Añade una categoría de datos que hereda toda su protección de su padre. |
 | `TaxonomyBuilder category(String key, String name, String description, Consumer<CategoryDraft> customizer)` | Añade una categoría y declara sus facetas, rasgos, atributos y ciclo de vida en un [`CategoryDraft`](#categorydraft). Lanza `TaxonomyException` si una extensión añade una categoría raíz. |
@@ -75,7 +75,8 @@ existir en la misma jerarquía, pero los términos pueden añadirse en cualquier
    especial a infracciones penales o al revés, es un error.
 4. Que una categoría de naturaleza `SPECIAL_CATEGORY` o `CRIMINAL_OFFENCE`
    (`LegalNature.requiresMaximumProtection()`) resuelva, declarada o heredada, a confidencialidad `HIGH` e integridad
-   `HIGH`.
+   `HIGH`. Un record `DataCategory` construido a mano está sujeto a la misma regla: su constructor lanza
+   `IllegalArgumentException` en otro caso.
 5. `secret` se combina con OR hacia abajo; los atributos se heredan y los de la hija prevalecen; los rasgos se heredan
    y se suman a los propios de la hija.
 6. Que todo `replacedBy` exista en la misma jerarquía y que las sustituciones no formen un ciclo (para categorías,
@@ -83,6 +84,9 @@ existir en la misma jerarquía, pero los términos pueden añadirse en cualquier
 7. Que la sustituta de una categoría obsoleta proteja al menos tanto: una naturaleza que la obsoleta admita,
    confidencialidad e integridad no inferiores, y `secret` si la obsoleta es secreta. Una declaración que nombra la
    clave obsoleta se clasifica con su sustituta, así que una más débil rebajaría la protección sin avisar.
+8. Que la sustituta de un término obsoleto lleve todos los rasgos del término que sustituye, para categorías de datos,
+   usos de datos y sujetos de datos, ya que las declaraciones que aún nombran la clave obsoleta se comprueban con la
+   sustituta: una sustituta sin el rasgo levantaría una regla que lo leía.
 
 Consulta [Niveles de protección](protection-levels.md#regla-de-herencia).
 
@@ -97,7 +101,7 @@ taxonomía estándar:
   de protección;
 - llamar a `origin(...)`: los términos que añade una extensión llevan su nombre;
 - llamar a `since` o `deprecated` sobre un término que no añadió (uno cuyo origen es otro): solo deprecia sus propios
-  términos.
+  términos. Se comprueba al hacer la llamada, frente a la extensión que contribuye entonces.
 
 Elevar siempre está permitido, y combinar no depende del orden: dos extensiones que elevan la misma categoría dan el
 más estricto de sus niveles, se aplique primero la que se aplique. Una aplicación que usa el constructor directamente
@@ -112,7 +116,7 @@ Todos son `TaxonomyException` (mensajes tal como los produce el código):
 | `category`/`dataUse`/`dataSubject`, clave no válida | `Invalid key '<key>': use lower-case segments separated by dots` |
 | `category`/`dataUse`/`dataSubject`, clave duplicada | `Duplicate key '<key>'` |
 | `refineCategory`/`refineDataUse`/`refineDataSubject`, clave desconocida | `Cannot refine unknown data category '<key>'` (o `data use`, `data subject`) |
-| `extend`, nombre reservado o en blanco | `Invalid extension name '<name>' in <class>` |
+| `extend`, nombre reservado (`fideslang`, `linneo`, `application`) o en blanco | `Invalid extension name '<name>' in <class>` |
 | `origin`, en blanco | `The origin of terms must not be blank` |
 | `origin`, llamado por una extensión | `The extension '<name>' cannot change the origin of its terms` |
 | `category`, raíz añadida por una extensión | `The extension '<name>' cannot add the root data category '<key>': an extension adds data categories below existing ones` |
@@ -121,6 +125,7 @@ Todos son `TaxonomyException` (mensajes tal como los produce el código):
 | `traits`, no aplicable a la jerarquía | `The trait <trait> does not apply to the <hierarchy> '<key>'` |
 | `deprecated`, versión en blanco | `The deprecation of '<key>' needs the version that deprecated it` |
 | `since`/`deprecated`, de una extensión sobre un término que no añadió | `The extension '<name>' cannot set the version that introduced '<key>', which comes from '<origin>'` (o `deprecate`) |
+| cualquier método de un borrador, llamado después de que su customizer haya terminado | `The draft of '<key>' can only be changed inside the customizer that received it` |
 | `build`, falta el padre | `The parent '<parent>' of data category '<key>' does not exist` (o `data use`, `data subject`) |
 | `build`, raíz incompleta | `Root data category '<key>' must declare its nature, confidentiality and integrity` |
 | `build`, naturaleza no admitida | `Data category '<key>' declares nature <n>, which its parent '<parent>' (<pn>) does not admit` |
@@ -128,6 +133,7 @@ Todos son `TaxonomyException` (mensajes tal como los produce el código):
 | `build`, falta la sustituta | `The replacement '<r>' of data category '<key>' does not exist` |
 | `build`, ciclo de sustituciones | `The replacements of data category '<key>' form a cycle` |
 | `build`, la sustituta protege menos | `The replacement '<r>' of data category '<key>' has weaker protection: <nature>, <c>, <i>[, secret] instead of <nature>, <c>, <i>[, secret]` |
+| `build`, a la sustituta le falta un rasgo | `The replacement '<r>' of data category '<key>' lacks its traits [<trait>, ...]` (o `data use`, `data subject`) |
 
 ### Ejemplo
 
@@ -155,7 +161,7 @@ existentes.
 
 | Método | Descripción |
 |---|---|
-| `String name()` | Se registra como `origin` de los términos que añade la extensión. Un nombre corto y estable; nunca `"fideslang"` ni `"linneo"`. También es la clave de ordenación al cargar extensiones y la identidad que garantiza que una extensión se aplique una sola vez: dos clases distintas no pueden compartir nombre. |
+| `String name()` | Se registra como `origin` de los términos que añade la extensión. Un nombre corto y estable; nunca `"fideslang"`, `"linneo"` ni `"application"`. También es la clave de ordenación al cargar extensiones y la identidad que garantiza que una extensión se aplique una sola vez: dos clases distintas no pueden compartir nombre. |
 | `void contribute(TaxonomyBuilder builder)` | Añade o refina términos. El constructor ya contiene los términos estándar (si se empezó con `withStandard()`) y las extensiones aplicadas antes que esta. |
 
 Una extensión añade categorías de datos por debajo de las existentes, usos de datos y sujetos de datos, eleva la
@@ -250,7 +256,9 @@ más reciente de Linneo.
 
 Las propiedades declaradas de una categoría mientras el constructor está abierto; es lo que reciben los
 personalizadores de `category` y `refineCategory`. Toda faceta declarada es un **mínimo**, y toda faceta no declarada
-se hereda del padre en `build()`. Todos los métodos devuelven el mismo borrador para encadenar llamadas.
+se hereda del padre en `build()`. Todos los métodos devuelven el mismo borrador para encadenar llamadas. Un borrador
+solo se puede cambiar dentro del personalizador que lo recibió: guardarlo y llamar a un método después lanza
+`TaxonomyException`.
 
 | Método | Descripción |
 |---|---|
@@ -272,7 +280,8 @@ padre en `build()`.
 `io.github.devbpm.linneo.TermDraft` — `public sealed class TermDraft permits CategoryDraft`, `@since 0.1.0`
 
 Los rasgos y el ciclo de vida declarados de un término mientras el constructor está abierto; es lo que reciben los
-personalizadores de `dataUse`, `dataSubject`, `refineDataUse` y `refineDataSubject`.
+personalizadores de `dataUse`, `dataSubject`, `refineDataUse` y `refineDataSubject`. Igual que con un `CategoryDraft`,
+sus métodos lanzan `TaxonomyException` cuando el personalizador que recibió el borrador ya ha terminado.
 
 | Método | Descripción |
 |---|---|

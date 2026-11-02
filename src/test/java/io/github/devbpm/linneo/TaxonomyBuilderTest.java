@@ -210,7 +210,8 @@ class TaxonomyBuilderTest {
     @DisplayName("a deprecated category cannot be replaced by one with weaker protection")
     void replacementKeepsProtection() {
         TaxonomyBuilder toOrdinary = Taxonomy.builder().withStandard().refineCategory(
-                Categories.USER_HEALTH_AND_MEDICAL_DISABILITY, c -> c.deprecated("0.2.0", Categories.USER_CONTACT_EMAIL));
+                Categories.USER_HEALTH_AND_MEDICAL_DISABILITY,
+                c -> c.deprecated("0.2.0", Categories.USER_CONTACT_EMAIL));
         TaxonomyBuilder lowerConfidentiality = root()
                 .category("data.a", "A", "", c -> c.confidentiality(Confidentiality.HIGH).deprecated("2.0", "data.b"))
                 .category("data.b", "B", "");
@@ -317,6 +318,36 @@ class TaxonomyBuilderTest {
                         () -> Taxonomy.builder().withStandard().extend(deprecates)),
                 () -> assertTrue(Taxonomy.builder().withStandard().extend(own).build()
                         .requireCategory("user.nickname").info().isDeprecated()));
+    }
+
+    @Test
+    @DisplayName("a draft changes only inside its customizer, and the lifecycle check holds at the time of the change")
+    void draftsAreClosed() {
+        CategoryDraft[] kept = new CategoryDraft[1];
+        TaxonomyExtension escapes = extension("escapes", b -> {
+            b.refineCategory(Categories.USER_CONTACT_EMAIL, c -> kept[0] = c);
+            kept[0].deprecated("9.9", null);
+        });
+        TaxonomyExtension nested = extension("nested", b -> b.refineCategory(Categories.USER_CONTACT_EMAIL,
+                c -> b.refineCategory(Categories.USER_CONTACT_EMAIL, inner -> inner.secret())
+                        .refineCategory(Categories.USER_NAME, x -> c.deprecated("9.9", null))));
+        TaxonomyBuilder builder = Taxonomy.builder().withStandard();
+        builder.refineCategory(Categories.USER_NAME, c -> kept[0] = c);
+        builder.build();
+        assertAll(
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard().extend(escapes)),
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard().extend(nested)),
+                () -> assertThrows(TaxonomyException.class, () -> kept[0].deprecated("1.0", null)),
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder()
+                        .extend(extension(TaxonomyBuilder.DEFAULT_ORIGIN, b -> { }))));
+    }
+
+    @Test
+    @DisplayName("a special category or criminal offence category cannot be made with lower levels, even by hand")
+    void recordValidates() {
+        assertThrows(IllegalArgumentException.class, () -> new DataCategory(new TermInfo("x", null, "X", "",
+                "application", null, null, null), LegalNature.SPECIAL_CATEGORY, Confidentiality.LOW, Integrity.LOW,
+                false, null, null));
     }
 
     private static TaxonomyExtension extension(String name, java.util.function.Consumer<TaxonomyBuilder> body) {

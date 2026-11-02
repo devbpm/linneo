@@ -30,10 +30,11 @@ gestiona la violación. Las instancias son inmutables; construye una con [`Breac
 Es una **orientación para las primeras horas, no una decisión**: el responsable evalúa el riesgo de cada violación, y el
 delegado de protección de datos decide si hay que notificar. Una gravedad baja se lee como una violación que
 probablemente no entraña un riesgo (artículo 33.1), que se documenta (artículo 33.5) pero no se notifica; una alta o muy
-alta, como un riesgo alto, que además se comunica a los interesados (artículo 34.1) salvo que los datos fueran
-ininteligibles (artículo 34.3.a). Una violación solo de la confidencialidad de datos que eran ininteligibles, como los
-cifrados con una clave que no quedó comprometida, tampoco entraña probablemente un riesgo y no se notifica, sea cual
-sea su puntuación (Directrices 9/2022 del CEPD, y 01/2021, caso 1).
+alta, como un riesgo alto, que además se comunica a los interesados (artículo 34.1). Una violación solo de la
+confidencialidad de datos que eran ininteligibles, como los cifrados con una clave que no quedó comprometida, no entraña
+probablemente un riesgo: ni se notifica ni se comunica, sea cual sea su puntuación (artículo 34.3.a; Directrices 9/2022
+del CEPD, y 01/2021, caso 1). Si esos datos además se perdieron o se alteraron, el cifrado protege lo que se leyó, no lo
+que se perdió, así que se notifica a la autoridad y, con una gravedad alta, se informa a los interesados.
 
 ## Cómo se puntúa
 
@@ -59,8 +60,8 @@ categorías.
 |---|---|---|
 | `MAXIMUM` | 1 | incluyen un `DIRECT_IDENTIFIER`: un nombre (`user.name`), un documento de identidad (`user.government_id`), datos biométricos (`user.biometric`) o una imagen (`user.content.self_image`) |
 | `SIGNIFICANT` | 0,75 | incluyen un `CONTACT_IDENTIFIER`: datos de contacto (`user.contact`) o de cuenta (`user.account`) |
-| `LIMITED` | 0,5 | incluyen un `INDIRECT_IDENTIFIER`: identificadores internos (`user.unique_id`) o de dispositivo (`user.device`); o cualquier valor declarado seudonimizado; un identificador directo o de contacto seudonimizado también es `LIMITED` |
-| `NEGLIGIBLE` | 0,25 | no tienen ninguno de ellos |
+| `LIMITED` | 0,5 | incluyen un `INDIRECT_IDENTIFIER`: identificadores internos (`user.unique_id`) o de dispositivo (`user.device`); o cualquier valor declarado seudonimizado (un identificador directo o de contacto seudonimizado también es `LIMITED`); o cualquier otro dato personal, que referido a alguien lo identifica con cierto esfuerzo aunque no haya ningún identificador entre los campos |
+| `NEGLIGIBLE` | 0,25 | no contienen datos personales: nada es personal, un valor anonimizado o agregado incluido |
 
 Ambos pueden ajustarse, como prevé la metodología, cuando el contexto de los datos lo pide: véanse
 [`adjustContext`](#builder) e [`identification`](#builder).
@@ -94,7 +95,7 @@ La **gravedad** es el nivel de la puntuación (`contexto × identificación + ci
 | Método | `true` cuando | Artículo |
 |---|---|---|
 | `notifyAuthority()` | hay datos personales afectados, la gravedad no es `LOW` y **no** se perdió solo la confidencialidad de datos ininteligibles (`unintelligible(true)` sin pérdida de integridad ni de disponibilidad declarada) | 33.1: notificar a la autoridad de control en un plazo de 72 horas desde que se tiene constancia de la violación. Una violación `LOW`, y una violación solo de la confidencialidad de datos ininteligibles (Directrices 9/2022 del CEPD y 01/2021, caso 1), solo se documenta (33.5). |
-| `communicateToSubjects()` | hay datos personales afectados, la gravedad es `HIGH` o `VERY_HIGH` y los datos **no** se declararon ininteligibles | 34.1: informar a los interesados sin dilación indebida. 34.3.a: no hace falta si los datos eran ininteligibles para cualquiera sin acceso a ellos, por ejemplo cifrados con una clave robusta que no se vio comprometida (`unintelligible(true)`). |
+| `communicateToSubjects()` | hay datos personales afectados, la gravedad es `HIGH` o `VERY_HIGH`, y **no** se perdió solo la confidencialidad de datos ininteligibles (`unintelligible(true)` sin pérdida de integridad ni de disponibilidad declarada) | 34.1: informar a los interesados sin dilación indebida. 34.3.a: no hace falta cuando solo se perdió la confidencialidad de datos que eran ininteligibles para cualquiera sin acceso a ellos, por ejemplo cifrados con una clave robusta que no se vio comprometida (`unintelligible(true)`). El cifrado protege lo que se leyó, no lo que se perdió o se alteró: con una pérdida de integridad o de disponibilidad declarada, se informa a los interesados. |
 | `manyIndividuals()` | se declaró que se vieron afectadas más de 100 personas | Un indicador de la metodología que pesa en la evaluación sin cambiar la puntuación. |
 
 ## Miembros
@@ -103,9 +104,9 @@ La **gravedad** es el nivel de la puntuación (`contexto × identificación + ci
 |---|---|---|
 | `static Builder builder()` | [`Builder`](#builder) | Inicia una evaluación sin ningún campo afectado ni ninguna pérdida declarada. |
 | `int dataProcessingContext()` | `int` | El contexto, de 1 a 4 tras cualquier ajuste; 0 cuando ningún campo afectado contiene datos personales. |
-| `String contextReason()` | `String` | Por qué el contexto tiene su puntuación: el tipo de datos y el campo que lo fija, en inglés, con el ajuste si lo hay. |
+| `String contextReason()` | `String` | Por qué el contexto tiene su puntuación: el tipo de datos y el campo que lo fija, en inglés, con el ajuste si lo hay. Con puntuaciones iguales da el motivo el campo de clave menor, así que no depende del orden de los campos. |
 | `Identification identification()` | nivel | La facilidad de identificación. Cada `Identification` tiene un `score()`: 0,25, 0,5, 0,75 o 1. |
-| `String identificationReason()` | `String` | Los identificadores encontrados o el motivo dado, en inglés. |
+| `String identificationReason()` | `String` | Los identificadores encontrados o el motivo dado, en inglés; con niveles iguales, la clave menor. |
 | `double circumstances()` | `double` | Los puntos de las circunstancias, de 0 a 2. |
 | `double score()` | `double` | `contexto × identificación + circunstancias`. |
 | `Severity severity()` | nivel | El nivel de la puntuación. |
@@ -169,12 +170,13 @@ This is an orientation: the controller assesses the risk of each breach.
 ```
 
 La puntuación es `4 × 1 + 0,25`: datos sensibles que nombran a las personas, enviados a destinatarios conocidos. Si esos
-mismos datos se hubieran declarado `unintelligible(true)`, solo se habría perdido su confidencialidad, así que tampoco
-se notificaría a la autoridad: la explicación diría que solo se perdió la confidencialidad de datos ininteligibles
-(Directrices 9/2022 del CEPD) y que la violación se documenta, no se notifica. Con una pérdida de integridad o de
-disponibilidad declarada, la autoridad se notificaría y la penúltima línea diría que no hace falta informar a los
-interesados (artículo 34.3.a). Una violación que solo afecta a calificaciones e identificadores internos, sin que se
-haya revelado nada, puntúa 0,5 (`LOW`): documéntala, no la notifiques.
+mismos datos se hubieran declarado `unintelligible(true)`, solo se habría perdido su confidencialidad, así que no se
+informaría ni a la autoridad ni a los interesados: la explicación diría que solo se perdió la confidencialidad de datos
+ininteligibles (Directrices 9/2022 del CEPD) y que la violación se documenta, no se notifica, y la penúltima línea diría
+que no hace falta informar a los interesados (artículo 34.3.a). Con una pérdida de integridad o de disponibilidad
+declarada además, se notificaría a la autoridad y se informaría a los interesados: el cifrado protege lo que se leyó, no
+lo que se perdió o se alteró. Una violación que solo afecta a calificaciones e identificadores internos, sin que se haya
+revelado nada, puntúa 0,5 (`LOW`): documéntala, no la notifiques.
 
 Véase también: [ImpactScreening](impact-screening.md) · [ProcessingChecker](checker.md) ·
 [Classifier](../classify/classifier.md) · [Actividades de tratamiento](README.md)

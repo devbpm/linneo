@@ -53,7 +53,7 @@ mensajes.
 
 | Fila | Se muestra | Contenido |
 |---|---|---|
-| `Purposes (art. 30.1.b)` | siempre | ``<name> (`<key>`)`` de cada finalidad, separadas por `; `, o `None` |
+| `Purposes (art. 30.1.b)` | siempre | ``<name> (`<key>`)`` de cada finalidad, en orden de clave, separadas por `; `, o `None` |
 | `Lawful basis (art. 6.1)` | si se declara | `Art. <article>: <fideslang name>` |
 | `Legitimate interest` | solo si la base es `LEGITIMATE_INTERESTS` y se indica un interés | el interés |
 | `Special categories (art. 9.2)` | si se declara | `Art. <article>: <fideslang name>` por cada condición, separadas por `; ` |
@@ -163,7 +163,7 @@ declaración. Los miembros opcionales se omiten cuando la actividad no los decla
 |---|---|---|
 | `key`, `name` | siempre | cadenas |
 | `description` | si se declara | cadena (conserva los saltos de línea) |
-| `purposes`, `dataSubjects`, `dataCategories` | siempre | arrays de claves, ya resueltas (claves obsoletas sustituidas, categorías no personales descartadas) |
+| `purposes`, `dataSubjects`, `dataCategories` | siempre | arrays de claves en orden de clave, ya resueltas (claves obsoletas sustituidas, categorías no personales descartadas) |
 | `legalBasis` | si se declara | `{"code": <constant>, "article": <article>, "fideslang": <fideslang name>}` |
 | `legitimateInterest` | solo si la base es `LEGITIMATE_INTERESTS` y se indica un interés | cadena |
 | `specialCategoryConditions` | si se declara | array de objetos como `legalBasis`, uno por cada condición |
@@ -196,8 +196,10 @@ de datos y el que rige ahora. `fingerprint()` dice de una vez si algo cambió, y
 
 `fingerprint()` es el SHA-256 (UTF-8, hexadecimal en minúscula, 64 dígitos) del contenido del registro, actividad a
 actividad por orden de clave y aspecto a aspecto como los compara `RecordDiff`. Dos registros tienen la misma huella
-exactamente cuando `RecordDiff` no encuentra ningún cambio entre ellos, sea cual sea el orden de sus actividades. Dice
-que algo cambió, no qué. Una aplicación la guarda junto al registro que aprobó el delegado, para saber si el registro
+exactamente cuando `RecordDiff` no encuentra ningún cambio entre ellos, sea cual sea el orden de sus actividades. El
+cribado de la necesidad de una evaluación de impacto forma parte del contenido, así que un cambio en los rasgos de un
+término que cambia el cribado cambia la huella, aunque no haya cambiado ninguna declaración. Dice que algo cambió, no
+qué. Una aplicación la guarda junto al registro que aprobó el delegado, para saber si el registro
 sigue siendo ese. El texto que se resume escribe un sustituto UTF-16 suelto, que UTF-8 no puede codificar, como una
 barra invertida, `u` y sus cuatro dígitos hexadecimales, de modo que dos registros que solo difieren en un carácter así
 nunca tienen la misma huella.
@@ -258,7 +260,7 @@ El constructor canónico lanza `NullPointerException` si `activity` o `direction
 
 | Miembro | Descripción |
 |---|---|
-| `boolean isGovernance()` | `true` si cambió un aspecto de la [gobernanza](activity.md#governance) y nada más salvo los puntos abiertos: un cambio que hizo la función de protección de datos, con el alcance que declara el código y los datos que alcanza sin cambios. Los puntos abiertos que se derivan de él pueden cambiar también. |
+| `boolean isGovernance()` | `true` si cambió un aspecto de la [gobernanza](activity.md#governance) y nada más salvo los puntos abiertos y el cribado: un cambio que hizo la función de protección de datos, con el alcance que declara el código y los datos que alcanza sin cambios. Los puntos abiertos y el cribado que se derivan de él pueden cambiar también. |
 
 `toString()` es `activity '<key>': <aspects>`, seguido de la dirección salvo que sea `SAME`.
 
@@ -286,14 +288,17 @@ el aspecto forma parte de la gobernanza y no del alcance declarado en el código
 | `TRANSFERS` | `true` | Las transferencias a terceros países u organizaciones internacionales. |
 | `RETENTION` | `true` | El plazo de supresión. |
 | `IMPACT_ASSESSMENT` | `true` | La evaluación de impacto. |
-| `RISK_FACTORS` | `true` | Los [factores de riesgo](impact-screening.md#declarar-factores-de-riesgo) que declara el delegado para el cribado de la necesidad de una evaluación de impacto. |
-| `OPEN_POINTS` | `false` | Los puntos abiertos: los avisos de la actividad. |
+| `RISK_FACTORS` | `true` | Los [factores de riesgo](impact-screening.md#declarar-factores-de-riesgo) que declara el delegado en la gobernanza para el cribado de la necesidad de una evaluación de impacto. |
+| `DECLARED_RISK_FACTORS` | `false` | Los factores de riesgo que declara el código (`ProcessingActivity.riskFactors()`): parte del alcance. |
+| `SCREENING` | `false` | El [cribado](impact-screening.md) de la necesidad de una evaluación de impacto: su resultado, su caso obligatorio y sus criterios. Cambia con los rasgos de los términos aunque no cambie ninguna declaración. |
+| `OPEN_POINTS` | `false` | Los puntos abiertos: los avisos de la actividad, comparados solo por código y elemento, de modo que un cambio en la redacción de la biblioteca no es un cambio del registro. |
 
 Editar la conservación o los destinatarios es un cambio de gobernanza, y suele cerrar también un punto abierto. Editar
-los factores de riesgo lo es también: el aviso sobre la evaluación de impacto nombra los criterios que se cumplen, así
-que cambia `RISK_FACTORS` y, cuando el aviso cambia con ellos, `OPEN_POINTS`. Un cambio en los datos que alcanza la
-actividad, como un campo nuevo en una entidad de la lista o una categoría más estricta, se ve en `PERSONAL_DATA` o en
-`PROTECTION` y no lo es.
+los factores de riesgo de la gobernanza lo es también: el cribado nombra los criterios que se cumplen, así que cambia
+`RISK_FACTORS` y `SCREENING` y, cuando el aviso sobre la evaluación de impacto aparece o desaparece, `OPEN_POINTS`;
+`isGovernance()` ignora `SCREENING` y `OPEN_POINTS`. Un cambio en los datos que alcanza la actividad, como un campo
+nuevo en una entidad de la lista o una categoría más estricta, se ve en `PERSONAL_DATA` o en `PROTECTION` y no es un
+cambio de gobernanza.
 
 Véase también: [ProcessingChecker](checker.md) · [ProcessingActivity](activity.md) · [Bases jurídicas](bases.md) ·
 [Actividades de tratamiento](README.md)

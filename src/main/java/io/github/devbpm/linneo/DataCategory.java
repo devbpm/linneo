@@ -49,13 +49,19 @@ public record DataCategory(TermInfo info, LegalNature nature, Confidentiality co
      * @param secret whether it is a secret
      * @param attributes the application-defined attributes
      * @param traits the traits, or {@code null} for none
-     * @throws IllegalArgumentException if a trait does not apply to data categories
+     * @throws IllegalArgumentException if a trait does not apply to data categories, or special category or criminal
+     *         offence data is not at {@code HIGH} confidentiality and integrity
      */
     public DataCategory {
         Objects.requireNonNull(info, "info");
         Objects.requireNonNull(nature, "nature");
         Objects.requireNonNull(confidentiality, "confidentiality");
         Objects.requireNonNull(integrity, "integrity");
+        if (nature.requiresMaximumProtection()
+                && (confidentiality != Confidentiality.HIGH || integrity != Integrity.HIGH)) {
+            throw new IllegalArgumentException("'" + info.key() + "' is " + nature + " data and needs HIGH"
+                    + " confidentiality and integrity");
+        }
         attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
         traits = Trait.checked(traits, TermChange.Hierarchy.DATA_CATEGORY, info.key());
     }

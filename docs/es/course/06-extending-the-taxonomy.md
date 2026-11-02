@@ -79,8 +79,9 @@ public final class CampusTaxonomy implements TaxonomyExtension {
 ### `name()`
 
 Un nombre corto y estable. Se registra como **origen** de todos los términos que añade la extensión, de modo que los
-informes distinguen los términos de «campus» de los de «fideslang» y «linneo». Esos dos nombres están reservados: una
-extensión llamada `"fideslang"` o `"linneo"` (o con el nombre vacío) se rechaza con
+informes distinguen los términos de «campus» de los de «fideslang» y «linneo». Tres nombres están reservados: una
+extensión llamada `"fideslang"`, `"linneo"` o `"application"` (el origen de los términos que añade la propia
+aplicación), o con el nombre vacío, se rechaza con
 `Invalid extension name 'linneo' in edu.example.university.CampusTaxonomy`. Aplicar dos veces la misma clase de
 extensión no tiene efecto la segunda vez, pero dos clases distintas con el mismo nombre se rechazan (véase más abajo).
 El nombre `"university"` lo usa la [extensión incluida en Linneo](#la-extensión-universitaria-incluida-en-linneo); no lo
@@ -101,6 +102,10 @@ reutilices.
 | `traits(Trait...)` | rasgos que leen las reglas jurídicas de Linneo, que heredan las hijas (ver [más abajo](#rasgos)) |
 | `since(version)` | la versión de tu extensión que introdujo el término |
 | `deprecated(sinceVersion, replacedBy)` | declara obsoleto el término; `replacedBy` puede ser `null` |
+
+Un borrador solo se puede cambiar dentro del personalizador que lo recibió: si lo guardas y llamas a un método después,
+el constructor lanza `TaxonomyException`. Una extensión solo puede cambiar el ciclo de vida (`since`, `deprecated`) de
+los términos que añadió, y el constructor lo comprueba al hacer cada cambio.
 
 Con esta extensión, `user.education.lab_notebook` queda así:
 
@@ -147,9 +152,10 @@ la raíz `advancement`. `refineDataUse` y `refineDataSubject` añaden rasgos o u
 Un **rasgo** es una propiedad de un término que leen las reglas jurídicas de Linneo, para que sigan a la taxonomía y no
 a listas de claves: `EVALUATION` marca una finalidad que puntúa a las personas, `MONITORING` una que las observa,
 `VULNERABLE` un interesado en una posición más débil que el responsable, `DIRECT_MARKETING` una finalidad a la que el
-interesado siempre puede oponerse, y así sucesivamente (la [referencia](../reference/terms.md#trait) enumera los diez y
-las jerarquías a las que se aplica cada uno). Un término tiene sus propios rasgos y los de sus ancestros. Si la
-universidad puntúa a los solicitantes, dilo en la finalidad y el cribado de impacto del módulo 9 lo verá:
+interesado siempre puede oponerse, `BIOMETRIC` y `GENETIC` datos de esas clases, `RESEARCH` una finalidad de
+investigación, y así sucesivamente (la [referencia](../reference/terms.md#trait) enumera los trece y las jerarquías a
+las que se aplica cada uno). Un término tiene sus propios rasgos y los de sus ancestros. Si la universidad puntúa a los
+solicitantes, dilo en la finalidad y el cribado de impacto del módulo 9 lo verá:
 
 ```java
 .dataUse("education.applicant_ranking", "Applicant ranking", "Ranks applicants for admission.",
@@ -159,7 +165,8 @@ universidad puntúa a los solicitantes, dilo en la finalidad y el cribado de imp
 
 Un rasgo solo puede declararse en una jerarquía a la que se aplica: `Trait.EVALUATION` en una categoría lanza
 `The trait EVALUATION does not apply to the DATA_CATEGORY '<key>'`. Añadir un rasgo a un término endurece las reglas, así
-que es un cambio menor de una taxonomía; quitarlo es un cambio mayor.
+que es un cambio menor de una taxonomía; quitarlo es un cambio mayor. Los rasgos son una ayuda: permiten que las
+reglas vean lo que una clave no dice, y el delegado de protección de datos sigue revisando cada resultado.
 
 ### Declarar obsoletos tus propios términos
 
@@ -174,7 +181,9 @@ declárala obsoleta:
 ```
 
 Los campos que siguen anotados con la clave antigua continúan funcionando, se clasifican con
-`user.education.lab_notebook` y producen el aviso que viste en el módulo 4:
+`user.education.lab_notebook` y producen el aviso que viste en el módulo 4. Como se comprueban con la sustituta, esta
+debe llevar todos los rasgos del término que sustituye (si no, `TaxonomyException`), o una regla que leía el término
+antiguo dejaría de leerlo:
 
 ```
 WARNING DEPRECATED_CATEGORY edu.example.university.LabNotebook.file: data category 'user.education.lab_journal' is deprecated; use 'user.education.lab_notebook'
@@ -251,7 +260,7 @@ Linneo incluye extensiones opcionales para varios sectores. Este módulo usa la 
 `UniversityTaxonomy`, en el paquete
 `io.github.devbpm.linneo.extension.university`. Añade 32 categorías de datos (asistencia, situación académica,
 adaptaciones, solicitudes de admisión y su evaluación, notas finales, reconocimiento de créditos, títulos, prácticas,
-valoraciones de renta, exenciones de tasas, donaciones…), 27 usos de datos (entre ellos dos raíces nuevas,
+valoraciones de renta, exenciones de tasas, donaciones…), 28 usos de datos (entre ellos dos raíces nuevas,
 `advancement` y `research`) y 12 interesados (futuro estudiante, doctorando, estudiante de intercambio, donante, autor
 de cartas de referencia…). La [referencia](../reference/extensions/university.md) enumera todos los
 términos con su protección. Las otras cuatro extensiones incluidas (finanzas, cadena de suministro, operaciones de
@@ -269,7 +278,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-`taxonomy.toString()` imprime `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: las 126 categorías
+`taxonomy.toString()` imprime `Taxonomy[160 data categories, 91 data uses, 35 data subjects]`: las 126 categorías
 estándar, 32 de `university` y 2 de `campus`. Sus claves tienen constantes en `UniversityCategories`,
 `UniversityDataUses` y `UniversityDataSubjects`, así que funcionan en las anotaciones igual que las estándar:
 
@@ -352,7 +361,8 @@ de otra extensión solo si el nombre de esa extensión va antes que el tuyo en o
 - **No declarar rasgos en los términos que las reglas deberían ver.** Una finalidad que puntúa a las personas sin el
   rasgo `EVALUATION` es invisible para el cribado de impacto.
 - **Renombrar una clave** en lugar de declararla obsoleta con una sustituta.
-- **Usar `"linneo"` o `"fideslang"` como nombre de la extensión**, o `"university"`, que usa la extensión incluida.
+- **Usar `"linneo"`, `"fideslang"` o `"application"` como nombre de la extensión**, o `"university"`, que usa la
+  extensión incluida.
 - **Añadir una clave que ya tiene la extensión universitaria incluida** en lugar de aplicarla.
 
 ## Ejercicios
@@ -481,7 +491,7 @@ Taxonomy taxonomy = Taxonomy.builder()
         .build();
 ```
 
-1. `Taxonomy[160 data categories, 90 data uses, 35 data subjects]`: 126 + 32 + 2 categorías, 63 + 27 usos y
+1. `Taxonomy[160 data categories, 91 data uses, 35 data subjects]`: 126 + 32 + 2 categorías, 63 + 28 usos y
    22 + 12 + 1 interesados. Aplicar las dos extensiones en el orden contrario da la misma taxonomía.
 2. `university` y `campus`.
 3. `extend(new CampusTaxonomy())` lanza `TaxonomyException` con `Duplicate key 'user.education.thesis'`.

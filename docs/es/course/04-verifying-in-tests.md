@@ -138,11 +138,11 @@ Los mensajes de abajo son exactamente los que produce Linneo (con `X` para la cl
 
 | Código | Gravedad | Mensaje | Corrección |
 |---|---|---|---|
-| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (o `on Superclase or X` para un campo heredado) | Añade `@Category` (o `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), o una `@DefaultCategory` no personal si la clase no contiene datos personales; en una clase embebida, márcala `@Composite` |
+| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (o `on Superclase or X` para un campo heredado) | Añade `@Category` (o `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), o una `@DefaultCategory` no personal si la clase no contiene datos personales; en una clase embebida, márcala `@Composite`; en una referencia a un registro con datos personales (el mensaje empieza por `the class default 'k' does not apply: the field refers to X ...`), declara lo que guarda el campo, normalmente `@DerivedFrom(type = X.class, value = "id")` |
 | `UNKNOWN_CATEGORY` | error | `unknown data category 'k'` | Corrige la clave (usa las constantes de `Categories`) o asegúrate de que se carga la extensión que la define (`Taxonomy.load()`) |
 | `PERSONAL_DEFAULT` | error | `@DefaultCategory of X names 'k', which is personal data: declare personal fields one by one with @Category` | Quita el valor por defecto y anota los campos personales uno a uno |
 | `MISSING_REASON` | error | `@DefaultCategory of X needs a reason`, `@Exempt needs a reason` o `@CategoryByRow needs declaredBy` | Escribe el motivo para el revisor |
-| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom` o `@CategoryByRow cannot be combined with @Category or @DerivedFrom` | Deja solo una (`@Category` con `@DerivedFrom` está permitido) |
+| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom`, `@CategoryByRow cannot be combined with @Category or @DerivedFrom` o `@Exempt is for a field that holds no data of the model, and this one ...` | Deja solo una (`@Category` con `@DerivedFrom` está permitido); una relación con un registro con datos personales se declara con `@DerivedFrom`, no se exime |
 | `LOWERED_LEVEL` | error | `confidentiality LOW is lower than the MEDIUM of 'k'` (o `integrity ...`) | Quita el elemento o súbelo; los niveles solo suben |
 | `AMBIGUOUS_VALUE` | error | `confidentiality must have at most one value` (o `integrity`, `identifiability`) | Indica un solo valor |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `'k' is not personal data and has no identifiability` | Quita `identifiability` o comprueba que la clave es la correcta |
@@ -150,7 +150,7 @@ Los mensajes de abajo son exactamente los que produce Linneo (con `X` para la cl
 | `UNKNOWN_SOURCE` | error | `@DerivedFrom needs at least one source` o `the source 's' is not a classified field of X` o `the source 's' has an error` | Nombra un campo clasificado como fuente; un campo `@Exempt` o con un error no puede ser fuente |
 | `AMBIGUOUS_DERIVATION` | error | `its sources [...] have different classifications; declare the category of the derived value with @Category` | Añade `@Category` al campo derivado |
 | `WEAKER_THAN_SOURCE` | error | `'k' protects less than its source(s) [...]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature` | Declara una categoría que proteja al menos tanto, o quita `@Category` para tomar la de la fuente |
-| `WEAKER_THAN_PARTS` | error | `'k' protects less than the fields of X need (...)` | Declara una categoría que cubra todos los campos del compuesto guardado como un solo valor |
+| `WEAKER_THAN_PARTS` | error | `'k' protects less than the fields of X need (...)` o `the fields of [X] have errors, so what 'k' must protect is unknown` | Declara una categoría que cubra todos los campos del compuesto guardado como un solo valor; corrige antes los errores de los campos del compuesto |
 | `CYCLE` | error | `the composite X contains itself; classify the field as one value with @Category or @CategoryByRow` o `is derived from itself through other derived fields` | Clasifica como un solo valor el campo que cierra el bucle, o rompe la derivación circular |
 | `DEPRECATED_CATEGORY` | **aviso** | `data category 'k' is deprecated; use 'r'` | Sustituye la clave por la sugerida |
 
@@ -297,7 +297,8 @@ new Classifier(Taxonomy.load()).verify(model);
   todas las claves de la extensión.
 - **Capturar la excepción y limitarse a registrarla en el log.** Lo que se busca es que falle la compilación.
 - **Verificar solo algunas entidades.** Tómalas del metamodelo, o con `ModelClasses`, para que las nuevas queden
-  cubiertas automáticamente.
+  cubiertas automáticamente. Cada clase informa de sus propios problemas, así que una clase fuera de la lista es una
+  clase sin comprobar.
 - **Corregir una infracción añadiendo `@Exempt`** a un campo que contiene datos. Revisa las exenciones como código.
 - **Olvidar `@Composite` en un embebible.** El campo embebido no tiene categoría y se informa como
   `UNCLASSIFIED_FIELD`; la solución es el marcador en la clase embebible, no un `@Exempt` en el campo.
@@ -360,8 +361,10 @@ módulo 3 y no imprime nada (no hay avisos).
 - `Building`: `user.workplace` es personal. Un edificio es un dato de la organización: usa
   `@DefaultCategory(value = ORG_LOCATION, reason = "edificios y aulas de la universidad")` y anota con su propia
   `@Category` cualquier campo personal (por ejemplo, el nombre del responsable del edificio).
-- `Document.attachments`: lleva `@Exempt` junto con otra anotación de clasificación. Un campo de relación no contiene
-  datos por sí mismo: deja solo `@Exempt("relación: cada Attachment se clasifica por separado")`.
+- `Document.attachments`: lleva `@Exempt` junto con otra anotación de clasificación, probablemente `@DerivedFrom`. Deja
+  una sola. Una relación con `Attachment` no se exime: `Attachment` contiene datos personales, así que `@Exempt` solo
+  sería también un error `CONFLICTING_ANNOTATIONS`. Deja `@DerivedFrom(type = Attachment.class, value = "id")`, que
+  declara lo que guarda el campo: las claves de los adjuntos.
 
 **Ejercicio 4.3**
 

@@ -36,8 +36,8 @@ public final class CategoryDraft extends TermDraft {
     private boolean secret;
     private final Map<String, String> attributes = new LinkedHashMap<>();
 
-    CategoryDraft(String key, String name, String description, String origin) {
-        super(TermChange.Hierarchy.DATA_CATEGORY, key, name, description, origin);
+    CategoryDraft(TaxonomyBuilder builder, String key, String name, String description, String origin) {
+        super(builder, TermChange.Hierarchy.DATA_CATEGORY, key, name, description, origin);
     }
 
     /**
@@ -50,6 +50,7 @@ public final class CategoryDraft extends TermDraft {
      *         data and the other is not, or they are special category and criminal offence data
      */
     public CategoryDraft nature(LegalNature nature) {
+        checkOpen();
         Objects.requireNonNull(nature, "nature");
         if (this.nature == null || this.nature.admits(nature)) {
             this.nature = nature;
@@ -67,6 +68,7 @@ public final class CategoryDraft extends TermDraft {
      * @return this draft
      */
     public CategoryDraft confidentiality(Confidentiality confidentiality) {
+        checkOpen();
         Objects.requireNonNull(confidentiality, "confidentiality");
         this.confidentiality = this.confidentiality == null ? confidentiality
                 : this.confidentiality.max(confidentiality);
@@ -80,6 +82,7 @@ public final class CategoryDraft extends TermDraft {
      * @return this draft
      */
     public CategoryDraft integrity(Integrity integrity) {
+        checkOpen();
         Objects.requireNonNull(integrity, "integrity");
         this.integrity = this.integrity == null ? integrity : this.integrity.max(integrity);
         return this;
@@ -91,6 +94,7 @@ public final class CategoryDraft extends TermDraft {
      * @return this draft
      */
     public CategoryDraft secret() {
+        checkOpen();
         this.secret = true;
         return this;
     }
@@ -103,6 +107,7 @@ public final class CategoryDraft extends TermDraft {
      * @return this draft
      */
     public CategoryDraft attribute(String name, String value) {
+        checkOpen();
         if (Objects.requireNonNull(name, "name").isBlank()) {
             throw new TaxonomyException("An attribute of '" + key() + "' has a blank name");
         }

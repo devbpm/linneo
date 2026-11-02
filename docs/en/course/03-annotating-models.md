@@ -344,9 +344,10 @@ public class ScholarshipApplication {              // not part of the model so f
 }
 ```
 
-An unannotated field whose type is a composite (or an array, a collection, an `Optional` or the values of a `Map` of one,
-at any depth) is classified by the composite's fields, with the path `field.part`: `home.street`, `previous.city`,
-`byType.street`. A subclass of a composite is a composite too, since the annotation is inherited.
+An unannotated field whose type is a concrete composite (or an array, a collection or an `Optional` of one, at any
+depth) is classified by the composite's fields, with the path `field.part`: `home.street`, `previous.city`. A subclass
+of a composite is a composite too, since the annotation is inherited. Mark concrete classes and records: an interface
+or an abstract class marked `@Composite` is not embedded, because its implementations may have other fields.
 
 - The composite is resolved with **its own** annotations and `@DefaultCategory`, never with the holder's: a default
   on `ScholarshipApplication` does not reach `Address`.
@@ -355,18 +356,24 @@ at any depth) is classified by the composite's fields, with the path `field.part
   the address, but `@Category(SYSTEM_OPERATIONS)` would be a `WEAKER_THAN_PARTS` error.
 - A composite that contains itself (a `Node` with a list of `Node`) cannot be expanded: the field that closes the
   loop is a `CYCLE` error; classify that field as one value.
-- **Forgetting `@Composite` is safe.** Without it, `home` has no category and takes no class default, because the
-  classifier sees that the class holds classified fields: it reports `UNCLASSIFIED_FIELD`. You do not need to pass the
-  embeddable classes to `verify` separately.
-- **A class default never reaches data the classifier cannot see.** A composite used as a map key or as the type
-  argument of a class that is not a collection (`Wrapper<Address>`), several composites in one field, `Object`, an
-  unbound type variable or a raw container are `UNCLASSIFIED_FIELD` even when the class has a `@DefaultCategory`, so
-  wrapping personal data never turns it into a non-personal default. Declare the category of such a field yourself.
+- **Forgetting `@Composite` is safe.** Without it, `home` is a reference to a record that holds personal data, so it
+  takes no class default: the classifier reports `UNCLASSIFIED_FIELD`. You do not need to pass the embeddable classes
+  to `verify` separately.
+- **A class default never reaches data the classifier cannot see.** Composites in a `Map` (never descended into: its
+  keys are data too), a composite as the type argument of a class that is not a collection (`Wrapper<Address>`),
+  several composites in one field (a generic composite such as `Box<Address>` mentions two), `Object`, `Serializable`,
+  an unbound type variable or a raw container are `UNCLASSIFIED_FIELD` even when the class has a `@DefaultCategory`,
+  so wrapping personal data never turns it into a non-personal default. Declare the category of such a field yourself,
+  as one value: a `Map<String, Address>` with `@Category(USER_CONTACT_ADDRESS)` is then checked against the fields of
+  `Address`.
+- **A reference to another record is personal data when the record is.** A field whose type is another record of the
+  model takes the class default only when that record holds no personal data, as a catalogue entry (`Country`) does.
+  A reference to a person's record, such as the `Attachment`s of a document, is a pseudonymous key: declare what it
+  stores, typically the record's key, with `@DerivedFrom(type = Attachment.class, value = "id")`.
 
 ## `@Exempt`: technical fields
 
-Some fields hold no data of the model: a cache, a technical handle, state that a framework keeps, or a collection of
-other records that are classified on their own, such as the children of a one-to-many association. `@Exempt`
+Some fields hold no data of the model: a cache, a technical handle or state that a framework keeps. `@Exempt`
 excludes them, with a reason:
 
 ```java
@@ -375,7 +382,8 @@ private String renderedMenu;
 ```
 
 A value computed from other fields is **not** such a field: it is data, and uses `@DerivedFrom` or `@Category`. If you
-find yourself writing "computed from..." as a reason, use `@DerivedFrom`.
+find yourself writing "computed from..." as a reason, use `@DerivedFrom`. Neither is a relationship to a record that
+holds personal data. The `Document` of the model has one of those and a technical field:
 
 ```java
 public class Document extends AuditedEntity {
@@ -392,10 +400,17 @@ public class Document extends AuditedEntity {
     @Category(USER_CONTENT_PRIVATE)
     private String documentType;
 
-    @Exempt("relationship: each Attachment is classified on its own")
+    @DerivedFrom(type = Attachment.class, value = "id")   // one-to-many children: it stores their key
     private List<Attachment> attachments;
+
+    @Exempt("client of the file store, opened on demand")
+    private Object fileStore;
 }
 ```
+
+`attachments` is not exempt, although it holds no column of its own: the `Attachment`s are records about a person, so
+a reference to them is personal data, and `@Exempt` there is a `CONFLICTING_ANNOTATIONS` error. `fileStore` is what
+`@Exempt` is for.
 
 Excluded automatically, without any annotation: **`static`** fields, **synthetic** fields (generated by the
 compiler) and fields with the Java **`transient`** modifier, unless a `transient` field carries one of Linneo's
@@ -488,6 +503,8 @@ public class Student extends AuditedEntity {
   of the model; the reason is reviewed.
 - **Exempting a computed value** ("computed from firstName and lastName"). It is data: use `@DerivedFrom`, or
   `@Category` if you know its category.
+- **Exempting a relationship** to a record that holds personal data. A reference to a person's record is personal
+  data: declare what it stores with `@DerivedFrom(type = ..., value = "id")`, as `Document.attachments` does.
 - **Leaving an embedded class without `@Composite`.** A JPA `@Embedded` address is then one field with no category
   (`UNCLASSIFIED_FIELD`). Mark the embeddable class `@Composite` and the fields that hold it are classified by its
   fields; do not `@Exempt` the embedded field.
@@ -748,7 +765,7 @@ many people, may protect less.
 7. `@DerivedFrom("dateOfBirth")`. It takes the classification of its source: `user.demographic.date_of_birth`,
    identified, personal data, with basis `DERIVED`.
 8. `UNCLASSIFIED_FIELD` for that field, even if the class has a default: `Address` has classified fields but is not a
-   composite, so the field may hide data and takes no class default. Mark `Address` `@Composite`, or declare the
-   field's category.
+   composite, so the field is a reference to a record that holds personal data and takes no class default. Mark
+   `Address` `@Composite`, or declare the field's category.
 
 </details>

@@ -44,8 +44,9 @@ import java.util.Objects;
  * {@link Trait#BEHAVIOURAL behavioural} data, 1 for other personal data; the ease of identification is maximum when a
  * field is a {@link Trait#DIRECT_IDENTIFIER direct identifier} (a name, an identity document, biometric data, a
  * picture), significant with a {@link Trait#CONTACT_IDENTIFIER contact identifier} (contact or account data), limited
- * with an {@link Trait#INDIRECT_IDENTIFIER indirect identifier} or a pseudonymized value, and negligible otherwise. A
- * field declared anonymized or aggregated is not personal data and counts for neither. Both scores can be adjusted, as
+ * with an {@link Trait#INDIRECT_IDENTIFIER indirect identifier}, a pseudonymized value or any other personal data,
+ * held about someone, and negligible when no field is personal data: a field declared anonymized or aggregated is not
+ * personal data and counts for neither score. Both scores can be adjusted, as
  * the methodology foresees, when the context of the data calls for it. The circumstances (how confidentiality,
  * integrity and availability were lost, and malicious intent) are declared by whoever handles the breach.
  * <pre>{@code
@@ -383,10 +384,11 @@ public final class BreachAssessment {
     /**
      * Whether the data subjects should be told, without undue delay (GDPR article 34.1).
      *
-     * @return {@code true} for a high or very high severity, unless the data was unintelligible (article 34.3.a)
+     * @return {@code true} for a high or very high severity, unless only the confidentiality of unintelligible data
+     *         was lost (article 34.3.a: encryption protects what was read, not what was lost or altered)
      */
     public boolean communicateToSubjects() {
-        return context > 0 && !unintelligible
+        return context > 0 && !unintelligibleOnly()
                 && (severity() == Severity.HIGH || severity() == Severity.VERY_HIGH);
     }
 
@@ -419,7 +421,7 @@ public final class BreachAssessment {
                 + " record it (GDPR art. 33.5); notification is not required (art. 33.1).");
         if (communicateToSubjects()) {
             lines.add("Tell the data subjects without undue delay (GDPR art. 34.1).");
-        } else if (unintelligible && (severity() == Severity.HIGH || severity() == Severity.VERY_HIGH)) {
+        } else if (unintelligibleOnly() && (severity() == Severity.HIGH || severity() == Severity.VERY_HIGH)) {
             lines.add("The data was unintelligible to anyone without access to it, so the data subjects need not be"
                     + " told (GDPR art. 34.3.a).");
         } else {
@@ -607,20 +609,25 @@ public final class BreachAssessment {
             String contextReason = "no personal data";
             Identification level = Identification.NEGLIGIBLE;
             String levelReason = "no identifier among the affected fields";
+            // On equal scores the smallest key gives the reason, so the reasons do not depend on the order of fields.
+            String contextKey = null;
+            String levelKey = null;
             for (Affected field : affected) {
+                String key = field.category().key();
                 if (field.personal()) {
                     int score = contextOf(field.category());
-                    if (score > context) {
+                    if (score > context || score == context && key.compareTo(contextKey) < 0) {
                         context = score;
-                        contextReason = typeOf(score) + " " + field.category().key();
+                        contextKey = key;
+                        contextReason = typeOf(score) + " " + key;
                     }
                 }
                 Identification identifies = identificationOf(field);
-                if (identifies.compareTo(level) > 0) {
+                int order = identifies.compareTo(level);
+                if (order > 0 || order == 0 && levelKey != null && key.compareTo(levelKey) < 0) {
                     level = identifies;
-                    levelReason = (field.identifiability() == Identifiability.PSEUDONYMIZED
-                            && identifies == Identification.LIMITED ? "pseudonymized " : "identifier ")
-                            + field.category().key();
+                    levelKey = key;
+                    levelReason = reasonOf(field, identifies) + key;
                 }
             }
             if (context > 0 && adjustment != 0) {
@@ -652,7 +659,16 @@ public final class BreachAssessment {
             };
         }
 
-        // A value that is not personal data, an anonymized or aggregated one included, identifies no one.
+        private static String reasonOf(Affected field, Identification identifies) {
+            if (identifies != Identification.LIMITED || field.category().has(Trait.INDIRECT_IDENTIFIER)) {
+                return "identifier ";
+            }
+            return field.identifiability() == Identifiability.PSEUDONYMIZED ? "pseudonymized "
+                    : "personal data held about a person, ";
+        }
+
+        // A value that is not personal data, an anonymized or aggregated one included, identifies no one; personal
+        // data held about someone, without an identifier among the fields, identifies them with some effort.
         private static Identification identificationOf(Affected field) {
             if (!field.personal()) {
                 return Identification.NEGLIGIBLE;
@@ -665,8 +681,7 @@ public final class BreachAssessment {
             if (category.has(Trait.CONTACT_IDENTIFIER)) {
                 return pseudonymized ? Identification.LIMITED : Identification.SIGNIFICANT;
             }
-            return category.has(Trait.INDIRECT_IDENTIFIER) || pseudonymized ? Identification.LIMITED
-                    : Identification.NEGLIGIBLE;
+            return Identification.LIMITED;
         }
     }
 }

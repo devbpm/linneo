@@ -62,8 +62,8 @@ student.holdsPersonalData();                              // true
 student.field("email").orElseThrow().category().key();    // "user.contact.email"
 
 ClassClassification document = classifier.classify(Document.class);
-document.field("attachments");                            // Optional.empty: @Exempt
-document.exempted().get(0).path();                        // "attachments"
+document.field("fileStore");                              // Optional.empty: @Exempt
+document.exempted().get(0).path();                        // "fileStore"
 ```
 
 ## `FieldClassification`

@@ -19,7 +19,8 @@ doc-sources:
 ```java
 public record ProcessingActivity(String key, String name, String description, List<String> purposes,
                                  List<String> dataSubjects, List<String> dataCategories, List<Class<?>> entities,
-                                 List<String> objects, Governance governance)
+                                 List<String> objects, Set<ImpactScreening.Factor> riskFactors,
+                                 Governance governance)
 ```
 
 Una actividad de tratamiento del responsable, tal como se declara en su registro de actividades de tratamiento (RGPD,
@@ -30,7 +31,8 @@ con [`builder(key, name)`](#builder).
 Una actividad tiene dos partes con responsables distintos:
 
 - su **alcance** es lo que el código de la aplicación sabe con certeza: las finalidades a las que sirve, los
-  interesados y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`);
+  interesados y los datos personales que trata (`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`), y
+  los factores de riesgo que el código conoce (`riskFactors`);
 - su [**gobernanza**](#governance) es lo que decide y mantiene al día la función de protección de datos del
   responsable: las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las
   transferencias, la evaluación de impacto y los factores de riesgo que declara para el
@@ -52,10 +54,11 @@ mediante [`withGovernance`](#withgovernance).
 | `dataCategories` | 30.1.c | vacía | Claves de categorías de datos personales tratadas además de las de `entities`, preferiblemente constantes de `Categories`. |
 | `entities` | 30.1.c | vacía | Clases del modelo clasificadas; la actividad trata las categorías de sus campos personales. |
 | `objects` | 30.1.c | vacía | Claves de objetos de un [inventario de datos](../classify/inventory.md); la actividad trata las categorías de sus campos personales. El [`ProcessingChecker`](checker.md#métodos) debe crearse con ese inventario. |
-| `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | Las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las transferencias, la evaluación de impacto y los factores de riesgo; consulta [Governance](#governance). `null` significa `Governance.NONE`. |
+| `riskFactors` | 35 | vacío | Lo que el código sabe que hace la actividad y que el [cribado](impact-screening.md) no puede ver por sus términos, como `Factor.AUTOMATED_DECISIONS`: un mínimo al que la gobernanza añade y que no puede quitar. `null` es un conjunto vacío. |
+| `governance` | 6.1, 6.3, 9.2, 10, 30.1.d–f, 35 | `Governance.NONE` | Las bases jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las transferencias, la evaluación de impacto y los factores de riesgo que declara el delegado; consulta [Governance](#governance). `null` significa `Governance.NONE`. |
 
 Los componentes de la gobernanza se leen a través de ella: `activity.governance().legalBasis()`,
-`activity.governance().retention()`, etcétera.
+`activity.governance().retention()`, etcétera. El cribado lee los factores de riesgo de ambas, `allRiskFactors()`.
 
 ### Constructor canónico
 
@@ -70,6 +73,7 @@ Los componentes de la gobernanza se leen a través de ella: `activity.governance
   lista como clave desconocida. La excepción es `objects`: una lista `null` es una lista vacía.
 - Una `description` en blanco pasa a ser `null` y a cualquier otro texto se le quitan los espacios iniciales y
   finales.
+- `riskFactors` se copia en un conjunto inmutable; `null` es uno vacío.
 - Una `governance` `null` pasa a ser [`Governance.NONE`](#governance).
 
 ```java
@@ -84,13 +88,15 @@ activity.governance().retention();    // null
 ### withGovernance
 
 `ProcessingActivity withGovernance(Governance governance)` devuelve la misma actividad con otra gobernanza, como la que
-mantiene al día el delegado de protección de datos. El alcance declarado en el código se conserva tal cual, y la
-actividad original no cambia. También se conservan los **factores de riesgo** que la actividad declara en el código: lo
-que el código dice que hace la actividad, como las decisiones automatizadas, es un mínimo, así que los factores de
-`governance` se unen a los de la actividad y una gobernanza guardada antes de que cambiara el código nunca levanta una
-evaluación de impacto. Llámalo sobre la actividad tal como la declara el código, no sobre una que ya tomó otra
-gobernanza. `NullPointerException` si `governance` es `null`; para vaciarla, pasa `Governance.NONE` (los factores que
-declara el código se mantienen).
+mantiene al día el delegado de protección de datos. El alcance declarado en el código se conserva tal cual, con sus
+`riskFactors`, y la actividad original no cambia. La gobernanza simplemente **sustituye** a la actual, sin combinarse:
+lo que el código dice que hace la actividad, como las decisiones automatizadas, forma parte del alcance, y el cribado lo
+lee junto con los factores de la gobernanza (`allRiskFactors()`), así que una gobernanza guardada antes de que cambiara
+el código nunca levanta una evaluación de impacto. `NullPointerException` si `governance` es `null`; para vaciarla, pasa
+`Governance.NONE` (los factores que declara el código se mantienen).
+
+`Set<ImpactScreening.Factor> allRiskFactors()` devuelve los factores de riesgo que lee el cribado: la unión de los del
+alcance y los de la gobernanza, inmutable.
 
 ## Builder
 
@@ -115,11 +121,11 @@ declara el código se mantienen).
 | `Builder recipients(String... recipients)` | **Añade** categorías de destinatarios. |
 | `Builder transfer(String destination, TransferSafeguard safeguard)` | **Añade** una `Transfer`. Un destino en blanco lanza `IllegalArgumentException` en ese momento, no en `build()`. |
 | `Builder impactAssessment(String reference)` | Fija la referencia a la evaluación de impacto. |
-| `Builder riskFactors(ImpactScreening.Factor... factors)` | **Añade** factores de riesgo que conoce el delegado, para el [cribado](impact-screening.md) de la necesidad de una evaluación de impacto. |
+| `Builder riskFactors(ImpactScreening.Factor... factors)` | **Añade** factores de riesgo que conoce el código, como `Factor.AUTOMATED_DECISIONS` cuando el código decide por sí solo, para el [cribado](impact-screening.md) de la necesidad de una evaluación de impacto. Forman parte del alcance: la gobernanza añade los suyos y no puede quitar estos. |
 | `ProcessingActivity build()` | Crea la actividad con el constructor canónico. |
 
-Los métodos de `legalBasis` a `riskFactors` son los del [`Governance.Builder`](#governancebuilder): dan los
-valores iniciales de la gobernanza de la actividad.
+Los métodos de `legalBasis` a `impactAssessment` son los del [`Governance.Builder`](#governancebuilder): dan los
+valores iniciales de la gobernanza de la actividad. `riskFactors` no es uno de ellos: alimenta el alcance.
 
 Cada método de lista, `specialCategoryConditions` y `riskFactors` añaden a lo indicado antes
 (`purposes("a").purposes("b", "c")` da `[a, b, c]`); los demás métodos sustituyen el valor anterior, así que gana la
@@ -220,9 +226,10 @@ conjuntos inmutables; `null` es un conjunto vacío.
 `Governance.Builder` — `public static final class`, `@since 0.1.0`. Tiene los mismos métodos, con el mismo efecto, que
 los métodos de gobernanza del [`ProcessingActivity.Builder`](#builder): `legalBasis`, `legitimateInterest`,
 `specialCategoryConditions(SpecialCategoryCondition...)`, `criminalDataBasis`, `legalReference`, `retention`,
-`recipients`, `transfer`, `impactAssessment` y `riskFactors(ImpactScreening.Factor...)`, más `Governance build()`. Los
-métodos de lista, `specialCategoryConditions` y `riskFactors` añaden a lo indicado antes y los demás métodos sustituyen
-el valor anterior. `build()` puede llamarse más de una vez.
+`recipients`, `transfer` e `impactAssessment`, más `Governance build()`. Su propio
+`riskFactors(ImpactScreening.Factor...)` declara los factores de riesgo de la gobernanza, los que conoce el delegado, a
+diferencia de los que declara el código. Los métodos de lista, `specialCategoryConditions` y `riskFactors` añaden a lo
+indicado antes y los demás métodos sustituyen el valor anterior. `build()` puede llamarse más de una vez.
 
 ### Alcance en el código, gobernanza desde el almacenamiento
 

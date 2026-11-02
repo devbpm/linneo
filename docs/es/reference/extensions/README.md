@@ -30,7 +30,7 @@ sector: términos que la mayoría de las aplicaciones no necesitan, empaquetados
 
 | Extensión | Clase | `name()` | Añade | Página |
 |---|---|---|---|---|
-| Educación superior | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 32 categorías de datos, 27 usos de datos, 12 interesados | [Universidad](university.md) |
+| Educación superior | `io.github.devbpm.linneo.extension.university.UniversityTaxonomy` | `"university"` | 32 categorías de datos, 28 usos de datos, 12 interesados | [Universidad](university.md) |
 | Finanzas y contabilidad | `io.github.devbpm.linneo.extension.finance.FinanceTaxonomy` | `"finance"` | 19 categorías de datos, 13 usos de datos, 3 interesados | [Finanzas](finance.md) |
 | Gestión de la cadena de suministro | `io.github.devbpm.linneo.extension.supplychain.SupplyChainTaxonomy` | `"supply_chain"` | 16 categorías de datos, 12 usos de datos, 3 interesados | [Cadena de suministro](supply-chain.md) |
 | Operaciones de proyecto | `io.github.devbpm.linneo.extension.projectoperations.ProjectOperationsTaxonomy` | `"project_operations"` | 11 categorías de datos, 6 usos de datos, 2 interesados | [Operaciones de proyecto](project-operations.md) |
@@ -67,9 +67,9 @@ import io.github.devbpm.linneo.extension.university.UniversityTaxonomy;
 Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
 ```
 
-`taxonomy.toString()` imprime `Taxonomy[158 data categories, 90 data uses, 34 data subjects]`, frente a
+`taxonomy.toString()` imprime `Taxonomy[158 data categories, 91 data uses, 34 data subjects]`, frente a
 `Taxonomy[126 data categories, 63 data uses, 22 data subjects]` de la taxonomía estándar. Con las cinco extensiones
-incluidas aplicadas imprime `Taxonomy[225 data categories, 136 data uses, 48 data subjects]`. Guarda el resultado y
+incluidas aplicadas imprime `Taxonomy[225 data categories, 137 data uses, 48 data subjects]`. Guarda el resultado y
 úsalo en todas partes: en el [`Classifier`](../classify/classifier.md), en el
 [`ProcessingChecker`](../processing/checker.md) y en los exportadores a catálogos. Un `Classifier` construido sobre
 `Taxonomy.standard()` informa de cada clave de la extensión como `UNKNOWN_CATEGORY`.
@@ -83,7 +83,7 @@ personales que cuelgan de `user.financial` o de `user.contact` heredan esos rasg
 
 | Extensión | Rasgos que declara |
 |---|---|
-| Universidad | usos de datos: `advancement` `DIRECT_MARKETING`; `advancement.prospect_research` y `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` y `MONITORING` |
+| Universidad | usos de datos: `advancement.alumni_relations`, `advancement.fundraising` y `advancement.prospect_research` `DIRECT_MARKETING`; `advancement.prospect_research` y `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` y `MONITORING`; `research` `RESEARCH` |
 | Finanzas | usos de datos: `finance.credit_management` y `finance.anti_money_laundering` `EVALUATION` |
 | Cadena de suministro | uso de datos: `operations.logistics.fleet_management` `MONITORING`; sujeto de datos: `driver` `VULNERABLE` |
 | Recursos humanos | categorías: `user.employment.compensation`, `user.employment.benefit` y `user.employment.payroll` `FINANCIAL`, `user.employment.monitoring` `MONITORING`; usos de datos: `employment.monitoring` `MONITORING`, `employment.performance` y `employment.recruitment.background_check` `EVALUATION`; sujetos de datos: `dependant`, `reporting_person`, `temporary_agency_worker` y `worker_representative` `VULNERABLE` |

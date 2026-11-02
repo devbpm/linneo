@@ -63,7 +63,7 @@ class EnsCategorizationTest {
                 () -> assertTrue(ens.valuation(Dimension.CONFIDENTIALITY).orElseThrow().reason()
                         .contains(Categories.USER_HEALTH_AND_MEDICAL_DISABILITY)),
                 () -> assertEquals(Level.HIGH, ens.valuation(Dimension.INTEGRITY).orElseThrow().level()),
-                () -> assertEquals(EnsCategorization.Category.HIGH, ens.category()),
+                () -> assertEquals(EnsCategorization.SystemCategory.HIGH, ens.category()),
                 () -> assertEquals("ALTA", ens.category().spanishName()),
                 () -> assertFalse(ens.isComplete()),
                 () -> assertEquals(EnumSet.of(Dimension.TRACEABILITY, Dimension.AUTHENTICITY, Dimension.AVAILABILITY),
@@ -83,7 +83,7 @@ class EnsCategorizationTest {
         assertAll(
                 () -> assertTrue(ens.valuation(Dimension.CONFIDENTIALITY).isEmpty()),
                 () -> assertTrue(ens.isComplete()),
-                () -> assertEquals(EnsCategorization.Category.MEDIUM, ens.category()),
+                () -> assertEquals(EnsCategorization.SystemCategory.MEDIUM, ens.category()),
                 () -> assertEquals("declared: enrollment closes on fixed dates",
                         ens.valuation(Dimension.AVAILABILITY).orElseThrow().reason()));
     }
@@ -99,7 +99,7 @@ class EnsCategorizationTest {
                 .declare(Dimension.INTEGRITY, Level.HIGH, "official catalogue").build();
         DataInventory inventory = classifier.inventory(List.of(Student.class), type -> "students");
         EnsCategorization stored = EnsCategorization.builder()
-                .information(inventory.fields("students"), taxonomy).build();
+                .information(inventory, "students", taxonomy).build();
         assertAll(
                 () -> assertEquals(Level.HIGH, lowered.valuation(Dimension.CONFIDENTIALITY).orElseThrow().level()),
                 () -> assertTrue(lowered.valuation(Dimension.CONFIDENTIALITY).orElseThrow().reason()
@@ -127,6 +127,8 @@ class EnsCategorizationTest {
                 () -> assertThrows(IllegalArgumentException.class,
                         () -> EnsCategorization.builder().information(classifier.classify(Broken.class))),
                 () -> assertFalse(empty.isComplete()),
-                () -> assertTrue(empty.summary().contains("no information given")));
+                () -> assertTrue(empty.summary().contains("no information given")),
+                () -> assertThrows(IllegalArgumentException.class, () -> EnsCategorization.builder()
+                        .information(DataInventory.builder().object("students").build(), "studnet", taxonomy)));
     }
 }

@@ -39,11 +39,14 @@ public sealed class TermDraft permits CategoryDraft {
     private String since;
     private String deprecatedSince;
     private String replacedBy;
-    // The extension refining this term when it comes from elsewhere: it may add traits and raise protection, not
-    // change the term's lifecycle.
-    private String lockedBy;
+    // The builder, which tells which extension, if any, is contributing when the draft is changed.
+    private final TaxonomyBuilder builder;
+    // A draft only changes inside the customizer that received it.
+    private boolean open;
 
-    TermDraft(Hierarchy hierarchy, String key, String name, String description, String origin) {
+    TermDraft(TaxonomyBuilder builder, Hierarchy hierarchy, String key, String name, String description,
+              String origin) {
+        this.builder = Objects.requireNonNull(builder, "builder");
         this.hierarchy = Objects.requireNonNull(hierarchy, "hierarchy");
         this.key = Objects.requireNonNull(key, "key");
         this.name = Objects.requireNonNull(name, "name");
@@ -56,7 +59,8 @@ public sealed class TermDraft permits CategoryDraft {
      *
      * @param version the version, such as {@code 1.2.0}
      * @return this draft
-     * @throws TaxonomyException if an extension refines a term it did not add
+     * @throws TaxonomyException if an extension refines a term it did not add, or the customizer that received the
+     *         draft has returned
      */
     public TermDraft since(String version) {
         checkLifecycle("set the version that introduced");
@@ -70,9 +74,11 @@ public sealed class TermDraft permits CategoryDraft {
      *
      * @param traits traits that apply to the term's hierarchy
      * @return this draft
-     * @throws TaxonomyException if a trait does not apply to the term's hierarchy
+     * @throws TaxonomyException if a trait does not apply to the term's hierarchy, or the customizer that received the
+     *         draft has returned
      */
     public TermDraft traits(Trait... traits) {
+        checkOpen();
         for (Trait trait : traits) {
             if (!Objects.requireNonNull(trait, "trait").appliesTo(hierarchy)) {
                 throw new TaxonomyException("The trait " + trait + " does not apply to the " + hierarchy + " '"
@@ -89,8 +95,8 @@ public sealed class TermDraft permits CategoryDraft {
      * @param sinceVersion the version of the term's origin that deprecated it
      * @param replacedBy the key of the replacing term of the same hierarchy, or {@code null} if there is none
      * @return this draft
-     * @throws TaxonomyException if the version is blank, which would leave the term current, or an extension
-     *         refines a term it did not add
+     * @throws TaxonomyException if the version is blank, which would leave the term current, an extension refines a
+     *         term it did not add, or the customizer that received the draft has returned
      */
     public TermDraft deprecated(String sinceVersion, String replacedBy) {
         checkLifecycle("deprecate");
@@ -110,13 +116,26 @@ public sealed class TermDraft permits CategoryDraft {
         return Collections.unmodifiableSet(traits);
     }
 
-    final void lockLifecycle(String extension) {
-        this.lockedBy = extension;
+    // Opens or closes the draft for its customizer and returns whether it was open, for nested customizers.
+    final boolean open(boolean open) {
+        boolean was = this.open;
+        this.open = open;
+        return was;
     }
 
+    final void checkOpen() {
+        if (!open) {
+            throw new TaxonomyException("The draft of '" + key + "' can only be changed inside the customizer that"
+                    + " received it");
+        }
+    }
+
+    // Checked when the change is made, against the extension contributing then.
     private void checkLifecycle(String action) {
-        if (lockedBy != null) {
-            throw new TaxonomyException("The extension '" + lockedBy + "' cannot " + action + " '" + key
+        checkOpen();
+        String extension = builder.extending();
+        if (extension != null && !extension.equals(origin)) {
+            throw new TaxonomyException("The extension '" + extension + "' cannot " + action + " '" + key
                     + "', which comes from '" + origin + "'");
         }
     }

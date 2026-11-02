@@ -39,8 +39,8 @@ The canonical constructor throws `NullPointerException` if `outcome` or `finding
 
 ## What the code can see and what only the officer knows
 
-Some criteria show in what the activity declares. The others are facts that only the data protection function knows,
-such as the scale of the processing, and the officer declares them as **risk factors**.
+Some criteria show in what the activity declares. The others are facts that the terms do not tell, such as the scale of
+the processing or automated decisions: the code declares those it knows and the officer the rest, as **risk factors**.
 
 The criteria the code can see are read from the [traits](../terms.md#trait) of the activity's terms, not from lists of
 keys, so a term of an extension or of your own counts as soon as it declares its traits.
@@ -63,25 +63,29 @@ personal data counts. A criterion is met once, however many things show it; the 
 
 The standard taxonomy declares the traits in [`linneo-traits.tsv`](../standard-taxonomy.md#traits-of-the-standard-terms):
 the purposes with `EVALUATION` are `marketing.advertising.profiling`, `marketing.advertising.first_party.targeted`,
-`marketing.advertising.third_party.targeted`, `personalize.content.profiling`, `personalize.content.profiled` and the
-deprecated `personalize.profiling` (screened as `personalize.content.profiling`); `employee`, `staff_member`,
-`faculty_member`, `trainee`, `patient` and `job_applicant` are `VULNERABLE`, like the category `user.childrens`;
-`user.financial` is `FINANCIAL`, `user.behavior` and `user.location` are `BEHAVIOURAL`, and `user.content.private` is
-`PRIVATE_LIFE`. The standard taxonomy has no `MONITORING` term: those come from the
-[extensions](../extensions/README.md#traits), such as `employment.monitoring` and `user.employment.monitoring` of the
-[human resources extension](../extensions/human-resources.md) or `education.financial_aid.means_assessment`, an
-`EVALUATION` purpose of the [university extension](../extensions/university.md); with the standard taxonomy alone those
-rows find nothing. An extension or an application that declares the traits of its own terms is read like the standard
-ones.
+`marketing.advertising.third_party.targeted`, `personalize.content.profiling`, `personalize.content.profiled`,
+`essential.fraud_detection` and the deprecated `personalize.profiling` (screened as `personalize.content.profiling`);
+`employee`, `staff_member`, `faculty_member`, `trainee`, `patient` and `job_applicant` are `VULNERABLE`, like the
+categories `user.childrens`, `user.victim_status` and `user.government_id.immigration`; `user.financial` and
+`user.payment` are `FINANCIAL`, `user.behavior` and `user.location` are `BEHAVIOURAL`, and `user.content.private` is
+`PRIVATE_LIFE`. The standard taxonomy has two `MONITORING` categories, `user.telemetry` and `user.sensor`, and no
+`MONITORING` purpose: those come from the [extensions](../extensions/README.md#traits), such as `employment.monitoring`
+and `user.employment.monitoring` of the [human resources extension](../extensions/human-resources.md); with the
+standard taxonomy alone no purpose meets criterion 3. `education.financial_aid.means_assessment` is an `EVALUATION`
+purpose of the [university extension](../extensions/university.md). An extension or an application that declares the
+traits of its own terms is read like the standard ones. In Spain, `BIOMETRIC` and `GENETIC` data count as a criterion
+of their own for the checker; see [In the checker and the record](#in-the-checker-and-the-record).
 
 `Criterion.number()` is the number of the criterion in the guidelines, 1 to 9. A `Factor` has a `criterion()`: the one
 it meets.
 
 ### Declaring risk factors
 
-Risk factors belong to the [governance](activity.md#governance) of the activity, which the officer keeps: they are its
-`riskFactors` component, a `Set<ImpactScreening.Factor>`, set with the `riskFactors(...)` method of the `Governance`
-builder and of the `ProcessingActivity` builder. The method **adds** the factors it is given to those declared before.
+Risk factors have two homes, both a `Set<ImpactScreening.Factor>` set with a `riskFactors(...)` method that **adds** the
+factors it is given to those declared before. What the code knows the activity does, such as
+`Factor.AUTOMATED_DECISIONS` when the code decides on its own, is part of its scope: the `riskFactors` component of the
+[`ProcessingActivity`](activity.md#components), set with its builder. What only the officer knows, such as the scale of
+the processing, belongs to the [governance](activity.md#governance) she keeps: `Governance.riskFactors()`.
 
 ```java
 Governance declared = Governance.builder()
@@ -89,10 +93,18 @@ Governance declared = Governance.builder()
         .riskFactors(ImpactScreening.Factor.LARGE_SCALE, ImpactScreening.Factor.DATASET_MATCHING)
         .build();
 declared.riskFactors();   // [LARGE_SCALE, DATASET_MATCHING]
+
+ProcessingActivity scoring = ProcessingActivity.builder("scoring", "Applicant scoring")
+        .riskFactors(ImpactScreening.Factor.AUTOMATED_DECISIONS)
+        .build();
+scoring.riskFactors();                                // [AUTOMATED_DECISIONS]
+scoring.withGovernance(declared).allRiskFactors();    // [AUTOMATED_DECISIONS, LARGE_SCALE, DATASET_MATCHING]
 ```
 
-A change of the risk factors between two records is the governance aspect `RISK_FACTORS` of an
-[`ActivityChange`](record.md#aspect).
+The screening reads the union, `ProcessingActivity.allRiskFactors()`. `withGovernance` only replaces the governance, so
+a governance saved before the code changed never lifts what the code declares. A change of the risk factors between
+two records is the governance aspect `RISK_FACTORS` of an [`ActivityChange`](record.md#aspect) when it is the
+governance that changes, and the scope aspect `DECLARED_RISK_FACTORS` when it is the code.
 
 ## Outcome
 
@@ -158,10 +170,18 @@ Under `Jurisdiction.SPAIN` the warning cites the list of the Spanish supervisory
 `GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases
 that meet two criteria or more). <summary>`.
 
-Both are reported on the element `IMPACT_ASSESSMENT`, which belongs to the governance, and the error makes `verify`
-fail like any other. An activity that refers to an assessment gets no violation, whatever the outcome. The
-[record](record.md) shows the screening of every activity either way, in a row of the Markdown and in a `screening`
-object of the JSON.
+Under `Jurisdiction.SPAIN` the checker adds one more case. The AEPD's list under article 35.4 counts biometric data for
+identification and genetic data, the categories with the `BIOMETRIC` or `GENETIC` trait, as criteria of their own,
+besides special category data. When the screening is not already `LIKELY` or `REQUIRED` and the activity refers to no
+assessment, it raises the warning `IMPACT_ASSESSMENT_RECOMMENDED`: `The AEPD's list under GDPR article 35.4 counts
+biometric data for identification and genetic data as a criterion besides special category data, so an impact
+assessment is required in most cases: <keys>. <summary>`. The screening itself, and so the record, shows the criteria
+of the guidelines as before.
+
+The error and the warnings are reported on the element `IMPACT_ASSESSMENT`, which belongs to the governance, and the
+error makes `verify` fail like any other. An activity that refers to an assessment gets no violation, whatever the
+outcome. The [record](record.md) shows the screening of every activity either way, in a row of the Markdown and in a
+`screening` object of the JSON.
 
 ## Example
 

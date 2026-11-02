@@ -29,7 +29,7 @@ internships and mobility, means-tested aid and fee exemptions.
 |---|---|
 | `UniversityTaxonomy` | `public final class implements TaxonomyExtension`. `name()` returns `NAME`, `public static final String NAME = "university"`, recorded as the origin of its terms. Public no-argument constructor; no state. `contribute(builder)` adds the terms listed below. |
 | `UniversityCategories` | `public final class`, private constructor: one `public static final String` per data category the extension adds (32). |
-| `UniversityDataUses` | The same for its data uses (27). |
+| `UniversityDataUses` | The same for its data uses (28). |
 | `UniversityDataSubjects` | The same for its data subjects (12). |
 
 The constants follow the [naming rule](../key-constants.md#naming-rule) of `Categories`: `user.education.attendance`
@@ -41,7 +41,7 @@ annotations once the extension is applied.
 
 ```java
 Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
-// Taxonomy[158 data categories, 90 data uses, 34 data subjects]
+// Taxonomy[158 data categories, 91 data uses, 34 data subjects]
 ```
 
 `Taxonomy.load()` applies it only if the application registers it; see
@@ -219,7 +219,8 @@ facets, only [traits](#traits).
 |---|---|---|---|
 | `advancement` | Advancement | (root) | Builds the institution's relationships with alumni, donors and supporters. |
 | `advancement.alumni_relations` | Alumni Relations | `advancement` | Keeps in touch with former students: communications, events, networks. |
-| `advancement.fundraising` | Fundraising | `advancement` | Solicits, records and acknowledges gifts and pledges. |
+| `advancement.fundraising` | Fundraising | `advancement` | Solicits gifts and pledges from alumni, donors and supporters. |
+| `advancement.gift_administration` | Gift Administration | `advancement` | Records and acknowledges gifts and pledges, and issues donation receipts and tax certificates. |
 | `advancement.prospect_research` | Prospect Research | `advancement` | Identifies potential donors and estimates their giving capacity. |
 | `education.academic_records.certification` | Certification | `education.academic_records` | Issues certificates, transcripts, diploma supplements and degree certificates. |
 | `education.academic_records.credit_recognition` | Credit Recognition | `education.academic_records` | Recognises and transfers credits from previous studies or experience. |
@@ -293,8 +294,9 @@ the [subject rights](../processing/subject-rights.md) like the standard ones:
 
 | Terms | Trait | Why |
 |---|---|---|
-| Data use `advancement` (and its children) | `DIRECT_MARKETING` | Advancement is direct marketing, fundraising included, so the right to object to it is absolute (GDPR article 21.2) |
+| Data uses `advancement.alumni_relations`, `advancement.fundraising` and `advancement.prospect_research` | `DIRECT_MARKETING` | Alumni communications, appeals for gifts and the prospect research behind them are direct marketing, so the right to object to them is absolute (GDPR article 21.2). Administering the gifts received, `advancement.gift_administration`, is not, and the root `advancement` declares no trait |
 | Data uses `advancement.prospect_research` and `education.financial_aid.means_assessment` | `EVALUATION` | Prospect research and means assessment evaluate people (WP248 criterion 1) |
+| Data use `research` (and its children) | `RESEARCH` | Scientific research (GDPR article 89.1), whose erasure and objection have their own limits (articles 17.3.d and 21.6) |
 | Data use `education.learning_analytics` | `EVALUATION`, `MONITORING` | Learning analytics evaluates students and observes them systematically (WP248 criteria 1 and 3) |
 
 ## Standard keys for everything else
@@ -325,7 +327,7 @@ describe:
 | Gender, pronouns | `user.demographic.gender` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
 | Home or preferred language | `user.demographic.language` | `ORDINARY`, `LOW`, `MEDIUM` |
 | Nationality, citizenship, country of birth | `user.demographic.nationality` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
-| Residence permit, citizenship status | `user.government_id.immigration` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
+| Residence permit, citizenship status | `user.government_id.immigration` | `ORDINARY`, `HIGH`, `MEDIUM` |
 | National identity and social security numbers | `user.government_id.national_identification_number`, `user.government_id.social_security_number` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
 | Student number, European Student Identifier, ORCID | `user.unique_id` | `ORDINARY`, `LOW`, `MEDIUM` |
 | Photographs | `user.content.self_image` | `ORDINARY`, `MEDIUM`, `MEDIUM` |

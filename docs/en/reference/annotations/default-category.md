@@ -55,12 +55,17 @@ When the default is unknown or personal, the fields it would cover are left out 
 the class-level violation is the only report (no extra `UNCLASSIFIED_FIELD`). A blank `reason` alone does not stop
 the fields from being classified.
 
-The default never covers a field that may hold data the classifier cannot see: a field typed `Object`, by an unbound
-type variable or by a raw container, one that holds a composite as a map key or as the type argument of a class that
-is not a collection, and one that holds a class with classified fields that is not a
-[`@Composite`](composite.md#what-the-classifier-does), such as a referenced entity. Such a field is an
-`UNCLASSIFIED_FIELD` error unless it declares its own category: a class default would otherwise classify as
+The default never covers a field that may hold data the classifier cannot see: a field typed `Object`, `Serializable`
+or by an unbound type variable or a raw container, one that holds composites in a map or as the type argument of a
+class that is not a collection, and an abstract [`@Composite`](composite.md#what-the-classifier-does). Such a field is
+an `UNCLASSIFIED_FIELD` error unless it declares its own category: a class default would otherwise classify as
 non-personal what wraps personal data.
+
+A field that refers to another record of the model, a class with a classification of its own, takes the default only
+when that record holds no personal data, as a catalogue entry does. A reference to a record with personal data is
+personal data itself, so the field is an `UNCLASSIFIED_FIELD` error that advises declaring what it stores, typically
+with `@DerivedFrom(type = Customer.class, value = "id")`; see
+[References to other records](composite.md#references-to-other-records).
 
 ## Resulting FieldClassification
 

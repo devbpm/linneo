@@ -47,7 +47,8 @@ import java.util.TreeSet;
  * {@link io.github.devbpm.linneo.Trait#MONITORING} trait are {@link Criterion#SYSTEMATIC_MONITORING}; data subjects
  * and data categories with the {@link io.github.devbpm.linneo.Trait#VULNERABLE} trait are
  * {@link Criterion#VULNERABLE_SUBJECTS}. The rest only the data protection officer knows, such as the scale of the
- * processing, and declares as {@linkplain Governance#riskFactors() risk factors}. The evidence of each criterion is
+ * processing, and declares as {@linkplain Governance#riskFactors() risk factors}, as the code declares those it
+ * knows ({@link ProcessingActivity#riskFactors()}). The evidence of each criterion is
  * sorted, so the screening does not depend on the order in which the activity lists its terms.
  * <p>
  * The outcome follows the guidelines: a case of article 35.3 is {@link Outcome#REQUIRED}; two criteria or more make
@@ -262,11 +263,11 @@ public record ImpactScreening(Outcome outcome, List<Finding> findings, String ma
      */
     public static ImpactScreening of(CheckedActivity activity) {
         return of(activity.purposes(), activity.dataSubjects(), activity.dataCategories(),
-                activity.activity().governance());
+                activity.activity().allRiskFactors());
     }
 
     static ImpactScreening of(Collection<DataUse> purposes, Collection<DataSubject> subjects,
-                              Collection<DataCategory> categories, Governance governance) {
+                              Collection<DataCategory> categories, Set<Factor> factors) {
         Map<Criterion, Set<String>> evidence = new EnumMap<>(Criterion.class);
         for (DataUse use : purposes) {
             if (use.has(Trait.EVALUATION)) {
@@ -278,7 +279,8 @@ public record ImpactScreening(Outcome outcome, List<Finding> findings, String ma
         }
         boolean special = false;
         for (DataCategory category : categories) {
-            if (category.nature() == LegalNature.SPECIAL_CATEGORY || category.nature() == LegalNature.CRIMINAL_OFFENCE) {
+            if (category.nature() == LegalNature.SPECIAL_CATEGORY
+                    || category.nature() == LegalNature.CRIMINAL_OFFENCE) {
                 special = true;
                 add(evidence, Criterion.SENSITIVE_DATA, (category.nature() == LegalNature.SPECIAL_CATEGORY
                         ? "special category data " : "criminal offence data ") + category.key());
@@ -297,7 +299,6 @@ public record ImpactScreening(Outcome outcome, List<Finding> findings, String ma
                 add(evidence, Criterion.VULNERABLE_SUBJECTS, "data subjects " + subject.key());
             }
         }
-        Set<Factor> factors = governance.riskFactors();
         for (Factor factor : factors) {
             add(evidence, factor.criterion(), "declared " + factor.name());
         }

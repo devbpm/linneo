@@ -33,7 +33,7 @@ with `Taxonomy.builder()` (empty). A builder is not thread-safe and is meant to 
 | `TaxonomyBuilder withStandard()` | Adds the [standard taxonomy](standard-taxonomy.md) with its protection policy (origins `fideslang` and `linneo`). Calling it again has no effect. Restores the current origin afterwards. |
 | `TaxonomyBuilder withExtensions()` | Applies every `TaxonomyExtension` found by `ServiceLoader` with the thread context class loader, or with `TaxonomyBuilder`'s own loader when there is none. |
 | `TaxonomyBuilder withExtensions(ClassLoader classLoader)` | Applies every extension found by `ServiceLoader` in `classLoader`, **sorted by `name()`**, so the result does not depend on class path order. |
-| `TaxonomyBuilder extend(TaxonomyExtension extension)` | Applies one extension: calls `contribute(this)` with the extension's `name()` as origin. Applying the same extension **class** again has **no effect**, so an extension can be applied explicitly and also registered as a service. While it contributes, the builder applies the [rules for extensions](#what-an-extension-may-do). Throws `TaxonomyException` if the name is `null`, blank, `"fideslang"` or `"linneo"`, or if a **different** class with the same name was already applied (`The extensions <first class> and <second class> are both named '<name>'`); `NullPointerException` if `extension` is `null`. |
+| `TaxonomyBuilder extend(TaxonomyExtension extension)` | Applies one extension: calls `contribute(this)` with the extension's `name()` as origin. Applying the same extension **class** again has **no effect**, so an extension can be applied explicitly and also registered as a service. While it contributes, the builder applies the [rules for extensions](#what-an-extension-may-do). Throws `TaxonomyException` if the name is `null`, blank, or one of the reserved `"fideslang"`, `"linneo"` and `"application"` (the origin of terms added outside an extension), or if a **different** class with the same name was already applied (`The extensions <first class> and <second class> are both named '<name>'`); `NullPointerException` if `extension` is `null`. |
 | `TaxonomyBuilder origin(String origin)` | Sets the origin recorded for terms added from now on (default `"application"`). `NullPointerException` if `null`; `TaxonomyException` if blank, or if an extension calls it (the terms an extension adds carry its name). |
 | `TaxonomyBuilder category(String key, String name, String description)` | Adds a data category that inherits all its protection from its parent. |
 | `TaxonomyBuilder category(String key, String name, String description, Consumer<CategoryDraft> customizer)` | Adds a data category and declares its facets, traits, attributes and lifecycle on a [`CategoryDraft`](#categorydraft). Throws `TaxonomyException` if an extension adds a root category. |
@@ -72,7 +72,8 @@ hierarchy, but terms may be added in any order: parents are checked by `build()`
    parent's nature. A nature that changes whether the data is personal, or that switches between special category
    and criminal offence data, is an error.
 4. A category whose nature is `SPECIAL_CATEGORY` or `CRIMINAL_OFFENCE` (`LegalNature.requiresMaximumProtection()`)
-   must resolve, declared or inherited, to `HIGH` confidentiality and `HIGH` integrity.
+   must resolve, declared or inherited, to `HIGH` confidentiality and `HIGH` integrity. A `DataCategory` record built
+   by hand is held to the same rule: its constructor throws `IllegalArgumentException` otherwise.
 5. `secret` is OR-ed down the tree; attributes are inherited and overridden by the child's own; traits are inherited
    and added to the child's own.
 6. Every `replacedBy` exists in the same hierarchy, and replacements do not form a cycle (for data categories, data
@@ -80,6 +81,9 @@ hierarchy, but terms may be added in any order: parents are checked by `build()`
 7. The replacement of a deprecated data category protects at least as much: a nature the deprecated category admits,
    confidentiality and integrity not lower, and `secret` if the deprecated category is secret. A declaration that
    names the deprecated key is classified with its replacement, so a weaker one would silently lower the protection.
+8. The replacement of a deprecated term carries every trait of the term it replaces, for data categories, data uses
+   and data subjects, since declarations that still name the deprecated key are checked with the replacement: a
+   replacement without the trait would lift a rule that read it.
 
 See [Protection levels](protection-levels.md#inheritance-rule).
 
@@ -92,7 +96,7 @@ refuses what would let one extension change what another, or the standard taxono
 - adding a **root** data category: a new root is a new domain of data, which needs its own protection policy;
 - calling `origin(...)`: the terms an extension adds carry its name;
 - calling `since` or `deprecated` on a term it did not add (one whose origin is another): it deprecates only its own
-  terms.
+  terms. This is checked when the call is made, against the extension contributing then.
 
 Raising is always allowed, and combining is independent of order: two extensions that raise the same category give the
 stricter of their levels, whichever is applied first. An application that uses the builder directly is not bound by
@@ -107,7 +111,7 @@ All are `TaxonomyException` (messages as produced by the source):
 | `category`/`dataUse`/`dataSubject`, bad key | `Invalid key '<key>': use lower-case segments separated by dots` |
 | `category`/`dataUse`/`dataSubject`, duplicate | `Duplicate key '<key>'` |
 | `refineCategory`/`refineDataUse`/`refineDataSubject`, unknown key | `Cannot refine unknown data category '<key>'` (or `data use`, `data subject`) |
-| `extend`, reserved or blank name | `Invalid extension name '<name>' in <class>` |
+| `extend`, reserved (`fideslang`, `linneo`, `application`) or blank name | `Invalid extension name '<name>' in <class>` |
 | `origin`, blank | `The origin of terms must not be blank` |
 | `origin`, called by an extension | `The extension '<name>' cannot change the origin of its terms` |
 | `category`, root added by an extension | `The extension '<name>' cannot add the root data category '<key>': an extension adds data categories below existing ones` |
@@ -116,6 +120,7 @@ All are `TaxonomyException` (messages as produced by the source):
 | `traits`, not applicable to the hierarchy | `The trait <trait> does not apply to the <hierarchy> '<key>'` |
 | `deprecated`, blank version | `The deprecation of '<key>' needs the version that deprecated it` |
 | `since`/`deprecated`, by an extension on a term it did not add | `The extension '<name>' cannot set the version that introduced '<key>', which comes from '<origin>'` (or `deprecate`) |
+| any method of a draft, called after its customizer returned | `The draft of '<key>' can only be changed inside the customizer that received it` |
 | `build`, missing parent | `The parent '<parent>' of data category '<key>' does not exist` (or `data use`, `data subject`) |
 | `build`, incomplete root | `Root data category '<key>' must declare its nature, confidentiality and integrity` |
 | `build`, nature not admitted | `Data category '<key>' declares nature <n>, which its parent '<parent>' (<pn>) does not admit` |
@@ -123,6 +128,7 @@ All are `TaxonomyException` (messages as produced by the source):
 | `build`, missing replacement | `The replacement '<r>' of data category '<key>' does not exist` |
 | `build`, replacement cycle | `The replacements of data category '<key>' form a cycle` |
 | `build`, replacement protects less | `The replacement '<r>' of data category '<key>' has weaker protection: <nature>, <c>, <i>[, secret] instead of <nature>, <c>, <i>[, secret]` |
+| `build`, replacement lacks a trait | `The replacement '<r>' of data category '<key>' lacks its traits [<trait>, ...]` (or `data use`, `data subject`) |
 
 ### Example
 
@@ -149,7 +155,7 @@ Terms an application or a sector adds to the taxonomy, and the stricter protecti
 
 | Method | Description |
 |---|---|
-| `String name()` | Recorded as the `origin` of the terms the extension adds. A short, stable name; never `"fideslang"` or `"linneo"`. Also the sort key when extensions are loaded, and the identity used to apply an extension only once: two different classes cannot share a name. |
+| `String name()` | Recorded as the `origin` of the terms the extension adds. A short, stable name; never `"fideslang"`, `"linneo"` or `"application"`. Also the sort key when extensions are loaded, and the identity used to apply an extension only once: two different classes cannot share a name. |
 | `void contribute(TaxonomyBuilder builder)` | Adds or refines terms. The builder already holds the standard terms (when started with `withStandard()`) and the extensions applied before this one. |
 
 An extension adds data categories below existing ones, data uses and data subjects, raises protection, adds traits and
@@ -243,7 +249,8 @@ too.
 
 The declared properties of a data category while the builder is open, passed to the customizers of `category` and
 `refineCategory`. Every declared facet is a **minimum**, and every facet left undeclared is inherited from the parent at
-`build()`. All methods return the same draft for chaining.
+`build()`. All methods return the same draft for chaining. A draft can only be changed inside the customizer that
+received it: keeping it and calling a method later throws `TaxonomyException`.
 
 | Method | Description |
 |---|---|
@@ -265,7 +272,8 @@ the parent's at `build()`.
 `io.github.devbpm.linneo.TermDraft` — `public sealed class TermDraft permits CategoryDraft`, `@since 0.1.0`
 
 The declared traits and lifecycle of a term while the builder is open, passed to the customizers of `dataUse`,
-`dataSubject`, `refineDataUse` and `refineDataSubject`.
+`dataSubject`, `refineDataUse` and `refineDataSubject`. As with a `CategoryDraft`, its methods throw
+`TaxonomyException` once the customizer that received the draft has returned.
 
 | Method | Description |
 |---|---|

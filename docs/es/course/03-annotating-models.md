@@ -352,9 +352,11 @@ public class ScholarshipApplication {              // aún no forma parte del mo
 }
 ```
 
-Un campo sin anotar cuyo tipo es un compuesto (o un array, una colección, un `Optional` o los valores de un `Map` de él,
-a cualquier profundidad) se clasifica por los campos del compuesto, con la ruta `campo.parte`: `home.street`,
-`previous.city`, `byType.street`. Una subclase de un compuesto también es un compuesto, porque la anotación se hereda.
+Un campo sin anotar cuyo tipo es un compuesto concreto (o un array, una colección o un `Optional` de él, a cualquier
+profundidad) se clasifica por los campos del compuesto, con la ruta `campo.parte`: `home.street`, `previous.city`. Una
+subclase de un compuesto también es un compuesto, porque la anotación se hereda. Marca clases concretas y records: una
+interfaz o una clase abstracta marcada `@Composite` no se incrusta, porque sus implementaciones pueden tener otros
+campos.
 
 - El compuesto se resuelve con **sus propias** anotaciones y su `@DefaultCategory`, nunca con los de la clase
   contenedora: un valor por defecto en `ScholarshipApplication` no llega a `Address`.
@@ -363,19 +365,25 @@ a cualquier profundidad) se clasifica por los campos del compuesto, con la ruta 
   basta para la dirección, pero `@Category(SYSTEM_OPERATIONS)` sería un error `WEAKER_THAN_PARTS`.
 - Un compuesto que se contiene a sí mismo (un `Node` con una lista de `Node`) no se puede expandir: el campo que
   cierra el bucle es un error `CYCLE`; clasifica ese campo como un solo valor.
-- **Olvidar `@Composite` es seguro.** Sin él, `home` no tiene categoría y no toma ningún valor por defecto de la clase,
-  porque el clasificador ve que la clase contiene campos clasificados: informa `UNCLASSIFIED_FIELD`. No hace falta pasar
+- **Olvidar `@Composite` es seguro.** Sin él, `home` es una referencia a un registro que contiene datos personales, así
+  que no toma ningún valor por defecto de la clase: el clasificador informa `UNCLASSIFIED_FIELD`. No hace falta pasar
   las clases embebibles a `verify` por separado.
-- **Un valor por defecto de la clase nunca llega a datos que el clasificador no ve.** Un compuesto como clave de mapa o
-  como argumento de tipo de una clase que no es una colección (`Wrapper<Address>`), varios compuestos en un campo,
-  `Object`, una variable de tipo sin enlazar o un contenedor sin parametrizar son `UNCLASSIFIED_FIELD` aunque la clase
-  tenga `@DefaultCategory`, así que envolver datos personales nunca los convierte en un valor por defecto no personal.
-  Declara tú la categoría de un campo así.
+- **Un valor por defecto de la clase nunca llega a datos que el clasificador no ve.** Compuestos en un `Map` (en el
+  que nunca se entra: sus claves también son datos), un compuesto como argumento de tipo de una clase que no es una
+  colección (`Wrapper<Address>`), varios compuestos en un campo (un compuesto genérico como `Box<Address>` menciona
+  dos), `Object`, `Serializable`, una variable de tipo sin enlazar o un contenedor sin parametrizar son
+  `UNCLASSIFIED_FIELD` aunque la clase tenga `@DefaultCategory`, así que envolver datos personales nunca los convierte
+  en un valor por defecto no personal. Declara tú la categoría de un campo así, como un solo valor: un
+  `Map<String, Address>` con `@Category(USER_CONTACT_ADDRESS)` se comprueba entonces contra los campos de `Address`.
+- **Una referencia a otro registro es un dato personal cuando lo es el registro.** Un campo cuyo tipo es otro registro
+  del modelo toma el valor por defecto de la clase solo cuando ese registro no contiene datos personales, como un
+  elemento de un catálogo (`Country`). Una referencia al registro de una persona, como los `Attachment` de un documento,
+  es una clave seudónima: declara lo que guarda, normalmente la clave del registro, con
+  `@DerivedFrom(type = Attachment.class, value = "id")`.
 
 ## `@Exempt`: campos técnicos
 
-Algunos campos no contienen datos del modelo: una caché, un manejador técnico, un estado que mantiene un framework o
-una colección de otros registros que se clasifican por sí mismos, como los hijos de una asociación uno a muchos.
+Algunos campos no contienen datos del modelo: una caché, un manejador técnico o un estado que mantiene un framework.
 `@Exempt` los excluye, con un motivo:
 
 ```java
@@ -384,7 +392,8 @@ private String renderedMenu;
 ```
 
 Un valor calculado a partir de otros campos **no** es un campo así: es un dato, y usa `@DerivedFrom` o `@Category`. Si
-te encuentras escribiendo «calculado a partir de…» como motivo, usa `@DerivedFrom`.
+te encuentras escribiendo «calculado a partir de…» como motivo, usa `@DerivedFrom`. Tampoco lo es una relación con un
+registro que contiene datos personales. El `Document` del modelo tiene una de esas y un campo técnico:
 
 ```java
 public class Document extends AuditedEntity {
@@ -401,10 +410,17 @@ public class Document extends AuditedEntity {
     @Category(USER_CONTENT_PRIVATE)
     private String documentType;
 
-    @Exempt("relación: cada Attachment se clasifica por separado")
+    @DerivedFrom(type = Attachment.class, value = "id")   // hijos uno a muchos: guarda su clave
     private List<Attachment> attachments;
+
+    @Exempt("cliente del almacén de archivos, se abre bajo demanda")
+    private Object fileStore;
 }
 ```
+
+`attachments` no se exime, aunque no tiene columna propia: los `Attachment` son registros sobre una persona, así que una
+referencia a ellos es un dato personal, y un `@Exempt` ahí es un error `CONFLICTING_ANNOTATIONS`. `fileStore` es para lo
+que sirve `@Exempt`.
 
 Se excluyen automáticamente, sin anotación: los campos **`static`**, los **sintéticos** (generados por el
 compilador) y los que llevan el modificador Java **`transient`**, salvo que un campo `transient` lleve una de las
@@ -499,6 +515,8 @@ public class Student extends AuditedEntity {
   contienen datos del modelo; el motivo se revisa.
 - **Eximir un valor calculado** («calculado a partir de firstName y lastName»). Es un dato: usa `@DerivedFrom`, o
   `@Category` si conoces su categoría.
+- **Eximir una relación** con un registro que contiene datos personales. Una referencia al registro de una persona es un
+  dato personal: declara lo que guarda con `@DerivedFrom(type = ..., value = "id")`, como hace `Document.attachments`.
 - **Dejar una clase embebida sin `@Composite`.** Una dirección `@Embedded` de JPA es entonces un campo sin categoría
   (`UNCLASSIFIED_FIELD`). Marca la clase embebible `@Composite` y los campos que la contienen se clasifican por sus
   campos; no hagas `@Exempt` del campo embebido.
@@ -759,7 +777,7 @@ promedio sobre muchas personas, puede proteger menos.
 7. `@DerivedFrom("dateOfBirth")`. Toma la clasificación de su fuente: `user.demographic.date_of_birth`, identificado,
    dato personal, con base `DERIVED`.
 8. `UNCLASSIFIED_FIELD` para ese campo, aunque la clase tenga un valor por defecto: `Address` tiene campos clasificados
-   pero no es un compuesto, así que el campo puede ocultar datos y no toma ningún valor por defecto de la clase. Marca
-   `Address` como `@Composite`, o declara la categoría del campo.
+   pero no es un compuesto, así que el campo es una referencia a un registro que contiene datos personales y no toma
+   ningún valor por defecto de la clase. Marca `Address` como `@Composite`, o declara la categoría del campo.
 
 </details>

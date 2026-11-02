@@ -98,7 +98,12 @@ public final class SubjectRights {
         /**
          * Objection (article 21).
          */
-        OBJECTION("21");
+        OBJECTION("21"),
+
+        /**
+         * Not to be subject to a decision based solely on automated processing (article 22).
+         */
+        AUTOMATED_DECISION("22");
 
         private final String article;
 
@@ -352,8 +357,12 @@ public final class SubjectRights {
                     + " lawful basis; build the record with ProcessingChecker.verify");
         }
         boolean marketing = checked.purposes().stream().anyMatch(use -> use.has(Trait.DIRECT_MARKETING));
+        boolean onlyMarketing = marketing && checked.purposes().stream().allMatch(u -> u.has(Trait.DIRECT_MARKETING));
+        boolean research = checked.purposes().stream().anyMatch(use -> use.has(Trait.RESEARCH));
+        boolean automated = checked.activity().allRiskFactors().contains(ImpactScreening.Factor.AUTOMATED_DECISIONS);
         boolean explicitConsent = governance.specialCategoryConditions()
                 .contains(SpecialCategoryCondition.EXPLICIT_CONSENT);
+        boolean otherConditions = governance.specialCategoryConditions().size() > (explicitConsent ? 1 : 0);
         String blocking = jurisdiction == Jurisdiction.SPAIN
                 ? " Under Spanish law the data is blocked, not deleted, while liabilities may arise from the"
                 + " processing, and deleted afterwards (LOPDGDD art. 32)." : "";
@@ -361,10 +370,12 @@ public final class SubjectRights {
         List<Entitlement> entitlements = new ArrayList<>();
         entitlements.add(new Entitlement(Right.ACCESS, Availability.YES, "Art. 15: confirmation, a copy of the data"
                 + " and the purposes, categories, recipients, transfers and retention of this activity ("
-                + terms(checked.purposes()) + ")."));
+                + terms(checked.purposes()) + ")" + (automated ? ", and the automated decisions it makes, their"
+                + " logic and consequences (art. 15.1.h)" : "") + "."));
         entitlements.add(new Entitlement(Right.RECTIFICATION, Availability.YES,
                 "Art. 16: inaccurate data is rectified and incomplete data completed." + blocking));
-        entitlements.add(erasure(basis, marketing, explicitConsent, retention, blocking));
+        entitlements.add(erasure(basis, marketing, onlyMarketing, research, explicitConsent, otherConditions,
+                retention, blocking));
         entitlements.add(new Entitlement(Right.RESTRICTION, Availability.CONDITIONAL, "Art. 18.1: while the accuracy"
                 + " of the data or an objection is being verified, when the processing is unlawful and the person"
                 + " prefers restriction, or when the data is no longer needed but the person needs it for legal"
@@ -374,6 +385,9 @@ public final class SubjectRights {
         if (basis == LegalBasis.CONSENT || basis == LegalBasis.CONTRACT) {
             entitlements.add(new Entitlement(Right.PORTABILITY, Availability.YES, "Art. 20.1: the processing is"
                     + " based on " + label(basis) + ";" + portable));
+        } else if (basis == LegalBasis.PUBLIC_INTEREST) {
+            entitlements.add(new Entitlement(Right.PORTABILITY, Availability.NO, "Art. 20.3: portability does not"
+                    + " apply to processing necessary for a task in the public interest."));
         } else if (explicitConsent) {
             entitlements.add(new Entitlement(Right.PORTABILITY, Availability.CONDITIONAL, "Art. 20.1.a: the special"
                     + " category data is processed with explicit consent (art. 9.2.a);" + portable + " The rest rests"
@@ -382,28 +396,44 @@ public final class SubjectRights {
             entitlements.add(new Entitlement(Right.PORTABILITY, Availability.NO, "Art. 20.1: portability applies to"
                     + " processing based on consent or a contract; this activity rests on " + label(basis) + "."));
         }
-        entitlements.add(objection(basis, marketing));
+        entitlements.add(objection(basis, marketing, research));
+        entitlements.add(automated ? new Entitlement(Right.AUTOMATED_DECISION, Availability.CONDITIONAL, "Art. 22:"
+                + " the person is not subject to a decision based solely on automated processing with legal or"
+                + " similarly significant effects, unless it is necessary for a contract, authorised by law or based"
+                + " on explicit consent; then the person may obtain human intervention, express their view and"
+                + " contest the decision (art. 22.3).")
+                : new Entitlement(Right.AUTOMATED_DECISION, Availability.NO, "Art. 22: the activity declares no"
+                + " decision based solely on automated processing."));
         return entitlements;
     }
 
-    private static Entitlement erasure(LegalBasis basis, boolean marketing, boolean explicitConsent,
-                                       String retention, String blocking) {
-        Entitlement entitlement = erasure(basis, marketing, retention, blocking);
+    private static Entitlement erasure(LegalBasis basis, boolean marketing, boolean onlyMarketing, boolean research,
+                                       boolean explicitConsent, boolean otherConditions, String retention,
+                                       String blocking) {
+        Entitlement entitlement = erasure(basis, marketing, onlyMarketing, retention, blocking);
+        if (research && entitlement.availability() != Availability.NO) {
+            entitlement = new Entitlement(Right.ERASURE, Availability.CONDITIONAL, entitlement.explanation() + " For"
+                    + " research, erasure may be refused where it would make the research impossible or seriously"
+                    + " impair it (art. 17.3.d).");
+        }
         if (!explicitConsent || basis == LegalBasis.CONSENT || entitlement.availability() == Availability.YES) {
             return entitlement;
         }
         return new Entitlement(Right.ERASURE, Availability.CONDITIONAL, entitlement.explanation() + " The special"
                 + " category data, processed with explicit consent, is erased when the consent is withdrawn"
-                + " (art. 17.1.b with 9.2.a).");
+                + (otherConditions ? ", unless another condition of article 9.2 declared for the activity covers it"
+                : "") + " (art. 17.1.b with 9.2.a).");
     }
 
-    private static Entitlement erasure(LegalBasis basis, boolean marketing, String retention, String blocking) {
+    private static Entitlement erasure(LegalBasis basis, boolean marketing, boolean onlyMarketing, String retention,
+                                       String blocking) {
         boolean kept = basis == LegalBasis.LEGAL_OBLIGATION || basis == LegalBasis.PUBLIC_INTEREST;
-        if (marketing && kept) {
+        if (marketing && (kept || !onlyMarketing)) {
             return new Entitlement(Right.ERASURE, Availability.CONDITIONAL, "Art. 17.1.c and 21.3: after an objection"
                     + " to direct marketing the data is no longer processed for it and is erased, except what "
-                    + (basis == LegalBasis.LEGAL_OBLIGATION ? "the legal obligation" : "the task in the public"
-                    + " interest") + " still requires (art. 17.3.b; retention: " + retention + ")." + blocking);
+                    + (kept ? (basis == LegalBasis.LEGAL_OBLIGATION ? "the legal obligation" : "the task in the"
+                    + " public interest") + " still requires (art. 17.3.b; retention: " + retention + ")"
+                    : "the activity's other purposes still need") + "." + blocking);
         }
         if (marketing) {
             return new Entitlement(Right.ERASURE, Availability.YES, "Art. 17.1.c and 21.2: the person may object to"
@@ -425,10 +455,18 @@ public final class SubjectRights {
         };
     }
 
-    private static Entitlement objection(LegalBasis basis, boolean marketing) {
+    private static Entitlement objection(LegalBasis basis, boolean marketing, boolean research) {
         if (marketing) {
             return new Entitlement(Right.OBJECTION, Availability.YES, "Art. 21.2 and 21.3: the person may object at"
                     + " any time to processing for direct marketing, which then stops.");
+        }
+        if (research) {
+            return basis == LegalBasis.PUBLIC_INTEREST
+                    ? new Entitlement(Right.OBJECTION, Availability.NO, "Art. 21.6: objection to research does not"
+                    + " apply where the research is necessary for a task in the public interest.")
+                    : new Entitlement(Right.OBJECTION, Availability.CONDITIONAL, "Art. 21.6: on grounds relating to"
+                    + " the person's particular situation, the person may object to processing for research or"
+                    + " statistics.");
         }
         if (basis == LegalBasis.PUBLIC_INTEREST || basis == LegalBasis.LEGITIMATE_INTERESTS) {
             return new Entitlement(Right.OBJECTION, Availability.CONDITIONAL, "Art. 21.1: on grounds relating to the"

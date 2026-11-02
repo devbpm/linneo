@@ -117,7 +117,9 @@ su padre. Una `Taxonomy` garantiza que nunca son más débiles que los del padre
 El constructor canónico lanza `NullPointerException` si `info`, `nature`, `confidentiality` o `integrity` son
 `null`; un `attributes` `null` se convierte en un mapa vacío, y el mapa se copia en uno inmutable; un `traits` `null`
 se convierte en un conjunto vacío, y `IllegalArgumentException` indica un rasgo que no se aplica a las categorías de
-datos.
+datos. Lanza también `IllegalArgumentException` si la `nature` es de categoría especial o de datos de condenas e
+infracciones penales (`LegalNature.requiresMaximumProtection()`) y la confidencialidad y la integridad no son ambas
+`HIGH`, como exige `TaxonomyBuilder.build()` a toda categoría que construye.
 
 | Método | Devuelve | Descripción |
 |---|---|---|
@@ -179,10 +181,13 @@ incluida declara los de sus términos. Cada rasgo se aplica solo a algunas jerar
 | `DIRECT_IDENTIFIER` | categorías de datos | Datos que identifican a una persona por sí solos: un nombre, un documento de identidad, un rostro, una plantilla biométrica. |
 | `CONTACT_IDENTIFIER` | categorías de datos | Datos mediante los que se puede localizar a una persona y, por tanto, identificarla: datos de contacto, una cuenta. |
 | `INDIRECT_IDENTIFIER` | categorías de datos | Datos que singularizan a una persona dentro de un sistema: un identificador interno o de dispositivo. |
+| `BIOMETRIC` | categorías de datos | Datos biométricos como los define el artículo 4.14 del RGPD: características físicas, fisiológicas o conductuales que permiten o confirman la identificación única de una persona, como las imágenes faciales o las huellas dactilares. |
+| `GENETIC` | categorías de datos | Datos genéticos como los define el artículo 4.13 del RGPD: características genéticas heredadas o adquiridas, tal como las da el análisis de una muestra biológica. |
 | `MONITORING` | categorías de datos, usos de datos | Datos obtenidos observando a las personas, o una finalidad que las observa, rastrea o vigila de forma sistemática. |
 | `VULNERABLE` | categorías de datos, sujetos de datos | Personas en una posición más débil que el responsable, como niños, empleados y pacientes, o datos que tratan de ellas por su naturaleza. |
 | `EVALUATION` | usos de datos | Una finalidad que evalúa o puntúa a las personas, elabora perfiles de ellas o predice su comportamiento, rendimiento o situación. |
 | `DIRECT_MARKETING` | usos de datos | Mercadotecnia directa, incluidas las campañas de captación de fondos y la elaboración de perfiles relacionada, a la que el interesado puede oponerse en todo momento (artículo 21.2 del RGPD). |
+| `RESEARCH` | usos de datos | Una finalidad de investigación científica o histórica o de estadística (artículo 89.1 del RGPD), a la que los derechos de supresión y oposición se aplican con sus propios límites (artículos 17.3.d y 21.6). |
 
 | Método | Descripción |
 |---|---|
@@ -190,7 +195,7 @@ incluida declara los de sus términos. Cada rasgo se aplica solo a algunas jerar
 | `boolean isIdentifier()` | `true` para `DIRECT_IDENTIFIER`, `CONTACT_IDENTIFIER` e `INDIRECT_IDENTIFIER`: los rasgos que indican cómo un valor identifica a una persona. |
 | `boolean isHighlyPersonal()` | `true` para `FINANCIAL`, `BEHAVIOURAL` y `PRIVATE_LIFE`: datos de naturaleza altamente personal en el sentido de las directrices sobre evaluaciones de impacto. |
 
-Tres reglas los leen:
+Cuatro reglas los leen:
 
 - [`ImpactScreening`](processing/impact-screening.md) lee `FINANCIAL`, `BEHAVIOURAL` y `PRIVATE_LIFE` como datos de
   naturaleza altamente personal, y `EVALUATION`, `MONITORING` y `VULNERABLE` como los criterios del mismo nombre
@@ -198,11 +203,20 @@ Tres reglas los leen:
 - [`BreachAssessment`](processing/breach-assessment.md) lee `FINANCIAL` y `BEHAVIOURAL` como el contexto del
   tratamiento de los datos y los rasgos de identificador como la facilidad de identificación (ENISA, 2013);
 - [`SubjectRights`](processing/subject-rights.md) lee `DIRECT_MARKETING` para el derecho de oposición absoluto
-  (artículo 21.2 y 21.3 del RGPD).
+  (artículo 21.2 y 21.3 del RGPD) y `RESEARCH` para el derecho de oposición a la investigación (artículo 21.6) y el
+  límite a la supresión (artículo 17.3.d);
+- [`ProcessingChecker`](processing/checker.md) lee `BIOMETRIC` y `GENETIC` con `Jurisdiction.SPAIN`, donde la lista de
+  la AEPD del artículo 35.4 los cuenta como criterios propios.
 
 Añadir un rasgo a un término endurece esas reglas, así que es un cambio menor de una taxonomía; quitarlo puede levantar
 una obligación, así que es un cambio mayor ([`TermChange.Aspect.TRAITS`](taxonomy-diff.md#aspect)). `Taxonomy.toTsv()`
 los escribe como filas `trait`.
+
+Una sustituta lleva todos los rasgos del término que sustituye, en las tres jerarquías: las declaraciones que aún
+nombran la clave obsoleta se comprueban con la sustituta, así que una sin el rasgo levantaría la regla en silencio.
+`TaxonomyBuilder.build()` lanza `TaxonomyException` (`The replacement '<r>' of data category '<key>' lacks its traits
+[...]`) en otro caso. Los rasgos son una ayuda: permiten que las reglas vean lo que una clave no dice, y el delegado de
+protección de datos sigue revisando cada resultado.
 
 ```java
 Taxonomy taxonomy = Taxonomy.standard();

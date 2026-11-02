@@ -15,7 +15,7 @@ doc-sources:
 `io.github.devbpm.linneo.processing.SubjectRights` — `public final class`, `@since 0.1.0`
 
 Lo que el [registro de actividades de tratamiento](record.md) dice a alguien de una categoría de interesados que ejerce
-sus derechos (RGPD, artículos 15 a 21): las actividades que tratan sus datos, qué trata cada una y por qué, dónde se
+sus derechos (RGPD, artículos 15 a 22): las actividades que tratan sus datos, qué trata cada una y por qué, dónde se
 guardan esos datos y qué derechos le da la base jurídica de cada actividad. Las instancias son inmutables; no hay
 constructor público.
 
@@ -64,6 +64,7 @@ inventario da los campos de los objetos.
 | `RESTRICTION` | `18` | Limitación del tratamiento. |
 | `PORTABILITY` | `20` | Portabilidad de los datos. |
 | `OBJECTION` | `21` | Oposición. |
+| `AUTOMATED_DECISION` | `22` | No ser objeto de una decisión basada únicamente en un tratamiento automatizado. |
 
 ## Availability
 
@@ -107,31 +108,51 @@ registro construido con `ProcessingChecker.verify` tiene:
 | `PORTABILITY` (20) | `YES` | `YES` | `NO` | `NO` | `NO` | `NO` |
 | `OBJECTION` (21) | `NO` | `NO` | `NO` | `NO` | `CONDITIONAL` (21.1) | `CONDITIONAL` (21.1) |
 
+La tabla no tiene fila para `AUTOMATED_DECISION`: no depende de la base jurídica (véase más abajo).
+
 - **La supresión** no está disponible mientras una obligación legal o una misión de interés público necesita los datos
   (artículo 17.3.b), y la explicación incluye entonces la conservación que declara la actividad (`not declared` si no
   tiene). Con consentimiento sigue a la retirada del consentimiento (17.1.b), con un contrato o intereses vitales a
   que los datos dejen de ser necesarios (17.1.a), con intereses legítimos a una oposición salvo que haya motivos
   legítimos imperiosos (17.1.c).
 - **La portabilidad** se aplica al tratamiento basado en el consentimiento o en un contrato (artículo 20.1), y a los
-  datos de categoría especial tratados con consentimiento explícito (artículo 20.1.a; véase más abajo).
+  datos de categoría especial tratados con consentimiento explícito (artículo 20.1.a; véase más abajo). No se aplica al
+  tratamiento necesario para una misión de interés público (artículo 20.3), ni siquiera con consentimiento explícito.
 - **La oposición** se aplica al tratamiento basado en una misión de interés público o en intereses legítimos
   (artículo 21.1).
+- **Las decisiones automatizadas** (artículo 22) no dependen de la base sino de lo que declara la actividad. Si la
+  actividad declara `Factor.AUTOMATED_DECISIONS`, en el alcance o en la gobernanza, el derecho es `CONDITIONAL`: la
+  persona no es objeto de una decisión basada únicamente en un tratamiento automatizado con efectos jurídicos o
+  similares, salvo que sea necesaria para un contrato, esté autorizada por ley o se base en el consentimiento
+  explícito, y entonces puede obtener intervención humana, expresar su punto de vista e impugnar la decisión (artículo
+  22.3). La explicación de `ACCESS` añade las decisiones automatizadas, su lógica y sus consecuencias (artículo
+  15.1.h). Sin el factor, el derecho es `NO`.
 - **La limitación** es `CONDITIONAL` en toda actividad: se aplica mientras se verifica la exactitud de los datos o una
   oposición, cuando el tratamiento es ilícito y la persona prefiere la limitación, o cuando la persona necesita los
   datos para reclamaciones (artículo 18.1).
 - **Mercadotecnia directa.** Si una finalidad de la actividad tiene el [rasgo `DIRECT_MARKETING`](../terms.md#trait)
-  (el uso estándar `marketing` y todo lo que cuelga de él, `advancement` en la extensión universitaria, o un término
-  tuyo que lo declare), sea cual sea la base, `OBJECTION` es `YES` (artículos 21.2 y 21.3: el tratamiento cesa) y
+  (los usos estándar `marketing` y `sales` y todo lo que cuelga de ellos, los usos de relaciones con antiguos alumnos,
+  captación de fondos e investigación de posibles donantes de la extensión universitaria, o un término tuyo que lo
+  declare), sea cual sea la base, `OBJECTION` es `YES` (artículos 21.2 y 21.3: el tratamiento cesa) y
   `ERASURE` es `YES` (artículos 17.1.c y 21.2: la persona puede oponerse en cualquier momento y los datos se suprimen
   entonces). Cuando la base es una obligación legal o una misión de interés público, `ERASURE` es en cambio
   `CONDITIONAL` (artículos 17.1.c y 21.3): los datos se suprimen salvo lo que conserva el artículo 17.3.b, y la
-  explicación incluye la conservación.
+  explicación incluye la conservación. `ERASURE` es también `CONDITIONAL` cuando la mercadotecnia directa es una
+  finalidad junto a otras: los datos se suprimen salvo lo que aún necesitan las demás finalidades de la actividad.
+- **Investigación.** Si una finalidad de la actividad tiene el rasgo `RESEARCH` (el uso `research` de la extensión
+  universitaria, o un término tuyo que lo declare), `OBJECTION` es `CONDITIONAL` (artículo 21.6: por motivos
+  relacionados con la situación particular de la persona) o `NO` cuando la base es una misión de interés público, y un
+  `ERASURE` que no es `NO` pasa a ser `CONDITIONAL`, con una explicación que señala que puede denegarse cuando haría
+  imposible o perjudicaría gravemente la investigación (artículo 17.3.d). La mercadotecnia directa va primero para
+  `OBJECTION`.
 - **Consentimiento explícito.** Si la actividad declara el consentimiento explícito como condición para datos de
   categoría especial (artículo 9.2.a, en [`specialCategoryConditions`](activity.md#governance)): cuando su base
-  jurídica no es el consentimiento ni un contrato, `PORTABILITY` es `CONDITIONAL` en lugar de `NO` (artículo 20.1.a:
-  abarca los datos de categoría especial, no el resto); y cuando su base no es el consentimiento, `ERASURE` es
+  jurídica no es el consentimiento, un contrato ni una misión de interés público, `PORTABILITY` es `CONDITIONAL` en
+  lugar de `NO` (artículo 20.1.a: abarca los datos de categoría especial, no el resto), mientras que con una misión de
+  interés público sigue siendo `NO` (artículo 20.3); y cuando su base no es el consentimiento, `ERASURE` es
   `CONDITIONAL` salvo que ya sea `YES`, y la explicación añade que los datos de categoría especial se suprimen cuando se
-  retira el consentimiento (artículos 17.1.b y 9.2.a).
+  retira el consentimiento (artículos 17.1.b y 9.2.a), salvo que lo cubra otra condición del artículo 9.2 declarada para
+  la actividad, cuando la actividad declara otras.
 - **El acceso** es `YES` en toda actividad y su explicación enumera por su nombre las finalidades de la actividad. Las
   explicaciones de los demás derechos citan los artículos anteriores.
 - **`Jurisdiction.SPAIN`.** Las explicaciones de `RECTIFICATION` y `ERASURE` añaden que los datos se bloquean, no se

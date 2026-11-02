@@ -22,6 +22,7 @@ import io.github.devbpm.linneo.annotation.Category;
 import io.github.devbpm.linneo.annotation.Composite;
 import io.github.devbpm.linneo.annotation.DefaultCategory;
 import io.github.devbpm.linneo.annotation.DerivedFrom;
+import io.github.devbpm.linneo.annotation.Exempt;
 import io.github.devbpm.linneo.classify.FieldClassification.Basis;
 import io.github.devbpm.linneo.classify.Violation.Code;
 import org.junit.jupiter.api.DisplayName;
@@ -97,7 +98,6 @@ class ClassifierFailClosedTest {
     @SuppressWarnings("unused")
     @DefaultCategory(value = Categories.SYSTEM_OPERATIONS, reason = "technical")
     static class Holder {
-        private Map<String, Address> byType;
         private List<List<Address>> history;
         private Optional<List<Address>> previous;
         private HomeAddress home;
@@ -115,7 +115,7 @@ class ClassifierFailClosedTest {
         ClassClassification holder = classifier.classify(Holder.class);
         assertAll(
                 () -> assertTrue(holder.isValid(), holder::toString),
-                () -> assertEquals(List.of("byType.city", "history.city", "previous.city", "home.city",
+                () -> assertEquals(List.of("history.city", "previous.city", "home.city",
                         "home.street", "moves.city", "grid.city", "bounded.city"), holder.personalFields().stream()
                         .map(FieldClassification::path).toList()),
                 () -> assertEquals(Basis.CLASS_DEFAULT, holder.field("tags").orElseThrow().basis()),
@@ -301,11 +301,125 @@ class ClassifierFailClosedTest {
                 () -> assertEquals(built.fingerprint(), inventory.fingerprint()));
     }
 
+    @Composite
+    interface Contact {
+    }
+
+    @SuppressWarnings("unused")
+    @Composite
+    abstract static class Place {
+        @Category(Categories.USER_CONTACT_ADDRESS_COUNTRY)
+        private String country;
+    }
+
+    @SuppressWarnings("unused")
+    @Composite
+    static class Box<T> {
+        @Category(Categories.SYSTEM_OPERATIONS)
+        private T value;
+    }
+
+    /** Holds personal data only through composites. */
+    @SuppressWarnings("unused")
+    static class Resident {
+        private Address home;
+    }
+
+    @SuppressWarnings("unused")
+    @DefaultCategory(value = Categories.SYSTEM_OPERATIONS, reason = "catalogue")
+    static class Country {
+        private String code;
+    }
+
+    @SuppressWarnings("unused")
+    sealed interface Payment permits Card {
+    }
+
+    @SuppressWarnings("unused")
+    record Card(@Category(Categories.USER_FINANCIAL_CREDIT_CARD) String number) implements Payment {
+    }
+
+    @SuppressWarnings("unused")
+    @Composite
+    static class Leaky {
+        private String unclassified;
+    }
+
+    static class Outer<T> {
+        class Inner {
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @DefaultCategory(value = Categories.SYSTEM_OPERATIONS, reason = "technical")
+    static class Shapes<B extends Comparable<B>> {
+        private Contact contact;
+        private Place place;
+        private Box<Address> box;
+        private Map<String, Address> byEmail;
+        private Resident resident;
+        private Country country;
+        private List<Country> visited;
+        private Payment payment;
+        private java.util.concurrent.atomic.AtomicReference<Resident> later;
+        private java.util.function.Supplier<Object> anything;
+        private java.io.Serializable blob;
+        private B bounded;
+        private Outer<Address>.Inner inner;
+        @Category(Categories.SYSTEM_OPERATIONS)
+        private Leaky leaky;
+        @Exempt("lazy collection mapped by the resident")
+        private List<Resident> residents;
+        @Exempt("lazy collection mapped by the country")
+        private List<Country> countries;
+        private Object $lock;
+    }
+
+    @Test
+    @DisplayName("abstract and generic composites, maps, references and opaque types take no class default")
+    void shapes() {
+        ClassClassification shapes = classifier.classify(Shapes.class);
+        assertAll(
+                () -> assertEquals(List.of("contact", "place", "box", "byEmail", "resident", "payment", "later",
+                        "anything", "blob", "bounded", "inner"), shapes.errors().stream()
+                        .filter(v -> v.code() == Code.UNCLASSIFIED_FIELD).map(Violation::path).toList()),
+                () -> assertEquals(List.of("leaky"), shapes.errors().stream()
+                        .filter(v -> v.code() == Code.WEAKER_THAN_PARTS).map(Violation::path).toList()),
+                () -> assertEquals(List.of("residents"), shapes.errors().stream()
+                        .filter(v -> v.code() == Code.CONFLICTING_ANNOTATIONS).map(Violation::path).toList()),
+                () -> assertTrue(shapes.errors().stream().anyMatch(v -> v.path().equals("resident")
+                        && v.message().contains("@DerivedFrom(type = Resident.class"))),
+                () -> assertEquals(Basis.CLASS_DEFAULT, shapes.field("country").orElseThrow().basis()),
+                () -> assertEquals(Basis.CLASS_DEFAULT, shapes.field("visited").orElseThrow().basis()),
+                () -> assertEquals(List.of("residents", "countries"), shapes.exempted().stream()
+                        .map(ClassClassification.Exemption::path).toList()),
+                () -> assertTrue(shapes.field("$lock").isEmpty()));
+    }
+
+    @SuppressWarnings("unused")
+    @DefaultCategory(value = Categories.SYSTEM_OPERATIONS, reason = "technical")
+    static class Invoice {
+        @DerivedFrom(type = Resident.class, value = "home.city")
+        private String city;
+        @DerivedFrom(type = Country.class, value = "code")
+        private String country;
+    }
+
+    @Test
+    @DisplayName("a reference declared with @DerivedFrom takes the classification of the record's field")
+    void declaredReferences() {
+        ClassClassification invoice = classifier.classify(Invoice.class);
+        assertAll(
+                () -> assertTrue(invoice.isValid(), invoice::toString),
+                () -> assertTrue(invoice.field("city").orElseThrow().isPersonal()));
+    }
+
     @Test
     @DisplayName("the problems of a class do not depend on the order in which classes are classified")
     void orderIndependent() {
         List<Class<?>> classes = List.of(Holder.class, Opaque.class, Stored.class, Secrets.class, Node.class,
-                Left.class, Right.class, DerivedWhole.class, Envelope.class);
+                Left.class, Right.class, DerivedWhole.class, Envelope.class, Shapes.class, Resident.class,
+                Country.class);
         Map<Class<?>, List<Violation>> expected = new java.util.HashMap<>();
         for (List<Class<?>> order : permutations(classes, 40)) {
             for (ClassClassification classification : classifier.classifyAll(order)) {

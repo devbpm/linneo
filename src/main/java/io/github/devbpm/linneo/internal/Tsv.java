@@ -160,6 +160,7 @@ public final class Tsv {
             return cell;
         }
         StringBuilder value = new StringBuilder(cell.length());
+        List<Integer> lone = new ArrayList<>();
         for (int i = 0; i < cell.length(); i++) {
             char c = cell.charAt(i);
             if (c != '\\') {
@@ -178,16 +179,33 @@ public final class Tsv {
                     if (i + 4 >= cell.length()) {
                         throw new IllegalArgumentException("Line " + line + ": '\\u' needs four hexadecimal digits");
                     }
+                    char escaped;
                     try {
-                        value.append((char) HexFormat.fromHexDigits(cell, i + 1, i + 5));
+                        escaped = (char) HexFormat.fromHexDigits(cell, i + 1, i + 5);
                     } catch (IllegalArgumentException e) {
                         throw new IllegalArgumentException("Line " + line + ": '\\u' needs four hexadecimal digits",
                                 e);
                     }
+                    // Only a lone surrogate is written this way, so a text has a single form.
+                    if (!Character.isSurrogate(escaped)) {
+                        throw new IllegalArgumentException("Line " + line + ": '\\u' only escapes a lone surrogate");
+                    }
+                    lone.add(value.length());
+                    value.append(escaped);
                     i += 4;
                 }
                 default -> throw new IllegalArgumentException("Line " + line + ": invalid escape '\\"
                         + cell.charAt(i) + "'");
+            }
+        }
+        for (int at : lone) {
+            char c = value.charAt(at);
+            boolean paired = Character.isHighSurrogate(c) ? at + 1 < value.length()
+                    && Character.isLowSurrogate(value.charAt(at + 1))
+                    : at > 0 && Character.isHighSurrogate(value.charAt(at - 1));
+            if (paired) {
+                throw new IllegalArgumentException("Line " + line + ": an escaped surrogate is part of a pair, which"
+                        + " is written as it is");
             }
         }
         return value.toString();

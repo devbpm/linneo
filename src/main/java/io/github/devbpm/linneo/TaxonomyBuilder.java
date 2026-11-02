@@ -19,6 +19,7 @@ import io.github.devbpm.linneo.TermChange.Hierarchy;
 import io.github.devbpm.linneo.internal.StandardTaxonomy;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -142,7 +143,8 @@ public final class TaxonomyBuilder {
      */
     public TaxonomyBuilder extend(TaxonomyExtension extension) {
         String name = Objects.requireNonNull(extension, "extension").name();
-        if (name == null || name.isBlank() || TermInfo.FIDESLANG.equals(name) || TermInfo.LINNEO.equals(name)) {
+        if (name == null || name.isBlank() || TermInfo.FIDESLANG.equals(name) || TermInfo.LINNEO.equals(name)
+                || DEFAULT_ORIGIN.equals(name)) {
             throw new TaxonomyException("Invalid extension name '" + name + "' in " + extension.getClass().getName());
         }
         Class<?> applied = appliedExtensions.putIfAbsent(name, extension.getClass());
@@ -212,8 +214,8 @@ public final class TaxonomyBuilder {
             throw new TaxonomyException("The extension '" + extending + "' cannot add the root data category '" + key
                     + "': an extension adds data categories below existing ones");
         }
-        CategoryDraft draft = new CategoryDraft(checkKey(key, categories), name, description, origin);
-        customizer.accept(draft);
+        CategoryDraft draft = new CategoryDraft(this, checkKey(key, categories), name, description, origin);
+        customize(draft, customizer);
         categories.put(key, draft);
         return this;
     }
@@ -265,13 +267,23 @@ public final class TaxonomyBuilder {
         if (draft == null) {
             throw new TaxonomyException("Cannot refine unknown " + kind + " '" + key + "'");
         }
-        draft.lockLifecycle(extending != null && !extending.equals(draft.origin()) ? extending : null);
+        customize(draft, customizer);
+        return this;
+    }
+
+    // A draft is open while its customizer runs, so it cannot be kept and changed later.
+    private static <D extends TermDraft> void customize(D draft, Consumer<? super D> customizer) {
+        boolean was = draft.open(true);
         try {
             customizer.accept(draft);
         } finally {
-            draft.lockLifecycle(null);
+            draft.open(was);
         }
-        return this;
+    }
+
+    // The extension contributing now, or null: a draft checks it when a change is made.
+    String extending() {
+        return extending;
     }
 
     /**
@@ -299,8 +311,8 @@ public final class TaxonomyBuilder {
      * @throws TaxonomyException if the key is invalid or already present
      */
     public TaxonomyBuilder dataUse(String key, String name, String description, Consumer<TermDraft> customizer) {
-        TermDraft draft = new TermDraft(Hierarchy.DATA_USE, checkKey(key, uses), name, description, origin);
-        customizer.accept(draft);
+        TermDraft draft = new TermDraft(this, Hierarchy.DATA_USE, checkKey(key, uses), name, description, origin);
+        customize(draft, customizer);
         uses.put(key, draft);
         return this;
     }
@@ -330,8 +342,9 @@ public final class TaxonomyBuilder {
      * @throws TaxonomyException if the key is invalid or already present
      */
     public TaxonomyBuilder dataSubject(String key, String name, String description, Consumer<TermDraft> customizer) {
-        TermDraft draft = new TermDraft(Hierarchy.DATA_SUBJECT, checkKey(key, subjects), name, description, origin);
-        customizer.accept(draft);
+        TermDraft draft = new TermDraft(this, Hierarchy.DATA_SUBJECT, checkKey(key, subjects), name, description,
+                origin);
+        customize(draft, customizer);
         subjects.put(key, draft);
         return this;
     }
@@ -357,8 +370,12 @@ public final class TaxonomyBuilder {
         checkReplacementProtection(builtCategories);
         checkReplacements(uses, "data use");
         checkReplacements(subjects, "data subject");
-        return new Taxonomy(builtCategories.values(), buildTerms(uses, "data use", DataUse::new),
-                buildTerms(subjects, "data subject", DataSubject::new));
+        List<DataUse> builtUses = buildTerms(uses, "data use", DataUse::new);
+        List<DataSubject> builtSubjects = buildTerms(subjects, "data subject", DataSubject::new);
+        checkReplacementTraits(builtCategories.values(), "data category");
+        checkReplacementTraits(builtUses, "data use");
+        checkReplacementTraits(builtSubjects, "data subject");
+        return new Taxonomy(builtCategories.values(), builtUses, builtSubjects);
     }
 
     // The categories whose declared facets their parent's raised in the last build, for the checks of the bundled
@@ -497,6 +514,26 @@ public final class TaxonomyBuilder {
                 throw new TaxonomyException("The replacement '" + replacedBy + "' of data category '"
                         + category.key() + "' has weaker protection: " + describe(replacement) + " instead of "
                         + describe(category));
+            }
+        }
+    }
+
+    // A declaration that names a deprecated term is checked with its replacement, so the replacement must carry every
+    // trait the legal rules read from the deprecated term.
+    private static void checkReplacementTraits(Collection<? extends Term> terms, String kind) {
+        Map<String, Term> byKey = new HashMap<>();
+        terms.forEach(term -> byKey.put(term.key(), term));
+        for (Term term : terms) {
+            String replacedBy = term.info().replacedBy();
+            if (replacedBy == null) {
+                continue;
+            }
+            Set<Trait> missing = EnumSet.noneOf(Trait.class);
+            missing.addAll(term.traits());
+            missing.removeAll(byKey.get(replacedBy).traits());
+            if (!missing.isEmpty()) {
+                throw new TaxonomyException("The replacement '" + replacedBy + "' of " + kind + " '" + term.key()
+                        + "' lacks its traits " + missing);
             }
         }
     }

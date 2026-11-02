@@ -64,7 +64,8 @@ category may have special-category or criminal-offence children, and those keep 
 
 `requiresMaximumProtection()` is the rule behind the levels: `TaxonomyBuilder.build()` throws `TaxonomyException` for
 a `SPECIAL_CATEGORY` or `CRIMINAL_OFFENCE` category that does not resolve (declared or inherited) to `HIGH`
-confidentiality and `HIGH` integrity.
+confidentiality and `HIGH` integrity, and the constructor of a [`DataCategory`](terms.md#datacategory) throws
+`IllegalArgumentException` for one built by hand with lower levels.
 
 `covers` orders the natures by how much protection their data needs. [`Protection.covers`](#protection) compares
 protections with it:

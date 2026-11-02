@@ -26,7 +26,7 @@ taxonomy and the classification of the model, and renders the record.
 
 | Type | Kind | Role | Page |
 |---|---|---|---|
-| `ProcessingActivity` | record, with a `Builder` | One processing activity as declared: its scope (purposes, data subjects, personal data) and its governance | [ProcessingActivity](activity.md) |
+| `ProcessingActivity` | record, with a `Builder` | One processing activity as declared: its scope (purposes, data subjects, personal data, the risk factors the code knows of) and its governance | [ProcessingActivity](activity.md) |
 | `Governance` | record, with a `Builder` | The part the data protection function owns: bases, legal reference, retention, recipients, transfers, impact assessment and the risk factors it declares | [ProcessingActivity](activity.md#governance) |
 | `Transfer` | record | A transfer to a third country or an international organisation | [ProcessingActivity](activity.md#transfer) |
 | `LegalBasis` | enum | The lawful basis (article 6.1) | [Legal bases](bases.md#legalbasis) |
@@ -77,10 +77,11 @@ own weighs in them as soon as it declares its traits.
 
 ## Scope and governance
 
-An activity has two parts with different owners. Its **scope**, the purposes, the data subjects and the personal data,
-is what the code of the application knows for certain. Its **governance** (`Governance`) is what the data protection
-function decides and keeps up to date: the lawful bases, the legal reference, the retention, the recipients, the
-transfers, the impact assessment and the risk factors that only it knows. An application can declare the scope in code,
+An activity has two parts with different owners. Its **scope**, the purposes, the data subjects, the personal data and
+the risk factors the code knows of, is what the code of the application knows for certain. Its **governance**
+(`Governance`) is what the data protection function decides and keeps up to date: the lawful bases, the legal
+reference, the retention, the recipients, the transfers, the impact assessment and the risk factors that only it
+knows. An application can declare the scope in code,
 keep the governance its data protection officer edits in its own storage and combine both with
 `ProcessingActivity.withGovernance(...)` before checking. Each problem the checker reports carries the `Element` of the
 activity it is in, and `element().isGovernance()` tells the scope, for developers, from the governance, for the
@@ -104,7 +105,9 @@ severity:
   one too, under LOPDGDD article 27), legitimate interests without the interest pursued, no retention, a
   condition declared for data the activity does not process, and an activity whose [screening](impact-screening.md)
   makes an impact assessment likely (two criteria or more) and that refers to none. Special category data alone is one
-  criterion and raises nothing. Verification passes and the warnings appear in the record as **open points**.
+  criterion and raises nothing; with `Jurisdiction.SPAIN`, biometric or genetic data raise the warning, citing the
+  AEPD's list, and explicit consent beside other conditions for the data of LOPDGDD article 9.1 is a warning to confirm
+  that another condition covers it. Verification passes and the warnings appear in the record as **open points**.
 
 The full list is in the [codes table](checker.md#codes), with the element each code is reported on. `verify` fails
 on every error, whichever its element.

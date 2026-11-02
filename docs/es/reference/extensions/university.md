@@ -30,7 +30,7 @@ competencia lingüística, prácticas y movilidad, ayudas sujetas a nivel de ren
 |---|---|
 | `UniversityTaxonomy` | `public final class implements TaxonomyExtension`. `name()` devuelve `NAME`, `public static final String NAME = "university"`, que se registra como origen de sus términos. Constructor público sin argumentos; sin estado. `contribute(builder)` añade los términos que se enumeran abajo. |
 | `UniversityCategories` | `public final class` con constructor privado: un `public static final String` por cada categoría de datos que añade la extensión (32). |
-| `UniversityDataUses` | Lo mismo para sus usos de datos (27). |
+| `UniversityDataUses` | Lo mismo para sus usos de datos (28). |
 | `UniversityDataSubjects` | Lo mismo para sus interesados (12). |
 
 Las constantes siguen la [regla de nombres](../key-constants.md#regla-de-nombres) de `Categories`:
@@ -43,7 +43,7 @@ anotaciones una vez aplicada la extensión.
 
 ```java
 Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
-// Taxonomy[158 data categories, 90 data uses, 34 data subjects]
+// Taxonomy[158 data categories, 91 data uses, 34 data subjects]
 ```
 
 `Taxonomy.load()` solo la aplica si la aplicación la registra; consulta
@@ -224,7 +224,8 @@ usos de datos no tienen facetas de protección, solo [rasgos](#rasgos).
 |---|---|---|---|
 | `advancement` | Advancement | (raíz) | Cultiva la relación de la institución con antiguos alumnos, donantes y benefactores. |
 | `advancement.alumni_relations` | Alumni Relations | `advancement` | Mantiene el contacto con los antiguos alumnos: comunicaciones, eventos, redes. |
-| `advancement.fundraising` | Fundraising | `advancement` | Solicita, registra y agradece donativos y promesas de donación. |
+| `advancement.fundraising` | Fundraising | `advancement` | Solicita donativos y promesas de donación a antiguos alumnos, donantes y benefactores. |
+| `advancement.gift_administration` | Gift Administration | `advancement` | Registra y agradece donativos y promesas de donación, y emite recibos y certificados fiscales de donación. |
 | `advancement.prospect_research` | Prospect Research | `advancement` | Identifica posibles donantes y estima su capacidad de donación. |
 | `education.academic_records.certification` | Certification | `education.academic_records` | Emite certificados, certificaciones académicas, suplementos al título y certificados de títulos. |
 | `education.academic_records.credit_recognition` | Credit Recognition | `education.academic_records` | Reconoce y transfiere créditos de estudios previos o de experiencia. |
@@ -297,8 +298,9 @@ pesan en el [cribado de impacto](../processing/impact-screening.md), la
 
 | Términos | Rasgo | Por qué |
 |---|---|---|
-| Uso de datos `advancement` (y sus hijos) | `DIRECT_MARKETING` | La captación de fondos es mercadotecnia directa, así que el derecho de oposición es absoluto (artículo 21.2 del RGPD) |
+| Usos de datos `advancement.alumni_relations`, `advancement.fundraising` y `advancement.prospect_research` | `DIRECT_MARKETING` | Las comunicaciones con antiguos alumnos, las solicitudes de donativos y la investigación de posibles donantes que las sustenta son mercadotecnia directa, así que el derecho de oposición es absoluto (artículo 21.2 del RGPD). Administrar los donativos recibidos, `advancement.gift_administration`, no lo es, y la raíz `advancement` no declara ningún rasgo |
 | Usos de datos `advancement.prospect_research` y `education.financial_aid.means_assessment` | `EVALUATION` | La investigación de posibles donantes y la evaluación de recursos evalúan a personas (criterio 1 del WP248) |
+| Uso de datos `research` (y sus hijos) | `RESEARCH` | La investigación científica (artículo 89.1 del RGPD), cuyos derechos de supresión y oposición tienen sus propios límites (artículos 17.3.d y 21.6) |
 | Uso de datos `education.learning_analytics` | `EVALUATION`, `MONITORING` | La analítica del aprendizaje evalúa a los estudiantes y los observa de forma sistemática (criterios 1 y 3 del WP248) |
 
 ## Claves estándar para todo lo demás
@@ -328,7 +330,7 @@ concreto: `user.education.grade` (`.final`, `.average`, `.attempt`), `user.educa
 | Género, pronombres | `user.demographic.gender` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
 | Lengua materna o preferida | `user.demographic.language` | `ORDINARY`, `LOW`, `MEDIUM` |
 | Nacionalidad, ciudadanía, país de nacimiento | `user.demographic.nationality` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
-| Permiso de residencia, situación de ciudadanía | `user.government_id.immigration` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
+| Permiso de residencia, situación de ciudadanía | `user.government_id.immigration` | `ORDINARY`, `HIGH`, `MEDIUM` |
 | Números de identidad y de la seguridad social | `user.government_id.national_identification_number`, `user.government_id.social_security_number` | `ORDINARY`, `MEDIUM`, `MEDIUM` |
 | Número de estudiante, European Student Identifier, ORCID | `user.unique_id` | `ORDINARY`, `LOW`, `MEDIUM` |
 | Fotografías | `user.content.self_image` | `ORDINARY`, `MEDIUM`, `MEDIUM` |

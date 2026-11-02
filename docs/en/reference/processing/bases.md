@@ -113,7 +113,9 @@ WARNING MISSING_LEGAL_REFERENCE screening: GDPR article(s) 6.1.c, 9.2.b, 10 rest
 
 With `Jurisdiction.SPAIN` the warning adds `(LOPDGDD article(s) 8, 9.2, 10: a law with the rank of statute)`, naming
 the ones that apply: article 8 for a legal obligation or a task in the public interest, 9.2 for the conditions of
-article 9.2.g, h and i, and 10 for criminal offence data authorised by law.
+article 9.2.g, h and i, and 10 for criminal offence data authorised by law. The rule on data about administrative
+infringements and sanctions (LOPDGDD article 27) is added to the same warning, or raises it when no other basis asks
+for the law: a missing reference is one warning, never two.
 
 `legalReference` is a single text for the whole activity, so name every law involved in it, for example
 `Higher Education Act, arts. 12 and 31` (a fictional law).

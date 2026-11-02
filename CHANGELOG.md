@@ -42,20 +42,22 @@ All notable changes to this project are documented in this file. The format foll
 - `TaxonomyBuilder` and `TaxonomyExtension` (loaded with `ServiceLoader`) to add terms and make protection stricter.
   Every declared facet is a minimum: two refinements of a category combine into the stricter one in either order,
   and raising a category raises everything below it. An extension adds data categories below existing ones and
-  changes the lifecycle of its own terms only, and the builder refuses what the text form could not hold (a blank
-  origin, attribute name or deprecating version), so every taxonomy reads back from its text.
+  changes the lifecycle of its own terms only, checked when each change is made; a draft changes only inside the
+  customizer that received it. The builder refuses what the text form could not hold (a blank origin, attribute name
+  or deprecating version), so every taxonomy reads back from its text.
 - `Trait`: properties of terms that the legal rules read instead of lists of keys (financial, behavioural and
-  private-life data; direct, contact and indirect identifiers; monitoring; vulnerable data subjects; evaluation and
-  direct marketing purposes). Declared in a resource of the standard taxonomy and by each extension
-  (`TermDraft.traits`, `refineDataUse`, `refineDataSubject`), inherited down the tree, kept in the text form and
-  graded by `TaxonomyDiff` (adding one is minor, removing one major), so an application's own terms weigh like
-  standard ones. `Taxonomy.resolveDataUse` and `resolveDataSubject` follow replacements as `resolveCategory` does.
+  private-life data; direct, contact and indirect identifiers; biometric and genetic data; monitoring; vulnerable data
+  subjects; evaluation, direct marketing and research purposes). Declared in a resource of the standard taxonomy and
+  by each extension (`TermDraft.traits`, `refineDataUse`, `refineDataSubject`), inherited down the tree, carried by
+  every replacement, kept in the text form and graded by `TaxonomyDiff` (adding one is minor, removing one major), so
+  an application's own terms weigh like standard ones. A test makes every standard term without traits a reviewed
+  decision, so a new fideslang term cannot weaken a rule unnoticed. `Taxonomy.resolveDataUse` and `resolveDataSubject` follow replacements as `resolveCategory` does.
 - Annotations `@Category`, `@DefaultCategory`, `@CategoryByRow` and `@Exempt`, and the `Classifier` that reads and
   verifies them.
 - `OpenMetadataCatalog`: classifications, nested tags, and the tags of each column. Tags carry no
   `associatedTags`, which OpenMetadata accepts but does not store: the protection goes on each column.
 - `UniversityTaxonomy`: an optional taxonomy extension for higher education (32 data categories focused on the
-  student record, 27 data uses including the new roots `advancement` and `research`, 12 data subjects), informed by
+  student record, 28 data uses including the new roots `advancement` and `research`, 12 data subjects), informed by
   the Open Education API (OEAPI) and following fideslang's rules for custom labels. Not applied by default; keys in
   `UniversityCategories`, `UniversityDataUses` and `UniversityDataSubjects`.
 - Optional business extensions informed by the Common Data Model (CDM) schemas, each in its own exported package
@@ -92,22 +94,25 @@ All notable changes to this project are documented in this file. The format foll
   holds it; only derived fields that depend on each other are a `CYCLE` (found exactly, with Tarjan's algorithm), and
   the result does not depend on the order in which classes are classified.
 - `@Composite` for classes that are part of other records, such as an embedded address: an unannotated field of a
-  composite type, or an array, collection, `Optional` or map value of one at any depth, is classified by the
+  concrete composite type, or an array, collection or `Optional` of one at any depth, is classified by the
   composite's fields with paths such as `home.street`, under the composite's own default. The marker is inherited,
   and type variables are resolved through the superclasses of the class being classified. A field that may hold data
-  the classifier cannot see (a composite it cannot split, a value typed `Object` or by an unbound type variable,
-  another class with classified fields) never takes a class default. A field that stores composites as one value,
-  declared or derived, must protect at least as much as their fields (`WEAKER_THAN_PARTS`), a composite that stores
-  itself included; a composite that contains itself is a `CYCLE`. A `transient` field is classified when it carries
-  an annotation. `Classifier` reads each class once per call and stays immutable.
+  the classifier cannot see (composites in a map or that it cannot split, an abstract composite, a value typed
+  `Object`, `Serializable` or by an unbound type variable) never takes a class default. A field whose type is another
+  record of the model takes the class default only when that record holds no personal data; a reference to a
+  person's record declares what it stores, typically with `@DerivedFrom(type = …, value = "id")`, and cannot be
+  exempted. A field that stores composites as one value, declared or derived, must protect at least as much as
+  their fields (`WEAKER_THAN_PARTS`), and a composite with an error leaves nothing to compare with; a composite that
+  contains itself is a `CYCLE`. A `transient` field is classified when it carries an annotation, and Lombok's lock
+  fields are ignored. `Classifier` reads each class once per call and stays immutable.
 - `Governance`: the part of a processing activity the data protection function decides (lawful bases, legal
   reference, retention, recipients, transfers, impact assessment), separate from the scope the code declares
   (purposes, data subjects, personal data). `ProcessingActivity.governance()` and `withGovernance(...)` combine what
   an officer keeps in the application's storage with the scope in code; the builder's governance methods give initial
   values. `ProcessingViolation.element()` tells which part a problem is in and `Element.isGovernance()` who should fix
   it, so an application can fail the build on scope errors and show governance gaps where they are edited. The risk
-  factors the code declares are a minimum a stored governance cannot drop, and an activity may rest on several
-  article 9.2 conditions (`specialCategoryConditions`).
+  factors the code knows of are part of the scope (`ProcessingActivity.riskFactors`), joined with those of the
+  governance, and an activity may rest on several article 9.2 conditions (`specialCategoryConditions`).
 - `ProcessingChecker.checkAll` and `verify` classify each entity once for all the activities.
 - `FieldClassification.covers(DataCategory)`: whether a row of a `@CategoryByRow` field may hold a category, and
   whether a classification raised at run time still covers the code's.
@@ -124,8 +129,8 @@ All notable changes to this project are documented in this file. The format foll
   deterministic text form, in which lone UTF-16 surrogates are escaped so that different texts never share a
   fingerprint. `InventoryDiff.between(stored, declared, taxonomy)` lists the `FieldChange`s to apply to a stored copy
   and how each moves protection; `weakening()` lists the ones to review. `DataInventory.affectedBy(TaxonomyDiff)`
-  gives the fields each changed category reaches, those whose deprecated key it replaces included. Processing activities can name inventory objects
-  (`ProcessingActivity.objects`) and be checked with `ProcessingChecker(taxonomy, jurisdiction, inventory)` without
+  gives the fields each changed category reaches, those whose deprecated key it replaces included. Processing
+  activities can name inventory objects (`ProcessingActivity.objects`) and be checked with `ProcessingChecker(taxonomy, jurisdiction, inventory)` without
   the model classes. `tools/bench/InventoryBench.java` measures all of it on a model of 800 entities.
 - Catalogs from stored records: `OpenMetadataCatalog.tagsOf(InventoryField)`, `DataHubCatalog.termsOf(InventoryField)`
   and `AtlasCatalog.classificationsOf(InventoryField)` give what the `FieldClassification` overloads give for the same
@@ -133,8 +138,9 @@ All notable changes to this project are documented in this file. The format foll
   with the difference between its earlier and current tags. `InventoryField.identifiability(Taxonomy)`.
 - `ProcessingRecord.fingerprint()` and `RecordDiff.between(before, after)`: the `ActivityChange`s between two records
   of processing activities (added, removed, and per aspect: scope, personal data, protection with its direction,
-  each governance element, open points), so a record rebuilt from what was approved can be compared with the current
-  one before it is signed again. A record holds each activity key once.
+  each governance element, the impact assessment screening, open points by code), so a record rebuilt from what was
+  approved can be compared with the current one before it is signed again. A record holds each activity key once and
+  lists purposes and data subjects in key order.
 - `ModelClasses.inPackage(anchor)` and `inPackageTree(anchor)`: the classes and records of a model package, read
   from where the anchor class was loaded (directory or JAR, class path or module path), so a test verifies every
   class of the model, including the one nobody listed. A location or class that cannot be read is an error, never
@@ -144,37 +150,40 @@ All notable changes to this project are documented in this file. The format foll
   protection never gets a laxer treatment and secrets are always left out; `forLogs()` as a starting point.
 - `SubjectRights.of(record, taxonomy, dataSubject, jurisdiction)`: for a request of a data subject, the activities
   that process their data, the categories, the stored fields to search (`storedFields(inventory, taxonomy)`) and, per
-  activity, whether access, rectification, erasure, restriction, portability and objection apply under its lawful
-  basis (GDPR articles 15 to 21), with the provisions: objection to direct marketing (purposes with that trait) is
-  absolute and erases what no legal obligation keeps, and explicit consent to special category data gives
-  portability and erasure on withdrawal. The key is resolved with the taxonomy, so a misspelt one is an error. Under
+  activity, whether access, rectification, erasure, restriction, portability, objection and the safeguards on automated
+  decisions apply under its lawful basis (GDPR articles 15 to 22), with the provisions: objection to direct marketing
+  (purposes with that trait) is absolute and erases what no legal obligation or other purpose keeps, research has its
+  own limits (articles 17.3.d and 21.6), portability excludes tasks in the public interest (article 20.3), and explicit
+  consent to special category data gives portability and erasure on withdrawal. The key is resolved with the taxonomy, so a misspelt one is an error. Under
   Spanish law, erased or rectified data is blocked first (LOPDGDD article 32).
 - `ImpactScreening`: whether an activity needs a data protection impact assessment, screened against the nine
   criteria of the EDPB guidelines (WP248) and the mandatory cases of GDPR article 35.3, with the evidence of each
   criterion. The criteria the code can see (sensitive or highly personal data, vulnerable data subjects, evaluation
-  and monitoring purposes) are found from the traits of the terms, with sorted evidence; the rest the data
-  protection officer declares as `Governance.riskFactors`. The
+  and monitoring purposes) are found from the traits of the terms, with sorted evidence; the rest the code and the
+  data protection officer declare as risk factors. In Spain, biometric and genetic data count as a criterion of their
+  own (the AEPD's list). The
   checker reports a mandatory case without an assessment as the error `IMPACT_ASSESSMENT_REQUIRED` and two criteria
   or more without one as the warning `IMPACT_ASSESSMENT_RECOMMENDED`; a single criterion, such as special category
   data alone, no longer raises a warning. The record shows the screening of each activity.
 - `BreachAssessment`: the severity of a personal data breach with ENISA's methodology (context × ease of
   identification + circumstances), scored from the classification of the affected fields and the traits of their
-  categories (anonymized and aggregated values identify no one), and whether to notify the supervisory authority
-  (GDPR article 33, not for the lost confidentiality of unintelligible data alone) and tell the data subjects
-  (article 34).
+  categories (anonymized and aggregated values identify no one, other personal data identifies with effort), and
+  whether to notify the supervisory authority (GDPR article 33) and tell the data subjects (article 34), neither of
+  which applies when only the confidentiality of unintelligible data was lost.
 - `EnsCategorization` (package `ens`): the security category of a system under the Spanish Esquema Nacional de
   Seguridad, with confidentiality and integrity valued from the classification and the other dimensions declared.
-  Only a classification without errors gives information, and the category is final only once information is given
-  and every other dimension declared.
+  Only a classification without errors, or an object a data inventory holds, gives information, and the category
+  (`SystemCategory`) is final only once information is given and every other dimension declared.
 - Exports to more tools, in the `export` packages: `PostgresAnonymizer` (masking rules for PostgreSQL Anonymizer
-  that follow a `DisclosurePolicy`: one statement per column, the value left out when the fields of a shared column
-  need different rules, `withValue` for `NOT NULL` columns, quoted identifiers), `OpenApiExtension` (the `x-linneo`
+  that follow a `DisclosurePolicy`: one statement per column, the value left out in a column shared by fields that
+  are not all shown, removals before masks, `withValue` for `NOT NULL` columns, quoted identifiers of at most 63
+  bytes), `OpenApiExtension` (the `x-linneo`
   extension of each API property) and `OdcsSchema` (the schema of an Open Data Contract Standard contract from a data
   inventory). An object the inventory does not hold is an error, never an empty output.
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
-  `module-info.java`, and a type no sample declares, such as a renamed one of the library, fails. A Javadoc warning
-  fails the build.
+  `module-info.java`, and a type no sample declares or imports, such as a renamed one of the library, fails, used as
+  a type or as a qualifier. A Javadoc warning fails the build.
 - `ClassificationException` and `ProcessingException` list the first 50 errors and count all of them by code, so
   the message of a large model stays readable.
 - `AtlasCatalog`: the taxonomy as Apache Atlas classification types (category tree as super types, protection

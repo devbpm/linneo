@@ -115,12 +115,15 @@ public final class UniversityTaxonomy implements TaxonomyExtension {
         traits(builder);
     }
 
-    // The traits Linneo's legal rules read (see Trait): advancement is direct marketing, fundraising included, so the
-    // right to object to it is absolute (GDPR article 21.2); prospect research, means assessment and learning
-    // analytics evaluate people, and learning analytics observes them systematically (WP248).
+    // The traits Linneo's legal rules read (see Trait): alumni communications, appeals for gifts and the prospect
+    // research behind them are direct marketing, so the right to object to them is absolute (GDPR article 21.2), while
+    // administering the gifts received is not; prospect research, means assessment and learning analytics evaluate
+    // people, and learning analytics observes them systematically (WP248); research is research (article 89.1).
     private static void traits(TaxonomyBuilder builder) {
-        builder.refineDataUse(ADVANCEMENT, u -> u.traits(Trait.DIRECT_MARKETING))
-                .refineDataUse(ADVANCEMENT_PROSPECT_RESEARCH, u -> u.traits(Trait.EVALUATION))
+        builder.refineDataUse(ADVANCEMENT_ALUMNI_RELATIONS, u -> u.traits(Trait.DIRECT_MARKETING))
+                .refineDataUse(ADVANCEMENT_FUNDRAISING, u -> u.traits(Trait.DIRECT_MARKETING))
+                .refineDataUse(ADVANCEMENT_PROSPECT_RESEARCH, u -> u.traits(Trait.DIRECT_MARKETING, Trait.EVALUATION))
+                .refineDataUse(RESEARCH, u -> u.traits(Trait.RESEARCH))
                 .refineDataUse(EDUCATION_FINANCIAL_AID_MEANS_ASSESSMENT, u -> u.traits(Trait.EVALUATION))
                 .refineDataUse(EDUCATION_LEARNING_ANALYTICS, u -> u.traits(Trait.EVALUATION, Trait.MONITORING));
     }
@@ -222,7 +225,10 @@ public final class UniversityTaxonomy implements TaxonomyExtension {
                 .dataUse(ADVANCEMENT_ALUMNI_RELATIONS, "Alumni Relations",
                         "Keeps in touch with former students: communications, events, networks.")
                 .dataUse(ADVANCEMENT_FUNDRAISING, "Fundraising",
-                        "Solicits, records and acknowledges gifts and pledges.")
+                        "Solicits gifts and pledges from alumni, donors and supporters.")
+                .dataUse(ADVANCEMENT_GIFT_ADMINISTRATION, "Gift Administration",
+                        "Records and acknowledges gifts and pledges, and issues donation receipts and tax"
+                                + " certificates.")
                 .dataUse(ADVANCEMENT_PROSPECT_RESEARCH, "Prospect Research",
                         "Identifies potential donors and estimates their giving capacity.")
                 .dataUse(EDUCATION_ACADEMIC_RECORDS_CERTIFICATION, "Certification",

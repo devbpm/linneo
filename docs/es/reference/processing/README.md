@@ -26,7 +26,7 @@ frente a la taxonomía y la clasificación del modelo, y genera el registro.
 
 | Tipo | Declaración | Papel | Página |
 |---|---|---|---|
-| `ProcessingActivity` | record, con un `Builder` | Una actividad de tratamiento tal como se declara: su alcance (finalidades, interesados, datos personales) y su gobernanza | [ProcessingActivity](activity.md) |
+| `ProcessingActivity` | record, con un `Builder` | Una actividad de tratamiento tal como se declara: su alcance (finalidades, interesados, datos personales, los factores de riesgo que conoce el código) y su gobernanza | [ProcessingActivity](activity.md) |
 | `Governance` | record, con un `Builder` | La parte que posee la función de protección de datos: bases, referencia legal, conservación, destinatarios, transferencias, evaluación de impacto y los factores de riesgo que declara | [ProcessingActivity](activity.md#governance) |
 | `Transfer` | record | Una transferencia a un tercer país o a una organización internacional | [ProcessingActivity](activity.md#transfer) |
 | `LegalBasis` | enum | La base jurídica (artículo 6.1) | [Bases jurídicas](bases.md#legalbasis) |
@@ -79,10 +79,11 @@ extensión o propio pesa en ellas en cuanto declara sus rasgos.
 
 ## Alcance y gobernanza
 
-Una actividad tiene dos partes con responsables distintos. Su **alcance**, las finalidades, los interesados y los datos
-personales, es lo que el código de la aplicación sabe con certeza. Su **gobernanza** (`Governance`) es lo que decide y
-mantiene al día la función de protección de datos: las bases jurídicas, la referencia legal, el plazo de conservación,
-los destinatarios, las transferencias, la evaluación de impacto y los factores de riesgo que solo ella conoce. Una
+Una actividad tiene dos partes con responsables distintos. Su **alcance**, las finalidades, los interesados, los datos
+personales y los factores de riesgo que el código conoce, es lo que el código de la aplicación sabe con certeza. Su
+**gobernanza** (`Governance`) es lo que decide y mantiene al día la función de protección de datos: las bases
+jurídicas, la referencia legal, el plazo de conservación, los destinatarios, las transferencias, la evaluación de
+impacto y los factores de riesgo que solo ella conoce. Una
 aplicación puede declarar el alcance en el código, guardar en su propio almacenamiento la gobernanza que edita su
 delegado de protección de datos y combinar ambos con `ProcessingActivity.withGovernance(...)` antes de comprobar. Cada
 problema que notifica el comprobador lleva el `Element` de la actividad en el que está, y `element().isGovernance()`
@@ -107,8 +108,10 @@ la gravedad:
   referencia legal, según el artículo 27 de la LOPDGDD), el interés legítimo sin el interés perseguido, la falta de plazo de
   conservación, una condición declarada para datos que la actividad no trata, y una actividad cuyo
   [cribado](impact-screening.md) hace probable una evaluación de impacto (dos criterios o más) y que no cita ninguna.
-  Los datos de categorías especiales por sí solos son un criterio y no generan nada. La verificación pasa y los avisos
-  aparecen en el registro como **puntos abiertos**.
+  Los datos de categorías especiales por sí solos son un criterio y no generan nada; con `Jurisdiction.SPAIN`, los datos
+  biométricos o genéticos sí generan el aviso, citando la lista de la AEPD, y el consentimiento explícito junto a otras
+  condiciones para los datos del artículo 9.1 de la LOPDGDD es un aviso para confirmar que otra condición los cubre. La
+  verificación pasa y los avisos aparecen en el registro como **puntos abiertos**.
 
 La lista completa está en la [tabla de códigos](checker.md#códigos), con el elemento en el que se notifica cada código.
 `verify` falla con todos los errores, sea cual sea su elemento.

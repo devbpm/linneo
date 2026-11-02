@@ -31,9 +31,17 @@ public enum Jurisdiction {
      * The GDPR and Spain's Ley Orgánica 3/2018 (LOPDGDD, consolidated text of 27 December 2025):
      * <ul>
      *   <li>explicit consent alone does not lift the prohibition of processing ideology, trade union membership,
-     *       religion, sexual orientation, beliefs or racial or ethnic origin (article 9.1), an error;</li>
-     *   <li>processing under GDPR article 9.2 g), h) and i) must rest on a law with the rank of statute (article
-     *       9.2), which the warning about a missing legal reference says.</li>
+     *       religion, sexual orientation, beliefs or racial or ethnic origin (article 9.1): an error when it is the
+     *       only condition, a warning to confirm another condition covers them otherwise;</li>
+     *   <li>a legal obligation or a task in the public interest (article 8), GDPR article 9.2 g), h) and i)
+     *       (article 9.2) and criminal offence data authorised by law (article 10) rest on a law with the rank of
+     *       statute, which the warning about a missing legal reference says;</li>
+     *   <li>data on administrative infringements and sanctions needs consent or such a law, unless the controller is
+     *       the competent body (article 27), a warning;</li>
+     *   <li>erased or rectified data is blocked before it is deleted (article 32), which
+     *       {@link SubjectRights} says;</li>
+     *   <li>the AEPD's list under GDPR article 35.4 counts biometric data for identification and genetic data as
+     *       criteria of their own, so they make an impact assessment likely, a warning.</li>
      * </ul>
      */
     SPAIN

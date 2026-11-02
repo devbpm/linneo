@@ -99,6 +99,8 @@ stored into an inventory. It has no public constructor; use `DataInventory.build
 | `DataInventory build()` | Creates the inventory. The builder can be kept and used again. |
 
 ```java
+import io.github.devbpm.linneo.classify.FieldClassification.Basis;
+
 DataInventory stored = DataInventory.builder()
         .field("student", "email", Categories.USER_CONTACT_EMAIL, Basis.DECLARED)
         .field(new InventoryField("student", "version", Categories.SYSTEM_OPERATIONS, Basis.CLASS_DEFAULT,

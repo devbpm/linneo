@@ -151,7 +151,9 @@ por clave de categoría y nombre, y después los rasgos de las categorías, de l
 es un valor ausente. Una barra invertida, un tabulador, un salto de línea y un retorno de carro dentro de una celda se
 escriben `\\`, `\t`, `\n` y `\r`, de modo que una fila es siempre una línea; un sustituto UTF-16 suelto, que UTF-8 no
 puede codificar, se escribe como una barra invertida, `u` y sus cuatro dígitos hexadecimales, para que dos taxonomías
-distintas nunca tengan los mismos bytes ni la misma huella. La naturaleza, la confidencialidad y la integridad son los
+distintas nunca tengan los mismos bytes ni la misma huella; `fromTsv` acepta ese escape solo para un sustituto suelto,
+de modo que un texto tiene una única forma (cualquier otro escape `\u`, o uno que sea la mitad de un par de sustitutos,
+que se escribe tal cual, se rechaza). La naturaleza, la confidencialidad y la integridad son los
 nombres de las constantes de [`LegalNature`, `Confidentiality` e `Integrity`](protection-levels.md), y el rasgo es el
 nombre de un [`Trait`](terms.md#trait). `fromTsv` lee las filas en cualquier orden: los padres se comprueban al
 construir la taxonomía y las filas de atributos y de rasgos se aplican después de todos los términos.

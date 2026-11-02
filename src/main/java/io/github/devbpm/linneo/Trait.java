@@ -39,8 +39,14 @@ import java.util.Set;
  *       {@link #BEHAVIOURAL} as the data processing context and the identifier traits as the ease of identification
  *       (ENISA, 2013).</li>
  *   <li>{@link io.github.devbpm.linneo.processing.SubjectRights} reads {@link #DIRECT_MARKETING} for the absolute
- *       right to object (GDPR article 21.2 and 21.3).</li>
+ *       right to object (GDPR article 21.2 and 21.3) and {@link #RESEARCH} for the right to object to research
+ *       (article 21.6).</li>
+ *   <li>{@link io.github.devbpm.linneo.processing.ProcessingChecker} reads {@link #BIOMETRIC} and {@link #GENETIC}
+ *       under Spanish law, where the AEPD's list under article 35.4 counts them as criteria of their own.</li>
  * </ul>
+ * A replacement carries every trait of the term it replaces, since declarations that still name the deprecated key
+ * are checked with the replacement. Traits are an aid: they let the rules see what a key cannot tell, and the data
+ * protection officer still reviews each result.
  *
  * @since 0.1.0
  */
@@ -77,6 +83,18 @@ public enum Trait {
     INDIRECT_IDENTIFIER(Hierarchy.DATA_CATEGORY),
 
     /**
+     * Biometric data as GDPR article 4.14 defines it: physical, physiological or behavioural characteristics that
+     * allow or confirm the unique identification of a person, such as facial images or fingerprints.
+     */
+    BIOMETRIC(Hierarchy.DATA_CATEGORY),
+
+    /**
+     * Genetic data as GDPR article 4.13 defines it: inherited or acquired genetic characteristics, as an analysis of a
+     * biological sample gives them.
+     */
+    GENETIC(Hierarchy.DATA_CATEGORY),
+
+    /**
      * For a data category, data obtained by observing people; for a data use, a purpose that observes, tracks or
      * monitors them systematically.
      */
@@ -97,7 +115,13 @@ public enum Trait {
      * A purpose of direct marketing, fundraising appeals and the profiling related to them included, to which a data
      * subject may object at any time (GDPR article 21.2).
      */
-    DIRECT_MARKETING(Hierarchy.DATA_USE);
+    DIRECT_MARKETING(Hierarchy.DATA_USE),
+
+    /**
+     * A purpose of scientific or historical research or of statistics (GDPR article 89.1), to which the rights of
+     * erasure and objection apply with their own limits (articles 17.3.d and 21.6).
+     */
+    RESEARCH(Hierarchy.DATA_USE);
 
     private final Set<Hierarchy> hierarchies;
 

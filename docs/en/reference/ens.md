@@ -41,11 +41,14 @@ The ENS values the information and the services of a system in five **dimensions
 | `MEDIUM` | `MEDIO` | Serious harm. |
 | `HIGH` | `ALTO` | Very serious harm. |
 
-| `Category` | `spanishName()` | When |
+| `SystemCategory` | `spanishName()` | When |
 |---|---|---|
 | `BASIC` | `BÁSICA` | No dimension is above low. |
 | `MEDIUM` | `MEDIA` | A dimension is medium, none is high. |
 | `HIGH` | `ALTA` | A dimension is high. |
+
+`EnsCategorization.SystemCategory` is the nested enum of the category of the system; it is not called `Category` so that
+it does not clash with the `@Category` annotation.
 
 ## What the classification gives
 
@@ -86,7 +89,7 @@ information given (lower bound)`.
 | `static Builder builder()` | [`Builder`](#builder) | Starts a categorization with no information and nothing declared. |
 | `Optional<Valuation> valuation(Dimension dimension)` | optional | The valuation of a dimension, or empty if the information sets no requirement and nothing was declared. |
 | `List<Valuation> valuations()` | immutable list | Every valuation, in the order of the dimensions. |
-| `Category category()` | category | The highest level of any dimension; `BASIC` when no dimension has a level. |
+| `SystemCategory category()` | category | The highest level of any dimension; `BASIC` when no dimension has a level. |
 | `boolean isComplete()` | `boolean` | Whether information was given and authenticity, traceability and availability are valued, so that the category is final rather than a lower bound. |
 | `Set<Dimension> missing()` | set | The dimensions of authenticity, traceability and availability without a valuation, in the order of the dimensions. Confidentiality and integrity are never listed. |
 | `String summary()` | `String` | A one-line summary in English with the ENS names, such as `Category MEDIUM (MEDIA): C MEDIUM, I HIGH; not declared: T, A, D (lower bound)`. |
@@ -112,7 +115,8 @@ has no public constructor.
 | Member | Effect |
 |---|---|
 | `Builder information(ClassClassification classification)` | **Adds** the fields of a class of the information the system handles; the reason names `<class>.<path>`. `IllegalArgumentException` if the classification has errors (call it once for each class). |
-| `Builder information(Collection<InventoryField> fields, Taxonomy taxonomy)` | **Adds** stored fields of a [data inventory](classify/inventory.md), resolved with the taxonomy; exempted fields are skipped, and the reason names `<object>.<path>`. `TaxonomyException` if the taxonomy does not contain a key. |
+| `Builder information(DataInventory inventory, Taxonomy taxonomy)` | **Adds** the stored fields of **every object** of a [data inventory](classify/inventory.md), resolved with the taxonomy; exempted fields are skipped, and the reason names `<object>.<path>`. `TaxonomyException` if the taxonomy does not contain a key. |
+| `Builder information(DataInventory inventory, String object, Taxonomy taxonomy)` | The same for one object of the inventory. `IllegalArgumentException` if the inventory has no such object, because a mistyped key would leave its information out and understate the category; `TaxonomyException` if the taxonomy does not contain a key. |
 | `Builder declare(Dimension dimension, Level level, String reason)` | Declares the level of a dimension and why. For confidentiality and integrity it can only raise what the information sets. `NullPointerException` if an argument is `null`. |
 | `EnsCategorization build()` | Creates the categorization. |
 
@@ -151,6 +155,20 @@ EnsCategorization complete = EnsCategorization.builder()
         .build();
 complete.summary();    // Category HIGH (ALTA): C HIGH, I HIGH, T MEDIUM, A MEDIUM, D MEDIUM
 complete.isComplete(); // true
+```
+
+A system whose information is stored, such as a back office that has the data inventory and not the model classes, gives
+its fields from the inventory:
+
+```java
+DataInventory inventory = classifier.inventory(List.of(Student.class), type -> "students");
+
+EnsCategorization stored = EnsCategorization.builder()
+        .information(inventory, taxonomy)                        // every object of the inventory
+        .build();
+EnsCategorization students = EnsCategorization.builder()
+        .information(inventory, "students", taxonomy)            // one object; an unknown key is an error
+        .build();
 ```
 
 A system whose fields are all `PUBLIC` data has no valuation of confidentiality, so its category comes from its

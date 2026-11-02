@@ -63,7 +63,7 @@ class UniversityTaxonomyTest {
                 () -> assertEquals(constants(UniversityDataSubjects.class), added(university.dataSubjects(),
                         standard.dataSubjects())),
                 () -> assertEquals(32, constants(UniversityCategories.class).size()),
-                () -> assertEquals(27, constants(UniversityDataUses.class).size()),
+                () -> assertEquals(28, constants(UniversityDataUses.class).size()),
                 () -> assertEquals(12, constants(UniversityDataSubjects.class).size()),
                 () -> assertTrue(university.categories().stream()
                         .filter(c -> constants(UniversityCategories.class).contains(c.key()))

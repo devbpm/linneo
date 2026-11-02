@@ -49,7 +49,7 @@ and description, a two-column table and, if the activity has warnings, an `Open 
 
 | Row | Shown | Content |
 |---|---|---|
-| `Purposes (art. 30.1.b)` | always | ``<name> (`<key>`)`` for each purpose, separated by `; `, or `None` |
+| `Purposes (art. 30.1.b)` | always | ``<name> (`<key>`)`` for each purpose, in key order, separated by `; `, or `None` |
 | `Lawful basis (art. 6.1)` | when declared | `Art. <article>: <fideslang name>` |
 | `Legitimate interest` | only when the basis is `LEGITIMATE_INTERESTS` and an interest is stated | the interest |
 | `Special categories (art. 9.2)` | when declared | `Art. <article>: <fideslang name>` for each condition, separated by `; ` |
@@ -158,7 +158,7 @@ order. Optional members are left out when the activity does not declare them; li
 |---|---|---|
 | `key`, `name` | always | strings |
 | `description` | when declared | string (line breaks kept) |
-| `purposes`, `dataSubjects`, `dataCategories` | always | arrays of keys, after resolution (deprecated keys replaced, non-personal categories left out) |
+| `purposes`, `dataSubjects`, `dataCategories` | always | arrays of keys in key order, after resolution (deprecated keys replaced, non-personal categories left out) |
 | `legalBasis` | when declared | `{"code": <constant>, "article": <article>, "fideslang": <fideslang name>}` |
 | `legitimateInterest` | only when the basis is `LEGITIMATE_INTERESTS` and an interest is stated | string |
 | `specialCategoryConditions` | when declared | array of objects as `legalBasis`, one for each condition |
@@ -190,10 +190,12 @@ approved and the one that applies now. `fingerprint()` tells at once whether any
 
 `fingerprint()` is the SHA-256 (UTF-8, lower-case hexadecimal, 64 digits) of the content of the record, activity by
 activity in key order and aspect by aspect as `RecordDiff` compares them. Two records have the same fingerprint exactly
-when `RecordDiff` finds no change between them, whatever the order of their activities. It says that something changed,
-not what. An application keeps it with the record the officer approved, to know whether the record still is that one. The
-text that is hashed writes a lone UTF-16 surrogate, which UTF-8 cannot encode, as a backslash, `u` and its four
-hexadecimal digits, so two records that differ only in such a character never have the same fingerprint.
+when `RecordDiff` finds no change between them, whatever the order of their activities. The screening of the need for an
+impact assessment is part of the content, so a change in the traits of a term that changes the screening changes the
+fingerprint, although no declaration changed. It says that something changed, not what. An application keeps it with
+the record the officer approved, to know whether the record still is that one. The text that is hashed writes a lone
+UTF-16 surrogate, which UTF-8 cannot encode, as a backslash, `u` and its four hexadecimal digits, so two records that
+differ only in such a character never have the same fingerprint.
 
 ### RecordDiff
 
@@ -251,7 +253,7 @@ The canonical constructor throws `NullPointerException` if `activity` or `direct
 
 | Member | Description |
 |---|---|
-| `boolean isGovernance()` | `true` if an aspect of the [governance](activity.md#governance) changed and nothing else did but the open points: a change the data protection function made, with the scope the code declares and the data it reaches unchanged. The open points that follow from it may change too. |
+| `boolean isGovernance()` | `true` if an aspect of the [governance](activity.md#governance) changed and nothing else did but the open points and the screening: a change the data protection function made, with the scope the code declares and the data it reaches unchanged. The open points and the screening that follow from it may change too. |
 
 `toString()` is `activity '<key>': <aspects>`, followed by the direction unless it is `SAME`.
 
@@ -279,13 +281,16 @@ whether the aspect is part of the governance rather than of the scope declared i
 | `TRANSFERS` | `true` | The transfers to third countries or international organisations. |
 | `RETENTION` | `true` | The time limit for erasure. |
 | `IMPACT_ASSESSMENT` | `true` | The impact assessment. |
-| `RISK_FACTORS` | `true` | The [risk factors](impact-screening.md#declaring-risk-factors) the officer declares for the screening of the need for an impact assessment. |
-| `OPEN_POINTS` | `false` | The open points: the warnings of the activity. |
+| `RISK_FACTORS` | `true` | The [risk factors](impact-screening.md#declaring-risk-factors) the officer declares in the governance for the screening of the need for an impact assessment. |
+| `DECLARED_RISK_FACTORS` | `false` | The risk factors the code declares (`ProcessingActivity.riskFactors()`): part of the scope. |
+| `SCREENING` | `false` | The [screening](impact-screening.md) of the need for an impact assessment: its outcome, its mandatory case and its criteria. It changes with the traits of the terms even when no declaration changes. |
+| `OPEN_POINTS` | `false` | The open points: the warnings of the activity, compared by code and element only, so a change of the wording of the library is not a change of the record. |
 
 An edit of the retention or the recipients is a governance change, and it usually closes an open point too. An edit of
-the risk factors is one as well: the warning about the impact assessment names the criteria that are met, so it changes
-`RISK_FACTORS` and, when the warning changes with it, `OPEN_POINTS`. A change in the data the activity reaches, such as
-a new field in a listed entity or a stricter category, shows in `PERSONAL_DATA` or `PROTECTION` and is not.
+the risk factors in the governance is one as well: the screening names the criteria that are met, so it changes
+`RISK_FACTORS` and `SCREENING` and, when the warning about the impact assessment appears or goes away, `OPEN_POINTS`;
+`isGovernance()` ignores `SCREENING` and `OPEN_POINTS`. A change in the data the activity reaches, such as a new field
+in a listed entity or a stricter category, shows in `PERSONAL_DATA` or `PROTECTION` and is not a governance change.
 
 See also: [ProcessingChecker](checker.md) · [ProcessingActivity](activity.md) · [Legal bases](bases.md) ·
 [Processing activities](README.md)

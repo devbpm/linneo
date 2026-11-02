@@ -53,8 +53,8 @@ For each activity, in this order (the violations of a `CheckedActivity` follow i
 1. **Purposes**, then **data subjects**: each key is looked up in the taxonomy. An unknown key is the error
    `UNKNOWN_KEY` and is left out. A deprecated key is the warning `DEPRECATED_KEY` and is replaced by its
    `replaced_by` term, following the chain of replacements; a deprecated key without a replacement is kept, with the
-   warning. Duplicates after replacement are kept once, in declaration order. An empty list is the error
-   `MISSING_PURPOSE` or `MISSING_DATA_SUBJECTS`.
+   warning. Duplicates after replacement are kept once, and the terms are in key order, so the record does not depend on
+   the order in which the activity lists them. An empty list is the error `MISSING_PURPOSE` or `MISSING_DATA_SUBJECTS`.
 2. **Personal data** (see [below](#how-the-personal-data-is-gathered)). If there is none, and nothing was left
    unresolved by an unknown category key, an entity with classification errors, or an unknown object or object field,
    the error is `MISSING_PERSONAL_DATA`.
@@ -68,29 +68,35 @@ For each activity, in this order (the violations of a `CheckedActivity` follow i
      conditions without special category data: warning `UNNEEDED_CONDITION`;
    - criminal offence data and no `criminalDataBasis`: error `MISSING_CRIMINAL_DATA_BASIS`; a basis without
      criminal offence data: warning `UNNEEDED_CONDITION`;
-   - with `Jurisdiction.SPAIN`, `EXPLICIT_CONSENT` as the **only** article 9.2 condition of an activity that processes
-     ideology, trade union membership, religion, sexual orientation, beliefs or racial or ethnic origin: error
-     `CONSENT_NOT_SUFFICIENT` (another condition declared beside it covers the data that consent cannot);
+   - with `Jurisdiction.SPAIN`, `EXPLICIT_CONSENT` among the article 9.2 conditions of an activity that processes
+     ideology, trade union membership, religion, sexual orientation, beliefs or racial or ethnic origin:
+     `CONSENT_NOT_SUFFICIENT`, an error when explicit consent is the **only** condition, and a warning to confirm that
+     another declared condition covers those categories when others are declared (conditions are declared for the
+     activity, not for each category);
    - bases that [rest on law](bases.md#the-legal-reference) and no `legalReference`: warning
      `MISSING_LEGAL_REFERENCE`. With `Jurisdiction.SPAIN` the message adds, when it applies,
      `LOPDGDD article(s) 8, 9.2, 10: a law with the rank of statute`, naming the provisions that require it: 8 for a
      legal obligation or a task in the public interest, 9.2 for the conditions of article 9.2.g, h and i, and 10 for
      criminal offence data authorised by law;
    - with `Jurisdiction.SPAIN`, data on administrative infringements and sanctions (`user.administrative_sanction` or
-     below), a basis other than consent and no `legalReference`: warning `MISSING_LEGAL_REFERENCE` (LOPDGDD article
-     27: such data may only be processed by the competent bodies, with the person's consent, or as a law with the rank
-     of statute allows);
+     below), a basis other than consent and no `legalReference`: the same warning `MISSING_LEGAL_REFERENCE` (LOPDGDD
+     article 27: such data may only be processed by the competent bodies, with the person's consent, or as a law with
+     the rank of statute allows). It is **one** warning: the rule is added to the message when another one is raised;
    - no `retention`: warning `MISSING_RETENTION`;
    - no `impactAssessment`, and the [screening](impact-screening.md) of the activity finds a case of GDPR article 35.3
      (`REQUIRED`): error `IMPACT_ASSESSMENT_REQUIRED`; or finds two criteria or more (`LIKELY`): warning
-     `IMPACT_ASSESSMENT_RECOMMENDED`. One criterion (`POSSIBLE`) or none raises nothing.
+     `IMPACT_ASSESSMENT_RECOMMENDED`. One criterion (`POSSIBLE`) or none raises nothing, except that with
+     `Jurisdiction.SPAIN` biometric or genetic data (the `BIOMETRIC` and `GENETIC` traits) raise the warning
+     `IMPACT_ASSESSMENT_RECOMMENDED` citing the AEPD's list under article 35.4.
 
 The screening is the one `CheckedActivity.screening()` returns. It does not take special category data, criminal
 offence data or profiling as a reason on its own: each is a single criterion of the guidelines of the European Data
-Protection Board, and an assessment becomes likely with two. What the code cannot see, such as the scale of the
-processing, the officer declares as risk factors in the [governance](activity.md#governance), and a declared
+Protection Board, and an assessment becomes likely with two. What the terms do not tell, such as the scale of the
+processing, the code and the officer declare as risk factors, in the scope and in the
+[governance](activity.md#governance), and the screening reads both (`ProcessingActivity.allRiskFactors()`); a declared
 `Factor.LARGE_SCALE` turns special category data into a case of article 35.3.b. The criteria, how each is found and
-the three cases are in [ImpactScreening](impact-screening.md).
+the three cases are in [ImpactScreening](impact-screening.md). The checker reads what the activity declares and the
+traits of its terms; it does not judge the facts behind them, which the data protection officer reviews.
 
 The checker does not inspect `description`, `recipients` or `transfers`.
 
@@ -147,7 +153,7 @@ public record CheckedActivity(ProcessingActivity activity, List<DataUse> purpose
 | Component | Description |
 |---|---|
 | `activity` | The activity as declared. |
-| `purposes` | The data uses, unknown keys left out and deprecated keys replaced. |
+| `purposes` | The data uses, unknown keys left out and deprecated keys replaced, in key order. |
 | `dataSubjects` | The data subjects, likewise. |
 | `dataCategories` | The personal data categories processed, from the declared keys and the personal fields of the entities and objects, in key order. |
 | `protection` | The least [`Protection`](../protection-levels.md#protection) that covers all that data, field-level raises included; `Protection.LOWEST` when there is none. Its `confidentiality()`, `integrity()` and `secret()` are what the record shows as the required protection. |
@@ -223,16 +229,16 @@ parts depends on the part.
 | `MISSING_LEGAL_BASIS` | error | `LEGAL_BASIS` | Personal data and no `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
 | `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Special category data and no `specialCategoryConditions`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
 | `MISSING_CRIMINAL_DATA_BASIS` | error | `CRIMINAL_DATA_BASIS` | Criminal offence data and no `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
-| `CONSENT_NOT_SUFFICIENT` | error | `SPECIAL_CATEGORY_CONDITION` | `Jurisdiction.SPAIN` only: the activity processes `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` or `race_ethnicity` (or a descendant) and its only article 9.2 condition is `EXPLICIT_CONSENT` (LOPDGDD article 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
+| `CONSENT_NOT_SUFFICIENT` | error, or **warning** | `SPECIAL_CATEGORY_CONDITION` | `Jurisdiction.SPAIN` only: the activity processes `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` or `race_ethnicity` (or a descendant) and declares `EXPLICIT_CONSENT` (LOPDGDD article 9.1). An **error** when it is the only article 9.2 condition; a **warning** when other conditions are declared, to confirm that one of them covers those categories. | Error: `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2`. Warning: `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); confirm that another declared condition of GDPR article 9.2 covers it` |
 | `IMPACT_ASSESSMENT_REQUIRED` | error | `IMPACT_ASSESSMENT` | The [screening](impact-screening.md) of the activity finds a case of GDPR article 35.3 and there is no `impactAssessment`. | `GDPR article <a> requires an impact assessment; refer to it. <summary>`, where `<a>` is `35.3.a`, `35.3.b` or `35.3.c` and `<summary>` is `ImpactScreening.summary()` |
 | `DUPLICATE_ACTIVITY` | error | `KEY` | `checkAll`/`verify` only: an earlier activity has the same key. | `Another activity of the record has the key '<k>'` |
 | `DEPRECATED_KEY` | **warning** | `PURPOSES`, `DATA_SUBJECTS` or `PERSONAL_DATA`, by the kind of key | A purpose, data subject or data category key is deprecated, or a field of an object of `objects` declares a deprecated data category key; the activity is checked with its replacement. | `The data use '<k>' is deprecated; checked as '<r>'` (likewise `data subject`, `data category`; without the `; checked as` part when the key has no replacement) / `The field <o>.<path> has the deprecated data category '<k>'; checked as '<r>'` (same omission) |
 | `NOT_PERSONAL_DATA` | **warning** | `PERSONAL_DATA` | A declared category is not personal data; it is left out of the record. | `The data category '<k>' is not personal data and is left out of the record` |
 | `UNNEEDED_CONDITION` | **warning** | `SPECIAL_CATEGORY_CONDITION` for an article 9.2 condition, `CRIMINAL_DATA_BASIS` for an article 10 basis, `LEGITIMATE_INTEREST` for a legitimate interest | An article 9.2 condition or article 10 basis is declared for data the activity does not process, or a legitimate interest is stated with another lawful basis. | `Article(s) <a>, <a> declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
-| `MISSING_LEGAL_REFERENCE` | **warning** | `LEGAL_REFERENCE` | A basis that rests on law applies and `legalReference` is not set; or, with `Jurisdiction.SPAIN`, the activity processes data on administrative infringements and sanctions (`user.administrative_sanction` or below) on a basis other than consent. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; with `Jurisdiction.SPAIN` it ends with ` (LOPDGDD article(s) <a>: a law with the rank of statute)` naming the provisions that apply: `8` for a legal obligation or a task in the public interest, `9.2` for a condition of `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` or `PUBLIC_HEALTH`, `10` for criminal offence data authorised by law. For administrative sanctions: `Data on administrative infringements and sanctions may only be processed by the bodies competent for the sanctioning procedure, with the consent of the person, or as a law with the rank of statute allows (LOPDGDD article 27); name that law as the legal reference` |
+| `MISSING_LEGAL_REFERENCE` | **warning** | `LEGAL_REFERENCE` | A basis that rests on law applies and `legalReference` is not set; or, with `Jurisdiction.SPAIN`, the activity processes data on administrative infringements and sanctions (`user.administrative_sanction` or below) on a basis other than consent. One warning, whatever the number of provisions that ask for the reference. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; with `Jurisdiction.SPAIN` it continues with ` (LOPDGDD article(s) <a>: a law with the rank of statute)` naming the provisions that apply: `8` for a legal obligation or a task in the public interest, `9.2` for a condition of `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` or `PUBLIC_HEALTH`, `10` for criminal offence data authorised by law; and, for administrative sanctions, with `; and data on administrative infringements and sanctions may only be processed by the bodies competent for the sanctioning procedure, with the consent of the person, or as a law with the rank of statute allows (LOPDGDD article 27)`. When administrative sanctions are the only reason: `Name the law as the legal reference: data on administrative infringements and sanctions may only be processed by the bodies competent for the sanctioning procedure, with the consent of the person, or as a law with the rank of statute allows (LOPDGDD article 27)` |
 | `MISSING_LEGITIMATE_INTEREST` | **warning** | `LEGITIMATE_INTEREST` | The basis is `LEGITIMATE_INTERESTS` and `legitimateInterest` is not set. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
 | `MISSING_RETENTION` | **warning** | `RETENTION` | Personal data and no `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
-| `IMPACT_ASSESSMENT_RECOMMENDED` | **warning** | `IMPACT_ASSESSMENT` | The [screening](impact-screening.md) of the activity meets two criteria or more, so article 35 likely requires an impact assessment, and there is no `impactAssessment`. | `GDPR article 35 likely requires an impact assessment. <summary>`, where `<summary>` is `ImpactScreening.summary()`; with `Jurisdiction.SPAIN`, `GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases that meet two criteria or more). <summary>` |
+| `IMPACT_ASSESSMENT_RECOMMENDED` | **warning** | `IMPACT_ASSESSMENT` | The [screening](impact-screening.md) of the activity meets two criteria or more, so article 35 likely requires an impact assessment, and there is no `impactAssessment`; or, with `Jurisdiction.SPAIN`, the screening is not already likely or required and the activity processes biometric data for identification or genetic data (the `BIOMETRIC` and `GENETIC` traits), which the AEPD's list under article 35.4 counts as a criterion of its own. | `GDPR article 35 likely requires an impact assessment. <summary>`, where `<summary>` is `ImpactScreening.summary()`; with `Jurisdiction.SPAIN`, `GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases that meet two criteria or more). <summary>`. For biometric or genetic data: `The AEPD's list under GDPR article 35.4 counts biometric data for identification and genetic data as a criterion besides special category data, so an impact assessment is required in most cases: <keys>. <summary>` |
 
 Real output for a student activity that processes `user.health_and_medical.disability` and `user.criminal_history` and
 misses both conditions. Both are sensitive data, one criterion, so the screening is `POSSIBLE` and raises nothing:
@@ -325,17 +331,26 @@ The national data protection law a checker applies on top of the GDPR.
 | Constant | Meaning |
 |---|---|
 | `EU` | The GDPR alone, with no national rules. The default of `new ProcessingChecker(taxonomy)`. |
-| `SPAIN` | The GDPR and Ley Orgánica 3/2018 (LOPDGDD). Two rules are added, below. |
+| `SPAIN` | The GDPR and Ley Orgánica 3/2018 (LOPDGDD). The rules added are listed below. |
 
 With `SPAIN`:
 
 - **Consent is not enough** (LOPDGDD article 9.1). If the activity processes `user.demographic.political_opinion`,
   `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` or `race_ethnicity`
   (or a descendant of them) and its only article 9.2 condition is `EXPLICIT_CONSENT`, the error
-  `CONSENT_NOT_SUFFICIENT` names those keys: declare another condition of article 9.2.
-- **Statute** (LOPDGDD article 9.2). When the condition is `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE`
-  or `PUBLIC_HEALTH` and there is no `legalReference`, the warning `MISSING_LEGAL_REFERENCE` adds that the law must
-  have the rank of statute.
+  `CONSENT_NOT_SUFFICIENT` names those keys: declare another condition of article 9.2. If other conditions are
+  declared beside it, the checker raises a warning instead, to confirm that one of them covers those categories.
+- **Statute** (LOPDGDD articles 8, 9.2 and 10). A legal obligation or a task in the public interest, the conditions
+  `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` and `PUBLIC_HEALTH`, and criminal offence data authorised by
+  law rest on a law with the rank of statute: when there is no `legalReference`, the warning `MISSING_LEGAL_REFERENCE`
+  says it.
+- **Administrative sanctions** (LOPDGDD article 27). Data on administrative infringements and sanctions needs consent
+  or such a law, unless the controller is the competent body: when the basis is not consent and there is no
+  `legalReference`, the same `MISSING_LEGAL_REFERENCE` warning adds the rule.
+- **Blocking** (LOPDGDD article 32). Erased or rectified data is blocked before it is deleted, which
+  [`SubjectRights`](subject-rights.md) says in its explanations.
+- **Impact assessment** (the AEPD's list under GDPR article 35.4). Biometric data for identification and genetic data
+  are criteria of their own, so they make an impact assessment likely: the warning `IMPACT_ASSESSMENT_RECOMMENDED`.
 
 ```java
 ProcessingChecker checker = new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN);

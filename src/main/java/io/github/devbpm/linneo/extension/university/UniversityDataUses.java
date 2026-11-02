@@ -29,8 +29,14 @@ public final class UniversityDataUses {
     /** Alumni Relations: Keeps in touch with former students: communications, events, networks. */
     public static final String ADVANCEMENT_ALUMNI_RELATIONS = "advancement.alumni_relations";
 
-    /** Fundraising: Solicits, records and acknowledges gifts and pledges. */
+    /** Fundraising: Solicits gifts and pledges from alumni, donors and supporters. */
     public static final String ADVANCEMENT_FUNDRAISING = "advancement.fundraising";
+
+    /**
+     * Gift Administration: Records and acknowledges gifts and pledges, and issues donation receipts and tax
+     * certificates.
+     */
+    public static final String ADVANCEMENT_GIFT_ADMINISTRATION = "advancement.gift_administration";
 
     /** Prospect Research: Identifies potential donors and estimates their giving capacity. */
     public static final String ADVANCEMENT_PROSPECT_RESEARCH = "advancement.prospect_research";

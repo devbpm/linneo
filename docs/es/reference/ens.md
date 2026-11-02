@@ -41,11 +41,14 @@ el nivel bajo, `MEDIA` si una es media y ninguna alta, `ALTA` si una es alta.
 | `MEDIUM` | `MEDIO` | Perjuicio grave. |
 | `HIGH` | `ALTO` | Perjuicio muy grave. |
 
-| `Category` | `spanishName()` | Cuándo |
+| `SystemCategory` | `spanishName()` | Cuándo |
 |---|---|---|
 | `BASIC` | `BÁSICA` | Ninguna dimensión supera el nivel bajo. |
 | `MEDIUM` | `MEDIA` | Una dimensión es media, ninguna es alta. |
 | `HIGH` | `ALTA` | Una dimensión es alta. |
+
+`EnsCategorization.SystemCategory` es el enum anidado de la categoría del sistema; no se llama `Category` para que no
+choque con la anotación `@Category`.
 
 ## Qué da la clasificación
 
@@ -87,7 +90,7 @@ termina con `; no information given (lower bound)`.
 | `static Builder builder()` | [`Builder`](#builder) | Inicia una categorización sin información y sin nada declarado. |
 | `Optional<Valuation> valuation(Dimension dimension)` | optional | La valoración de una dimensión, o vacío si la información no fija ningún requisito y no se declaró nada. |
 | `List<Valuation> valuations()` | lista inmutable | Todas las valoraciones, en el orden de las dimensiones. |
-| `Category category()` | categoría | El nivel más alto de cualquier dimensión; `BASIC` cuando ninguna dimensión tiene nivel. |
+| `SystemCategory category()` | categoría | El nivel más alto de cualquier dimensión; `BASIC` cuando ninguna dimensión tiene nivel. |
 | `boolean isComplete()` | `boolean` | Si se dio información y la autenticidad, la trazabilidad y la disponibilidad están valoradas, de modo que la categoría es definitiva y no una cota inferior. |
 | `Set<Dimension> missing()` | conjunto | Las dimensiones de autenticidad, trazabilidad y disponibilidad sin valoración, en el orden de las dimensiones. La confidencialidad y la integridad nunca se listan. |
 | `String summary()` | `String` | Un resumen de una línea en inglés con los nombres del ENS, como `Category MEDIUM (MEDIA): C MEDIUM, I HIGH; not declared: T, A, D (lower bound)`. |
@@ -113,7 +116,8 @@ tiene constructor público.
 | Miembro | Efecto |
 |---|---|
 | `Builder information(ClassClassification classification)` | **Añade** los campos de una clase de la información que maneja el sistema; el motivo nombra `<clase>.<ruta>`. `IllegalArgumentException` si la clasificación tiene errores (llámalo una vez por cada clase). |
-| `Builder information(Collection<InventoryField> fields, Taxonomy taxonomy)` | **Añade** campos guardados de un [inventario de datos](classify/inventory.md), resueltos con la taxonomía; los campos exentos se omiten, y el motivo nombra `<object>.<path>`. `TaxonomyException` si la taxonomía no contiene una clave. |
+| `Builder information(DataInventory inventory, Taxonomy taxonomy)` | **Añade** los campos guardados de **todos los objetos** de un [inventario de datos](classify/inventory.md), resueltos con la taxonomía; los campos exentos se omiten, y el motivo nombra `<object>.<path>`. `TaxonomyException` si la taxonomía no contiene una clave. |
+| `Builder information(DataInventory inventory, String object, Taxonomy taxonomy)` | Lo mismo para un objeto del inventario. `IllegalArgumentException` si el inventario no tiene ese objeto, porque una clave mal escrita dejaría fuera su información y subestimaría la categoría; `TaxonomyException` si la taxonomía no contiene una clave. |
 | `Builder declare(Dimension dimension, Level level, String reason)` | Declara el nivel de una dimensión y por qué. En confidencialidad e integridad solo puede elevar lo que fija la información. `NullPointerException` si un argumento es `null`. |
 | `EnsCategorization build()` | Crea la categorización. |
 
@@ -152,6 +156,20 @@ EnsCategorization complete = EnsCategorization.builder()
         .build();
 complete.summary();    // Category HIGH (ALTA): C HIGH, I HIGH, T MEDIUM, A MEDIUM, D MEDIUM
 complete.isComplete(); // true
+```
+
+Un sistema cuya información está guardada, como un back office que tiene el inventario de datos y no las clases del
+modelo, da sus campos desde el inventario:
+
+```java
+DataInventory inventory = classifier.inventory(List.of(Student.class), type -> "students");
+
+EnsCategorization stored = EnsCategorization.builder()
+        .information(inventory, taxonomy)                        // todos los objetos del inventario
+        .build();
+EnsCategorization students = EnsCategorization.builder()
+        .information(inventory, "students", taxonomy)            // un objeto; una clave desconocida es un error
+        .build();
 ```
 
 Un sistema cuyos campos son todos datos `PUBLIC` no tiene valoración de confidencialidad, así que su categoría sale de

@@ -175,12 +175,14 @@ articles. One `legalReference` text covers every basis of the activity, so name 
 The checker applies the GDPR alone by default. For a Spanish institution, create it with a jurisdiction:
 `new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)`. It then also reports the error
 `CONSENT_NOT_SUFFICIENT` when explicit consent is the **only** condition for beliefs, trade union membership or other
-data of LOPDGDD article 9.1 (an activity may declare several conditions, one for each kind of special data, and another
-condition beside consent covers what consent cannot), and says in `MISSING_LEGAL_REFERENCE` which provisions need a
-law with the rank of statute: LOPDGDD article 8 for a legal obligation or a task in the public interest, 9.2 for the
-conditions of article 9.2.g, h and i, and 10 for criminal offence data authorised by law. It also warns when data on
-administrative sanctions (`user.administrative_sanction`) is processed without consent or a legal reference (LOPDGDD
-article 27), and its warning about an impact assessment cites the AEPD's list under article 35.4.
+data of LOPDGDD article 9.1 (an activity may declare several conditions, one for each kind of special data; conditions
+are declared for the activity, not for each category, so with another condition beside consent the checker only warns
+you to confirm that it covers those categories), and says in `MISSING_LEGAL_REFERENCE` which provisions need a law
+with the rank of statute: LOPDGDD article 8 for a legal obligation or a task in the public interest, 9.2 for the
+conditions of article 9.2.g, h and i, and 10 for criminal offence data authorised by law. The same warning adds the rule
+for data on administrative sanctions (`user.administrative_sanction`) processed without consent or a legal reference
+(LOPDGDD article 27). Its warning about an impact assessment cites the AEPD's list under article 35.4, and that list
+also makes biometric and genetic data a reason to expect one.
 
 The reference page [Legal bases](../reference/processing/bases.md) lists every constant with its article and its
 fideslang name.
@@ -386,7 +388,8 @@ The [codes table](../reference/processing/checker.md#codes) lists every code wit
 
 So far the activities declared everything in code. In many organisations that is not who knows what. The developers know
 the **scope** of an activity for certain: its purposes, its data subjects and the personal data it processes
-(`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`). The **governance** is decided and kept up to date
+(`purposes`, `dataSubjects`, `dataCategories`, `entities`, `objects`), and the risk factors the code knows of
+(`riskFactors`). The **governance** is decided and kept up to date
 by the data protection officer: the lawful bases, the legal reference, the retention, the recipients, the transfers and
 the impact assessment. It is a record of its own, `Governance`, and an activity holds it in its `governance()`.
 
@@ -413,9 +416,10 @@ Governance stored = Governance.builder()
 CheckedActivity checked = checker.check(support.withGovernance(stored));   // valid, no violations
 ```
 
-`withGovernance` keeps what the code declares about the activity: the risk factors the code gives it (for instance
-`Factor.AUTOMATED_DECISIONS`) are a minimum that the stored governance adds to and cannot drop, so a governance saved
-before the code changed never lifts an impact assessment.
+`withGovernance` keeps what the code declares about the activity: the risk factors the code gives it with the builder's
+`riskFactors(...)` (for instance `Factor.AUTOMATED_DECISIONS`) are part of the scope. The stored governance replaces the
+governance and adds its own factors, and the screening reads both, so a governance saved before the code changed never
+lifts an impact assessment.
 
 The scope in code has no governance yet, so its check finds only governance problems. Each `ProcessingViolation`
 carries the `element()` of the activity it is in:
@@ -526,15 +530,16 @@ cannot know, such as the controller's contact details.
 
 The checker also screens each activity for the need of a data protection impact assessment (`ImpactScreening`). It
 counts the criteria of the European Data Protection Board's guidelines that the activity meets, warns when two are met
-and no assessment is referred to, and reports a case of article 35.3 as an error. What only the officer knows, such as
-the scale of the processing, she declares with `riskFactors(...)`: `Factor.LARGE_SCALE` on `learning-support` would
-make it an error until it refers to an assessment. The criteria the code can see are read from the **traits** of the
-terms (module 2): a purpose with `EVALUATION` is criterion 1, `MONITORING` criterion 3, a category with `FINANCIAL`,
-`BEHAVIOURAL` or `PRIVATE_LIFE` criterion 4, and a data subject or category with `VULNERABLE` criterion 7, so a term of
-your own extension (module 6) counts as soon as it declares its traits. When a breach happens, `BreachAssessment` scores
-its severity from the classification of the affected fields and the traits of their categories, as an orientation for
+and no assessment is referred to, and reports a case of article 35.3 as an error. What the terms do not tell is declared
+as risk factors: by the code, with the activity's `riskFactors(...)`, for what it knows (automated decisions), and by
+the officer, in the governance, for what only she knows, such as the scale of the processing: `Factor.LARGE_SCALE` on
+`learning-support` would make it an error until it refers to an assessment. The criteria the code can see are read from
+the **traits** of the terms (module 2): a purpose with `EVALUATION` is criterion 1, `MONITORING` criterion 3, a category
+with `FINANCIAL`, `BEHAVIOURAL` or `PRIVATE_LIFE` criterion 4, and a data subject or category with `VULNERABLE`
+criterion 7, so a term of your own extension (module 6) counts as soon as it declares its traits. When a breach
+happens, `BreachAssessment` scores its severity from the classification of the affected fields and the traits of their categories, as an orientation for
 the first hours; a breach of the confidentiality alone of data that was unintelligible, such as strongly encrypted, is
-not notified to the authority. See
+neither notified to the authority nor communicated to the data subjects. See
 [ImpactScreening](../reference/processing/impact-screening.md) and
 [BreachAssessment](../reference/processing/breach-assessment.md).
 
@@ -557,7 +562,7 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 ```
 
 `activities()` holds the activities whose data subjects include `alumnus`: here only the newsletter. For each one,
-`entitlements()` has one entry per right of articles 15 to 21, decided by its lawful basis:
+`entitlements()` has one entry per right of articles 15 to 22, decided by its lawful basis and what it declares:
 
 | Right | Availability | Why |
 |---|---|---|
@@ -567,6 +572,7 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 | `RESTRICTION` | `CONDITIONAL` | Art. 18.1 lists the cases |
 | `PORTABILITY` | `NO` | Only for processing based on consent or a contract; this one rests on legitimate interests |
 | `OBJECTION` | `YES` | Art. 21.2: direct marketing |
+| `AUTOMATED_DECISION` | `NO` | Art. 22: the activity declares no decision based solely on automated processing |
 
 The same call for a student shows what the basis changes. Enrollment rests on a task in the public interest:
 
@@ -588,7 +594,9 @@ Every `Entitlement` carries an English explanation that cites the articles. To f
 erasure add that the data is blocked before it is deleted (LOPDGDD art. 32). The key is resolved with the taxonomy, so a
 data subject it does not have is a `TaxonomyException` and not an empty answer, and an activity with `DIRECT_MARKETING`
 purposes and a legal obligation or public task basis gets a `CONDITIONAL` erasure instead of `YES`: the data is erased
-except what art. 17.3.b keeps.
+except what art. 17.3.b keeps. So does one that serves other purposes beside the marketing one: the data is erased
+except what those purposes still need. Declaring `Factor.AUTOMATED_DECISIONS` makes `AUTOMATED_DECISION` `CONDITIONAL`
+(art. 22) and adds art. 15.1.h to the explanation of access.
 
 This is the start of the answer, not the answer. `CONDITIONAL` means the article lists cases, and whether this request
 meets them is for the data protection officer to decide, as is every request. Linneo reads the record; giving the

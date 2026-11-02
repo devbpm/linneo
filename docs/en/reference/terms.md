@@ -115,7 +115,10 @@ from its parent. A `Taxonomy` guarantees they are never weaker than the parent's
 
 The canonical constructor throws `NullPointerException` if `info`, `nature`, `confidentiality` or `integrity` is
 `null`; a `null` `attributes` becomes an empty map, and the map is copied into an immutable one; a `null` `traits`
-becomes an empty set, and `IllegalArgumentException` reports a trait that does not apply to data categories.
+becomes an empty set, and `IllegalArgumentException` reports a trait that does not apply to data categories. It also
+throws `IllegalArgumentException` if the `nature` is special category or criminal offence data
+(`LegalNature.requiresMaximumProtection()`) and the confidentiality and integrity are not both `HIGH`, as
+`TaxonomyBuilder.build()` requires of every category it builds.
 
 | Method | Returns | Description |
 |---|---|---|
@@ -177,10 +180,13 @@ on another is an error.
 | `DIRECT_IDENTIFIER` | data categories | Data that identifies a person on its own: a name, an identity document, a face, a biometric template. |
 | `CONTACT_IDENTIFIER` | data categories | Data through which a person can be reached, and so identified: contact details, an account. |
 | `INDIRECT_IDENTIFIER` | data categories | Data that singles out a person within a system: an internal or a device identifier. |
+| `BIOMETRIC` | data categories | Biometric data as GDPR article 4.14 defines it: physical, physiological or behavioural characteristics that allow or confirm the unique identification of a person, such as facial images or fingerprints. |
+| `GENETIC` | data categories | Genetic data as GDPR article 4.13 defines it: inherited or acquired genetic characteristics, as an analysis of a biological sample gives them. |
 | `MONITORING` | data categories, data uses | Data obtained by observing people, or a purpose that observes, tracks or monitors them systematically. |
 | `VULNERABLE` | data categories, data subjects | People in a weaker position than the controller, such as children, employees and patients, or data that is about them by its nature. |
 | `EVALUATION` | data uses | A purpose that evaluates or scores people, profiles them or predicts their behaviour, performance or situation. |
 | `DIRECT_MARKETING` | data uses | Direct marketing, fundraising appeals and the profiling related to them included, to which a data subject may object at any time (GDPR article 21.2). |
+| `RESEARCH` | data uses | A purpose of scientific or historical research or of statistics (GDPR article 89.1), to which the rights of erasure and objection apply with their own limits (articles 17.3.d and 21.6). |
 
 | Method | Description |
 |---|---|
@@ -188,7 +194,7 @@ on another is an error.
 | `boolean isIdentifier()` | `true` for `DIRECT_IDENTIFIER`, `CONTACT_IDENTIFIER` and `INDIRECT_IDENTIFIER`: the traits that tell how a value identifies a person. |
 | `boolean isHighlyPersonal()` | `true` for `FINANCIAL`, `BEHAVIOURAL` and `PRIVATE_LIFE`: data of a highly personal nature in the sense of the impact assessment guidelines. |
 
-Three rules read them:
+Four rules read them:
 
 - [`ImpactScreening`](processing/impact-screening.md) reads `FINANCIAL`, `BEHAVIOURAL` and `PRIVATE_LIFE` as data of a
   highly personal nature, and `EVALUATION`, `MONITORING` and `VULNERABLE` as the criteria of the same names (WP248
@@ -196,11 +202,20 @@ Three rules read them:
 - [`BreachAssessment`](processing/breach-assessment.md) reads `FINANCIAL` and `BEHAVIOURAL` as the data processing
   context and the identifier traits as the ease of identification (ENISA, 2013);
 - [`SubjectRights`](processing/subject-rights.md) reads `DIRECT_MARKETING` for the absolute right to object (GDPR
-  article 21.2 and 21.3).
+  article 21.2 and 21.3) and `RESEARCH` for the right to object to research (article 21.6) and the limit on erasure
+  (article 17.3.d);
+- [`ProcessingChecker`](processing/checker.md) reads `BIOMETRIC` and `GENETIC` under `Jurisdiction.SPAIN`, where the
+  AEPD's list under article 35.4 counts them as criteria of their own.
 
 Adding a trait to a term makes those rules stricter, so it is a minor change of a taxonomy; removing one may lift an
 obligation, so it is a major one ([`TermChange.Aspect.TRAITS`](taxonomy-diff.md#aspect)). `Taxonomy.toTsv()` writes
 them as `trait` rows.
+
+A replacement carries every trait of the term it replaces, in all three hierarchies: declarations that still name the
+deprecated key are checked with the replacement, so one without the trait would lift the rule silently.
+`TaxonomyBuilder.build()` throws `TaxonomyException` (`The replacement '<r>' of data category '<key>' lacks its traits
+[...]`) otherwise. Traits are an aid: they let the rules see what a key cannot tell, and the data protection officer
+still reviews each result.
 
 ```java
 Taxonomy taxonomy = Taxonomy.standard();

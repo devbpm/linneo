@@ -21,11 +21,11 @@ import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.TaxonomyException;
 import io.github.devbpm.linneo.classify.ClassClassification;
+import io.github.devbpm.linneo.classify.DataInventory;
 import io.github.devbpm.linneo.classify.FieldClassification;
 import io.github.devbpm.linneo.classify.InventoryField;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -155,7 +155,7 @@ public final class EnsCategorization {
      *
      * @since 0.1.0
      */
-    public enum Category {
+    public enum SystemCategory {
 
         /**
          * BÁSICA: no dimension above low.
@@ -174,7 +174,7 @@ public final class EnsCategorization {
 
         private final String spanishName;
 
-        Category(String spanishName) {
+        SystemCategory(String spanishName) {
             this.spanishName = spanishName;
         }
 
@@ -251,14 +251,14 @@ public final class EnsCategorization {
     /**
      * The category of the system: the highest level of any dimension.
      *
-     * @return the category; {@link Category#BASIC} when no dimension has a level
+     * @return the category; {@link SystemCategory#BASIC} when no dimension has a level
      */
-    public Category category() {
+    public SystemCategory category() {
         Level highest = valuations.values().stream().map(Valuation::level).max(Enum::compareTo).orElse(Level.LOW);
         return switch (highest) {
-            case LOW -> Category.BASIC;
-            case MEDIUM -> Category.MEDIUM;
-            case HIGH -> Category.HIGH;
+            case LOW -> SystemCategory.BASIC;
+            case MEDIUM -> SystemCategory.MEDIUM;
+            case HIGH -> SystemCategory.HIGH;
         };
     }
 
@@ -343,16 +343,38 @@ public final class EnsCategorization {
         }
 
         /**
-         * Adds stored fields of the information the system handles.
+         * Adds the stored fields of every object of a data inventory, as the information the system handles.
          *
-         * @param fields fields of a {@link io.github.devbpm.linneo.classify.DataInventory}
-         * @param taxonomy the taxonomy to resolve their keys with
+         * @param inventory the inventory of the system
+         * @param taxonomy the taxonomy to resolve its keys with
          * @return this builder
          * @throws TaxonomyException if the taxonomy does not contain a key
          */
-        public Builder information(Collection<InventoryField> fields, Taxonomy taxonomy) {
+        public Builder information(DataInventory inventory, Taxonomy taxonomy) {
+            for (String object : inventory.objects()) {
+                information(inventory, object, taxonomy);
+            }
             informed = true;
-            for (InventoryField field : fields) {
+            return this;
+        }
+
+        /**
+         * Adds the stored fields of one object of a data inventory, as information the system handles.
+         *
+         * @param inventory the inventory
+         * @param object the key of the object
+         * @param taxonomy the taxonomy to resolve its keys with
+         * @return this builder
+         * @throws IllegalArgumentException if the inventory has no such object, which would leave its information
+         *         out and understate the category
+         * @throws TaxonomyException if the taxonomy does not contain a key
+         */
+        public Builder information(DataInventory inventory, String object, Taxonomy taxonomy) {
+            if (!inventory.objects().contains(Objects.requireNonNull(object, "object"))) {
+                throw new IllegalArgumentException("The inventory has no object '" + object + "'");
+            }
+            informed = true;
+            for (InventoryField field : inventory.fields(object)) {
                 if (!field.isExempt()) {
                     add(field.category(taxonomy), field.protection(taxonomy).confidentiality(),
                             field.protection(taxonomy).integrity(), field.object() + "." + field.path());

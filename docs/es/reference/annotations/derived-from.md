@@ -43,6 +43,11 @@ clase que se clasifica equivale a omitirlo. Así una vista se mantiene coherente
 `@Category` sigue la clasificación de la entidad, y con `@Category` debe estar a la altura si más adelante se da al
 campo de la entidad una categoría más estricta.
 
+El mismo modismo declara una **referencia a otro registro** que contiene datos personales, que no toma un valor por
+defecto de la clase y no se puede eximir: `@DerivedFrom(type = Customer.class, value = "id")` en el campo que se refiere
+a un `Customer` hace que tome la clasificación de la clave del registro. Consulta
+[Referencias a otros registros](composite.md#referencias-a-otros-registros).
+
 Las fuentes se resuelven campo a campo, así que dos clases pueden derivar de los *otros* campos de la otra:
 `Order.customerName` desde `Customer.name` y `Customer.lastOrderTotal` desde `Order.total` no es un ciclo, y un
 [`@Composite`](composite.md) puede derivar de una clase que lo contiene. Solo son un ciclo los campos derivados que

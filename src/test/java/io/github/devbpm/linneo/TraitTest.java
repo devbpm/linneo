@@ -107,6 +107,22 @@ class TraitTest {
     }
 
     @Test
+    @DisplayName("a replacement carries every trait of the term it replaces")
+    void replacementKeepsTraits() {
+        assertAll(
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard()
+                        .dataUse("marketing.newsletter", "Newsletter", "", u -> u.deprecated("1.0",
+                                DataUses.ANALYTICS)).build()),
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard()
+                        .category("user.financial.legacy", "Legacy", "", c -> c.deprecated("1.0",
+                                Categories.USER_CONTACT_EMAIL)).build()),
+                () -> assertTrue(Taxonomy.builder().withStandard()
+                        .dataUse("marketing.newsletter", "Newsletter", "", u -> u.deprecated("1.0",
+                                DataUses.MARKETING_COMMUNICATIONS)).build()
+                        .resolveDataUse("marketing.newsletter").has(Trait.DIRECT_MARKETING)));
+    }
+
+    @Test
     @DisplayName("adding a trait is a minor change, removing one a major change")
     void versioning() {
         Taxonomy marked = Taxonomy.builder().withStandard()

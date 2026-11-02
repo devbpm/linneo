@@ -19,35 +19,46 @@ Marks a class whose instances are part of another record, such as a JPA `@Embedd
 that the fields that hold it are classified by its own fields. It is a marker with no elements. It is **inherited**: a
 subclass of a composite is a composite.
 
+Mark concrete classes and records. The classifier cannot see the fields of the implementations of an interface or an
+abstract class, so a field of such a type takes no class default, and the fields of a subclass of a concrete composite
+are invisible through a field of the superclass type.
+
 The marker is Linneo's own rather than a framework annotation, so that the library needs no dependency. Forgetting it
-is safe: a field that holds a class whose fields are classified, without the class being a composite, takes no class
-default, so it fails verification (`UNCLASSIFIED_FIELD`) until the class is marked or the field declares its own
-category.
+is safe where it matters: a field that holds a class whose fields are classified, without the class being a composite,
+is a [reference to another record](#references-to-other-records), which takes no non-personal class default when that
+record holds personal data, so it fails verification (`UNCLASSIFIED_FIELD`) until the class is marked or the field
+declares its own category.
 
 ## What the classifier does
 
-A field with **no annotation of its own** whose type is a composite class, or an array, a collection, an `Optional` or
-a `Map` **value** of one, at any depth, gets one classification per field of the composite, with the path
-`field.part`:
+A field with **no annotation of its own** whose type is a concrete composite class, or an array, a collection or an
+`Optional` of one, at any depth, gets one classification per field of the composite, with the path `field.part`:
 
 | Field | Classified as |
 |---|---|
 | `Address home` | `home.street`, `home.city` |
-| `List<Address> previous`, `Address[] previous`, `Optional<Address> previous` | `previous.street`, `previous.city` |
-| `Map<String, Address> byType`, `Map<String, List<Address>> byType` | `byType.street`, `byType.city`: the values of a map, and containers nested at any depth, are descended into |
-| a field that may hold data the classifier cannot split into fields (see below) | `UNCLASSIFIED_FIELD`, unless it declares its own category |
+| `List<Address> previous`, `Address[] previous`, `Optional<Address> previous`, `List<List<Address>> history` | `previous.street`, `previous.city`: containers nested at any depth are descended into |
+| a field that may hold data the classifier cannot split into fields, such as `Map<String, Address> byType` (see below) | `UNCLASSIFIED_FIELD`, unless it declares its own category |
 | a field with `@Category`, `@CategoryByRow` or `@DerivedFrom` | one entry: the composite is stored as one value (see below) |
-| a field with `@Exempt` | skipped, and listed in `exempted()` |
+| a field with `@Exempt` | skipped, and listed in `exempted()`, unless it holds composites (`CONFLICTING_ANNOTATIONS`) |
 
 - **Type variables** are resolved through the superclasses of the class being classified: a `T value` of a generic
   base class classified for `Box extends Base<Address>` is an `Address`.
 - **A class default never applies to a field that may hold data the classifier cannot see**, so wrapping a composite
   never gives it a non-personal default. These fields are an `UNCLASSIFIED_FIELD` error unless they are annotated:
-  a map **key** that is a composite; a composite as the type argument of a class that is not a collection, such as
-  `Wrapper<Address>`; several composites in one type, such as `Map<Address, Address>`; a value typed `Object`, an unbound
-  type variable or a raw container; and another class with classified fields that is **not** a composite, such as a
-  referenced entity (mark it `@Composite` to classify its fields here, or declare what the field stores, such as the
-  record's key).
+  - composites in a `Map` or a `Map.Entry`, which is **never descended into** because its keys are data too:
+    `Map<String, Address>` declares its category with `@Category` or `@CategoryByRow`, and is then checked against the
+    composites' fields (see below);
+  - a composite as the type argument of a class that is not a collection, such as `Wrapper<Address>`, or of an owner
+    type (`Outer<Address>.Inner`), and several composites in one type, such as `Map<Address, Address>`. A generic
+    composite such as `Box<Address>` mentions two composites, itself and `Address`, so it is declared as one value;
+  - an interface or an abstract class marked `@Composite`, which is not embedded: its implementations may have other
+    fields;
+  - a value typed `Object`, `Serializable`, `Comparable` or `Cloneable`, a type variable the class does not bind, or a
+    raw container.
+
+  A field that refers to another record of the model is a separate case; see
+  [References to other records](#references-to-other-records).
 
 - **Paths** nest: a composite inside a composite gives `home.geo.country`. For such a field,
   `FieldClassification.fieldName()` is the last segment and `declaringClass()` is the composite class.
@@ -66,25 +77,61 @@ a `Map` **value** of one, at any depth, gets one classification per field of the
   composite in a cycle is reported with the composite and, at `field.part`, with the holder.
 - The composite classes need not be passed to `Classifier.verify` separately: they are classified as part of every
   class that holds them. Classifying one directly works too, as for any class.
+- **Order independence.** The problems found do not depend on the order in which classes are classified; only the field
+  a composite containment cycle is reported on may. Each class reports its own problems, so verify every class of the
+  model (see [`ModelClasses`](../classify/classifier.md#modelclasses)), not some of them.
 
 ## A composite stored as one value
 
 A field that stores the composite as one value, for example as JSON in a single column, or that holds it where its
-fields cannot be paths (a map key, or a type argument of a class that is not a collection), declares its category with
-[`@Category`](category.md) or [`@CategoryByRow`](category-by-row.md). The field is then one entry, and its
-protection must cover the protection of **every field of the composites it holds**: otherwise the value would be
-classified below what it contains. The same holds for a field that stores composites as one value and takes its
-category from a [`@DerivedFrom`](derived-from.md) source. The check also covers a composite that holds itself and
+fields cannot be paths (in a `Map`, whose keys are data too, or as a type argument of a class that is not a
+collection), declares its category with [`@Category`](category.md) or [`@CategoryByRow`](category-by-row.md). The
+field is then one entry, and its protection must cover the protection of **every field of the composites it holds**:
+otherwise the value would be classified below what it contains. The same holds for a field that stores composites as
+one value and takes its category from a [`@DerivedFrom`](derived-from.md) source. A composite whose own fields have
+errors leaves nothing to compare with, which is an error too. The check also covers a composite that holds itself and
 composites that hold each other, whatever the order in which the classes are classified.
 
 | Rule | Violation | Severity | Field classified? |
 |---|---|---|---|
-| The declared category protects at least as much as the fields of every composite the field holds | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of [<Composite>, ...] need (<natures>, <confidentiality>, <integrity>[, secret])`) | error | **yes** (the error is still reported) |
+| The declared category protects at least as much as the fields of every composite the field holds | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of [<Composite>, ...] need (<natures>, <confidentiality>, <integrity>[, secret])`; or, when the fields of a composite have errors, `the fields of [<Composite>, ...] have errors, so what '<key>' must protect is unknown`) | error | **yes** (the error is still reported) |
 | The composite does not contain itself, directly or through other composites | `CYCLE` (`the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow`) | error | no (the field that closes the loop) |
 
 A composite that contains itself (`Node` with a `List<Node> children`) cannot be expanded: the error is reported at
 the field that closes the loop (`tree.children`), and the other fields of the composite are classified normally.
 Classify that field as one value to remove the error.
+
+## References to other records
+
+A field with no annotation of its own whose type is another record of the model, a class that has a
+[`@DefaultCategory`](default-category.md), an annotated field or a field of a composite type, **refers** to that
+record. A sealed type is read through its permitted subclasses, and type arguments are read too (`List<Country>`).
+
+- If the record holds **no personal data**, as a catalogue entry such as a `Country` does, the field takes the class
+  default like any other.
+- A reference to a record that **holds personal data** is personal data itself, a pseudonymous key, so the class
+  default is refused: the field is an `UNCLASSIFIED_FIELD` error that advises declaring what it stores, typically the
+  record's key, with `@DerivedFrom(type = Customer.class, value = "id")`.
+- [`@Exempt`](exempt.md) on a field that holds composites, or that refers to a record with personal data, is a
+  `CONFLICTING_ANNOTATIONS` error: a relationship is not a field that holds no data.
+
+```java
+@DefaultCategory(value = REFERENCE_PUBLIC, reason = "code list of countries")
+public class Country {
+    private String code;
+}
+
+@DefaultCategory(value = SYSTEM_OPERATIONS, reason = "technical columns of the invoice")
+public class Invoice {
+
+    @DerivedFrom(type = Customer.class, value = "id")   // what the reference stores: the key of a Customer
+    private Customer customer;
+
+    private Country country;                            // a catalogue entry holds no personal data: class default
+
+    private Long number;                                // class default
+}
+```
 
 ## Example
 

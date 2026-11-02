@@ -132,17 +132,27 @@ which every term below the one that declares them inherits.
 
 | Trait | Terms that declare it |
 |---|---|
-| `FINANCIAL` | `user.financial` |
+| `FINANCIAL` | `user.financial`, `user.payment` |
 | `BEHAVIOURAL` | `user.behavior`, `user.location` |
 | `PRIVATE_LIFE` | `user.content.private` |
-| `DIRECT_IDENTIFIER` | `user.name`, `user.government_id`, `user.biometric`, `user.content.self_image` |
-| `CONTACT_IDENTIFIER` | `user.contact`, `user.account` |
-| `INDIRECT_IDENTIFIER` | `user.unique_id`, `user.device` |
-| `VULNERABLE` | the category `user.childrens`; the data subjects `employee`, `staff_member`, `faculty_member`, `trainee`, `patient`, `job_applicant` |
-| `EVALUATION` | the data uses `marketing.advertising.first_party.targeted`, `marketing.advertising.profiling`, `marketing.advertising.third_party.targeted`, `personalize.profiling`, `personalize.content.profiling`, `personalize.content.profiled` |
-| `DIRECT_MARKETING` | the data use `marketing` |
+| `DIRECT_IDENTIFIER` | `user.name`, `user.government_id`, `user.biometric`, `user.authorization.biometric`, `user.content.self_image` |
+| `CONTACT_IDENTIFIER` | `user.contact`, `user.account`, `user.authorization.credentials` |
+| `INDIRECT_IDENTIFIER` | `user.unique_id`, `user.device`, `user.health_and_medical.record_id`, `user.health_and_medical.insurance_beneficiary_id` |
+| `BIOMETRIC` | `user.biometric`, `user.authorization.biometric` |
+| `GENETIC` | `user.health_and_medical.genetic` |
+| `MONITORING` | the categories `user.telemetry`, `user.sensor` |
+| `VULNERABLE` | the categories `user.childrens`, `user.victim_status`, `user.government_id.immigration`; the data subjects `employee`, `staff_member`, `faculty_member`, `trainee`, `patient`, `job_applicant` |
+| `EVALUATION` | the data uses `essential.fraud_detection`, `marketing.advertising.first_party.targeted`, `marketing.advertising.profiling`, `marketing.advertising.third_party.targeted`, `personalize.profiling`, `personalize.content.profiling`, `personalize.content.profiled` |
+| `DIRECT_MARKETING` | the data uses `marketing`, `sales` |
 
-The shipped extensions declare the traits of their own terms; see [Extensions](extensions/README.md#traits).
+The standard taxonomy declares no `RESEARCH` term: the [university extension](extensions/university.md) does. The
+shipped extensions declare the traits of their own terms; see [Extensions](extensions/README.md#traits).
+
+A test, `TraitCoverageTest`, makes the absence of traits a reviewed decision: every personal data category, data use
+and data subject of the standard taxonomy either has traits, declared or inherited, or is listed in
+`src/test/resources/io/github/devbpm/linneo/traits-reviewed.txt` as reviewed without any. A term that a new fideslang
+release adds fails the test until someone gives it traits in `linneo-traits.tsv` or lists it there, so a missing trait
+never makes a rule silently laxer.
 
 ## fideslang roots
 
@@ -212,12 +222,17 @@ SHA-256 digest PyPI publishes, reads `src/fideslang/default_taxonomy/data_{categ
   keys of the `linneo-*.tsv` files (see [Key constants](key-constants.md)).
 
 The downloaded modules are **not executed**: the script parses them with `ast` and reads only the literal values of the
-fields it keeps, and stops if one is not a literal.
+fields it keeps, and stops if one is not a literal, if a term is defined with positional or `**` arguments, if the
+release has two files, or none, for a module, or if a key is not a valid key, which it would otherwise write into Java.
+Backslashes in the descriptions are escaped in the Javadoc it writes, so text from the release never reaches the source
+as a unicode escape.
 
 After adding a Linneo term to a `linneo-*.tsv` file, rerun the script to regenerate the constants. When moving to
 another fideslang version, also update `StandardTaxonomy.FIDESLANG_VERSION`, `NOTICE` and the term counts asserted
 in `StandardTaxonomyTest`, and make sure every new root category has a full row in `linneo-category-policy.tsv`
-(otherwise the taxonomy fails to build).
+(otherwise the taxonomy fails to build). A term the new release adds has no traits until `linneo-traits.tsv` gives it
+some: `TraitCoverageTest` fails until it does, or until the term is listed in `traits-reviewed.txt` as reviewed without
+any.
 
 See also: [Taxonomy](taxonomy.md) · [Protection levels](protection-levels.md) · [Key constants](key-constants.md) ·
 [Extending the taxonomy](extending.md) · course: [The taxonomy](../course/02-the-taxonomy.md)

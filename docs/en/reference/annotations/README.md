@@ -29,7 +29,7 @@ reads field values.
 | `@CategoryByRow` | field, record component | a field whose category depends on each row, with the most protective category a row may hold | [category-by-row.md](category-by-row.md) |
 | `@DerivedFrom` | field, record component | a field whose value is computed from other fields: it takes their classification, or declares one that protects at least as much | [derived-from.md](derived-from.md) |
 | `@Composite` | type | a class that is part of another record, such as an embedded address: the fields that hold it are classified by its own fields | [composite.md](composite.md) |
-| `@Exempt` | field, record component | a field that holds no data of the model (cache, handle, framework state, or a collection of other records classified on their own), with the reason | [exempt.md](exempt.md) |
+| `@Exempt` | field, record component | a field that holds no data of the model (cache, handle or framework state), with the reason | [exempt.md](exempt.md) |
 
 On a record component, the annotations also apply to the component's field, which is what the classifier reads.
 
@@ -40,9 +40,9 @@ field declared by them except **static** and **synthetic** fields (and those nam
 are always skipped without any annotation, and **transient** fields, which are skipped unless they carry one of Linneo's
 field annotations. See [Classifier](../classify/classifier.md#which-fields-are-scanned).
 
-A field without an annotation of its own whose type is a [`@Composite`](composite.md) class (or an array,
-collection, `Optional` or map value of one, at any depth) is not classified as one field: each field of the composite
-is, with the path `field.part`.
+A field without an annotation of its own whose type is a concrete [`@Composite`](composite.md) class (or an array,
+collection or `Optional` of one, at any depth) is not classified as one field: each field of the composite is, with
+the path `field.part`.
 
 ## Resolution order
 
@@ -54,8 +54,8 @@ For each considered field, the first rule that applies wins:
 | 2 | The field has `@Category` | the declared category (`DECLARED`; `DERIVED` if it also has `@DerivedFrom`) |
 | 2 | The field has `@CategoryByRow` | the ceiling category (`BY_ROW`) |
 | 3 | The field has `@DerivedFrom` and no `@Category` | the classification of its source (`DERIVED`) |
-| 4 | The type of the field is a `@Composite` class, or an array, collection, `Optional` or map value of one, at any depth | one classification per field of the composite, with the path `field.part`, each as its own class resolves it |
-| 5 | The class that **declares** the field has `@DefaultCategory`, and the field cannot hold data the classifier does not see | that default (`CLASS_DEFAULT`) |
+| 4 | The type of the field is a concrete `@Composite` class, or an array, collection or `Optional` of one, at any depth | one classification per field of the composite, with the path `field.part`, each as its own class resolves it |
+| 5 | The class that **declares** the field has `@DefaultCategory`, and the field cannot hold data the classifier does not see and refers to no record with personal data | that default (`CLASS_DEFAULT`) |
 | 6 | The class **being classified** has `@DefaultCategory`, and the same holds | that default (`CLASS_DEFAULT`) |
 | 7 | none of the above | error `UNCLASSIFIED_FIELD` |
 
@@ -64,10 +64,14 @@ Consequences:
 - An annotation on a field always overrides a class default.
 - The fields of a composite are resolved with the composite's own annotations and `@DefaultCategory`, never with the
   default of the class that holds it.
-- A class default never applies to a field that may hold data the classifier cannot see (a map key that is a
-  composite, several composites, `Object`, an unbound type variable, a raw container, or a class with classified fields
-  that is not `@Composite`): such a field needs its own annotation, or it is an `UNCLASSIFIED_FIELD`. See
+- A class default never applies to a field that may hold data the classifier cannot see (composites in a map or that
+  cannot be split into fields, an abstract composite, `Object`, `Serializable`, an unbound type variable or a raw
+  container): such a field needs its own annotation, or it is an `UNCLASSIFIED_FIELD`. See
   [`@Composite`](composite.md#what-the-classifier-does).
+- A field that refers to another record of the model takes the class default only when that record holds no personal
+  data, as a catalogue entry does. A reference to a record with personal data needs its own annotation, typically
+  `@DerivedFrom(type = Customer.class, value = "id")`, and cannot be exempted. See
+  [References to other records](composite.md#references-to-other-records).
 - A superclass's `@DefaultCategory` covers the fields that superclass declares, even when you classify a subclass.
 - A subclass's `@DefaultCategory` covers the fields it declares and the unannotated fields inherited from superclasses
   that have no default of their own.
@@ -81,6 +85,7 @@ Consequences:
 | Combination on one field | Violation | Effect |
 |---|---|---|
 | `@Exempt` + `@Category`, `@CategoryByRow` and/or `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom` | field skipped (the `@Exempt` reason is still checked) |
+| `@Exempt` on a field that holds composites, or that refers to a record with personal data | `CONFLICTING_ANNOTATIONS`: `@Exempt is for a field that holds no data of the model, and this one ...` | error reported; see [`@Exempt`](exempt.md#rules-enforced-by-the-classifier) |
 | `@CategoryByRow` + `@Category` and/or `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@CategoryByRow cannot be combined with @Category or @DerivedFrom` | field not classified |
 | `@Category` + `@DerivedFrom` | none | the field declares its category and must protect at least as much as its sources |
 | `@Category`, `@CategoryByRow` or `@DerivedFrom` + class `@DefaultCategory` | none | the field annotation wins |

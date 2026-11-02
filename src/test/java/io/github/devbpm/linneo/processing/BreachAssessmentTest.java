@@ -130,7 +130,7 @@ class BreachAssessmentTest {
                 () -> assertFalse(encrypted.notifyAuthority()),
                 () -> assertTrue(encrypted.explanation().contains("EDPB Guidelines 9/2022")),
                 () -> assertTrue(encryptedAndLost.notifyAuthority()),
-                () -> assertFalse(encryptedAndLost.communicateToSubjects()),
+                () -> assertTrue(encryptedAndLost.communicateToSubjects()),
                 () -> assertFalse(encrypted.communicateToSubjects()),
                 () -> assertTrue(encrypted.explanation().contains("art. 34.3.a")),
                 () -> assertEquals(0, technical.dataProcessingContext()),
