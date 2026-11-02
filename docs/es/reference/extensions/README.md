@@ -83,7 +83,7 @@ personales que cuelgan de `user.financial` o de `user.contact` heredan esos rasg
 
 | Extensión | Rasgos que declara |
 |---|---|
-| Universidad | usos de datos: `advancement.alumni_relations`, `advancement.fundraising` y `advancement.prospect_research` `DIRECT_MARKETING`; `advancement.prospect_research` y `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` y `MONITORING`; `research` `RESEARCH` |
+| Universidad | usos de datos: `advancement.alumni_relations`, `advancement.fundraising` y `advancement.prospect_research` `DIRECT_MARKETING`; `advancement.prospect_research` y `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` y `MONITORING`; `research.participation` `RESEARCH` |
 | Finanzas | usos de datos: `finance.credit_management` y `finance.anti_money_laundering` `EVALUATION` |
 | Cadena de suministro | uso de datos: `operations.logistics.fleet_management` `MONITORING`; sujeto de datos: `driver` `VULNERABLE` |
 | Recursos humanos | categorías: `user.employment.compensation`, `user.employment.benefit` y `user.employment.payroll` `FINANCIAL`, `user.employment.monitoring` `MONITORING`; usos de datos: `employment.monitoring` `MONITORING`, `employment.performance` y `employment.recruitment.background_check` `EVALUATION`; sujetos de datos: `dependant`, `reporting_person`, `temporary_agency_worker` y `worker_representative` `VULNERABLE` |

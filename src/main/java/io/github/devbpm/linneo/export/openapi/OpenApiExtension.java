@@ -38,7 +38,7 @@ import java.util.Map;
  * Each property gets one extension, {@value #NAME}, whose value is an object such as:
  * <pre>{@code
  * "x-linneo": {"category": "user.contact.email", "personal": true, "nature": "ORDINARY",
- *              "confidentiality": "LOW", "integrity": "LOW", "identifiability": "IDENTIFIED", "secret": false}
+ *              "confidentiality": "LOW", "integrity": "MEDIUM", "identifiability": "IDENTIFIED", "secret": false}
  * }</pre>
  * {@code nature} and {@code identifiability} are present only for personal data. The values are maps, strings and
  * booleans that any OpenAPI library can add to a schema property, for instance with a springdoc or swagger-core

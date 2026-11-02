@@ -379,7 +379,9 @@ campos.
   del modelo toma el valor por defecto de la clase solo cuando ese registro no contiene datos personales, como un
   elemento de un catálogo (`Country`). Una referencia al registro de una persona, como los `Attachment` de un documento,
   es una clave seudónima: declara lo que guarda, normalmente la clave del registro, con
-  `@DerivedFrom(type = Attachment.class, value = "id")`.
+  `@DerivedFrom(type = Attachment.class, value = "id")`. Lo mismo vale mientras los campos del registro tengan errores:
+  entonces no se sabe si contiene datos personales, así que la referencia no toma el valor por defecto de la clase ni
+  se puede eximir hasta que los corrijas o declares lo que guarda el campo.
 
 ## `@Exempt`: campos técnicos
 

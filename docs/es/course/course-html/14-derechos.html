@@ -491,8 +491,9 @@ nada. El portal, en cambio, también presta el servicio para el que el estudiant
 comerciales no borra la cuenta.</p>
 
 <h3 id="investigacion">La investigación</h3>
-<p>Las finalidades con el rasgo <code>RESEARCH</code> (en la extensión universitaria, <code>research</code> y sus
-hijos) tienen sus propios límites:</p>
+<p>Las finalidades con el rasgo <code>RESEARCH</code> (en la extensión universitaria,
+<code>research.participation</code>; la gestión de la investigación, <code>research.administration</code>, no lo
+tiene) tienen sus propios límites:</p>
 <ul>
 <li>la <strong>oposición</strong> es <code>CONDITIONAL</code> por motivos relacionados con la situación particular de
 la persona (artículo 21.6), y <code>NO</code> cuando la investigación es necesaria para una misión de interés
@@ -510,7 +511,7 @@ System.out.println(study.entitlement(SubjectRights.Right.ERASURE));
 System.out.println(study.entitlement(SubjectRights.Right.OBJECTION));
 
 ProcessingActivity graduateSurvey = ProcessingActivity.builder("graduate-survey", "Graduate employment survey")
-        .purposes(UniversityDataUses.RESEARCH)
+        .purposes(UniversityDataUses.RESEARCH_PARTICIPATION)
         .dataSubjects(DataSubjects.ALUMNUS)
         .dataCategories(USER_NAME, USER_CONTACT_EMAIL)
         .legalBasis(LegalBasis.PUBLIC_INTEREST)

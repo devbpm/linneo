@@ -22,8 +22,8 @@ import java.util.List;
 
 /**
  * Thrown by {@link ProcessingChecker#verify(java.util.Collection)} when a processing activity is incomplete or
- * would be unlawful as declared. The message lists the first 50 errors, one per line, and counts all of them by
- * code; {@link #errors()} has them all.
+ * would be unlawful as declared. The message lists the first 50 errors, one per line, and when there are more counts
+ * all of them by code; {@link #errors()} has them all.
  *
  * @since 0.1.0
  */

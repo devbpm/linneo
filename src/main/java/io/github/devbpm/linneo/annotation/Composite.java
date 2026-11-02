@@ -54,7 +54,7 @@ import java.lang.annotation.Target;
  * The marker is inherited: a subclass of a composite is a composite. It is Linneo's own rather than a framework
  * annotation, so that the library needs no dependency. Forgetting it is safe where it matters: a field that holds a
  * class whose fields are classified is then a reference to another record, which takes no non-personal class default
- * when the record holds personal data.
+ * when the record holds personal data or its fields have errors.
  *
  * @since 0.1.0
  */

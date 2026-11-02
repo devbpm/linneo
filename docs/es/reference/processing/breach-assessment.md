@@ -47,7 +47,7 @@ crítico entre los afectados.
 | 3 | datos financieros: una categoría con el rasgo `FINANCIAL` (`user.financial` y descendientes en la taxonomía estándar) |
 | 2 | datos de comportamiento: una categoría con el rasgo `BEHAVIOURAL` (`user.behavior` y `user.location` y descendientes) |
 | 1 | otros datos personales |
-| 0 | ningún campo afectado contiene datos personales: no es una violación de seguridad de datos personales (RGPD, artículo 4.12) |
+| 0 | ningún campo afectado contiene datos personales: no es una violación de seguridad de datos personales (RGPD, artículo 4.12), así que la puntuación es 0 y la gravedad `LOW`, sean cuales sean las circunstancias |
 
 Un campo declarado anonimizado o agregado no es un dato personal, así que no cuenta ni para el contexto ni para la
 facilidad de identificación.
@@ -108,7 +108,7 @@ La **gravedad** es el nivel de la puntuación (`contexto × identificación + ci
 | `Identification identification()` | nivel | La facilidad de identificación. Cada `Identification` tiene un `score()`: 0,25, 0,5, 0,75 o 1. |
 | `String identificationReason()` | `String` | Los identificadores encontrados o el motivo dado, en inglés; con niveles iguales, la clave menor. |
 | `double circumstances()` | `double` | Los puntos de las circunstancias, de 0 a 2. |
-| `double score()` | `double` | `contexto × identificación + circunstancias`. |
+| `double score()` | `double` | `contexto × identificación + circunstancias`, o 0 cuando ningún campo afectado contiene datos personales. |
 | `Severity severity()` | nivel | El nivel de la puntuación. |
 | `boolean manyIndividuals()` | `boolean` | Si se ven afectadas más de 100 personas. |
 | `boolean notifyAuthority()` | `boolean` | Véase arriba. |

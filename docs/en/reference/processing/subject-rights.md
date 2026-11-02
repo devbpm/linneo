@@ -135,8 +135,8 @@ The table has no row for `AUTOMATED_DECISION`: it does not depend on the lawful 
   21.3): the data is erased except what article 17.3.b keeps, and the explanation carries the retention. `ERASURE` is
   also `CONDITIONAL` when direct marketing is one purpose beside others: the data is erased except what the activity's
   other purposes still need.
-- **Research.** If a purpose of the activity has the `RESEARCH` trait (the `research` use of the university extension,
-  or a term of yours that declares it), `OBJECTION` is `CONDITIONAL` (article 21.6: on grounds relating to the person's
+- **Research.** If a purpose of the activity has the `RESEARCH` trait (the `research.participation` use of the university
+  extension, or a term of yours that declares it), `OBJECTION` is `CONDITIONAL` (article 21.6: on grounds relating to the person's
   particular situation) or `NO` when the basis is a task in the public interest, and an `ERASURE` that is not `NO`
   becomes `CONDITIONAL`, with an explanation that notes that it may be refused where it would make the research
   impossible or seriously impair it (article 17.3.d). Direct marketing comes first for `OBJECTION`.

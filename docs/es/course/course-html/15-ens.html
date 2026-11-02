@@ -413,8 +413,8 @@ información. El resumen lo dice en su final:</p>
 <tr><th scope="col">Situación</th><th scope="col">Ejemplo real</th></tr>
 </thead>
 <tbody>
-<tr><th scope="row">Nada dado ni declarado</th><td><code>Category BASIC (BÁSICA): ; no information given (lower
-bound)</code></td></tr>
+<tr><th scope="row">Nada dado ni declarado</th><td><code>Category BASIC (BÁSICA): no dimension valued; no information
+given (lower bound)</code></td></tr>
 <tr><th scope="row">Solo declaraciones, sin información</th><td><code>Category MEDIUM (MEDIA): T LOW, A LOW, D MEDIUM;
 no information given (lower bound)</code></td></tr>
 <tr><th scope="row">Información, faltan dimensiones</th><td><code>Category HIGH (ALTA): I MEDIUM, D HIGH; not
@@ -440,7 +440,9 @@ lanza <code>IllegalArgumentException</code> si el inventario no lo tiene: una cl
 información y subestimaría la categoría.</li>
 </ul>
 <p>En ambos, la taxonomía resuelve las claves guardadas (una clave que no tiene lanza <code>TaxonomyException</code>),
-los campos exentos se omiten y el motivo nombra <code>&lt;objeto&gt;.&lt;ruta&gt;</code>.</p>
+los campos exentos se omiten y el motivo nombra <code>&lt;objeto&gt;.&lt;ruta&gt;</code>. Un inventario sin objetos
+no da información: la categoría sigue siendo una cota inferior y el resumen termina con
+<code>; no information given (lower bound)</code>, como si no se hubiera llamado al método.</p>
 
 <figure class="ejemplo">
 <figcaption>Ejemplo 15.6. La información desde el inventario</figcaption>

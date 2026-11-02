@@ -138,11 +138,11 @@ Los mensajes de abajo son exactamente los que produce Linneo (con `X` para la cl
 
 | Código | Gravedad | Mensaje | Corrección |
 |---|---|---|---|
-| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (o `on Superclase or X` para un campo heredado) | Añade `@Category` (o `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), o una `@DefaultCategory` no personal si la clase no contiene datos personales; en una clase embebida, márcala `@Composite`; en una referencia a un registro con datos personales (el mensaje empieza por `the class default 'k' does not apply: the field refers to X ...`), declara lo que guarda el campo, normalmente `@DerivedFrom(type = X.class, value = "id")` |
+| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (o `on Superclase or X` para un campo heredado) | Añade `@Category` (o `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), o una `@DefaultCategory` no personal si la clase no contiene datos personales; en una clase embebida, márcala `@Composite`; en una referencia a un registro con datos personales o cuyos campos tienen errores (el mensaje empieza por `the class default 'k' does not apply: the field refers to X ...`), declara lo que guarda el campo, normalmente `@DerivedFrom(type = X.class, value = "id")`, y corrige los errores de los campos del registro |
 | `UNKNOWN_CATEGORY` | error | `unknown data category 'k'` | Corrige la clave (usa las constantes de `Categories`) o asegúrate de que se carga la extensión que la define (`Taxonomy.load()`) |
 | `PERSONAL_DEFAULT` | error | `@DefaultCategory of X names 'k', which is personal data: declare personal fields one by one with @Category` | Quita el valor por defecto y anota los campos personales uno a uno |
 | `MISSING_REASON` | error | `@DefaultCategory of X needs a reason`, `@Exempt needs a reason` o `@CategoryByRow needs declaredBy` | Escribe el motivo para el revisor |
-| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom`, `@CategoryByRow cannot be combined with @Category or @DerivedFrom` o `@Exempt is for a field that holds no data of the model, and this one ...` | Deja solo una (`@Category` con `@DerivedFrom` está permitido); una relación con un registro con datos personales se declara con `@DerivedFrom`, no se exime |
+| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom`, `@CategoryByRow cannot be combined with @Category or @DerivedFrom` o `@Exempt is for a field that holds no data of the model, and this one ...` | Deja solo una (`@Category` con `@DerivedFrom` está permitido); una relación con un registro con datos personales, o cuyos campos tienen errores, se declara con `@DerivedFrom`, no se exime |
 | `LOWERED_LEVEL` | error | `confidentiality LOW is lower than the MEDIUM of 'k'` (o `integrity ...`) | Quita el elemento o súbelo; los niveles solo suben |
 | `AMBIGUOUS_VALUE` | error | `confidentiality must have at most one value` (o `integrity`, `identifiability`) | Indica un solo valor |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `'k' is not personal data and has no identifiability` | Quita `identifiability` o comprueba que la clave es la correcta |
@@ -288,8 +288,9 @@ List<Class<?>> model = ModelClasses.inPackageTree(Student.class).stream()
 new Classifier(Taxonomy.load()).verify(model);
 ```
 
-`ModelClasses` también es fail-closed: una ubicación que no puede listar o una clase que no puede cargar es una
-`IllegalArgumentException`, no una clase que se omite en silencio. Entonces pasa las clases de forma explícita.
+`ModelClasses` también es fail-closed: una ubicación que no puede listar (una que no existe, o una que no es un
+directorio ni un archivo JAR, como un archivo fuente ejecutado con el lanzador `java`) o una clase que no puede cargar
+es una `IllegalArgumentException`, no una clase que se omite en silencio. Entonces pasa las clases de forma explícita.
 
 ## Errores frecuentes
 

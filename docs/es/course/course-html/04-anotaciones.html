@@ -482,7 +482,7 @@ rechaza en dos casos, que el <a href="05-estructuras.html">capítulo 5</a> trata
 <li>un campo que puede contener datos que el clasificador no ve, como un <code>Object</code>, un
 <code>Serializable</code>, una variable de tipo sin enlazar o un mapa de compuestos;</li>
 <li>un campo cuyo tipo es otro registro del modelo que contiene datos personales, como una relación con
-<code>Staff</code>.</li>
+<code>Staff</code>, o cuyos campos tienen errores, porque entonces no se sabe si los contiene.</li>
 </ul>
 <p>En ambos casos el campo necesita su propia anotación. Un valor por defecto afirma algo sobre lo que el clasificador
 ve; donde no ve, no afirma nada.</p>
@@ -663,8 +663,9 @@ archivos adjuntos que se presenta en el <a href="05-estructuras.html">capítulo 
 <li><code>@Exempt</code> no se combina con <code>@Category</code>, <code>@CategoryByRow</code> ni
 <code>@DerivedFrom</code>: <code>CONFLICTING_ANNOTATIONS</code> con el mensaje <code>@Exempt cannot be combined with
 @Category, @CategoryByRow or @DerivedFrom</code>.</li>
-<li>No se admite en un campo que contiene compuestos ni en uno que se refiere a un registro con datos personales
-(<code>CONFLICTING_ANNOTATIONS</code>, con los mensajes de arriba).</li>
+<li>No se admite en un campo que contiene compuestos ni en uno que se refiere a un registro con datos personales, o
+con errores en sus campos (<code>CONFLICTING_ANNOTATIONS</code>, con los mensajes de arriba y los del
+<a href="05-estructuras.html">capítulo 5</a>).</li>
 <li>Un campo exento no puede ser la fuente de un <code>@DerivedFrom</code>, porque no está clasificado.</li>
 </ul>
 <div class="recuadro recuadro-atencion" role="note">

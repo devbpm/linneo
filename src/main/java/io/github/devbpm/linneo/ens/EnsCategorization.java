@@ -293,7 +293,8 @@ public final class EnsCategorization {
     public String summary() {
         List<String> parts = new ArrayList<>();
         valuations.values().forEach(v -> parts.add(v.dimension().code() + " " + v.level()));
-        String text = "Category " + category() + " (" + category().spanishName() + "): " + String.join(", ", parts);
+        String text = "Category " + category() + " (" + category().spanishName() + "): "
+                + (parts.isEmpty() ? "no dimension valued" : String.join(", ", parts));
         if (!informed) {
             text += "; no information given (lower bound)";
         } else if (!isComplete()) {
@@ -343,7 +344,8 @@ public final class EnsCategorization {
         }
 
         /**
-         * Adds the stored fields of every object of a data inventory, as the information the system handles.
+         * Adds the stored fields of every object of a data inventory, as the information the system handles. An
+         * inventory without objects gives no information, so the category stays a lower bound.
          *
          * @param inventory the inventory of the system
          * @param taxonomy the taxonomy to resolve its keys with
@@ -354,7 +356,6 @@ public final class EnsCategorization {
             for (String object : inventory.objects()) {
                 information(inventory, object, taxonomy);
             }
-            informed = true;
             return this;
         }
 

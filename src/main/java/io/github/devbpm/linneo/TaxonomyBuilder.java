@@ -52,12 +52,15 @@ import java.util.regex.Pattern;
  *       declared or inherited;</li>
  *   <li>a secret category makes all its children secret;</li>
  *   <li>a replacement must exist in the same hierarchy, and replacements must not form a cycle;</li>
+ *   <li>a replacement must carry every {@linkplain Trait trait} of the term it replaces, since declarations that
+ *       still name the deprecated key are checked with the replacement;</li>
  *   <li>the replacement of a deprecated data category must protect at least as much: a nature the deprecated
  *       category admits, confidentiality and integrity no lower, and secret if the deprecated category is.</li>
  * </ul>
  * An {@linkplain #extend(TaxonomyExtension) extension} adds data categories below existing ones, data uses and data
- * subjects, raises protection and adds attributes: it cannot add a root data category, change the origin of its terms,
- * or change the lifecycle of a term it did not add. A builder is not thread-safe and is meant to be used once.
+ * subjects, raises protection and adds attributes and traits: it cannot add a root data category, change the origin
+ * of its terms, or change the lifecycle of a term it did not add. A builder is not thread-safe and is meant to be
+ * used once.
  *
  * @since 0.1.0
  */
@@ -356,7 +359,7 @@ public final class TaxonomyBuilder {
      * @throws TaxonomyException if a parent or replacement is missing, a root category lacks a facet, a category
      *         weakens its parent's protection, a special category or criminal offence category is not at
      *         {@code HIGH} confidentiality and integrity, a deprecated category is replaced by one with weaker
-     *         protection, or replacements form a cycle
+     *         protection, a replacement lacks a trait of the term it replaces, or replacements form a cycle
      */
     public Taxonomy build() {
         Map<String, DataCategory> builtCategories = new LinkedHashMap<>();

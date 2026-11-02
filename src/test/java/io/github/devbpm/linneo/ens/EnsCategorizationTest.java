@@ -118,7 +118,8 @@ class EnsCategorizationTest {
     }
 
     @Test
-    @DisplayName("a classification with errors gives no information, and none given leaves the category a lower bound")
+    @DisplayName("a classification with errors or an empty inventory gives no information, and none given leaves the"
+            + " category a lower bound")
     void failsClosed() {
         EnsCategorization empty = EnsCategorization.builder()
                 .declare(Dimension.AUTHENTICITY, Level.LOW, "x").declare(Dimension.TRACEABILITY, Level.LOW, "x")
@@ -128,6 +129,9 @@ class EnsCategorizationTest {
                         () -> EnsCategorization.builder().information(classifier.classify(Broken.class))),
                 () -> assertFalse(empty.isComplete()),
                 () -> assertTrue(empty.summary().contains("no information given")),
+                () -> assertEquals("Category BASIC (BÁSICA): no dimension valued; no information given (lower bound)",
+                        EnsCategorization.builder().information(DataInventory.builder().build(), taxonomy).build()
+                                .summary()),
                 () -> assertThrows(IllegalArgumentException.class, () -> EnsCategorization.builder()
                         .information(DataInventory.builder().object("students").build(), "studnet", taxonomy)));
     }

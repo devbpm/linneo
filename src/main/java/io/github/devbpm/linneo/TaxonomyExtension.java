@@ -35,8 +35,8 @@ package io.github.devbpm.linneo;
  * }
  * }</pre>
  * An extension adds data categories below existing ones (a new root would be a new domain of data, which needs its
- * own protection policy), and data uses and data subjects; it may make the protection of any category stricter and
- * add attributes, and deprecate only the terms it adds. {@link TaxonomyBuilder} refuses anything else while the
+ * own protection policy), and data uses and data subjects; it may make the protection of any category stricter, add
+ * attributes and traits, and deprecate only the terms it adds. {@link TaxonomyBuilder} refuses anything else while the
  * extension contributes, and checks the protection rules when the taxonomy is
  * {@linkplain TaxonomyBuilder#build() built}.
  *
@@ -47,7 +47,9 @@ public interface TaxonomyExtension {
     /**
      * The name recorded as the {@linkplain TermInfo#origin() origin} of the terms this extension adds.
      *
-     * @return a short, stable name; never {@value TermInfo#FIDESLANG} or {@value TermInfo#LINNEO}
+     * @return a short, stable name; never {@value TermInfo#FIDESLANG}, {@value TermInfo#LINNEO} or
+     *         {@value TaxonomyBuilder#DEFAULT_ORIGIN}, which {@link TaxonomyBuilder#extend(TaxonomyExtension)}
+     *         refuses
      */
     String name();
 

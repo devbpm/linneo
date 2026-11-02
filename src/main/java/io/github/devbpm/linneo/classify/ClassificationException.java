@@ -22,8 +22,8 @@ import java.util.List;
 
 /**
  * Thrown by {@link Classifier#verify(java.util.Collection)} when a model is not fully and correctly classified.
- * The message lists the first 50 errors, one per line, and counts all of them by code; {@link #errors()} has them
- * all.
+ * The message lists the first 50 errors, one per line, and when there are more counts all of them by code;
+ * {@link #errors()} has them all.
  *
  * @since 0.1.0
  */

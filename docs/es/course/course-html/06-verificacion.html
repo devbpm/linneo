@@ -327,13 +327,18 @@ AuditedEntity or Student</code>). La segunda variante es un campo que puede cont
 que ningún valor por defecto se aplica:</p>
 <pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.payload: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
 </code></pre>
-<p>La tercera es una referencia a un registro con datos personales en una clase con valor por defecto:</p>
+<p>La tercera es una referencia a un registro con datos personales, o cuyos campos tienen errores, en una clase con
+valor por defecto. Con datos personales, el mensaje es:</p>
 <pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Room.responsible: the class default 'org.location' does not apply: the field refers to Staff that holds personal data, and a reference to a person's record is personal data: declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Staff.class, value = "id")
 </code></pre>
+<p>Si los campos del registro referido tienen errores, no se sabe si contiene datos personales y el mensaje dice
+<code>… refers to Staff, whose fields have errors, so whether it holds personal data is unknown: fix them, or declare
+what the field stores …</code>.</p>
 <p><strong>Corrección.</strong> Para la primera, añade <code>@Category</code> (o la anotación que corresponda), o un
 valor por defecto no personal si la clase no contiene datos personales; si el campo es un objeto embebido, marca su
 clase con <code>@Composite</code>. Para la segunda, estrecha el tipo o declara la categoría. Para la tercera, declara lo
-que guarda el campo, normalmente con <code>@DerivedFrom(type = Staff.class, value = "id")</code>.</p>
+que guarda el campo, normalmente con <code>@DerivedFrom(type = Staff.class, value = "id")</code>, y corrige los errores
+del registro referido.</p>
 
 <h4 id="unknown-category">UNKNOWN_CATEGORY</h4>
 <p>Una clave de <code>@Category</code>, el techo de <code>@CategoryByRow</code> o el valor de
@@ -389,9 +394,10 @@ private String fileName;
 ERROR CONFLICTING_ANNOTATIONS edu.example.university.ScholarshipApplication.home: @Exempt is for a field that holds no data of the model, and this one holds [Address]: classify it as one value with @Category or @CategoryByRow
 </code></pre>
 <p>La segunda línea es un <code>@Exempt</code> en un campo que contiene un compuesto. La tercera forma, un
-<code>@Exempt</code> en una referencia a un registro con datos personales, se mostró en el
-<a href="04-anotaciones.html#exempt-cuando-no">capítulo 4</a>. <strong>Corrección.</strong> Deja una sola anotación; un
-compuesto se clasifica por sus campos o como un valor, y una referencia se declara con <code>@DerivedFrom</code>.</p>
+<code>@Exempt</code> en una referencia a un registro con datos personales, o con errores, se mostró en el
+<a href="04-anotaciones.html#exempt-cuando-no">capítulo 4</a> y en el <a href="05-estructuras.html">capítulo 5</a>.
+<strong>Corrección.</strong> Deja una sola anotación; un compuesto se clasifica por sus campos o como un valor, y una
+referencia se declara con <code>@DerivedFrom</code>.</p>
 
 <h4 id="lowered-level">LOWERED_LEVEL</h4>
 <p>Un campo declara una confidencialidad o una integridad inferior a la de su categoría. Se informa una infracción por
@@ -599,8 +605,15 @@ IAE: Cannot load edu.example.university.NewsletterSender from C:\...\out-broken 
 <p>El primero aparece porque <code>Main</code> está en el paquete sin nombre; el segundo, porque las clases del
 <abbr title="Java Development Kit">JDK</abbr> no tienen una ubicación que listar; el tercero, porque el paquete de
 <code>Student</code> contiene una clase, <code>NewsletterSender</code>, que extiende una clase de una biblioteca de
-correo ausente en tiempo de ejecución (la ruta del directorio se ha abreviado). Una ubicación que existe pero no se
-puede leer produce una <code>UncheckedIOException</code>. En todos los casos, pasa las clases de forma explícita.</p>
+correo ausente en tiempo de ejecución (la ruta del directorio se ha abreviado).</p>
+<p>Otras dos ubicaciones tienen su propio mensaje. Un programa de un solo archivo ejecutado con el lanzador
+<code>java</code> carga sus clases desde el archivo fuente, que no es un directorio ni un archivo JAR; y una ubicación
+puede haber desaparecido (aquí, el mismo archivo borrado antes de la segunda llamada):</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">IAE: Cannot list classes from C:\...\Demo3.java, where edu.example.university.Demo3 was loaded from: it is neither a directory nor a JAR file; pass the classes explicitly / causa: java.util.zip.ZipException: zip END header not found
+IAE: The location of edu.example.university.Demo3 does not exist: file:/C:/.../Demo3.java; pass the classes explicitly
+</code></pre>
+<p>Una ubicación que existe pero no se puede leer produce una <code>UncheckedIOException</code>. En todos los casos,
+pasa las clases de forma explícita.</p>
 
 <h3 id="jpa">Obtener las clases de JPA</h3>
 <p>Si el modelo es JPA, el metamodelo conoce todas las entidades. Toma de él las clases, por ejemplo en un test de
@@ -654,11 +667,15 @@ cometen:</p>
  - ERROR WEAKER_THAN_PARTS edu.example.university.ScholarshipApplication.billing: 'system.operations' protects less than the fields of [Address] need ([ORDINARY], LOW, MEDIUM)
 </code></pre>
 <p>Hay un caso más sutil. Cuando el registro al que apunta una referencia tiene errores en sus campos, el clasificador
-no puede saber si contiene datos personales, y la comprobación de la referencia queda pendiente. Si un
-<code>Attachment</code> tiene un campo sin anotar y <code>Document.attachments</code> lleva un <code>@Exempt</code>
-indebido, verificar solo <code>Document</code> pasa sin errores. Verificar las dos clases falla por el error de
-<code>Attachment</code>, y al corregirlo aparece el de <code>Document</code>:</p>
-<pre class="codigo salida" tabindex="0"><code class="language-text">1 classification error(s):
+no puede saber si contiene datos personales, así que la referencia no toma el valor por defecto de la clase ni se puede
+eximir hasta que se corrijan. Si un <code>Attachment</code> tiene un campo sin anotar y
+<code>Document.attachments</code> lleva un <code>@Exempt</code> indebido, verificar solo <code>Document</code> ya
+falla, pero su mensaje habla de los campos de <code>Attachment</code> sin decir cuáles son: el error de
+<code>Attachment.mimeType</code> solo aparece si <code>Attachment</code> está en la lista. Verificar las dos clases
+informa de ambos, y al corregir <code>Attachment</code> el error de <code>Document</code> pasa a decir que
+<code>Attachment</code> contiene datos personales:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">2 classification error(s):
+ - ERROR CONFLICTING_ANNOTATIONS edu.example.university.Document.attachments: @Exempt is for a field that holds no data of the model, and this one refers to Attachment, whose fields have errors, so whether it holds personal data is unknown: fix them, or declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Attachment.class, value = "id")
  - ERROR UNCLASSIFIED_FIELD edu.example.university.Attachment.mimeType: no @Category on the field and no @DefaultCategory on Attachment
 </code></pre>
 <p>Por eso la recomendación es doble: verifica todas las clases del modelo, con <code>ModelClasses</code> o con el

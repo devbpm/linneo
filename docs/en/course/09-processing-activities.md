@@ -333,8 +333,8 @@ The enrollment activity has been left without a retention period on purpose: a w
 ## Verifying in a test
 
 As with the classifier, the point is to run the check on every build. `verify` checks all the activities and throws
-a `ProcessingException` carrying **every error of every activity** (its message lists the first 50 and counts all of
-them by code); when there is none it returns the `ProcessingRecord`:
+a `ProcessingException` carrying **every error of every activity** (its message lists the first 50 and, when there are more,
+counts all of them by code); when there is none it returns the `ProcessingRecord`:
 
 ```java
 package edu.example.university;

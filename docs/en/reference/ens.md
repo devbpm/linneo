@@ -80,7 +80,9 @@ reason>`.
 While no information was given, or authenticity, traceability or availability is not declared, the category is only a
 **lower bound**: the system could be in a higher one. `isComplete()` is `true` when information was given **and** the
 three dimensions are valued, and `missing()` lists those that are not. Without information, `summary()` ends with `; no
-information given (lower bound)`.
+information given (lower bound)`. An inventory without objects gives no information, so it leaves the category a lower
+bound too. When no dimension is valued, the summary says so:
+`Category BASIC (BÁSICA): no dimension valued; no information given (lower bound)`.
 
 ## Members
 

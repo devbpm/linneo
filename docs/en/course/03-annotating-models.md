@@ -369,7 +369,9 @@ or an abstract class marked `@Composite` is not embedded, because its implementa
 - **A reference to another record is personal data when the record is.** A field whose type is another record of the
   model takes the class default only when that record holds no personal data, as a catalogue entry (`Country`) does.
   A reference to a person's record, such as the `Attachment`s of a document, is a pseudonymous key: declare what it
-  stores, typically the record's key, with `@DerivedFrom(type = Attachment.class, value = "id")`.
+  stores, typically the record's key, with `@DerivedFrom(type = Attachment.class, value = "id")`. The same goes while
+  the fields of the record have errors: whether it holds personal data is then unknown, so the reference takes no
+  class default and cannot be exempted until you fix them or declare what the field stores.
 
 ## `@Exempt`: technical fields
 

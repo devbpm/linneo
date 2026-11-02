@@ -300,7 +300,7 @@ pesan en el [cribado de impacto](../processing/impact-screening.md), la
 |---|---|---|
 | Usos de datos `advancement.alumni_relations`, `advancement.fundraising` y `advancement.prospect_research` | `DIRECT_MARKETING` | Las comunicaciones con antiguos alumnos, las solicitudes de donativos y la investigación de posibles donantes que las sustenta son mercadotecnia directa, así que el derecho de oposición es absoluto (artículo 21.2 del RGPD). Administrar los donativos recibidos, `advancement.gift_administration`, no lo es, y la raíz `advancement` no declara ningún rasgo |
 | Usos de datos `advancement.prospect_research` y `education.financial_aid.means_assessment` | `EVALUATION` | La investigación de posibles donantes y la evaluación de recursos evalúan a personas (criterio 1 del WP248) |
-| Uso de datos `research` (y sus hijos) | `RESEARCH` | La investigación científica (artículo 89.1 del RGPD), cuyos derechos de supresión y oposición tienen sus propios límites (artículos 17.3.d y 21.6) |
+| Uso de datos `research.participation` | `RESEARCH` | Tratar los datos de los participantes en estudios de investigación es investigación científica (artículo 89.1 del RGPD), cuyos derechos de supresión y oposición tienen sus propios límites (artículos 17.3.d y 21.6). Administrar proyectos, ayudas e investigadores, `research.administration`, no es tratamiento de investigación, y la raíz `research` no declara ningún rasgo |
 | Uso de datos `education.learning_analytics` | `EVALUATION`, `MONITORING` | La analítica del aprendizaje evalúa a los estudiantes y los observa de forma sistemática (criterios 1 y 3 del WP248) |
 
 ## Claves estándar para todo lo demás

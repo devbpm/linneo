@@ -776,10 +776,17 @@ student;</code> en <code>Enrollment</code>:</p>
 <pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Enrollment.student: no @Category on the field and no @DefaultCategory on Enrollment
 </code></pre>
 <p>La comprobación se hace al final de clasificar la clase, cuando ya se sabe si el registro referido contiene datos
-personales, y funciona igual aunque dos registros se refieran el uno al otro. Si los campos del registro referido tienen
-errores, la comprobación de la referencia espera a que se corrijan; el
-<a href="06-verificacion.html#todas-a-la-vez">capítulo 6</a> explica por qué eso obliga a verificar todas las
-clases.</p>
+personales, y funciona igual aunque dos registros se refieran el uno al otro.</p>
+<p>Si los campos del registro referido tienen errores, tampoco se sabe si contiene datos personales, y el clasificador
+no se arriesga: la referencia no toma el valor por defecto ni se puede eximir hasta que se corrijan. Si
+<code>Staff</code> tuviera un campo <code>officePhone</code> sin anotar, <code>Room.responsible</code> sin anotación y
+<code>Room.deputy</code> con <code>@Exempt</code> darían:</p>
+<pre class="codigo salida" tabindex="0"><code class="language-text">ERROR UNCLASSIFIED_FIELD edu.example.university.Room.responsible: the class default 'org.location' does not apply: the field refers to Staff, whose fields have errors, so whether it holds personal data is unknown: fix them, or declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Staff.class, value = "id")
+ERROR CONFLICTING_ANNOTATIONS edu.example.university.Room.deputy: @Exempt is for a field that holds no data of the model, and this one refers to Staff, whose fields have errors, so whether it holds personal data is unknown: fix them, or declare what the field stores with @Category, or take the classification of the record's key with @DerivedFrom(type = Staff.class, value = "id")
+</code></pre>
+<p>Cada clase informa solo de sus propios errores: el de <code>Staff.officePhone</code> aparece cuando se verifica
+<code>Staff</code>, y por eso el <a href="06-verificacion.html#todas-a-la-vez">capítulo 6</a> recomienda
+verificar todas las clases del modelo.</p>
 
 <h3 id="olvidar-composite">Olvidar @Composite es seguro</h3>
 <p>Una clase embebible sin <code>@Composite</code> no se expande: para el clasificador es una referencia a otro
@@ -837,7 +844,7 @@ ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.payload: it holds va
 ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.snapshot: it holds values typed Serializable, which may be anything: no class default applies. Declare its category with @Category or @CategoryByRow
 ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.sortKey: it holds values typed Comparable, which may be anything: no class default applies. Declare its category with @Category or @CategoryByRow
 ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.row: it holds values typed by the type variable T, which the class does not bind: no class default applies. Declare its category with @Category or @CategoryByRow
-ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.rawRows: it holds values typed by the type variable E, which the class does not bind: no class default applies. Declare its category with @Category or @CategoryByRow
+ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.rawRows: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
 ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.rows: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
 ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.lazyAddress: it holds [Address] in a way that cannot be split into the composites' fields (a map, a type argument of a class that is not a collection, or several composites): no class default applies. Declare its category with @Category or @CategoryByRow
 ERROR UNCLASSIFIED_FIELD edu.example.university.ImportBatch.attributes: it holds values typed Object, which may be personal data: no class default applies. Declare its category with @Category or @CategoryByRow
@@ -855,13 +862,14 @@ Object&gt;</code></th><td>No</td> <td>Puede contener cualquier valor, también d
 <tr><th scope="row"><code>Serializable</code>, <code>Comparable</code>, <code>Cloneable</code></th><td>No</td> <td>Son
 interfaces que cualquier valor puede implementar.</td></tr>
 <tr><th scope="row">Variable de tipo sin enlazar (<code>T</code>), colección sin parametrizar (<code>List</code>)</th>
-<td>No</td><td>La clase no dice qué contiene. En una colección sin parametrizar, el mensaje nombra la variable de tipo
-de la colección (<code>E</code>).</td></tr>
+<td>No</td><td>La clase no dice qué contiene. En una variable de tipo, el mensaje la nombra (<code>T</code>); en una
+colección sin parametrizar, dice que sus valores son de tipo <code>Object</code>, como en
+<code>List&lt;?&gt;</code>.</td></tr>
 <tr><th scope="row">Compuesto como argumento de una clase que no es una colección
 (<code>Supplier&lt;Address&gt;</code>), en un mapa, abstracto o genérico</th><td>No</td><td>Sus campos no pueden ser
 rutas, o el clasificador no los conoce todos.</td></tr>
-<tr><th scope="row">Referencia a un registro con datos personales</th><td>No</td><td>La referencia es un dato
-personal.</td></tr>
+<tr><th scope="row">Referencia a un registro con datos personales, o con errores en sus campos</th><td>No</td><td>La
+referencia es un dato personal, o no se sabe si lo es.</td></tr>
 <tr><th scope="row"><code>Class&lt;?&gt;</code>, <code>List&lt;String&gt;</code>, <code>Map&lt;String,
 Integer&gt;</code>, <code>Optional&lt;String&gt;</code></th><td>Sí</td><td>Su contenido está determinado y no incluye
 compuestos ni registros del modelo.</td></tr>
@@ -997,7 +1005,8 @@ secreto.</li>
 cualquier profundidad, y de variables de tipo resueltas por las superclases.</li>
 <li>Un compuesto guardado como un valor (también en un mapa) debe cubrir sus partes (<code>WEAKER_THAN_PARTS</code>);
 uno que se contiene a sí mismo es un <code>CYCLE</code>.</li>
-<li>Una referencia a un registro con datos personales es un dato personal: se declara y no se exime.</li>
+<li>Una referencia a un registro con datos personales es un dato personal: se declara y no se exime. Lo mismo vale
+mientras los campos del registro tengan errores.</li>
 <li>Los tipos opacos nunca toman el valor por defecto de la clase.</li>
 <li>Estas reglas cierran los huecos de un modelo correcto sin pedir anotaciones para casos que solo alcanza un mal uso;
 lo que el código no ve lo declaran las personas responsables.</li>

@@ -65,7 +65,9 @@ All notable changes to this project are documented in this file. The format foll
   `SupplyChainTaxonomy` (16, 12, 3), `ProjectOperationsTaxonomy` (11, 6, 2) and `HumanResourcesTaxonomy` (21, 15,
   6, with the new branch `user.employment` and sick leave, occupational health and workplace adjustments as special
   categories). Records about organizations extend `org.business_records`, records about people extend `user.*`; the
-  extensions share no key and can be applied together.
+  extensions share no key and can be applied together. A term is placed where the traits it inherits hold: order
+  management runs the business (`operations.order_management`), unlike the outreach of `sales`, and only the
+  participation in research studies is research, not the administration of projects and grants.
 - `user.contact.emergency_contact` and the data subject `emergency_contact` are standard terms, available to every
   extension (they were part of the university extension during development).
 - `ProcessingChecker`, `ProcessingActivity` and `ProcessingRecord`: GDPR processing activities (purposes, data
@@ -99,9 +101,9 @@ All notable changes to this project are documented in this file. The format foll
   and type variables are resolved through the superclasses of the class being classified. A field that may hold data
   the classifier cannot see (composites in a map or that it cannot split, an abstract composite, a value typed
   `Object`, `Serializable` or by an unbound type variable) never takes a class default. A field whose type is another
-  record of the model takes the class default only when that record holds no personal data; a reference to a
-  person's record declares what it stores, typically with `@DerivedFrom(type = …, value = "id")`, and cannot be
-  exempted. A field that stores composites as one value, declared or derived, must protect at least as much as
+  record of the model takes the class default only when that record holds no personal data and its fields have no
+  errors; a reference to a person's record declares what it stores, typically with
+  `@DerivedFrom(type = …, value = "id")`, and cannot be exempted. A field that stores composites as one value, declared or derived, must protect at least as much as
   their fields (`WEAKER_THAN_PARTS`), and a composite with an error leaves nothing to compare with; a composite that
   contains itself is a `CYCLE`. A `transient` field is classified when it carries an annotation, and Lombok's lock
   fields are ignored. `Classifier` reads each class once per call and stays immutable.
@@ -144,7 +146,8 @@ All notable changes to this project are documented in this file. The format foll
 - `ModelClasses.inPackage(anchor)` and `inPackageTree(anchor)`: the classes and records of a model package, read
   from where the anchor class was loaded (directory or JAR, class path or module path), so a test verifies every
   class of the model, including the one nobody listed. A location or class that cannot be read is an error, never
-  skipped.
+  skipped, and says why: a location that does not exist, or a file that is neither a directory nor a JAR, such as a
+  source file the `java` launcher runs.
 - `DisclosurePolicy`: whether the values of a field may be shown, must be masked or left out (`Treatment`) in a
   channel such as logs, exports or test copies, from thresholds on the `Protection` order, so a field that needs more
   protection never gets a laxer treatment and secrets are always left out; `forLogs()` as a starting point.
@@ -169,10 +172,12 @@ All notable changes to this project are documented in this file. The format foll
   identification + circumstances), scored from the classification of the affected fields and the traits of their
   categories (anonymized and aggregated values identify no one, other personal data identifies with effort), and
   whether to notify the supervisory authority (GDPR article 33) and tell the data subjects (article 34), neither of
-  which applies when only the confidentiality of unintelligible data was lost.
+  which applies when only the confidentiality of unintelligible data was lost. Without personal data the score is 0:
+  it is not a personal data breach.
 - `EnsCategorization` (package `ens`): the security category of a system under the Spanish Esquema Nacional de
   Seguridad, with confidentiality and integrity valued from the classification and the other dimensions declared.
-  Only a classification without errors, or an object a data inventory holds, gives information, and the category
+  Only a classification without errors, or an object a data inventory holds, gives information (an empty inventory
+  gives none), and the category
   (`SystemCategory`) is final only once information is given and every other dimension declared.
 - Exports to more tools, in the `export` packages: `PostgresAnonymizer` (masking rules for PostgreSQL Anonymizer
   that follow a `DisclosurePolicy`: one statement per column, the value left out in a column shared by fields that

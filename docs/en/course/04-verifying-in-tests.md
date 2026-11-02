@@ -135,11 +135,11 @@ The messages below are the exact ones Linneo produces (with `X` for the class, `
 
 | Code | Severity | Message | Fix |
 |---|---|---|---|
-| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (or `on Superclass or X` for an inherited field) | Add `@Category` (or `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), or a non-personal `@DefaultCategory` if the class holds no personal data; for an embedded class, mark it `@Composite`; for a reference to a record with personal data (the message starts `the class default 'k' does not apply: the field refers to X ...`), declare what the field stores, typically `@DerivedFrom(type = X.class, value = "id")` |
+| `UNCLASSIFIED_FIELD` | error | `no @Category on the field and no @DefaultCategory on X` (or `on Superclass or X` for an inherited field) | Add `@Category` (or `@CategoryByRow`/`@DerivedFrom`/`@Exempt`), or a non-personal `@DefaultCategory` if the class holds no personal data; for an embedded class, mark it `@Composite`; for a reference to a record with personal data or whose fields have errors (the message starts `the class default 'k' does not apply: the field refers to X ...`), declare what the field stores, typically `@DerivedFrom(type = X.class, value = "id")`, and fix the errors of the record's fields |
 | `UNKNOWN_CATEGORY` | error | `unknown data category 'k'` | Fix the key (use the `Categories` constants), or make sure the extension that defines it is loaded (`Taxonomy.load()`) |
 | `PERSONAL_DEFAULT` | error | `@DefaultCategory of X names 'k', which is personal data: declare personal fields one by one with @Category` | Remove the default and annotate personal fields individually |
 | `MISSING_REASON` | error | `@DefaultCategory of X needs a reason`, `@Exempt needs a reason` or `@CategoryByRow needs declaredBy` | Write the reason for the reviewer |
-| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom`, `@CategoryByRow cannot be combined with @Category or @DerivedFrom` or `@Exempt is for a field that holds no data of the model, and this one ...` | Keep only one (`@Category` with `@DerivedFrom` is allowed); a relationship to a record with personal data is declared with `@DerivedFrom`, not exempted |
+| `CONFLICTING_ANNOTATIONS` | error | `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom`, `@CategoryByRow cannot be combined with @Category or @DerivedFrom` or `@Exempt is for a field that holds no data of the model, and this one ...` | Keep only one (`@Category` with `@DerivedFrom` is allowed); a relationship to a record with personal data, or whose fields have errors, is declared with `@DerivedFrom`, not exempted |
 | `LOWERED_LEVEL` | error | `confidentiality LOW is lower than the MEDIUM of 'k'` (or `integrity ...`) | Remove the element or raise it; levels only go up |
 | `AMBIGUOUS_VALUE` | error | `confidentiality must have at most one value` (or `integrity`, `identifiability`) | Give one value |
 | `IDENTIFIABILITY_NOT_APPLICABLE` | error | `'k' is not personal data and has no identifiability` | Remove `identifiability`, or check that the key is right |
@@ -285,7 +285,8 @@ List<Class<?>> model = ModelClasses.inPackageTree(Student.class).stream()
 new Classifier(Taxonomy.load()).verify(model);
 ```
 
-`ModelClasses` is fail-closed too: a location it cannot list or a class it cannot load is an
+`ModelClasses` is fail-closed too: a location it cannot list (a location that does not exist, or one that is neither a
+directory nor a JAR file, such as a source file run by the `java` launcher) or a class it cannot load is an
 `IllegalArgumentException`, not a class that is silently skipped. Then pass the classes explicitly.
 
 ## Common mistakes

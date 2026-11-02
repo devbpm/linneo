@@ -81,7 +81,9 @@ declaración es `declared: <tu motivo>`.
 Mientras no se haya dado información, o no se declare la autenticidad, la trazabilidad o la disponibilidad, la categoría
 es solo una **cota inferior**: el sistema podría estar en una superior. `isComplete()` es `true` cuando se dio
 información **y** las tres dimensiones están valoradas, y `missing()` lista las que no. Sin información, `summary()`
-termina con `; no information given (lower bound)`.
+termina con `; no information given (lower bound)`. Un inventario sin objetos tampoco da información, así que también
+deja la categoría como cota inferior. Cuando ninguna dimensión está valorada, el resumen lo dice:
+`Category BASIC (BÁSICA): no dimension valued; no information given (lower bound)`.
 
 ## Miembros
 

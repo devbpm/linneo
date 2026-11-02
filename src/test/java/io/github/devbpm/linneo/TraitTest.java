@@ -23,6 +23,8 @@ import io.github.devbpm.linneo.extension.finance.FinanceTaxonomy;
 import io.github.devbpm.linneo.extension.humanresources.HumanResourcesCategories;
 import io.github.devbpm.linneo.extension.humanresources.HumanResourcesDataSubjects;
 import io.github.devbpm.linneo.extension.humanresources.HumanResourcesTaxonomy;
+import io.github.devbpm.linneo.extension.supplychain.SupplyChainDataUses;
+import io.github.devbpm.linneo.extension.supplychain.SupplyChainTaxonomy;
 import io.github.devbpm.linneo.extension.university.UniversityDataUses;
 import io.github.devbpm.linneo.extension.university.UniversityTaxonomy;
 import org.junit.jupiter.api.DisplayName;
@@ -58,10 +60,11 @@ class TraitTest {
     }
 
     @Test
-    @DisplayName("the shipped extensions declare the traits of their terms")
+    @DisplayName("the shipped extensions declare the traits of their terms, and no term inherits a purpose it lacks")
     void extensionTraits() {
         Taxonomy taxonomy = Taxonomy.builder().withStandard().extend(new HumanResourcesTaxonomy())
-                .extend(new UniversityTaxonomy()).extend(new FinanceTaxonomy()).build();
+                .extend(new UniversityTaxonomy()).extend(new FinanceTaxonomy()).extend(new SupplyChainTaxonomy())
+                .build();
         assertAll(
                 () -> assertTrue(taxonomy.requireCategory(HumanResourcesCategories.USER_EMPLOYMENT_COMPENSATION)
                         .has(Trait.FINANCIAL)),
@@ -74,7 +77,15 @@ class TraitTest {
                 () -> assertTrue(taxonomy.requireDataUse(UniversityDataUses.ADVANCEMENT_PROSPECT_RESEARCH)
                         .traits().containsAll(Set.of(Trait.DIRECT_MARKETING, Trait.EVALUATION))),
                 () -> assertTrue(taxonomy.requireDataUse(FinanceDataUses.FINANCE_CREDIT_MANAGEMENT)
-                        .has(Trait.EVALUATION)));
+                        .has(Trait.EVALUATION)),
+                // Research is the participation in studies, not the administration of projects and grants...
+                () -> assertTrue(taxonomy.requireDataUse(UniversityDataUses.RESEARCH_PARTICIPATION)
+                        .has(Trait.RESEARCH)),
+                () -> assertEquals(Set.of(), taxonomy.requireDataUse(UniversityDataUses.RESEARCH_ADMINISTRATION)
+                        .traits()),
+                // ...and taking orders runs the business, while sales outreach is direct marketing.
+                () -> assertEquals(Set.of(), taxonomy.requireDataUse(SupplyChainDataUses.OPERATIONS_ORDER_MANAGEMENT)
+                        .traits()));
     }
 
     @Test

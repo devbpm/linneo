@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.zip.ZipException;
 import java.util.stream.Stream;
 
 /**
@@ -44,7 +45,8 @@ import java.util.stream.Stream;
  * out. They are loaded without being initialized and sorted by name, so the result is the same on every run. Filter
  * the list further when the package also holds classes that are not data, such as repositories.
  * <p>
- * A location that cannot be listed, such as a JAR nested in another or classes generated at run time, and a class of
+ * A location that cannot be listed, such as a JAR nested in another, classes generated at run time or a source file
+ * run by the {@code java} launcher, and a class of
  * the package that cannot be loaded, for instance because an optional dependency is missing, are reported with an
  * {@link IllegalArgumentException} rather than skipped, so that no class of the model goes unverified: pass the
  * classes explicitly then.
@@ -95,6 +97,9 @@ public final class ModelClasses {
         try {
             entries = Files.isDirectory(location) ? inDirectory(location, prefix, below)
                     : inJar(location, prefix, below);
+        } catch (ZipException e) {
+            throw new IllegalArgumentException("Cannot list classes from " + location + ", where " + anchor.getName()
+                    + " was loaded from: it is neither a directory nor a JAR file; pass the classes explicitly", e);
         } catch (IOException e) {
             throw new UncheckedIOException("Cannot list the classes of " + location, e);
         }
@@ -147,15 +152,17 @@ public final class ModelClasses {
             throw new IllegalArgumentException(anchor.getName() + " has no location to list classes from; pass the"
                     + " classes explicitly");
         }
+        Path location;
         try {
-            Path location = Path.of(url.toURI());
-            if (!Files.exists(location)) {
-                throw new IllegalArgumentException("The location of " + anchor.getName() + " does not exist: " + url);
-            }
-            return location;
+            location = Path.of(url.toURI());
         } catch (URISyntaxException | IllegalArgumentException | FileSystemNotFoundException e) {
             throw new IllegalArgumentException("Cannot list classes from " + url + ", where " + anchor.getName()
                     + " was loaded from; pass the classes explicitly", e);
         }
+        if (!Files.exists(location)) {
+            throw new IllegalArgumentException("The location of " + anchor.getName() + " does not exist: " + url
+                    + "; pass the classes explicitly");
+        }
+        return location;
     }
 }

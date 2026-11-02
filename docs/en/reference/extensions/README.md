@@ -81,7 +81,7 @@ hang from `user.financial` or `user.contact` inherit those traits; the extension
 
 | Extension | Traits it declares |
 |---|---|
-| University | data uses: `advancement.alumni_relations`, `advancement.fundraising` and `advancement.prospect_research` `DIRECT_MARKETING`; `advancement.prospect_research` and `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` and `MONITORING`; `research` `RESEARCH` |
+| University | data uses: `advancement.alumni_relations`, `advancement.fundraising` and `advancement.prospect_research` `DIRECT_MARKETING`; `advancement.prospect_research` and `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` and `MONITORING`; `research.participation` `RESEARCH` |
 | Finance | data uses: `finance.credit_management` and `finance.anti_money_laundering` `EVALUATION` |
 | Supply chain | data use: `operations.logistics.fleet_management` `MONITORING`; data subject: `driver` `VULNERABLE` |
 | Human resources | categories: `user.employment.compensation`, `user.employment.benefit` and `user.employment.payroll` `FINANCIAL`, `user.employment.monitoring` `MONITORING`; data uses: `employment.monitoring` `MONITORING`, `employment.performance` and `employment.recruitment.background_check` `EVALUATION`; data subjects: `dependant`, `reporting_person`, `temporary_agency_worker` and `worker_representative` `VULNERABLE` |

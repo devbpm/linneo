@@ -932,8 +932,9 @@ potencial, tutor de prácticas, autor de cartas de referencia, patrono y volunta
 <code>advancement.fundraising</code> y <code>advancement.prospect_research</code> son <code>DIRECT_MARKETING</code>;
 <code>advancement.prospect_research</code> y <code>education.financial_aid.means_assessment</code> son
 <code>EVALUATION</code>; <code>education.learning_analytics</code> es <code>EVALUATION</code> y <code>MONITORING</code>;
-y <code>research</code> es <code>RESEARCH</code>, que heredan <code>research.administration</code> y
-<code>research.participation</code>.</p>
+y <code>research.participation</code>, el tratamiento de los datos de los participantes en estudios, es
+<code>RESEARCH</code>. La gestión de proyectos, ayudas e investigadores, <code>research.administration</code>, no es
+tratamiento de investigación, y la raíz <code>research</code> no declara el rasgo.</p>
 
 <h4>Usarla en el modelo</h4>
 <p>Las claves tienen constantes en <code>UniversityCategories</code>, <code>UniversityDataUses</code> y
@@ -1003,7 +1004,7 @@ fijo, facturas, libro mayor, cuentas a pagar y a cobrar, impuestos, tesorería),
 <td>16: trece bajo <code>org.business_records</code> (inventario, planificación, compras, productos, producción,
 calidad, pedidos, envíos…), <code>user.contact.delivery</code>, <code>user.workplace.driving_record</code> y
 <code>user.workplace.labor_tracking</code></td>
-<td>12: once bajo <code>operations</code> y <code>sales.order_management</code></td>
+<td>12, todos bajo la raíz estándar <code>operations</code></td>
 <td>3: <code>delivery_recipient</code>, <code>driver</code>, <code>supplier_contact</code></td>
 <td><code>MONITORING</code> en <code>operations.logistics.fleet_management</code>; <code>VULNERABLE</code> en
 <code>driver</code></td></tr>
@@ -1032,8 +1033,10 @@ cuatro sujetos</td></tr>
 diferencia entre una raíz y una rama: <code>user.employment</code> es una categoría nueva, pero cuelga de
 <code>user</code>, así que no es una raíz y la extensión puede añadirla. Los términos heredan además los rasgos de sus
 madres estándar: las categorías bajo <code>user.financial</code> son <code>FINANCIAL</code> y
-<code>sales.order_management</code> hereda <code>DIRECT_MARKETING</code> de <code>sales</code>. La referencia de cada
-extensión enumera todos sus términos con su protección.</p>
+<code>user.contact.delivery</code> hereda <code>CONTACT_IDENTIFIER</code> de <code>user.contact</code>. Por eso la
+gestión de pedidos de la cadena de suministro es <code>operations.order_management</code> y no un uso bajo
+<code>sales</code>: allí heredaría <code>DIRECT_MARKETING</code> de <code>sales</code> y haría absoluto el derecho de
+oposición al servir un pedido. La referencia de cada extensión enumera todos sus términos con su protección.</p>
 
 <h3>Combinar las incluidas con la tuya</h3>
 <p>Una extensión incluida y la tuya se aplican al mismo constructor como dos extensiones cualesquiera:</p>

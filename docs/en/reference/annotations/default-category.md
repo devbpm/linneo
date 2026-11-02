@@ -64,7 +64,8 @@ non-personal what wraps personal data.
 A field that refers to another record of the model, a class with a classification of its own, takes the default only
 when that record holds no personal data, as a catalogue entry does. A reference to a record with personal data is
 personal data itself, so the field is an `UNCLASSIFIED_FIELD` error that advises declaring what it stores, typically
-with `@DerivedFrom(type = Customer.class, value = "id")`; see
+with `@DerivedFrom(type = Customer.class, value = "id")`. So is a reference to a record whose fields have errors, since
+whether it holds personal data is then unknown; see
 [References to other records](composite.md#references-to-other-records).
 
 ## Resulting FieldClassification

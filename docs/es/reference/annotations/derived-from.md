@@ -45,7 +45,8 @@ campo de la entidad una categoría más estricta.
 
 El mismo modismo declara una **referencia a otro registro** que contiene datos personales, que no toma un valor por
 defecto de la clase y no se puede eximir: `@DerivedFrom(type = Customer.class, value = "id")` en el campo que se refiere
-a un `Customer` hace que tome la clasificación de la clave del registro. Consulta
+a un `Customer` hace que tome la clasificación de la clave del registro. Una referencia a un registro cuyos campos
+tienen errores se trata igual, pues entonces no se sabe si contiene datos personales. Consulta
 [Referencias a otros registros](composite.md#referencias-a-otros-registros).
 
 Las fuentes se resuelven campo a campo, así que dos clases pueden derivar de los *otros* campos de la otra:

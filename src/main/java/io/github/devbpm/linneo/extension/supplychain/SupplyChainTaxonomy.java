@@ -40,8 +40,9 @@ import static io.github.devbpm.linneo.extension.supplychain.SupplyChainDataUses.
  * produce leave a {@linkplain SupplyChainCategories#USER_WORKPLACE_DRIVING_RECORD driving record} and
  * {@linkplain SupplyChainCategories#USER_WORKPLACE_LABOR_TRACKING labour tracking} data.
  * <p>
- * Every term extends an existing class: the data uses sit below the standard {@code operations} and {@code sales}
- * uses, and the data subjects are flat as in fideslang. No term carries version information, which fideslang
+ * Every term extends an existing class: the data uses sit below the standard {@code operations} use, since taking and
+ * fulfilling orders runs the business, unlike the outreach of {@code sales}, which is direct marketing, and the data
+ * subjects are flat as in fideslang. No term carries version information, which fideslang
  * reserves for its default taxonomy.
  * <p>
  * Protection follows the standard policy and only raises it:
@@ -160,6 +161,8 @@ public final class SupplyChainTaxonomy implements TaxonomyExtension {
                 .dataUse(OPERATIONS_LOGISTICS, "Logistics", "Plans and carries out transport and deliveries.")
                 .dataUse(OPERATIONS_LOGISTICS_FLEET_MANAGEMENT, "Fleet Management",
                         "Manages vehicles and drivers, including driving times and vehicle geolocation.")
+                .dataUse(OPERATIONS_ORDER_MANAGEMENT, "Order Management",
+                        "Takes, confirms, fulfils and invoices customer orders and handles returns.")
                 .dataUse(OPERATIONS_PLANNING, "Supply Planning",
                         "Forecasts demand and plans supply, production and capacity.")
                 .dataUse(OPERATIONS_PROCUREMENT, "Procurement",
@@ -172,9 +175,7 @@ public final class SupplyChainTaxonomy implements TaxonomyExtension {
                 .dataUse(OPERATIONS_SUPPLIER_MANAGEMENT, "Supplier Management",
                         "Qualifies, evaluates and audits suppliers.")
                 .dataUse(OPERATIONS_TRACEABILITY, "Traceability",
-                        "Tracks batches and serial numbers through the supply chain for recalls and regulators.")
-                .dataUse(SALES_ORDER_MANAGEMENT, "Order Management",
-                        "Takes, confirms, fulfils and invoices customer orders and handles returns.");
+                        "Tracks batches and serial numbers through the supply chain for recalls and regulators.");
     }
 
     private static void dataSubjects(TaxonomyBuilder builder) {

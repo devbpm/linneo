@@ -139,8 +139,8 @@ La tabla no tiene fila para `AUTOMATED_DECISION`: no depende de la base jurídic
   `CONDITIONAL` (artículos 17.1.c y 21.3): los datos se suprimen salvo lo que conserva el artículo 17.3.b, y la
   explicación incluye la conservación. `ERASURE` es también `CONDITIONAL` cuando la mercadotecnia directa es una
   finalidad junto a otras: los datos se suprimen salvo lo que aún necesitan las demás finalidades de la actividad.
-- **Investigación.** Si una finalidad de la actividad tiene el rasgo `RESEARCH` (el uso `research` de la extensión
-  universitaria, o un término tuyo que lo declare), `OBJECTION` es `CONDITIONAL` (artículo 21.6: por motivos
+- **Investigación.** Si una finalidad de la actividad tiene el rasgo `RESEARCH` (el uso `research.participation` de la
+  extensión universitaria, o un término tuyo que lo declare), `OBJECTION` es `CONDITIONAL` (artículo 21.6: por motivos
   relacionados con la situación particular de la persona) o `NO` cuando la base es una misión de interés público, y un
   `ERASURE` que no es `NO` pasa a ser `CONDITIONAL`, con una explicación que señala que puede denegarse cuando haría
   imposible o perjudicaría gravemente la investigación (artículo 17.3.d). La mercadotecnia directa va primero para

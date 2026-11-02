@@ -698,11 +698,12 @@ dirigido); <code>UNKNOWN_RECIPIENTS</code> +0,5 (número desconocido, como datos
 </div>
 
 <h3 id="gravedad">La gravedad</h3>
-<p><code>score()</code> calcula <code>contexto × identificación + circunstancias</code> y <code>severity()</code> lo
-convierte en un nivel: <code>LOW</code> por debajo de 2, <code>MEDIUM</code> de 2 a menos de 3, <code>HIGH</code> de
-3 a menos de 4 y <code>VERY_HIGH</code> desde 4. <code>individuals(n)</code> declara cuántas personas se ven afectadas;
-por encima de 100, <code>manyIndividuals()</code> es <code>true</code>, un indicador de la metodología que pesa en la
-valoración sin cambiar la puntuación.</p>
+<p><code>score()</code> calcula <code>contexto × identificación + circunstancias</code>, o 0 cuando ningún campo
+afectado es personal (contexto 0), y <code>severity()</code> lo convierte en un nivel: <code>LOW</code> por debajo de
+2, <code>MEDIUM</code> de 2 a menos de 3, <code>HIGH</code> de 3 a menos de 4 y <code>VERY_HIGH</code> desde 4.
+<code>individuals(n)</code> declara cuántas personas se ven afectadas; por encima de 100,
+<code>manyIndividuals()</code> es <code>true</code>, un indicador de la metodología que pesa en la valoración sin
+cambiar la puntuación.</p>
 
 <h3 id="notificar-y-comunicar">Notificar y comunicar</h3>
 <div class="tabla" role="region" tabindex="0" aria-labelledby="tabla-13-9">
@@ -907,10 +908,11 @@ personales</td> <td>no / no</td></tr>
 </tbody>
 </table>
 </div>
-<p>El caso de las estadísticas tiene <code>score()</code> 0,5 y gravedad <code>LOW</code>, pero lo decisivo es el
-contexto 0: <code>explanation()</code> dice
+<p>El caso de las estadísticas tiene contexto 0, así que <code>score()</code> es 0 y la gravedad <code>LOW</code>
+aunque se declare una exposición a destinatarios desconocidos: las circunstancias solas no hacen una brecha de datos
+personales. <code>explanation()</code> dice
 <code>No affected field holds personal data: this is not a personal data breach (GDPR art. 4.12).</code> y ninguno de
-los dos métodos devuelve <code>true</code>, sea cual sea la puntuación.</p>
+los dos métodos devuelve <code>true</code>.</p>
 
 <h3 id="ajustes">Ajustar el contexto y la identificación</h3>
 <p>La metodología prevé ajustar las dos puntuaciones cuando el contexto de los datos lo pide, y el builder ofrece dos

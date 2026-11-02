@@ -22,8 +22,16 @@ import io.github.devbpm.linneo.classify.scan.Invoice;
 import io.github.devbpm.linneo.classify.scan.sub.Unclassified;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.opentest4j.AssertionFailedError;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.SecureClassLoader;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -68,5 +76,30 @@ class ModelClassesTest {
                 () -> assertTrue(fromJar.stream().allMatch(type -> type.getPackageName().equals("org.opentest4j")
                         && !type.isInterface() && !type.isEnum()), fromJar::toString),
                 () -> assertThrows(IllegalArgumentException.class, () -> ModelClasses.inPackage(String.class)));
+    }
+
+    @Test
+    @DisplayName("a location that does not exist, or is neither a directory nor a JAR file, is refused with the reason")
+    void unlistableLocation(@TempDir Path directory) throws IOException {
+        Path source = Files.writeString(directory.resolve("Customer.java"), "class Customer {}");
+        assertAll(
+                () -> assertTrue(refusal(directory.resolve("missing")).contains("does not exist")),
+                () -> assertTrue(refusal(source).contains("neither a directory nor a JAR file")));
+    }
+
+    // The message of the refusal to list the classes of Customer loaded from another location, such as a source file
+    // the java launcher runs.
+    private static String refusal(Path location) throws IOException {
+        byte[] bytes;
+        try (InputStream in = Customer.class.getResourceAsStream("Customer.class")) {
+            bytes = in.readAllBytes();
+        }
+        CodeSource source = new CodeSource(location.toUri().toURL(), (CodeSigner[]) null);
+        Class<?> anchor = new SecureClassLoader(null) {
+            Class<?> define() {
+                return defineClass(Customer.class.getName(), bytes, 0, bytes.length, source);
+            }
+        }.define();
+        return assertThrows(IllegalArgumentException.class, () -> ModelClasses.inPackage(anchor)).getMessage();
     }
 }

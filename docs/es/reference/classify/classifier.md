@@ -80,10 +80,12 @@ void everyClassOfTheModelIsClassified() {
   implementados como clases, hace que `verify` informe de sus campos sin clasificar: filtra antes la lista, por
   ejemplo por nombre.
 - **Fail-closed.** `IllegalArgumentException` si el ancla está en el paquete sin nombre, si su ubicación no se puede
-  listar (un JAR dentro de otro, clases generadas en tiempo de ejecución, una clase sin ubicación como las del JDK) o
-  no existe, o si no se puede cargar una clase del paquete, por ejemplo porque falta una dependencia opcional. No se
-  omite nada, así que ninguna clase queda sin verificar; pasa entonces las clases de forma explícita.
-  `UncheckedIOException` si no se puede leer la ubicación; `NullPointerException` si `anchor` es `null`.
+  listar (un JAR dentro de otro, clases generadas en tiempo de ejecución, un archivo fuente ejecutado con el lanzador
+  `java`, que no es un directorio ni un archivo JAR, una clase sin ubicación como las del JDK) o no existe, lo que
+  tiene su propio mensaje (`The location of X does not exist: ...`), o si no se puede cargar una clase del paquete, por
+  ejemplo porque falta una dependencia opcional. No se omite nada, así que ninguna clase queda sin verificar; pasa
+  entonces las clases de forma explícita. `UncheckedIOException` si no se puede leer la ubicación;
+  `NullPointerException` si `anchor` es `null`.
 
 ## Qué campos se examinan
 
@@ -123,7 +125,8 @@ void everyClassOfTheModelIsClassified() {
   elemento de un catálogo tipo `Country`. Una referencia a un registro que contiene datos personales, como una
   asociación JPA con un `Customer` o una clase `@Embedded` no marcada `@Composite`, es en sí misma un dato personal, una
   clave seudónima: el campo es un error `UNCLASSIFIED_FIELD` que aconseja declarar lo que guarda, normalmente con
-  `@DerivedFrom(type = Customer.class, value = "id")`.
+  `@DerivedFrom(type = Customer.class, value = "id")`. Lo es también una referencia a un registro cuyos campos tienen
+  errores, pues entonces no se sabe si contiene datos personales: corrige esos campos o declara lo que guarda el campo.
 - **Campos derivados.** Un campo marcado con [`@DerivedFrom`](../annotations/derived-from.md) toma la clasificación de
   su fuente, o declara una que protege al menos tanto. Sus fuentes pueden estar declaradas después de él, ser a su vez
   campos derivados, ser partes de un compuesto o pertenecer a otra clase (`type`), que el clasificador también lee.
@@ -133,7 +136,7 @@ void everyClassOfTheModelIsClassified() {
 - Los campos marcados con [`@Exempt`](../annotations/exempt.md) no se clasifican tras comprobar su anotación, y
   `ClassClassification.exempted()` los lista con sus motivos. `@Exempt` es para campos técnicos; un valor calculado a
   partir de otros campos es un dato y usa `@DerivedFrom` o `@Category`, y un campo que contiene compuestos, o que se
-  refiere a un registro con datos personales, es un error `CONFLICTING_ANNOTATIONS`.
+  refiere a un registro con datos personales o con errores, es un error `CONFLICTING_ANNOTATIONS`.
 - Las anotaciones se leen del propio campo (`getDeclaredAnnotation`), así que en un record deben aplicarse al campo
   del componente, cosa que hacen `@Category`, `@CategoryByRow`, `@DerivedFrom` y `@Exempt`.
 
@@ -159,20 +162,20 @@ la otra no lo son. Un campo que deriva de un campo con error, incluso uno en un 
 ciclo, es un `UNKNOWN_SOURCE`.
 
 Cada clase informa de sus propios problemas, como un campo guardado como un solo valor que protege menos que su
-compuesto o una referencia a un registro con datos personales, así que verifica todas las clases del modelo, con
-[`ModelClasses`](#modelclasses), y no solo algunas.
+compuesto o una referencia a un registro con datos personales o con errores, así que verifica todas las clases del
+modelo, con [`ModelClasses`](#modelclasses), y no solo algunas.
 
 ## Comportamiento cerrado ante fallos (fail-closed)
 
 Nada se clasifica por defecto. Son **errores** (hacen fallar `verify` y ponen `isValid()` a `false`):
 
 - un campo sin anotación y sin valor por defecto de clase aplicable, o que se refiere a un registro con datos
-  personales (`UNCLASSIFIED_FIELD`);
+  personales o con errores (`UNCLASSIFIED_FIELD`);
 - una clave que no está en la taxonomía (`UNKNOWN_CATEGORY`);
 - una categoría personal usada como valor por defecto de clase (`PERSONAL_DEFAULT`);
 - un motivo o un `declaredBy` en blanco (`MISSING_REASON`);
 - anotaciones que se excluyen entre sí, o `@Exempt` en un campo que contiene compuestos o se refiere a un registro con
-  datos personales (`CONFLICTING_ANNOTATIONS`);
+  datos personales o con errores (`CONFLICTING_ANNOTATIONS`);
 - un nivel inferior al de la categoría (`LOWERED_LEVEL`);
 - más de un valor en un elemento opcional de `@Category` (`AMBIGUOUS_VALUE`);
 - una identificabilidad en una categoría no personal (`IDENTIFIABILITY_NOT_APPLICABLE`);

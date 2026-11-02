@@ -66,7 +66,8 @@ datos personales.
 Un campo que se refiere a otro registro del modelo, una clase con una clasificación propia, toma el valor por defecto
 solo cuando ese registro no contiene datos personales, como un elemento de un catálogo. Una referencia a un registro
 con datos personales es en sí misma un dato personal, así que el campo es un error `UNCLASSIFIED_FIELD` que aconseja
-declarar lo que guarda, normalmente con `@DerivedFrom(type = Customer.class, value = "id")`; consulta
+declarar lo que guarda, normalmente con `@DerivedFrom(type = Customer.class, value = "id")`. Lo es también una
+referencia a un registro cuyos campos tienen errores, pues entonces no se sabe si contiene datos personales; consulta
 [Referencias a otros registros](composite.md#referencias-a-otros-registros).
 
 ## FieldClassification resultante

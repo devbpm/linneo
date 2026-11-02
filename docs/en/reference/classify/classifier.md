@@ -77,10 +77,11 @@ void everyClassOfTheModelIsClassified() {
 - **Everything is verified.** A package that also holds classes that are not data, such as services or repositories
   implemented as classes, makes `verify` report their unclassified fields: filter the list first, for example by name.
 - **Fail-closed.** `IllegalArgumentException` if the anchor is in the unnamed package, if its location cannot be
-  listed (a JAR nested in another, classes generated at run time, a class without a location such as one of the JDK) or
-  does not exist, or if a class of the package cannot be loaded, for instance because an optional dependency is
-  missing. Nothing is skipped, so no class goes unverified; pass the classes explicitly then. `UncheckedIOException`
-  if the location cannot be read; `NullPointerException` if `anchor` is `null`.
+  listed (a JAR nested in another, classes generated at run time, a source file run by the `java` launcher, which is
+  neither a directory nor a JAR file, a class without a location such as one of the JDK) or does not exist, which has
+  its own message (`The location of X does not exist: ...`), or if a class of the package cannot be loaded, for
+  instance because an optional dependency is missing. Nothing is skipped, so no class goes unverified; pass the classes
+  explicitly then. `UncheckedIOException` if the location cannot be read; `NullPointerException` if `anchor` is `null`.
 
 ## Which fields are scanned
 
@@ -119,7 +120,8 @@ void everyClassOfTheModelIsClassified() {
   `Country` does. A reference to a record that holds personal data, such as a JPA association to a `Customer` or an
   `@Embedded` class not marked `@Composite`, is personal data itself, a pseudonymous key: the field is an
   `UNCLASSIFIED_FIELD` error that advises declaring what it stores, typically with
-  `@DerivedFrom(type = Customer.class, value = "id")`.
+  `@DerivedFrom(type = Customer.class, value = "id")`. So is a reference to a record whose fields have errors, since
+  whether it holds personal data is then unknown: fix those fields, or declare what the field stores.
 - **Derived fields.** A field marked [`@DerivedFrom`](../annotations/derived-from.md) takes the classification of its
   source, or declares one that protects at least as much. Its sources may be declared after it, be derived fields
   themselves, be parts of a composite, or belong to another class (`type`), which the classifier reads as well.
@@ -129,7 +131,7 @@ void everyClassOfTheModelIsClassified() {
 - Fields marked [`@Exempt`](../annotations/exempt.md) are not classified after their annotation is checked, and
   `ClassClassification.exempted()` lists them with their reasons. `@Exempt` is for technical fields; a value computed
   from other fields is data and uses `@DerivedFrom` or `@Category`, and a field that holds composites, or refers to a
-  record with personal data, is a `CONFLICTING_ANNOTATIONS` error.
+  record with personal data or with errors, is a `CONFLICTING_ANNOTATIONS` error.
 - Annotations are read from the field itself (`getDeclaredAnnotation`), so on a record they must target the
   component's field, which `@Category`, `@CategoryByRow`, `@DerivedFrom` and `@Exempt` do.
 
@@ -154,20 +156,21 @@ Classes that derive from each other's other fields are not. A field that derives
 in a cycle, but is not itself in the cycle, is an `UNKNOWN_SOURCE`.
 
 Each class reports its own problems, such as a field stored as one value that protects less than its composite or a
-reference to a record with personal data, so verify every class of the model, with [`ModelClasses`](#modelclasses),
+reference to a record with personal data or with errors, so verify every class of the model, with
+[`ModelClasses`](#modelclasses),
 rather than some of them.
 
 ## Fail-closed behaviour
 
 Nothing is classified by default. These are **errors** (they fail `verify` and make `isValid()` false):
 
-- a field with no annotation and no applicable class default, or one that refers to a record with personal data
-  (`UNCLASSIFIED_FIELD`);
+- a field with no annotation and no applicable class default, or one that refers to a record with personal data or
+  with errors (`UNCLASSIFIED_FIELD`);
 - a key that is not in the taxonomy (`UNKNOWN_CATEGORY`);
 - a personal category used as a class default (`PERSONAL_DEFAULT`);
 - a blank reason or `declaredBy` (`MISSING_REASON`);
 - annotations that exclude each other, or `@Exempt` on a field that holds composites or refers to a record with
-  personal data (`CONFLICTING_ANNOTATIONS`);
+  personal data or with errors (`CONFLICTING_ANNOTATIONS`);
 - a level lower than the category's (`LOWERED_LEVEL`);
 - more than one value in an optional element of `@Category` (`AMBIGUOUS_VALUE`);
 - an identifiability on a non-personal category (`IDENTIFIABILITY_NOT_APPLICABLE`);

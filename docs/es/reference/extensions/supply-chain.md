@@ -108,8 +108,8 @@ orderReference: org.business_records NONE MEDIUM MEDIUM
 La extensión sigue las reglas que fideslang fija para las etiquetas propias, de modo que sus términos sigan siendo
 interoperables con otras herramientas:
 
-- **Ampliar clases existentes.** Todos los términos son hijos de un término existente; todos los usos son hijos de los
-  usos estándar `operations` o `sales`.
+- **Ampliar clases existentes.** Todos los términos son hijos de un término existente; todos los usos son hijos del
+  uso estándar `operations`.
 - **La madre es el prefijo de la clave.** `org.business_records.inventory` es hija de `org.business_records`.
 - **Los interesados son planos.** Los interesados de fideslang no tienen jerarquía, así que todos los de la extensión
   son raíces.
@@ -178,7 +178,9 @@ campos con la clave más estricta, no con la de la extensión:
 
 ## Usos de datos
 
-Todos los usos son hijos de los usos estándar `operations` o `sales`. Los usos de datos no tienen facetas de
+Todos los usos son hijos del uso estándar `operations`. La gestión de pedidos está ahí y no bajo `sales`: recibir y
+servir pedidos es llevar el negocio, mientras que `sales` es captación que lleva el rasgo de marketing directo, así que
+un uso bajo él haría absoluto el derecho de oposición para servir los pedidos. Los usos de datos no tienen facetas de
 protección, solo [rasgos](#rasgos).
 
 | Clave | Nombre | Madre | Finalidad |
@@ -187,6 +189,7 @@ protección, solo [rasgos](#rasgos).
 | `operations.inventory` | Inventory Management | `operations` | Recibe, almacena, cuenta y mueve existencias. |
 | `operations.logistics` | Logistics | `operations` | Planifica y realiza el transporte y las entregas. |
 | `operations.logistics.fleet_management` | Fleet Management | `operations.logistics` | Gestiona vehículos y conductores, incluidos los tiempos de conducción y la geolocalización de los vehículos. |
+| `operations.order_management` | Order Management | `operations` | Recibe, confirma, sirve y factura los pedidos de clientes y gestiona las devoluciones. |
 | `operations.planning` | Supply Planning | `operations` | Prevé la demanda y planifica el suministro, la producción y la capacidad. |
 | `operations.procurement` | Procurement | `operations` | Busca, pide y recibe bienes y servicios de proveedores. |
 | `operations.product_management` | Product Information Management | `operations` | Define los productos, sus especificaciones, fórmulas y costes. |
@@ -194,7 +197,6 @@ protección, solo [rasgos](#rasgos).
 | `operations.quality` | Quality Management | `operations` | Inspecciona y ensaya productos y materiales y gestiona las no conformidades. |
 | `operations.supplier_management` | Supplier Management | `operations` | Homologa, evalúa y audita a los proveedores. |
 | `operations.traceability` | Traceability | `operations` | Sigue lotes y números de serie a lo largo de la cadena de suministro para retiradas de producto y reguladores. |
-| `sales.order_management` | Order Management | `sales` | Recibe, confirma, sirve y factura los pedidos de clientes y gestiona las devoluciones. |
 
 ## Interesados
 

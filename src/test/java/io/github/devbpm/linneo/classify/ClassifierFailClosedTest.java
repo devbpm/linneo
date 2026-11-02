@@ -154,6 +154,8 @@ class ClassifierFailClosedTest {
                 () -> assertEquals(List.of("anything", "unbound", "raw", "wildcard", "byAddress", "later",
                         "attributes", "owner", "people", "lower"), opaque.errors().stream()
                         .filter(v -> v.code() == Code.UNCLASSIFIED_FIELD).map(Violation::path).toList()),
+                () -> assertTrue(opaque.errors().stream().anyMatch(v -> v.path().equals("raw")
+                        && v.message().contains("values typed Object")), opaque::toString),
                 () -> assertTrue(opaque.fields().isEmpty()));
     }
 
@@ -414,12 +416,58 @@ class ClassifierFailClosedTest {
                 () -> assertTrue(invoice.field("city").orElseThrow().isPersonal()));
     }
 
+    @SuppressWarnings("unused")
+    static class Building {
+        @Category(Categories.SYSTEM_OPERATIONS)
+        private String code;
+        private String manager;
+    }
+
+    @SuppressWarnings("unused")
+    @DefaultCategory(value = Categories.SYSTEM_OPERATIONS, reason = "technical")
+    static class Room {
+        private Building building;
+        @Exempt("lazy collection mapped by the building")
+        private List<Building> annexes;
+    }
+
+    @SuppressWarnings("unused")
+    static class Hall {
+        @Category(Categories.SYSTEM_OPERATIONS)
+        private String code;
+    }
+
+    @SuppressWarnings("unused")
+    @DefaultCategory(value = Categories.SYSTEM_OPERATIONS, reason = "technical")
+    static class Seat {
+        private Hall hall;
+        @Exempt("lazy collection mapped by the hall")
+        private List<Hall> halls;
+    }
+
+    @Test
+    @DisplayName("a reference to a record whose fields have errors takes no class default and cannot be exempted")
+    void referencesWithErrors() {
+        ClassClassification room = classifier.classify(Room.class);
+        ClassClassification seat = classifier.classify(Seat.class);
+        assertAll(
+                () -> assertEquals(List.of("building"), room.errors().stream()
+                        .filter(v -> v.code() == Code.UNCLASSIFIED_FIELD).map(Violation::path).toList()),
+                () -> assertEquals(List.of("annexes"), room.errors().stream()
+                        .filter(v -> v.code() == Code.CONFLICTING_ANNOTATIONS).map(Violation::path).toList()),
+                () -> assertTrue(room.errors().stream().allMatch(v -> v.message().contains(
+                        "whose fields have errors, so whether it holds personal data is unknown")), room::toString),
+                // once the referenced record is classified without errors and holds no personal data, both stand
+                () -> assertTrue(seat.isValid(), seat::toString),
+                () -> assertEquals(Basis.CLASS_DEFAULT, seat.field("hall").orElseThrow().basis()));
+    }
+
     @Test
     @DisplayName("the problems of a class do not depend on the order in which classes are classified")
     void orderIndependent() {
         List<Class<?>> classes = List.of(Holder.class, Opaque.class, Stored.class, Secrets.class, Node.class,
                 Left.class, Right.class, DerivedWhole.class, Envelope.class, Shapes.class, Resident.class,
-                Country.class);
+                Country.class, Room.class, Building.class);
         Map<Class<?>, List<Violation>> expected = new java.util.HashMap<>();
         for (List<Class<?>> order : permutations(classes, 40)) {
             for (ClassClassification classification : classifier.classifyAll(order)) {

@@ -26,8 +26,8 @@ are invisible through a field of the superclass type.
 The marker is Linneo's own rather than a framework annotation, so that the library needs no dependency. Forgetting it
 is safe where it matters: a field that holds a class whose fields are classified, without the class being a composite,
 is a [reference to another record](#references-to-other-records), which takes no non-personal class default when that
-record holds personal data, so it fails verification (`UNCLASSIFIED_FIELD`) until the class is marked or the field
-declares its own category.
+record holds personal data or its fields have errors, so it fails verification (`UNCLASSIFIED_FIELD`) until the class
+is marked or the field declares its own category.
 
 ## What the classifier does
 
@@ -112,8 +112,10 @@ record. A sealed type is read through its permitted subclasses, and type argumen
 - A reference to a record that **holds personal data** is personal data itself, a pseudonymous key, so the class
   default is refused: the field is an `UNCLASSIFIED_FIELD` error that advises declaring what it stores, typically the
   record's key, with `@DerivedFrom(type = Customer.class, value = "id")`.
-- [`@Exempt`](exempt.md) on a field that holds composites, or that refers to a record with personal data, is a
-  `CONFLICTING_ANNOTATIONS` error: a relationship is not a field that holds no data.
+- If the **fields of the record have errors**, whether it holds personal data is unknown, so the class default is
+  refused too: the field is an `UNCLASSIFIED_FIELD` error that advises fixing them, or declaring what the field stores.
+- [`@Exempt`](exempt.md) on a field that holds composites, or that refers to a record with personal data or with
+  errors, is a `CONFLICTING_ANNOTATIONS` error: a relationship is not a field that holds no data.
 
 ```java
 @DefaultCategory(value = REFERENCE_PUBLIC, reason = "code list of countries")

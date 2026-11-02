@@ -86,8 +86,8 @@ class SupplyChainTaxonomyTest {
                         .parentKey()),
                 () -> assertEquals(SupplyChainDataUses.OPERATIONS_LOGISTICS, supplyChain.requireDataUse(
                         SupplyChainDataUses.OPERATIONS_LOGISTICS_FLEET_MANAGEMENT).info().parentKey()),
-                () -> assertEquals(DataUses.SALES, supplyChain.requireDataUse(
-                        SupplyChainDataUses.SALES_ORDER_MANAGEMENT).info().parentKey()));
+                () -> assertEquals(DataUses.OPERATIONS, supplyChain.requireDataUse(
+                        SupplyChainDataUses.OPERATIONS_ORDER_MANAGEMENT).info().parentKey()));
     }
 
     @Test

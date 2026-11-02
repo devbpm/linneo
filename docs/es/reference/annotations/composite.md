@@ -26,8 +26,8 @@ un compuesto concreto son invisibles a través de un campo del tipo de la superc
 El marcador es propio de Linneo y no una anotación de un framework, para que la biblioteca no necesite ninguna
 dependencia. Olvidarlo es seguro donde importa: un campo que contiene una clase cuyos campos están clasificados, sin que
 la clase sea un compuesto, es una [referencia a otro registro](#referencias-a-otros-registros), que no toma un valor por
-defecto no personal de la clase cuando ese registro contiene datos personales, así que no pasa la verificación
-(`UNCLASSIFIED_FIELD`) hasta que se marque la clase o el campo declare su propia categoría.
+defecto no personal de la clase cuando ese registro contiene datos personales o sus campos tienen errores, así que no
+pasa la verificación (`UNCLASSIFIED_FIELD`) hasta que se marque la clase o el campo declare su propia categoría.
 
 ## Qué hace el clasificador
 
@@ -117,8 +117,11 @@ registro. Un tipo sellado se lee a través de sus subclases permitidas, y tambi�
 - Una referencia a un registro que **contiene datos personales** es en sí misma un dato personal, una clave seudónima,
   así que se rechaza el valor por defecto de la clase: el campo es un error `UNCLASSIFIED_FIELD` que aconseja declarar
   lo que guarda, normalmente la clave del registro, con `@DerivedFrom(type = Customer.class, value = "id")`.
-- [`@Exempt`](exempt.md) en un campo que contiene compuestos, o que se refiere a un registro con datos personales, es un
-  error `CONFLICTING_ANNOTATIONS`: una relación no es un campo que no contiene datos.
+- Si los **campos del registro tienen errores**, no se sabe si contiene datos personales, así que también se rechaza el
+  valor por defecto de la clase: el campo es un error `UNCLASSIFIED_FIELD` que aconseja corregirlos o declarar lo que
+  guarda el campo.
+- [`@Exempt`](exempt.md) en un campo que contiene compuestos, o que se refiere a un registro con datos personales o con
+  errores, es un error `CONFLICTING_ANNOTATIONS`: una relación no es un campo que no contiene datos.
 
 ```java
 @DefaultCategory(value = REFERENCE_PUBLIC, reason = "lista de códigos de países")

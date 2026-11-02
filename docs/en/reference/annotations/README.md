@@ -55,7 +55,7 @@ For each considered field, the first rule that applies wins:
 | 2 | The field has `@CategoryByRow` | the ceiling category (`BY_ROW`) |
 | 3 | The field has `@DerivedFrom` and no `@Category` | the classification of its source (`DERIVED`) |
 | 4 | The type of the field is a concrete `@Composite` class, or an array, collection or `Optional` of one, at any depth | one classification per field of the composite, with the path `field.part`, each as its own class resolves it |
-| 5 | The class that **declares** the field has `@DefaultCategory`, and the field cannot hold data the classifier does not see and refers to no record with personal data | that default (`CLASS_DEFAULT`) |
+| 5 | The class that **declares** the field has `@DefaultCategory`, and the field cannot hold data the classifier does not see and refers to no record with personal data or with errors | that default (`CLASS_DEFAULT`) |
 | 6 | The class **being classified** has `@DefaultCategory`, and the same holds | that default (`CLASS_DEFAULT`) |
 | 7 | none of the above | error `UNCLASSIFIED_FIELD` |
 
@@ -70,7 +70,8 @@ Consequences:
   [`@Composite`](composite.md#what-the-classifier-does).
 - A field that refers to another record of the model takes the class default only when that record holds no personal
   data, as a catalogue entry does. A reference to a record with personal data needs its own annotation, typically
-  `@DerivedFrom(type = Customer.class, value = "id")`, and cannot be exempted. See
+  `@DerivedFrom(type = Customer.class, value = "id")`, and cannot be exempted. The same holds for a reference to a
+  record whose fields have errors, since whether it holds personal data is then unknown. See
   [References to other records](composite.md#references-to-other-records).
 - A superclass's `@DefaultCategory` covers the fields that superclass declares, even when you classify a subclass.
 - A subclass's `@DefaultCategory` covers the fields it declares and the unannotated fields inherited from superclasses
@@ -85,7 +86,7 @@ Consequences:
 | Combination on one field | Violation | Effect |
 |---|---|---|
 | `@Exempt` + `@Category`, `@CategoryByRow` and/or `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom` | field skipped (the `@Exempt` reason is still checked) |
-| `@Exempt` on a field that holds composites, or that refers to a record with personal data | `CONFLICTING_ANNOTATIONS`: `@Exempt is for a field that holds no data of the model, and this one ...` | error reported; see [`@Exempt`](exempt.md#rules-enforced-by-the-classifier) |
+| `@Exempt` on a field that holds composites, or that refers to a record with personal data or with errors | `CONFLICTING_ANNOTATIONS`: `@Exempt is for a field that holds no data of the model, and this one ...` | error reported; see [`@Exempt`](exempt.md#rules-enforced-by-the-classifier) |
 | `@CategoryByRow` + `@Category` and/or `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@CategoryByRow cannot be combined with @Category or @DerivedFrom` | field not classified |
 | `@Category` + `@DerivedFrom` | none | the field declares its category and must protect at least as much as its sources |
 | `@Category`, `@CategoryByRow` or `@DerivedFrom` + class `@DefaultCategory` | none | the field annotation wins |

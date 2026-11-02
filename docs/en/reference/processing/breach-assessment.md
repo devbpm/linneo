@@ -47,7 +47,7 @@ among those affected.
 | 3 | financial data: a category with the `FINANCIAL` trait (`user.financial` and below in the standard taxonomy) |
 | 2 | behavioural data: a category with the `BEHAVIOURAL` trait (`user.behavior` and `user.location` and below) |
 | 1 | other personal data |
-| 0 | no affected field holds personal data: this is not a personal data breach (GDPR article 4.12) |
+| 0 | no affected field holds personal data: this is not a personal data breach (GDPR article 4.12), so the score is 0 and the severity `LOW`, whatever the circumstances |
 
 A field declared anonymized or aggregated is not personal data, so it counts for neither the context nor the ease of
 identification.
@@ -107,7 +107,7 @@ Both can be adjusted, as the methodology foresees, when the context of the data 
 | `Identification identification()` | level | The ease of identification. Each `Identification` has a `score()`: 0.25, 0.5, 0.75 or 1. |
 | `String identificationReason()` | `String` | The identifiers found or the reason given, in English; on equal levels, the smallest key. |
 | `double circumstances()` | `double` | The points of the circumstances, 0 to 2. |
-| `double score()` | `double` | `context × identification + circumstances`. |
+| `double score()` | `double` | `context × identification + circumstances`, or 0 when no affected field holds personal data. |
 | `Severity severity()` | level | The level of the score. |
 | `boolean manyIndividuals()` | `boolean` | Whether more than 100 people are affected. |
 | `boolean notifyAuthority()` | `boolean` | See above. |

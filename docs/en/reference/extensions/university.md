@@ -296,7 +296,7 @@ the [subject rights](../processing/subject-rights.md) like the standard ones:
 |---|---|---|
 | Data uses `advancement.alumni_relations`, `advancement.fundraising` and `advancement.prospect_research` | `DIRECT_MARKETING` | Alumni communications, appeals for gifts and the prospect research behind them are direct marketing, so the right to object to them is absolute (GDPR article 21.2). Administering the gifts received, `advancement.gift_administration`, is not, and the root `advancement` declares no trait |
 | Data uses `advancement.prospect_research` and `education.financial_aid.means_assessment` | `EVALUATION` | Prospect research and means assessment evaluate people (WP248 criterion 1) |
-| Data use `research` (and its children) | `RESEARCH` | Scientific research (GDPR article 89.1), whose erasure and objection have their own limits (articles 17.3.d and 21.6) |
+| Data use `research.participation` | `RESEARCH` | Processing the data of the participants of research studies is scientific research (GDPR article 89.1), whose erasure and objection have their own limits (articles 17.3.d and 21.6). Administering research projects, grants and researchers, `research.administration`, is not research processing, and the root `research` declares no trait |
 | Data use `education.learning_analytics` | `EVALUATION`, `MONITORING` | Learning analytics evaluates students and observes them systematically (WP248 criteria 1 and 3) |
 
 ## Standard keys for everything else

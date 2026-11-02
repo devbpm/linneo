@@ -16,8 +16,7 @@
 package io.github.devbpm.linneo.extension.supplychain;
 
 /**
- * Keys of the data uses added by the {@link SupplyChainTaxonomy}, below the standard {@code operations} and
- * {@code sales} uses.
+ * Keys of the data uses added by the {@link SupplyChainTaxonomy}, below the standard {@code operations} use.
  *
  * @since 0.1.0
  */
@@ -34,6 +33,9 @@ public final class SupplyChainDataUses {
 
     /** Fleet Management: Manages vehicles and drivers, including driving times and vehicle geolocation. */
     public static final String OPERATIONS_LOGISTICS_FLEET_MANAGEMENT = "operations.logistics.fleet_management";
+
+    /** Order Management: Takes, confirms, fulfils and invoices customer orders and handles returns. */
+    public static final String OPERATIONS_ORDER_MANAGEMENT = "operations.order_management";
 
     /** Supply Planning: Forecasts demand and plans supply, production and capacity. */
     public static final String OPERATIONS_PLANNING = "operations.planning";
@@ -55,9 +57,6 @@ public final class SupplyChainDataUses {
 
     /** Traceability: Tracks batches and serial numbers through the supply chain for recalls and regulators. */
     public static final String OPERATIONS_TRACEABILITY = "operations.traceability";
-
-    /** Order Management: Takes, confirms, fulfils and invoices customer orders and handles returns. */
-    public static final String SALES_ORDER_MANAGEMENT = "sales.order_management";
 
     private SupplyChainDataUses() {
     }

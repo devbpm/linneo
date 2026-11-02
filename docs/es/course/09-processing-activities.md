@@ -346,7 +346,7 @@ La actividad de matrícula se ha dejado a propósito sin plazo de conservación:
 
 Como con el clasificador, lo importante es ejecutar la comprobación en cada compilación. `verify` comprueba todas las
 actividades y lanza una `ProcessingException` con **todos los errores de todas las actividades** (su mensaje lista los
-50 primeros y los cuenta todos por código); si no hay ninguno, devuelve el `ProcessingRecord`:
+50 primeros y, si hay más, los cuenta todos por código); si no hay ninguno, devuelve el `ProcessingRecord`:
 
 ```java
 package edu.example.university;

@@ -82,7 +82,8 @@ import java.util.function.Function;
  * A field whose type is another record of the model, a class with a classification of its own, refers to it: the
  * class default applies when that record holds no personal data, as a catalogue entry does, while a reference to a
  * person's record is personal data itself, a pseudonymous key, and the field declares what it stores, typically with
- * {@code @DerivedFrom(type = Customer.class, value = "id")}; it cannot be exempted either. A {@code transient} field
+ * {@code @DerivedFrom(type = Customer.class, value = "id")}; it cannot be exempted either. Nor can a reference to a
+ * record whose fields have errors, since whether it holds personal data is then unknown. A {@code transient} field
  * is not classified unless it carries one of Linneo's field annotations, and the lock fields of Lombok's
  * {@code @Synchronized} are ignored like other generated fields.
  * Fields marked {@link Exempt @Exempt} are not classified, and {@link ClassClassification#exempted()} lists them.
@@ -343,7 +344,7 @@ public final class Classifier {
     /**
      * A field checked at the end against what it holds: composites stored as one value, whose fields it must
      * protect, and references to other records, which a class default or an exemption may not stand for when the
-     * records hold personal data.
+     * records hold personal data or have errors.
      */
     private record Whole(String name, Set<Class<?>> composites, Set<Class<?>> references, HowClassified basis) {
     }
@@ -638,7 +639,8 @@ public final class Classifier {
 
         // A field that stores composites as one value: its classification must cover the composites' fields, and a
         // composite with an error leaves nothing to compare with. A reference to another record that holds personal
-        // data is personal data itself, a pseudonymous key, which a class default or an exemption cannot stand for.
+        // data is personal data itself, a pseudonymous key, which a class default or an exemption cannot stand for;
+        // nor can they for a record whose fields have errors, since whether it holds personal data is then unknown.
         // Fields are derived, not finished, so a composite that holds itself, and records that refer to each other,
         // are checked too, whichever class is classified first.
         private void checkParts(Whole whole) {
@@ -659,14 +661,23 @@ public final class Classifier {
                             + describe(ceiling.get()) + ")");
                 }
             }
-            List<Class<?>> personal = whole.references().stream()
-                    .filter(reference -> ceilingOf(Set.of(reference)).map(Protection::isPersonal).orElse(false))
-                    .toList();
-            if (personal.isEmpty()) {
+            Class<?> personal = null;
+            Class<?> unknown = null;
+            for (Class<?> reference : whole.references()) {
+                Optional<Protection> ceiling = ceilingOf(Set.of(reference));
+                if (ceiling.isEmpty()) {
+                    unknown = unknown == null ? reference : unknown;
+                } else if (ceiling.get().isPersonal() && personal == null) {
+                    personal = reference;
+                }
+            }
+            if (personal == null && unknown == null) {
                 return;
             }
-            String referred = personal.getFirst().getSimpleName();
-            String advice = " that holds personal data, and a reference to a person's record is personal data:"
+            String referred = (personal != null ? personal : unknown).getSimpleName();
+            String advice = (personal != null
+                    ? " that holds personal data, and a reference to a person's record is personal data:"
+                    : ", whose fields have errors, so whether it holds personal data is unknown: fix them, or")
                     + " declare what the field stores with @Category, or take the classification of the record's"
                     + " key with @DerivedFrom(type = " + referred + ".class, value = \"id\")";
             if (whole.basis() == HowClassified.EXEMPT) {
@@ -1201,15 +1212,16 @@ public final class Classifier {
         } else {
             raw = (Class<?>) type;
         }
-        return argumentOf(raw, bindings, target, index);
+        Type argument = argumentOf(raw, bindings, target, index);
+        // A type parameter of the type or of its supertypes that stays unbound is a raw use of the type, such as a
+        // List without arguments: its values may be anything.
+        return argument instanceof TypeVariable<?> v && v.getGenericDeclaration() instanceof Class<?> declaring
+                && declaring.isAssignableFrom(raw) ? Object.class : argument;
     }
 
     private static Type argumentOf(Class<?> raw, Map<TypeVariable<?>, Type> bindings, Class<?> target, int index) {
         if (raw == target) {
-            Type argument = substitute(target.getTypeParameters()[index], bindings);
-            // A type parameter that stays unbound is a raw use of the type: its values may be anything.
-            return argument instanceof TypeVariable<?> v && v.getGenericDeclaration() == raw ? Object.class
-                    : argument;
+            return substitute(target.getTypeParameters()[index], bindings);
         }
         List<Type> supertypes = new ArrayList<>(Arrays.asList(raw.getGenericInterfaces()));
         if (raw.getGenericSuperclass() != null) {

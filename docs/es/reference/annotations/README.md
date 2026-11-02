@@ -56,7 +56,7 @@ Para cada campo considerado, gana la primera regla que se cumple:
 | 2 | El campo tiene `@CategoryByRow` | la categoría techo (`BY_ROW`) |
 | 3 | El campo tiene `@DerivedFrom` y no tiene `@Category` | la clasificación de su fuente (`DERIVED`) |
 | 4 | El tipo del campo es una clase `@Composite` concreta, o un array, una colección o un `Optional` de ella, a cualquier profundidad | una clasificación por cada campo del compuesto, con la ruta `campo.parte`, cada una como la resuelve su propia clase |
-| 5 | La clase que **declara** el campo tiene `@DefaultCategory`, y el campo no puede contener datos que el clasificador no ve ni se refiere a un registro con datos personales | ese valor por defecto (`CLASS_DEFAULT`) |
+| 5 | La clase que **declara** el campo tiene `@DefaultCategory`, y el campo no puede contener datos que el clasificador no ve ni se refiere a un registro con datos personales o con errores | ese valor por defecto (`CLASS_DEFAULT`) |
 | 6 | La clase **que se clasifica** tiene `@DefaultCategory`, y se cumple lo mismo | ese valor por defecto (`CLASS_DEFAULT`) |
 | 7 | ninguna de las anteriores | error `UNCLASSIFIED_FIELD` |
 
@@ -69,7 +69,8 @@ Consecuencias:
   `UNCLASSIFIED_FIELD`. Consulta [`@Composite`](composite.md#qué-hace-el-clasificador).
 - Un campo que se refiere a otro registro del modelo toma el valor por defecto de la clase solo cuando ese registro no
   contiene datos personales, como un elemento de un catálogo. Una referencia a un registro con datos personales necesita
-  su propia anotación, normalmente `@DerivedFrom(type = Customer.class, value = "id")`, y no se puede eximir. Consulta
+  su propia anotación, normalmente `@DerivedFrom(type = Customer.class, value = "id")`, y no se puede eximir. Lo mismo vale para una referencia a un
+  registro cuyos campos tienen errores, pues entonces no se sabe si contiene datos personales. Consulta
   [Referencias a otros registros](composite.md#referencias-a-otros-registros).
 - Los campos de un compuesto se resuelven con las anotaciones y el `@DefaultCategory` del propio compuesto, nunca
   con el valor por defecto de la clase que lo contiene.
@@ -87,7 +88,7 @@ Consecuencias:
 | Combinación en un campo | Violación | Efecto |
 |---|---|---|
 | `@Exempt` + `@Category`, `@CategoryByRow` y/o `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@Exempt cannot be combined with @Category, @CategoryByRow or @DerivedFrom` | se omite el campo (el motivo de `@Exempt` se sigue comprobando) |
-| `@Exempt` en un campo que contiene compuestos, o que se refiere a un registro con datos personales | `CONFLICTING_ANNOTATIONS`: `@Exempt is for a field that holds no data of the model, and this one ...` | se informa el error; consulta [`@Exempt`](exempt.md#reglas-que-aplica-el-classifier) |
+| `@Exempt` en un campo que contiene compuestos, o que se refiere a un registro con datos personales o con errores | `CONFLICTING_ANNOTATIONS`: `@Exempt is for a field that holds no data of the model, and this one ...` | se informa el error; consulta [`@Exempt`](exempt.md#reglas-que-aplica-el-classifier) |
 | `@CategoryByRow` + `@Category` y/o `@DerivedFrom` | `CONFLICTING_ANNOTATIONS`: `@CategoryByRow cannot be combined with @Category or @DerivedFrom` | el campo no se clasifica |
 | `@Category` + `@DerivedFrom` | ninguna | el campo declara su categoría y debe proteger al menos tanto como sus fuentes |
 | `@Category`, `@CategoryByRow` o `@DerivedFrom` + `@DefaultCategory` de la clase | ninguna | prevalece la anotación del campo |

@@ -106,7 +106,7 @@ orderReference: org.business_records NONE MEDIUM MEDIUM
 The extension follows the rules fideslang sets for custom labels, so its terms stay interoperable with other tools:
 
 - **Extend existing classes.** Every term is a child of an existing term; every use is a child of the standard
-  `operations` or `sales` use.
+  `operations` use.
 - **The parent is the prefix of the key.** `org.business_records.inventory` is a child of `org.business_records`.
 - **Data subjects are flat.** fideslang data subjects have no hierarchy, so every subject of the extension is a root.
 - **No version information.** fideslang allows version information only in its default taxonomy, so no term of the
@@ -173,7 +173,9 @@ stricter key, not with the extension's:
 
 ## Data uses
 
-Every use is a child of the standard `operations` or `sales` use. Data uses have no protection facets, only
+Every use is a child of the standard `operations` use. Order management sits there and not below `sales`: taking and
+fulfilling orders runs the business, while `sales` is outreach that carries the direct marketing trait, so a use below
+it would make the right to object absolute for order fulfilment. Data uses have no protection facets, only
 [traits](#traits).
 
 | Key | Name | Parent | Purpose |
@@ -182,6 +184,7 @@ Every use is a child of the standard `operations` or `sales` use. Data uses have
 | `operations.inventory` | Inventory Management | `operations` | Receives, stores, counts and moves stock. |
 | `operations.logistics` | Logistics | `operations` | Plans and carries out transport and deliveries. |
 | `operations.logistics.fleet_management` | Fleet Management | `operations.logistics` | Manages vehicles and drivers, including driving times and vehicle geolocation. |
+| `operations.order_management` | Order Management | `operations` | Takes, confirms, fulfils and invoices customer orders and handles returns. |
 | `operations.planning` | Supply Planning | `operations` | Forecasts demand and plans supply, production and capacity. |
 | `operations.procurement` | Procurement | `operations` | Sources, orders and receives goods and services from suppliers. |
 | `operations.product_management` | Product Information Management | `operations` | Defines products, their specifications, formulas and costs. |
@@ -189,7 +192,6 @@ Every use is a child of the standard `operations` or `sales` use. Data uses have
 | `operations.quality` | Quality Management | `operations` | Inspects and tests products and materials and handles non-conformances. |
 | `operations.supplier_management` | Supplier Management | `operations` | Qualifies, evaluates and audits suppliers. |
 | `operations.traceability` | Traceability | `operations` | Tracks batches and serial numbers through the supply chain for recalls and regulators. |
-| `sales.order_management` | Order Management | `sales` | Takes, confirms, fulfils and invoices customer orders and handles returns. |
 
 ## Data subjects
 

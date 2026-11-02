@@ -45,7 +45,8 @@ later given a stricter one.
 
 The same idiom declares a **reference to another record** that holds personal data, which takes no class default and
 cannot be exempted: `@DerivedFrom(type = Customer.class, value = "id")` on the field that refers to a `Customer` makes
-it take the classification of the record's key. See
+it take the classification of the record's key. A reference to a record whose fields have errors is treated the same,
+since whether it holds personal data is then unknown. See
 [References to other records](composite.md#references-to-other-records).
 
 Sources are resolved field by field, so two classes may derive from each other's *other* fields: `Order.customerName`

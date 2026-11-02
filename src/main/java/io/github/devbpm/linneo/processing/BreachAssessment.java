@@ -54,8 +54,9 @@ import java.util.Objects;
  *         .affected(classifier.classify(Student.class).fields())
  *         .confidentiality(Exposure.KNOWN_RECIPIENTS).individuals(340)
  *         .build();
- * assessment.severity();               // HIGH
+ * assessment.severity();               // VERY_HIGH for a Student with health data: 4 x 1 + 0.25
  * assessment.notifyAuthority();        // true: within 72 hours (GDPR article 33.1)
+ * assessment.communicateToSubjects();  // true: a high risk (article 34.1)
  * }</pre>
  * A low severity is read as a breach unlikely to result in a risk (article 33.1), which is recorded (article 33.5)
  * but not notified; a high or very high severity as a high risk, which is also communicated to the data subjects
@@ -337,10 +338,11 @@ public final class BreachAssessment {
     /**
      * The severity score.
      *
-     * @return context &times; identification + circumstances
+     * @return context &times; identification + circumstances, or 0 when no affected field holds personal data,
+     *         which is then not a personal data breach
      */
     public double score() {
-        return context * identification.score() + circumstances();
+        return context == 0 ? 0 : context * identification.score() + circumstances();
     }
 
     /**

@@ -118,12 +118,13 @@ public final class UniversityTaxonomy implements TaxonomyExtension {
     // The traits Linneo's legal rules read (see Trait): alumni communications, appeals for gifts and the prospect
     // research behind them are direct marketing, so the right to object to them is absolute (GDPR article 21.2), while
     // administering the gifts received is not; prospect research, means assessment and learning analytics evaluate
-    // people, and learning analytics observes them systematically (WP248); research is research (article 89.1).
+    // people, and learning analytics observes them systematically (WP248); the participation in research studies is
+    // research (article 89.1), while administering projects, grants and researchers is not.
     private static void traits(TaxonomyBuilder builder) {
         builder.refineDataUse(ADVANCEMENT_ALUMNI_RELATIONS, u -> u.traits(Trait.DIRECT_MARKETING))
                 .refineDataUse(ADVANCEMENT_FUNDRAISING, u -> u.traits(Trait.DIRECT_MARKETING))
                 .refineDataUse(ADVANCEMENT_PROSPECT_RESEARCH, u -> u.traits(Trait.DIRECT_MARKETING, Trait.EVALUATION))
-                .refineDataUse(RESEARCH, u -> u.traits(Trait.RESEARCH))
+                .refineDataUse(RESEARCH_PARTICIPATION, u -> u.traits(Trait.RESEARCH))
                 .refineDataUse(EDUCATION_FINANCIAL_AID_MEANS_ASSESSMENT, u -> u.traits(Trait.EVALUATION))
                 .refineDataUse(EDUCATION_LEARNING_ANALYTICS, u -> u.traits(Trait.EVALUATION, Trait.MONITORING));
     }

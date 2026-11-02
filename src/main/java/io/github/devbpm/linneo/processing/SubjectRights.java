@@ -40,7 +40,7 @@ import java.util.TreeSet;
 
 /**
  * What the record of processing activities says to someone of one category of data subjects who exercises their
- * rights (GDPR articles 15 to 21): the activities that process their data, what each one processes and why, where
+ * rights (GDPR articles 15 to 22): the activities that process their data, what each one processes and why, where
  * that data is stored, and which rights each activity's lawful basis gives them.
  * <pre>{@code
  * SubjectRights rights = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN);

@@ -35,7 +35,8 @@ public final class Messages {
     }
 
     /**
-     * A message that lists the errors, one per line, up to {@link #LISTED}, then counts all of them by code.
+     * A message that lists the errors, one per line, up to {@link #LISTED}, and when there are more counts all of
+     * them by code.
      *
      * @param kind what kind of errors they are, such as {@code "classification"}
      * @param errors the errors, at least one
