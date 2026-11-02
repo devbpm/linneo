@@ -9,6 +9,8 @@ doc-sources:
   - pom.xml
 -->
 
+<img src="../../assets/images/logo-linneo-horiz.png" alt="Linneo" width="240">
+
 # Linneo training course
 
 **Classify the data model of your organisation, verify it in your tests and put the result to work.**

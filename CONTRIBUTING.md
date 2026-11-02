@@ -125,5 +125,9 @@ touches `docs/` and deploys it from `main`.
   Markdown fence, and `<!-- unchecked: the reason -->` on the line before works the same way. Tables sit in a
   focusable `<div class="tabla" role="region">` named by their `<caption>`, and callouts are
   `<div class="recuadro …" role="note">` with a visible title.
+- **Logos.** The originals are in `docs/assets/images/original/`. Pages use smaller copies: the horizontal logo in
+  `docs/assets/images/` (the README, the site's navigation and the index pages), and the vertical logo and the
+  hexagon mark in `docs/es/course-html/recursos/` (the HTML course). Images never go in `src/main/resources`, which
+  is packaged in the library's JAR.
 
 By contributing, you agree that your contributions are licensed under the Apache License, Version 2.0.

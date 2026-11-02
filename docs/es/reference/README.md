@@ -24,6 +24,8 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/extension/humanresources/package-info.java
 -->
 
+<img src="../../assets/images/logo-linneo-horiz.png" alt="Linneo" width="240">
+
 # Referencia de Linneo
 
 Linneo es una biblioteca para Java 21 o superior, sin dependencias en tiempo de ejecución, que incluye una taxonomía de

@@ -1,4 +1,4 @@
-# Linneo
+<h1><img src="docs/assets/images/logo-linneo-horiz.png" alt="Linneo" width="360"></h1>
 
 [![CI](https://github.com/devbpm/linneo/actions/workflows/ci.yml/badge.svg)](https://github.com/devbpm/linneo/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.devbpm/linneo)](https://central.sonatype.com/artifact/io.github.devbpm/linneo)

@@ -24,6 +24,8 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/extension/humanresources/package-info.java
 -->
 
+<img src="../../assets/images/logo-linneo-horiz.png" alt="Linneo" width="240">
+
 # Linneo reference
 
 Linneo is a Java 21+ library with no runtime dependencies that bundles a data classification taxonomy and applies it

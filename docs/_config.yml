@@ -1,6 +1,7 @@
 # GitHub Pages site for the documentation in this folder, built by .github/workflows/pages.yml.
 title: Linneo
 description: Declare what every field of your data model holds, and the protection it needs.
+logo: "/assets/images/logo-linneo-horiz.png"
 url: https://devbpm.github.io
 baseurl: /linneo
 

@@ -4,7 +4,7 @@ nav_order: 1
 permalink: "/"
 ---
 
-# Linneo
+<h1><img src="assets/images/logo-linneo-horiz.png" alt="Linneo" width="360"></h1>
 
 **Declare what every field of your data model holds, and the protection it needs. Let the build check it.**
 
