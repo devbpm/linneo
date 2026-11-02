@@ -37,7 +37,7 @@ class ProcessingRecordTest {
             .dataSubjects(DataSubjects.APPLICANT)
             .dataCategories(Categories.USER_NAME, Categories.USER_HEALTH_AND_MEDICAL_DISABILITY)
             .legalBasis(LegalBasis.PUBLIC_INTEREST)
-            .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT)
+            .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
             .recipients("Admissions board")
             .transfer("United States", TransferSafeguard.STANDARD_CONTRACTUAL_CLAUSES)
             .build();
@@ -126,8 +126,8 @@ class ProcessingRecordTest {
                         + "\"description\":\"Receives and assesses\\napplications.\",\"purposes\":[\"education.admission\"],"
                         + "\"dataSubjects\":[\"applicant\"],\"dataCategories\":[\"user.health_and_medical.disability\","
                         + "\"user.name\"],\"legalBasis\":{\"code\":\"PUBLIC_INTEREST\",\"article\":\"6.1.e\","
-                        + "\"fideslang\":\"Public interest\"},\"specialCategoryCondition\":{\"code\":\"EXPLICIT_CONSENT\","
-                        + "\"article\":\"9.2.a\",\"fideslang\":\"Explicit consent\"},\"recipients\":[\"Admissions board\"],"
+                        + "\"fideslang\":\"Public interest\"},\"specialCategoryConditions\":[{\"code\":\"EXPLICIT_CONSENT\","
+                        + "\"article\":\"9.2.a\",\"fideslang\":\"Explicit consent\"}],\"recipients\":[\"Admissions board\"],"
                         + "\"transfers\":[{\"destination\":\"United States\",\"safeguard\":{\"code\":"
                         + "\"STANDARD_CONTRACTUAL_CLAUSES\",\"article\":\"46.2.c\",\"fideslang\":\"SCCs\"}}],"
                         + "\"screening\":{\"outcome\":\"POSSIBLE\",\"criteria\":[\"SENSITIVE_DATA\"]},"

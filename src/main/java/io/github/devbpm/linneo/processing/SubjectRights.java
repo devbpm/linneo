@@ -20,6 +20,7 @@ import io.github.devbpm.linneo.DataUse;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.TaxonomyException;
 import io.github.devbpm.linneo.Term;
+import io.github.devbpm.linneo.Trait;
 import io.github.devbpm.linneo.classify.DataInventory;
 import io.github.devbpm.linneo.classify.InventoryField;
 
@@ -42,14 +43,18 @@ import java.util.TreeSet;
  * rights (GDPR articles 15 to 21): the activities that process their data, what each one processes and why, where
  * that data is stored, and which rights each activity's lawful basis gives them.
  * <pre>{@code
- * SubjectRights rights = SubjectRights.of(record, DataSubjects.STUDENT, Jurisdiction.SPAIN);
+ * SubjectRights rights = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN);
  * rights.storedFields(inventory, taxonomy);   // where to look for the person's data, object by object
  * rights.activities().forEach(activity -> activity.entitlement(Right.ERASURE));
  * }</pre>
  * The rights follow what the GDPR provides for each lawful basis: erasure is not available while a legal obligation
- * or a public task needs the data (article 17.3.b), portability applies to processing based on consent or a
- * contract (article 20.1), objection to processing based on a public task or legitimate interests (article 21.1) and
- * always to direct marketing (article 21.2). It is the starting point of the answer, not the answer: the data
+ * or a public task needs the data (article 17.3.b), portability applies to processing based on consent, explicit
+ * consent to special category data or a contract (article 20.1), objection to processing based on a public task or
+ * legitimate interests (article 21.1) and always to direct marketing, the purposes with the
+ * {@link Trait#DIRECT_MARKETING} trait (article 21.2), after which the marketing stops and its data is erased except
+ * what a legal obligation or a public task still needs. The data subject key is resolved with the taxonomy, so a key
+ * that does not exist is an error rather than an empty answer. It is the starting point of the answer, not the
+ * answer: the data
  * protection officer decides each request, since the conditions of each article depend on the case. Under
  * {@link Jurisdiction#SPAIN} the data is blocked rather than deleted when it is erased or rectified (LOPDGDD article
  * 32). Instances are immutable.
@@ -201,32 +206,42 @@ public final class SubjectRights {
      * The rights of a category of data subjects under the GDPR alone.
      *
      * @param record the record of processing activities
-     * @param dataSubject the key of the data subject category, such as {@code student}
+     * @param taxonomy the taxonomy the record was checked with, to resolve the key
+     * @param dataSubject the key of the data subject category, such as {@code student}; a deprecated key stands for
+     *        its replacement
      * @return the rights, over every activity whose data subjects include that category
+     * @throws TaxonomyException if the taxonomy has no such data subject
+     * @throws IllegalArgumentException if an activity of the record has no lawful basis
      */
-    public static SubjectRights of(ProcessingRecord record, String dataSubject) {
-        return of(record, dataSubject, Jurisdiction.EU);
+    public static SubjectRights of(ProcessingRecord record, Taxonomy taxonomy, String dataSubject) {
+        return of(record, taxonomy, dataSubject, Jurisdiction.EU);
     }
 
     /**
      * The rights of a category of data subjects in a jurisdiction.
      *
      * @param record the record of processing activities
-     * @param dataSubject the key of the data subject category, such as {@code student}
+     * @param taxonomy the taxonomy the record was checked with, to resolve the key
+     * @param dataSubject the key of the data subject category, such as {@code student}; a deprecated key stands for
+     *        its replacement
      * @param jurisdiction the law that applies besides the GDPR
      * @return the rights, over every activity whose data subjects include that category
+     * @throws TaxonomyException if the taxonomy has no such data subject
+     * @throws IllegalArgumentException if an activity of the record has no lawful basis
      */
-    public static SubjectRights of(ProcessingRecord record, String dataSubject, Jurisdiction jurisdiction) {
+    public static SubjectRights of(ProcessingRecord record, Taxonomy taxonomy, String dataSubject,
+                                   Jurisdiction jurisdiction) {
         Objects.requireNonNull(record, "record");
-        Objects.requireNonNull(dataSubject, "dataSubject");
         Objects.requireNonNull(jurisdiction, "jurisdiction");
+        String key = Objects.requireNonNull(taxonomy, "taxonomy")
+                .resolveDataSubject(Objects.requireNonNull(dataSubject, "dataSubject")).key();
         List<ActivityRights> activities = new ArrayList<>();
         for (CheckedActivity checked : record.activities()) {
-            if (checked.dataSubjects().stream().anyMatch(subject -> subject.key().equals(dataSubject))) {
+            if (checked.dataSubjects().stream().anyMatch(subject -> subject.key().equals(key))) {
                 activities.add(new ActivityRights(checked, entitlements(checked, jurisdiction)));
             }
         }
-        return new SubjectRights(dataSubject, activities);
+        return new SubjectRights(key, activities);
     }
 
     /**
@@ -332,8 +347,13 @@ public final class SubjectRights {
     private static List<Entitlement> entitlements(CheckedActivity checked, Jurisdiction jurisdiction) {
         Governance governance = checked.activity().governance();
         LegalBasis basis = governance.legalBasis();
-        boolean marketing = checked.purposes().stream().map(DataUse::key)
-                .anyMatch(key -> key.equals("marketing") || key.startsWith("marketing."));
+        if (basis == null) {
+            throw new IllegalArgumentException("The processing activity '" + checked.activity().key() + "' has no"
+                    + " lawful basis; build the record with ProcessingChecker.verify");
+        }
+        boolean marketing = checked.purposes().stream().anyMatch(use -> use.has(Trait.DIRECT_MARKETING));
+        boolean explicitConsent = governance.specialCategoryConditions()
+                .contains(SpecialCategoryCondition.EXPLICIT_CONSENT);
         String blocking = jurisdiction == Jurisdiction.SPAIN
                 ? " Under Spanish law the data is blocked, not deleted, while liabilities may arise from the"
                 + " processing, and deleted afterwards (LOPDGDD art. 32)." : "";
@@ -344,22 +364,47 @@ public final class SubjectRights {
                 + terms(checked.purposes()) + ")."));
         entitlements.add(new Entitlement(Right.RECTIFICATION, Availability.YES,
                 "Art. 16: inaccurate data is rectified and incomplete data completed." + blocking));
-        entitlements.add(erasure(basis, marketing, retention, blocking));
+        entitlements.add(erasure(basis, marketing, explicitConsent, retention, blocking));
         entitlements.add(new Entitlement(Right.RESTRICTION, Availability.CONDITIONAL, "Art. 18.1: while the accuracy"
                 + " of the data or an objection is being verified, when the processing is unlawful and the person"
                 + " prefers restriction, or when the data is no longer needed but the person needs it for legal"
                 + " claims."));
-        entitlements.add(basis == LegalBasis.CONSENT || basis == LegalBasis.CONTRACT
-                ? new Entitlement(Right.PORTABILITY, Availability.YES, "Art. 20.1: the processing is based on "
-                + label(basis) + "; the person may receive the data they provided, processed by automated means,"
-                + " in a structured, machine-readable format, or have it sent to another controller.")
-                : new Entitlement(Right.PORTABILITY, Availability.NO, "Art. 20.1: portability applies to processing"
-                + " based on consent or a contract; this activity rests on " + label(basis) + "."));
+        String portable = " the person may receive the data they provided, processed by automated means, in a"
+                + " structured, machine-readable format, or have it sent to another controller.";
+        if (basis == LegalBasis.CONSENT || basis == LegalBasis.CONTRACT) {
+            entitlements.add(new Entitlement(Right.PORTABILITY, Availability.YES, "Art. 20.1: the processing is"
+                    + " based on " + label(basis) + ";" + portable));
+        } else if (explicitConsent) {
+            entitlements.add(new Entitlement(Right.PORTABILITY, Availability.CONDITIONAL, "Art. 20.1.a: the special"
+                    + " category data is processed with explicit consent (art. 9.2.a);" + portable + " The rest rests"
+                    + " on " + label(basis) + ", to which portability does not apply."));
+        } else {
+            entitlements.add(new Entitlement(Right.PORTABILITY, Availability.NO, "Art. 20.1: portability applies to"
+                    + " processing based on consent or a contract; this activity rests on " + label(basis) + "."));
+        }
         entitlements.add(objection(basis, marketing));
         return entitlements;
     }
 
+    private static Entitlement erasure(LegalBasis basis, boolean marketing, boolean explicitConsent,
+                                       String retention, String blocking) {
+        Entitlement entitlement = erasure(basis, marketing, retention, blocking);
+        if (!explicitConsent || basis == LegalBasis.CONSENT || entitlement.availability() == Availability.YES) {
+            return entitlement;
+        }
+        return new Entitlement(Right.ERASURE, Availability.CONDITIONAL, entitlement.explanation() + " The special"
+                + " category data, processed with explicit consent, is erased when the consent is withdrawn"
+                + " (art. 17.1.b with 9.2.a).");
+    }
+
     private static Entitlement erasure(LegalBasis basis, boolean marketing, String retention, String blocking) {
+        boolean kept = basis == LegalBasis.LEGAL_OBLIGATION || basis == LegalBasis.PUBLIC_INTEREST;
+        if (marketing && kept) {
+            return new Entitlement(Right.ERASURE, Availability.CONDITIONAL, "Art. 17.1.c and 21.3: after an objection"
+                    + " to direct marketing the data is no longer processed for it and is erased, except what "
+                    + (basis == LegalBasis.LEGAL_OBLIGATION ? "the legal obligation" : "the task in the public"
+                    + " interest") + " still requires (art. 17.3.b; retention: " + retention + ")." + blocking);
+        }
         if (marketing) {
             return new Entitlement(Right.ERASURE, Availability.YES, "Art. 17.1.c and 21.2: the person may object to"
                     + " direct marketing at any time, and the data is then erased." + blocking);

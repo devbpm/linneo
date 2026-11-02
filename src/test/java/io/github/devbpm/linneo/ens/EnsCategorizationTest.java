@@ -31,6 +31,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EnsCategorizationTest {
@@ -56,7 +57,7 @@ class EnsCategorizationTest {
     @DisplayName("the information sets confidentiality and integrity, and the category is the highest level")
     void fromInformation() {
         EnsCategorization ens = EnsCategorization.builder()
-                .information(classifier.classify(Student.class).fields()).build();
+                .information(classifier.classify(Student.class)).build();
         assertAll(
                 () -> assertEquals(Level.HIGH, ens.valuation(Dimension.CONFIDENTIALITY).orElseThrow().level()),
                 () -> assertTrue(ens.valuation(Dimension.CONFIDENTIALITY).orElseThrow().reason()
@@ -74,7 +75,7 @@ class EnsCategorizationTest {
     @DisplayName("public data sets no confidentiality requirement, and the owner completes the other dimensions")
     void declared() {
         EnsCategorization ens = EnsCategorization.builder()
-                .information(classifier.classify(Course.class).fields())
+                .information(classifier.classify(Course.class))
                 .declare(Dimension.AVAILABILITY, Level.MEDIUM, "enrollment closes on fixed dates")
                 .declare(Dimension.AUTHENTICITY, Level.LOW, "public catalogue")
                 .declare(Dimension.TRACEABILITY, Level.LOW, "no audit needed")
@@ -91,10 +92,10 @@ class EnsCategorizationTest {
     @DisplayName("a declaration raises the level the code sets but never lowers it, and stored fields count alike")
     void floorAndInventory() {
         EnsCategorization lowered = EnsCategorization.builder()
-                .information(classifier.classify(Student.class).fields())
+                .information(classifier.classify(Student.class))
                 .declare(Dimension.CONFIDENTIALITY, Level.LOW, "the officer thinks it is not sensitive").build();
         EnsCategorization raised = EnsCategorization.builder()
-                .information(classifier.classify(Course.class).fields())
+                .information(classifier.classify(Course.class))
                 .declare(Dimension.INTEGRITY, Level.HIGH, "official catalogue").build();
         DataInventory inventory = classifier.inventory(List.of(Student.class), type -> "students");
         EnsCategorization stored = EnsCategorization.builder()
@@ -104,8 +105,28 @@ class EnsCategorizationTest {
                 () -> assertTrue(lowered.valuation(Dimension.CONFIDENTIALITY).orElseThrow().reason()
                         .startsWith("field ")),
                 () -> assertEquals(Level.HIGH, raised.valuation(Dimension.INTEGRITY).orElseThrow().level()),
-                () -> assertEquals(EnsCategorization.builder().information(classifier.classify(Student.class)
-                        .fields()).build().category(), stored.category()),
+                () -> assertEquals(EnsCategorization.builder().information(classifier.classify(Student.class))
+                        .build().category(), stored.category()),
                 () -> assertEquals(Level.HIGH, stored.valuation(Dimension.CONFIDENTIALITY).orElseThrow().level()));
+    }
+
+    @SuppressWarnings("unused")
+    static class Broken {
+        @Category(Categories.USER_HEALTH_AND_MEDICAL)
+        private String condition;
+        private String unclassified;
+    }
+
+    @Test
+    @DisplayName("a classification with errors gives no information, and none given leaves the category a lower bound")
+    void failsClosed() {
+        EnsCategorization empty = EnsCategorization.builder()
+                .declare(Dimension.AUTHENTICITY, Level.LOW, "x").declare(Dimension.TRACEABILITY, Level.LOW, "x")
+                .declare(Dimension.AVAILABILITY, Level.LOW, "x").build();
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class,
+                        () -> EnsCategorization.builder().information(classifier.classify(Broken.class))),
+                () -> assertFalse(empty.isComplete()),
+                () -> assertTrue(empty.summary().contains("no information given")));
     }
 }

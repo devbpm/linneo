@@ -52,7 +52,7 @@ and description, a two-column table and, if the activity has warnings, an `Open 
 | `Purposes (art. 30.1.b)` | always | ``<name> (`<key>`)`` for each purpose, separated by `; `, or `None` |
 | `Lawful basis (art. 6.1)` | when declared | `Art. <article>: <fideslang name>` |
 | `Legitimate interest` | only when the basis is `LEGITIMATE_INTERESTS` and an interest is stated | the interest |
-| `Special categories (art. 9.2)` | when declared | `Art. <article>: <fideslang name>` |
+| `Special categories (art. 9.2)` | when declared | `Art. <article>: <fideslang name>` for each condition, separated by `; ` |
 | `Criminal offence data (art. 10)` | when declared | `Art. 10: Official authority` or `Art. 10: Authorised by law` |
 | `Legal reference` | when declared | the reference |
 | `Data subjects (art. 30.1.c)` | always | as purposes |
@@ -67,9 +67,10 @@ and description, a two-column table and, if the activity has warnings, an `Open 
 The record states the protection the data **requires** (the highest levels of its categories and fields), as input
 for the description of security measures of article 30.1.g; it does not describe the measures themselves.
 
-Every text written into the document — title, names, description and cells — has `|` escaped as `\|` and line breaks
-(`\n` or `\r`, with the white space around them) collapsed to one space, so that a value cannot break the table. The
-activity key is written as code, unescaped.
+Every text written into the document — title, names, description and cells — is written as text, so that a value can
+neither break the table nor become a link or HTML where the Markdown is rendered: `\`, `|`, `[` and `]` are escaped
+with a backslash (`\|`), `&`, `<` and `>` become `&amp;`, `&lt;` and `&gt;`, and line breaks (`\n` or `\r`, with the
+white space around them) collapse to one space. The activity key is written as code, unescaped.
 
 ### Example
 
@@ -80,7 +81,7 @@ ProcessingActivity admissions = ProcessingActivity.builder("admissions", "Admiss
         .dataSubjects(DataSubjects.APPLICANT)
         .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_HEALTH_AND_MEDICAL_DISABILITY)
         .legalBasis(LegalBasis.PUBLIC_INTEREST)
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .recipients("Admissions board")
         .impactAssessment("DPIA-2026-01")
         .build();
@@ -160,7 +161,7 @@ order. Optional members are left out when the activity does not declare them; li
 | `purposes`, `dataSubjects`, `dataCategories` | always | arrays of keys, after resolution (deprecated keys replaced, non-personal categories left out) |
 | `legalBasis` | when declared | `{"code": <constant>, "article": <article>, "fideslang": <fideslang name>}` |
 | `legitimateInterest` | only when the basis is `LEGITIMATE_INTERESTS` and an interest is stated | string |
-| `specialCategoryCondition` | when declared | as `legalBasis` |
+| `specialCategoryConditions` | when declared | array of objects as `legalBasis`, one for each condition |
 | `criminalDataBasis` | when declared | `{"code": <constant>, "article": "10"}`, without `fideslang` |
 | `legalReference` | when declared | string |
 | `recipients` | always | array of strings |
@@ -173,7 +174,7 @@ order. Optional members are left out when the activity does not declare them; li
 The JSON of the record above (one line):
 
 ```json
-{"activities":[{"key":"admissions","name":"Admissions","description":"Receives and assesses applications,\nincluding requests for the disability quota.","purposes":["education.admission"],"dataSubjects":["applicant"],"dataCategories":["user.contact.email","user.health_and_medical.disability","user.name"],"legalBasis":{"code":"PUBLIC_INTEREST","article":"6.1.e","fideslang":"Public interest"},"specialCategoryCondition":{"code":"SUBSTANTIAL_PUBLIC_INTEREST","article":"9.2.g","fideslang":"Reasons of substantial public interest (with a basis in law)"},"recipients":["Admissions board"],"transfers":[],"impactAssessment":"DPIA-2026-01","screening":{"outcome":"POSSIBLE","criteria":["SENSITIVE_DATA"]},"protection":{"natures":["ORDINARY","SPECIAL_CATEGORY"],"confidentiality":"HIGH","integrity":"HIGH","secret":false},"openPoints":["GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference","Declare the envisaged time limit for erasure (GDPR article 30.1.f)"]},{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","screening":{"outcome":"NOT_INDICATED","criteria":[]},"protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
+{"activities":[{"key":"admissions","name":"Admissions","description":"Receives and assesses applications,\nincluding requests for the disability quota.","purposes":["education.admission"],"dataSubjects":["applicant"],"dataCategories":["user.contact.email","user.health_and_medical.disability","user.name"],"legalBasis":{"code":"PUBLIC_INTEREST","article":"6.1.e","fideslang":"Public interest"},"specialCategoryConditions":[{"code":"SUBSTANTIAL_PUBLIC_INTEREST","article":"9.2.g","fideslang":"Reasons of substantial public interest (with a basis in law)"}],"recipients":["Admissions board"],"transfers":[],"impactAssessment":"DPIA-2026-01","screening":{"outcome":"POSSIBLE","criteria":["SENSITIVE_DATA"]},"protection":{"natures":["ORDINARY","SPECIAL_CATEGORY"],"confidentiality":"HIGH","integrity":"HIGH","secret":false},"openPoints":["GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference","Declare the envisaged time limit for erasure (GDPR article 30.1.f)"]},{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","screening":{"outcome":"NOT_INDICATED","criteria":[]},"protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
 ```
 
 The `code` members are the enum constant names, so a tool can map them back with `LegalBasis.valueOf(...)` and the
@@ -190,7 +191,9 @@ approved and the one that applies now. `fingerprint()` tells at once whether any
 `fingerprint()` is the SHA-256 (UTF-8, lower-case hexadecimal, 64 digits) of the content of the record, activity by
 activity in key order and aspect by aspect as `RecordDiff` compares them. Two records have the same fingerprint exactly
 when `RecordDiff` finds no change between them, whatever the order of their activities. It says that something changed,
-not what. An application keeps it with the record the officer approved, to know whether the record still is that one.
+not what. An application keeps it with the record the officer approved, to know whether the record still is that one. The
+text that is hashed writes a lone UTF-16 surrogate, which UTF-8 cannot encode, as a backslash, `u` and its four
+hexadecimal digits, so two records that differ only in such a character never have the same fingerprint.
 
 ### RecordDiff
 
@@ -269,7 +272,7 @@ whether the aspect is part of the governance rather than of the scope declared i
 | `PROTECTION` | `false` | The protection the personal data requires; see `direction`. |
 | `LEGAL_BASIS` | `true` | The lawful basis. |
 | `LEGITIMATE_INTEREST` | `true` | The legitimate interest pursued. |
-| `SPECIAL_CATEGORY_CONDITION` | `true` | The article 9.2 condition. |
+| `SPECIAL_CATEGORY_CONDITION` | `true` | The article 9.2 conditions. |
 | `CRIMINAL_DATA_BASIS` | `true` | The article 10 basis. |
 | `LEGAL_REFERENCE` | `true` | The law the bases rest on. |
 | `RECIPIENTS` | `true` | The recipients. |

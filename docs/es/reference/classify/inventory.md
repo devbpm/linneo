@@ -47,7 +47,9 @@ conserva:
 - la **base**: de dónde viene la categoría ([`Basis`](results.md#basis));
 - la `confidentiality` y la `integrity` que el campo eleva explícitamente con `@Category`, o `null` si toma las de la
   categoría;
-- la **identificabilidad**, en una categoría personal;
+- la **identificabilidad** tal como la declara el campo (`PSEUDONYMIZED`, `ANONYMIZED`, `AGGREGATED`), o `null` si no
+  declara ninguna o declara `IDENTIFIED`, que una categoría personal toma de todos modos: declaraciones iguales dan
+  campos iguales;
 - el **motivo**: el de un valor por defecto de clase, o el `declaredBy` de una categoría por fila.
 
 Un campo excluido con [`@Exempt`](../annotations/exempt.md) también se conserva, solo con su motivo, de modo que excluir
@@ -129,8 +131,8 @@ guardar, comparar y resolver más tarde contra la taxonomía del día.
 | `basis` | sí | De dónde viene la categoría: `DECLARED`, `CLASS_DEFAULT`, `BY_ROW` o `DERIVED`; `null` en un campo exento. |
 | `confidentiality` | sí | La confidencialidad que el campo declara por encima de la de su categoría, o `null` si toma la de la categoría. |
 | `integrity` | sí | La integridad que el campo declara por encima de la de su categoría, o `null` si toma la de la categoría. |
-| `identifiability` | sí | Cómo apunta el valor a la persona; `null` si la categoría no es personal, y se lee como `IDENTIFIED` cuando falta en una categoría personal. |
-| `reason` | sí | El motivo de una exención o de un valor por defecto de clase, o lo que decide una categoría por fila (`declaredBy`); `null` en los demás casos. |
+| `identifiability` | sí | Cómo apunta el valor a la persona, tal como la declara el campo; `null` si no declara ninguna, y se lee como `IDENTIFIED` en una categoría personal. El propio `IDENTIFIED` se guarda como `null`, para que declaraciones iguales den campos iguales. |
+| `reason` | sí | El motivo de una exención o de un valor por defecto de clase, o lo que decide una categoría por fila (`declaredBy`); `null` en los demás casos. Un motivo en blanco de un campo clasificado se guarda como `null`. |
 
 El constructor canónico lanza `NullPointerException` si `object` o `path` son `null`, e `IllegalArgumentException` si
 alguno está en blanco, si solo se da uno de `key` y `basis`, o si un campo exento (sin clave) tiene niveles, una
@@ -194,9 +196,11 @@ fila se trata:
 Cada objeto es una fila `object` seguida de sus filas `field` y `exempt` por ruta, y los objetos van por clave, de modo
 que el mismo inventario da siempre el mismo texto. Una celda vacía es un valor ausente. Una barra invertida, un
 tabulador, un salto de línea y un retorno de carro dentro de una celda se escriben `\\`, `\t`, `\n` y `\r`, como en el
-[texto de una taxonomía](../taxonomy.md#formato-del-texto), de modo que una fila es siempre una línea. La base, la
-confidencialidad, la integridad y la identificabilidad son los nombres de sus constantes. `fromTsv` lanza
-`IllegalArgumentException` ante otra primera línea, una fila con otro número de celdas, un tipo de fila o una constante
+[texto de una taxonomía](../taxonomy.md#formato-del-texto), de modo que una fila es siempre una línea; un sustituto
+UTF-16 suelto, que UTF-8 no puede codificar, se escribe como una barra invertida, `u` y sus cuatro dígitos hexadecimales,
+para que dos inventarios distintos nunca tengan los mismos bytes ni la misma huella. La base, la confidencialidad, la
+integridad y la identificabilidad son los nombres de sus constantes. `fromTsv` lanza `IllegalArgumentException` ante
+otra primera línea, una fila con otro número de celdas, un tipo de fila o una constante
 desconocidos, una celda vacía que debe tener valor, o dos filas del mismo campo.
 
 Para `Student`, con un `email` personal que eleva su confidencialidad, un valor por defecto de clase para el resto y un
@@ -209,7 +213,7 @@ Para `Student`, con un `email` personal que eleva su confidencialidad, un valor 
 # exempt object path reason
 object→student
 exempt→student→card→cache of the rendered card
-field→student→email→user.contact.email→DECLARED→HIGH→→IDENTIFIED→
+field→student→email→user.contact.email→DECLARED→HIGH→→→
 field→student→version→system.operations→CLASS_DEFAULT→→→→technical columns
 ```
 
@@ -311,8 +315,9 @@ confidencialidad es `MIXED`.
 
 `affectedBy(TaxonomyDiff diff)` responde a la otra pregunta: el código no cambió pero la taxonomía sí. Por cada
 **categoría de datos** modificada en el [`TaxonomyDiff`](../taxonomy-diff.md) que declara al menos un campo, devuelve el
-cambio con los campos que declaran su clave, en el orden del diff. Los usos y los sujetos de datos no están en un
-inventario, así que sus cambios nunca se devuelven.
+cambio con los campos que declaran su clave, en el orden del diff, y con los campos cuya **clave obsoleta se sustituye**
+por ella en cualquiera de las dos versiones, ya que un campo así toma la protección de la sustituta (los campos exentos
+nunca se devuelven). Los usos y los sujetos de datos no están en un inventario, así que sus cambios nunca se devuelven.
 
 Una aplicación lo usa para migrar las claves que guarda cuando una categoría pasa a ser obsoleta, y para registrar
 **una entrada por categoría modificada**, con los campos a los que afecta, en lugar de una entrada por campo. El

@@ -15,6 +15,8 @@
  */
 package io.github.devbpm.linneo;
 
+import java.util.Set;
+
 /**
  * A term of a taxonomy: a node of one of its three hierarchies.
  *
@@ -28,6 +30,23 @@ public sealed interface Term permits DataCategory, DataUse, DataSubject {
      * @return the key, parent, name, description, origin and lifecycle of the term
      */
     TermInfo info();
+
+    /**
+     * The traits of the term, declared on it or inherited from its ancestors, which Linneo's legal rules read.
+     *
+     * @return an immutable set, possibly empty
+     */
+    Set<Trait> traits();
+
+    /**
+     * Whether the term has a trait, declared or inherited.
+     *
+     * @param trait a trait
+     * @return {@code true} if {@link #traits()} contains it
+     */
+    default boolean has(Trait trait) {
+        return traits().contains(trait);
+    }
 
     /**
      * Shortcut for {@code info().key()}.

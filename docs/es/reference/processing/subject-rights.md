@@ -7,6 +7,7 @@ nav_order: 5
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # SubjectRights
@@ -23,7 +24,7 @@ porque las condiciones de cada artículo dependen del caso. Linneo lee el regist
 suprimir los datos corresponde a la aplicación.
 
 ```java
-SubjectRights rights = SubjectRights.of(record, DataSubjects.STUDENT, Jurisdiction.SPAIN);
+SubjectRights rights = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN);
 Map<String, List<InventoryField>> where = rights.storedFields(inventory, taxonomy);   // dónde buscar los datos
 for (SubjectRights.ActivityRights activity : rights.activities()) {
     SubjectRights.Entitlement erasure = activity.entitlement(SubjectRights.Right.ERASURE);
@@ -35,9 +36,9 @@ for (SubjectRights.ActivityRights activity : rights.activities()) {
 
 | Miembro | Devuelve | Descripción |
 |---|---|---|
-| `static SubjectRights of(ProcessingRecord record, String dataSubject)` | derechos | Los derechos solo bajo el RGPD (`Jurisdiction.EU`). |
-| `static SubjectRights of(ProcessingRecord record, String dataSubject, Jurisdiction jurisdiction)` | derechos | Los derechos en una [jurisdicción](checker.md#jurisdiction), sobre cada actividad del registro cuyos interesados incluyen la categoría `dataSubject` (una clave como `student`). `NullPointerException` si algún argumento es `null`. |
-| `String dataSubject()` | `String` | La clave de la categoría. |
+| `static SubjectRights of(ProcessingRecord record, Taxonomy taxonomy, String dataSubject)` | derechos | Los derechos solo bajo el RGPD (`Jurisdiction.EU`). |
+| `static SubjectRights of(ProcessingRecord record, Taxonomy taxonomy, String dataSubject, Jurisdiction jurisdiction)` | derechos | Los derechos en una [jurisdicción](checker.md#jurisdiction), sobre cada actividad del registro cuyos interesados incluyen la categoría `dataSubject` (una clave como `student`). La clave se resuelve con `taxonomy`, la misma con que se comprobó el registro: una clave obsoleta equivale a su sustituta. `NullPointerException` si algún argumento es `null`; `TaxonomyException` si la taxonomía no tiene ese sujeto de datos; `IllegalArgumentException` si una actividad del registro no tiene base jurídica (construye el registro con `ProcessingChecker.verify`). |
+| `String dataSubject()` | `String` | La clave de la categoría, resuelta: la sustituta si la clave indicada estaba obsoleta. |
 | `List<ActivityRights> activities()` | lista inmutable | Las actividades que tratan datos de la categoría, con los derechos sobre cada una, en el orden del registro. |
 | `Optional<ActivityRights> activity(String activity)` | `Optional` | Los derechos sobre una actividad, o vacío si la actividad no trata datos de la categoría. |
 | `boolean isEmpty()` | `boolean` | `true` si ninguna actividad trata datos de la categoría: no hay más que responder. |
@@ -46,8 +47,9 @@ for (SubjectRights.ActivityRights activity : rights.activities()) {
 | `List<Class<?>> entities()` | lista inmutable | Las clases de entidad que nombran las actividades, cada una una vez, en el orden de las actividades. |
 | `Map<String, List<InventoryField>> storedFields(DataInventory inventory, Taxonomy taxonomy)` | mapa inmutable | Los campos que contienen datos personales en los `objects()`: dónde buscar los datos de la persona para darle acceso, exportarlos, rectificarlos o suprimirlos. Objetos ordenados y campos en el orden del inventario; un objeto que el inventario no contiene, o sin campos personales, no tiene entrada. `TaxonomyException` si la taxonomía no contiene una clave del inventario. |
 
-Una categoría que ninguna actividad nombra da un resultado vacío, no un error. `entities()` y `objects()` son lo que
-declaran las actividades; el inventario da los campos de los objetos.
+Una categoría que ninguna actividad nombra da un resultado vacío, pero una clave que la taxonomía no tiene es un error,
+para que una errata no se lea como "no hay datos". `entities()` y `objects()` son lo que declaran las actividades; el
+inventario da los campos de los objetos.
 
 ## Right
 
@@ -93,7 +95,8 @@ derecho.
 
 ## Las reglas
 
-La disponibilidad sigue la base jurídica de la actividad (`governance().legalBasis()`):
+La disponibilidad sigue la base jurídica de la actividad (`governance().legalBasis()`), que toda actividad de un
+registro construido con `ProcessingChecker.verify` tiene:
 
 | Derecho | Consentimiento (`CONSENT`) | Contrato (`CONTRACT`) | Obligación legal (`LEGAL_OBLIGATION`) | Intereses vitales (`VITAL_INTERESTS`) | Interés público (`PUBLIC_INTEREST`) | Intereses legítimos (`LEGITIMATE_INTERESTS`) |
 |---|---|---|---|---|---|---|
@@ -109,15 +112,26 @@ La disponibilidad sigue la base jurídica de la actividad (`governance().legalBa
   tiene). Con consentimiento sigue a la retirada del consentimiento (17.1.b), con un contrato o intereses vitales a
   que los datos dejen de ser necesarios (17.1.a), con intereses legítimos a una oposición salvo que haya motivos
   legítimos imperiosos (17.1.c).
-- **La portabilidad** se aplica al tratamiento basado en el consentimiento o en un contrato (artículo 20.1).
+- **La portabilidad** se aplica al tratamiento basado en el consentimiento o en un contrato (artículo 20.1), y a los
+  datos de categoría especial tratados con consentimiento explícito (artículo 20.1.a; véase más abajo).
 - **La oposición** se aplica al tratamiento basado en una misión de interés público o en intereses legítimos
   (artículo 21.1).
 - **La limitación** es `CONDITIONAL` en toda actividad: se aplica mientras se verifica la exactitud de los datos o una
   oposición, cuando el tratamiento es ilícito y la persona prefiere la limitación, o cuando la persona necesita los
   datos para reclamaciones (artículo 18.1).
-- **Mercadotecnia directa.** Si una finalidad de la actividad es `marketing` o está bajo `marketing.*`, sea cual sea la
-  base, `ERASURE` es `YES` (artículos 17.1.c y 21.2: la persona puede oponerse en cualquier momento y los datos se
-  suprimen entonces) y `OBJECTION` es `YES` (artículos 21.2 y 21.3: el tratamiento cesa).
+- **Mercadotecnia directa.** Si una finalidad de la actividad tiene el [rasgo `DIRECT_MARKETING`](../terms.md#trait)
+  (el uso estándar `marketing` y todo lo que cuelga de él, `advancement` en la extensión universitaria, o un término
+  tuyo que lo declare), sea cual sea la base, `OBJECTION` es `YES` (artículos 21.2 y 21.3: el tratamiento cesa) y
+  `ERASURE` es `YES` (artículos 17.1.c y 21.2: la persona puede oponerse en cualquier momento y los datos se suprimen
+  entonces). Cuando la base es una obligación legal o una misión de interés público, `ERASURE` es en cambio
+  `CONDITIONAL` (artículos 17.1.c y 21.3): los datos se suprimen salvo lo que conserva el artículo 17.3.b, y la
+  explicación incluye la conservación.
+- **Consentimiento explícito.** Si la actividad declara el consentimiento explícito como condición para datos de
+  categoría especial (artículo 9.2.a, en [`specialCategoryConditions`](activity.md#governance)): cuando su base
+  jurídica no es el consentimiento ni un contrato, `PORTABILITY` es `CONDITIONAL` en lugar de `NO` (artículo 20.1.a:
+  abarca los datos de categoría especial, no el resto); y cuando su base no es el consentimiento, `ERASURE` es
+  `CONDITIONAL` salvo que ya sea `YES`, y la explicación añade que los datos de categoría especial se suprimen cuando se
+  retira el consentimiento (artículos 17.1.b y 9.2.a).
 - **El acceso** es `YES` en toda actividad y su explicación enumera por su nombre las finalidades de la actividad. Las
   explicaciones de los demás derechos citan los artículos anteriores.
 - **`Jurisdiction.SPAIN`.** Las explicaciones de `RECTIFICATION` y `ERASURE` añaden que los datos se bloquean, no se

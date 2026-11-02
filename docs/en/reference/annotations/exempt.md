@@ -22,8 +22,10 @@ one-to-many association.
 A value computed from other fields is **not** such a field: the age computed from a date of birth is personal data.
 Classify it with [`@DerivedFrom`](derived-from.md) or [`@Category`](category.md), never with `@Exempt`.
 
-Static, synthetic, `transient` and `$$_...` fields (added by Hibernate) are **always** excluded and need no annotation.
-An `@Exempt` on such a field is ignored entirely (not even its reason is checked).
+Static, synthetic and `$$_...` fields (added by Hibernate) are **always** excluded and need no annotation. An `@Exempt`
+on such a field is ignored entirely (not even its reason is checked). A `transient` field is excluded too, **unless it
+carries one of Linneo's field annotations** (`@Category`, `@CategoryByRow`, `@DerivedFrom` or `@Exempt`): then it is
+classified like any other field, and an `@Exempt` on it is checked and listed in `exempted()`.
 
 ## Elements
 

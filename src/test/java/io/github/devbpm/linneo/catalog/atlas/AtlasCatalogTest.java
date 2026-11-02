@@ -122,6 +122,20 @@ class AtlasCatalogTest {
         assertEquals(catalog.classificationDefs().size(), typeDefs.split("\"superTypes\"").length - 1);
     }
 
+    @Test
+    @DisplayName("publishing again creates the new types with POST and updates the others with PUT")
+    void republish() {
+        List<String> existing = catalog.classificationDefs().stream().map(AtlasClassificationDef::name)
+                .filter(name -> !name.endsWith(".user.contact.email")).toList();
+        String create = catalog.createJson(existing);
+        String update = catalog.updateJson(existing);
+        assertEquals(1, create.split("\"superTypes\"").length - 1);
+        assertTrue(create.contains(".user.contact.email\""));
+        assertEquals(existing.size(), update.split("\"superTypes\"").length - 1);
+        assertEquals("{\"classificationDefs\":[]}", catalog.createJson(catalog.classificationDefs().stream()
+                .map(AtlasClassificationDef::name).toList()));
+    }
+
     private AtlasClassificationDef def(String name) {
         return catalog.classificationDefs().stream().filter(d -> d.name().equals(name)).findFirst().orElseThrow();
     }

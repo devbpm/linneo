@@ -16,6 +16,7 @@
 package io.github.devbpm.linneo.classify;
 
 import io.github.devbpm.linneo.Categories;
+import io.github.devbpm.linneo.CategoryDraft;
 import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Protection;
@@ -243,5 +244,34 @@ class DataInventoryTest {
     @SuppressWarnings("unused")
     static class Broken {
         private String undecided;
+    }
+
+    @Test
+    @DisplayName("a change of a replacement reaches the fields that still declare the deprecated key")
+    void replacementChange() {
+        String legacy = Categories.USER_NAME + ".legacy";
+        Taxonomy before = Taxonomy.builder().withStandard().category(legacy, "Legacy name", "Replaced",
+                c -> c.deprecated("0.1.0", Categories.USER_CONTACT_EMAIL)).build();
+        Taxonomy after = Taxonomy.builder().withStandard().category(legacy, "Legacy name", "Replaced",
+                c -> c.deprecated("0.1.0", Categories.USER_CONTACT_EMAIL))
+                .refineCategory(Categories.USER_CONTACT_EMAIL, CategoryDraft::secret).build();
+        DataInventory inventory = DataInventory.builder().field("o", "old", legacy, Basis.DECLARED)
+                .field("o", "email", Categories.USER_CONTACT_EMAIL, Basis.DECLARED).build();
+        Map<TermChange, List<InventoryField>> affected = inventory.affectedBy(TaxonomyDiff.between(before, after));
+        assertEquals(List.of("email", "old"), affected.values().stream().flatMap(List::stream)
+                .map(InventoryField::path).toList());
+    }
+
+    @Test
+    @DisplayName("blank reasons and an explicit IDENTIFIED are stored as absent, so equal declarations are equal")
+    void canonical() {
+        assertAll(
+                () -> assertEquals(new InventoryField("o", "f", Categories.USER_NAME, Basis.DECLARED, null, null, null,
+                        null), new InventoryField("o", "f", Categories.USER_NAME, Basis.DECLARED, null, null,
+                        Identifiability.IDENTIFIED, " ")),
+                () -> assertEquals(DataInventory.builder().field(new InventoryField("o", "f", Categories.USER_NAME,
+                        Basis.DECLARED, null, null, null, "")).build().toTsv(), DataInventory.fromTsv(
+                        DataInventory.builder().field(new InventoryField("o", "f", Categories.USER_NAME,
+                                Basis.DECLARED, null, null, null, "")).build().toTsv()).toTsv()));
     }
 }

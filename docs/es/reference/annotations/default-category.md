@@ -56,6 +56,13 @@ Si el valor por defecto es desconocido o personal, los campos que cubriría qued
 `ClassClassification.fields()`; la violación de clase es el único aviso (no se añade `UNCLASSIFIED_FIELD`). Un
 `reason` en blanco, por sí solo, no impide que los campos se clasifiquen.
 
+El valor por defecto nunca cubre un campo que puede contener datos que el clasificador no ve: un campo tipado `Object`,
+por una variable de tipo sin enlazar o por un contenedor sin parametrizar, uno que contiene un compuesto como clave de
+mapa o como argumento de tipo de una clase que no es una colección, y uno que contiene una clase con campos
+clasificados que no es un [`@Composite`](composite.md#qué-hace-el-clasificador), como una entidad referenciada. Ese
+campo es un error `UNCLASSIFIED_FIELD` salvo que declare su propia categoría: un valor por defecto de la clase
+clasificaría, si no, como no personal lo que envuelve datos personales.
+
 ## FieldClassification resultante
 
 | Componente | Valor |

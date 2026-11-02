@@ -53,7 +53,7 @@ data and are left out of the schema.
 | `static OdcsSchema of(Taxonomy taxonomy)` | writer | The schema writer for a taxonomy, which resolves the keys the inventory stores. `NullPointerException` if `taxonomy` is `null`. |
 | `static String classification(Protection protection)` | `String` | The classification label of a protection: `public`, `internal`, `confidential` or `restricted`. |
 | `String schemaJson(DataInventory inventory)` | `String` | The `schema` of a contract: a JSON array with one schema object per object of the inventory, in its order. `TaxonomyException` if the taxonomy does not contain a key of the inventory. |
-| `String objectJson(DataInventory inventory, String object)` | `String` | The schema object of one object: a JSON object with `name`, `logicalType` (`object`) and `properties`. |
+| `String objectJson(DataInventory inventory, String object)` | `String` | The schema object of one object: a JSON object with `name`, `logicalType` (`object`) and `properties`. `IllegalArgumentException` if the inventory has no such object. |
 | `String propertyJson(InventoryField field)` | `String` | The schema property of one classified field: a JSON object with `name`, `classification`, `tags` and `customProperties`. `IllegalArgumentException` if the field is exempted. `TaxonomyException` if the taxonomy does not contain its key. |
 
 ## Using it

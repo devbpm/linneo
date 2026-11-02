@@ -16,6 +16,7 @@
 package io.github.devbpm.linneo;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Whose data is processed: a kind of individual, such as {@code employee} or {@code student}.
@@ -23,16 +24,20 @@ import java.util.Objects;
  * Like a {@link DataUse}, it describes a processing activity rather than a field.
  *
  * @param info the key, parent, name, description, origin and lifecycle
+ * @param traits the traits the term declares or inherits, which Linneo's legal rules read
  * @since 0.1.0
  */
-public record DataSubject(TermInfo info) implements Term {
+public record DataSubject(TermInfo info, Set<Trait> traits) implements Term {
 
     /**
-     * Checks the component.
+     * Checks the components and makes the traits immutable.
      *
      * @param info the term information
+     * @param traits the traits, or {@code null} for none
+     * @throws IllegalArgumentException if a trait does not apply to the hierarchy
      */
     public DataSubject {
         Objects.requireNonNull(info, "info");
+        traits = Trait.checked(traits, TermChange.Hierarchy.DATA_SUBJECT, info.key());
     }
 }

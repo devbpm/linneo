@@ -20,6 +20,7 @@ import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.TaxonomyException;
+import io.github.devbpm.linneo.classify.ClassClassification;
 import io.github.devbpm.linneo.classify.FieldClassification;
 import io.github.devbpm.linneo.classify.InventoryField;
 
@@ -46,14 +47,16 @@ import java.util.Set;
  * or integrity, never lower them: the code sets the floor.
  * <pre>{@code
  * EnsCategorization ens = EnsCategorization.builder()
- *         .information(classifier.classify(Student.class).fields())
+ *         .information(classifier.classify(Student.class))
  *         .declare(Dimension.AVAILABILITY, Level.MEDIUM, "enrollment closes on fixed dates")
  *         .declare(Dimension.AUTHENTICITY, Level.MEDIUM, "students sign in")
  *         .declare(Dimension.TRACEABILITY, Level.MEDIUM, "changes to records are audited")
  *         .build();
  * ens.category();   // HIGH when the system handles special category data
  * }</pre>
- * While a dimension is missing the category is only a lower bound ({@link #isComplete()}). The correspondence of
+ * Only a classification without errors gives information, since a field with an error has no level and leaving it
+ * out would understate the category. While no information is given or a dimension is missing, the category is only a
+ * lower bound ({@link #isComplete()}). The correspondence of
  * levels is Linneo's; review the valuation against guide CCN-STIC 803 before relying on it. Instances are
  * immutable.
  *
@@ -210,9 +213,11 @@ public final class EnsCategorization {
     }
 
     private final Map<Dimension, Valuation> valuations;
+    private final boolean informed;
 
-    private EnsCategorization(Map<Dimension, Valuation> valuations) {
+    private EnsCategorization(Map<Dimension, Valuation> valuations, boolean informed) {
         this.valuations = new EnumMap<>(valuations);
+        this.informed = informed;
     }
 
     /**
@@ -258,13 +263,13 @@ public final class EnsCategorization {
     }
 
     /**
-     * Whether the system owner declared the three dimensions the classification cannot give, so that the category is
-     * final rather than a lower bound.
+     * Whether the information was given and the system owner declared the three dimensions the classification cannot
+     * give, so that the category is final rather than a lower bound.
      *
-     * @return {@code true} if authenticity, traceability and availability are valued
+     * @return {@code true} if information was given and authenticity, traceability and availability are valued
      */
     public boolean isComplete() {
-        return missing().isEmpty();
+        return informed && missing().isEmpty();
     }
 
     /**
@@ -289,7 +294,9 @@ public final class EnsCategorization {
         List<String> parts = new ArrayList<>();
         valuations.values().forEach(v -> parts.add(v.dimension().code() + " " + v.level()));
         String text = "Category " + category() + " (" + category().spanishName() + "): " + String.join(", ", parts);
-        if (!isComplete()) {
+        if (!informed) {
+            text += "; no information given (lower bound)";
+        } else if (!isComplete()) {
             text += "; not declared: " + String.join(", ", missing().stream().map(Dimension::code).toList())
                     + " (lower bound)";
         }
@@ -309,19 +316,28 @@ public final class EnsCategorization {
     public static final class Builder {
 
         private final Map<Dimension, Valuation> valuations = new EnumMap<>(Dimension.class);
+        private boolean informed;
 
         private Builder() {
         }
 
         /**
-         * Adds the fields of the information the system handles.
+         * Adds the fields of a class of the information the system handles.
          *
-         * @param fields the classifications of the fields
+         * @param classification the classification of the class
          * @return this builder
+         * @throws IllegalArgumentException if the classification has errors: a field with an error has no level,
+         *         and leaving it out would understate the category
          */
-        public Builder information(Collection<FieldClassification> fields) {
-            for (FieldClassification field : fields) {
-                add(field.category(), field.confidentiality(), field.integrity(), field.path());
+        public Builder information(ClassClassification classification) {
+            if (!classification.isValid()) {
+                throw new IllegalArgumentException(classification.type().getName() + " has classification errors, so"
+                        + " some fields have no level: " + classification.errors());
+            }
+            informed = true;
+            for (FieldClassification field : classification.fields()) {
+                add(field.category(), field.confidentiality(), field.integrity(),
+                        classification.type().getSimpleName() + "." + field.path());
             }
             return this;
         }
@@ -335,6 +351,7 @@ public final class EnsCategorization {
          * @throws TaxonomyException if the taxonomy does not contain a key
          */
         public Builder information(Collection<InventoryField> fields, Taxonomy taxonomy) {
+            informed = true;
             for (InventoryField field : fields) {
                 if (!field.isExempt()) {
                     add(field.category(taxonomy), field.protection(taxonomy).confidentiality(),
@@ -367,7 +384,7 @@ public final class EnsCategorization {
          * @return the categorization
          */
         public EnsCategorization build() {
-            return new EnsCategorization(valuations);
+            return new EnsCategorization(valuations, informed);
         }
 
         private void add(DataCategory category, Confidentiality confidentiality, Integrity integrity, String field) {

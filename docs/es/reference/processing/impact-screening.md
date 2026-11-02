@@ -10,6 +10,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/CheckedActivity.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # ImpactScreening
@@ -41,30 +42,38 @@ lo usa para notificar la necesidad de una evaluación que la actividad no cita, 
 Algunos criterios se ven en lo que declara la actividad. Los demás son hechos que solo conoce la función de protección
 de datos, como la escala del tratamiento, y el delegado los declara como **factores de riesgo**.
 
+Los criterios que el código puede ver se leen de los [rasgos](../terms.md#trait) de los términos de la actividad, no de
+listas de claves, así que un término de una extensión o propio cuenta en cuanto declara sus rasgos.
+
 | Criterio | Se encuentra a partir de la actividad | Se declara con |
 |---|---|---|
-| 1. `EVALUATION`: evaluación o puntuación, incluida la elaboración de perfiles | una finalidad con un segmento `profiling`, `profiled` o `targeted` en su clave, o una finalidad que sea `employment.performance` o `education.financial_aid.means_assessment` (o descendiente) | `Factor.EVALUATION` |
+| 1. `EVALUATION`: evaluación o puntuación, incluida la elaboración de perfiles | una finalidad con el rasgo `EVALUATION` | `Factor.EVALUATION` |
 | 2. `AUTOMATED_DECISIONS`: decisiones automatizadas con efectos jurídicos o similares | no se ve | `Factor.AUTOMATED_DECISIONS` |
-| 3. `SYSTEMATIC_MONITORING`: observación sistemática | la finalidad `employment.monitoring` o la categoría de datos `user.employment.monitoring` (o descendiente) | `Factor.SYSTEMATIC_MONITORING`, `Factor.PUBLICLY_ACCESSIBLE_AREA` |
-| 4. `SENSITIVE_DATA`: datos sensibles o de naturaleza muy personal | una categoría de categorías especiales o de datos penales, o una categoría `user.financial`, `user.location`, `user.content.private` o `user.behavior` (o descendiente) | — |
+| 3. `SYSTEMATIC_MONITORING`: observación sistemática | una finalidad o una categoría de datos con el rasgo `MONITORING` | `Factor.SYSTEMATIC_MONITORING`, `Factor.PUBLICLY_ACCESSIBLE_AREA` |
+| 4. `SENSITIVE_DATA`: datos sensibles o de naturaleza muy personal | una categoría de categorías especiales o de datos penales, o una categoría con el rasgo `FINANCIAL`, `BEHAVIOURAL` o `PRIVATE_LIFE` | — |
 | 5. `LARGE_SCALE`: datos tratados a gran escala | no se ve | `Factor.LARGE_SCALE` |
 | 6. `DATASET_MATCHING`: cotejo o combinación de conjuntos de datos | no se ve | `Factor.DATASET_MATCHING` |
-| 7. `VULNERABLE_SUBJECTS`: datos de interesados vulnerables | los interesados `employee`, `staff_member`, `faculty_member`, `trainee` o `patient`, o la categoría de datos `user.childrens` (o descendiente) | `Factor.VULNERABLE_SUBJECTS` |
+| 7. `VULNERABLE_SUBJECTS`: datos de interesados vulnerables | un interesado o una categoría de datos con el rasgo `VULNERABLE` | `Factor.VULNERABLE_SUBJECTS` |
 | 8. `INNOVATIVE_TECHNOLOGY`: uso innovador o nuevas soluciones tecnológicas u organizativas | no se ve | `Factor.INNOVATIVE_TECHNOLOGY` |
 | 9. `PREVENTS_RIGHTS`: tratamiento que impide a las personas ejercer un derecho o usar un servicio o un contrato | no se ve | `Factor.PREVENTS_RIGHTS` |
 
 Las finalidades, los interesados y las categorías de datos son los que resolvió el comprobador: las claves obsoletas
 están sustituidas y solo cuentan los datos personales. Un criterio se cumple una sola vez, por muchas cosas que lo
-muestren; los hallazgos las listan todas en su evidencia.
+muestren; los hallazgos las listan todas en su evidencia, **ordenadas**, de modo que el cribado no depende del orden en
+que la actividad enumera sus términos.
 
-En la taxonomía estándar, las finalidades con un segmento así son `marketing.advertising.profiling`,
-`marketing.advertising.first_party.targeted`, `marketing.advertising.third_party.targeted`,
-`personalize.content.profiling`, `personalize.content.profiled` y la obsoleta `personalize.profiling` (cribada como
-`personalize.content.profiling`). Los términos `employment.performance`, `employment.monitoring` y
-`user.employment.monitoring` vienen de la [extensión de recursos humanos](../extensions/human-resources.md) y
-`education.financial_aid.means_assessment` de la [extensión de universidad](../extensions/university.md); con la
-taxonomía estándar sola, esas filas no encuentran nada. Los usos de datos de cualquier otra extensión cuentan solo si
-sus claves usan los segmentos.
+La taxonomía estándar declara los rasgos en [`linneo-traits.tsv`](../standard-taxonomy.md#rasgos-de-los-términos-estándar):
+las finalidades con `EVALUATION` son `marketing.advertising.profiling`, `marketing.advertising.first_party.targeted`,
+`marketing.advertising.third_party.targeted`, `personalize.content.profiling`, `personalize.content.profiled` y la
+obsoleta `personalize.profiling` (cribada como `personalize.content.profiling`); `employee`, `staff_member`,
+`faculty_member`, `trainee`, `patient` y `job_applicant` son `VULNERABLE`, igual que la categoría `user.childrens`;
+`user.financial` es `FINANCIAL`, `user.behavior` y `user.location` son `BEHAVIOURAL`, y `user.content.private` es
+`PRIVATE_LIFE`. La taxonomía estándar no tiene ningún término `MONITORING`: vienen de las
+[extensiones](../extensions/README.md#rasgos), como `employment.monitoring` y `user.employment.monitoring` de la
+[extensión de recursos humanos](../extensions/human-resources.md) o `education.financial_aid.means_assessment`, una
+finalidad `EVALUATION` de la [extensión de universidad](../extensions/university.md); con la taxonomía estándar sola,
+esas filas no encuentran nada. Una extensión o una aplicación que declara los rasgos de sus propios términos se lee
+igual que las estándar.
 
 `Criterion.number()` es el número del criterio en las directrices, de 1 a 9. Un `Factor` tiene un `criterion()`: el que
 cumple.
@@ -147,6 +156,10 @@ Cuando una actividad trata datos personales y **no** cita ninguna evaluación de
 | `REQUIRED` | **error** `IMPACT_ASSESSMENT_REQUIRED` | `GDPR article <case> requires an impact assessment; refer to it. <summary>` |
 | `LIKELY` | **aviso** `IMPACT_ASSESSMENT_RECOMMENDED` | `GDPR article 35 likely requires an impact assessment. <summary>` |
 | `POSSIBLE`, `NOT_INDICATED` | ninguna | |
+
+Con `Jurisdiction.SPAIN` el aviso cita la lista de la autoridad de control española (artículo 35.4) y dice
+`GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases
+that meet two criteria or more). <summary>`.
 
 Ambas se notifican en el elemento `IMPACT_ASSESSMENT`, que pertenece a la gobernanza, y el error hace fallar a `verify`
 como cualquier otro. Una actividad que cita una evaluación no recibe ninguna infracción, sea cual sea el resultado. El

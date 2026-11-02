@@ -35,9 +35,21 @@ All notable changes to this project are documented in this file. The format foll
 - `Jurisdiction` and `ProcessingChecker(Taxonomy, Jurisdiction)`: with `Jurisdiction.SPAIN` the checker applies the
   LOPDGDD on top of the GDPR. Explicit consent as the only condition for ideology, trade union membership, religion,
   sexual orientation, beliefs or racial or ethnic origin is an error (`CONSENT_NOT_SUFFICIENT`, article 9.1), and
-  the warning for a missing legal reference under GDPR article 9.2 g), h) or i) asks for a law with the rank of
-  statute (article 9.2).
+  the warning for a missing legal reference asks for a law with the rank of statute where the LOPDGDD requires one
+  (article 8 for a legal obligation or a task in the public interest, 9.2 for GDPR article 9.2 g), h) or i), 10 for
+  criminal offence data authorised by law). Data on administrative sanctions without consent or a named law is a
+  warning (article 27), and the impact assessment warning cites the AEPD's list under GDPR article 35.4.
 - `TaxonomyBuilder` and `TaxonomyExtension` (loaded with `ServiceLoader`) to add terms and make protection stricter.
+  Every declared facet is a minimum: two refinements of a category combine into the stricter one in either order,
+  and raising a category raises everything below it. An extension adds data categories below existing ones and
+  changes the lifecycle of its own terms only, and the builder refuses what the text form could not hold (a blank
+  origin, attribute name or deprecating version), so every taxonomy reads back from its text.
+- `Trait`: properties of terms that the legal rules read instead of lists of keys (financial, behavioural and
+  private-life data; direct, contact and indirect identifiers; monitoring; vulnerable data subjects; evaluation and
+  direct marketing purposes). Declared in a resource of the standard taxonomy and by each extension
+  (`TermDraft.traits`, `refineDataUse`, `refineDataSubject`), inherited down the tree, kept in the text form and
+  graded by `TaxonomyDiff` (adding one is minor, removing one major), so an application's own terms weigh like
+  standard ones. `Taxonomy.resolveDataUse` and `resolveDataSubject` follow replacements as `resolveCategory` does.
 - Annotations `@Category`, `@DefaultCategory`, `@CategoryByRow` and `@Exempt`, and the `Classifier` that reads and
   verifies them.
 - `OpenMetadataCatalog`: classifications, nested tags, and the tags of each column. Tags carry no
@@ -73,38 +85,46 @@ All notable changes to this project are documented in this file. The format foll
   fields excluded with `@Exempt`, so excluding a field is visible.
 - `@DerivedFrom` for values computed from other fields, of the same class or of another (a view or data transfer
   object built from an entity): without `@Category` the field takes the classification of its source; with it, the
-  category must protect at least as much as every source (`WEAKER_THAN_SOURCE`), unless the value is declared
-  anonymized or aggregated. Errors `UNKNOWN_SOURCE`, `AMBIGUOUS_DERIVATION` and `CYCLE`; basis `DERIVED` with
+  category must protect at least as much as every source (`WEAKER_THAN_SOURCE`); a value declared anonymized or
+  aggregated may drop only the personal nature of its sources, never their levels or secrecy. Errors `UNKNOWN_SOURCE`, `AMBIGUOUS_DERIVATION` and `CYCLE`; basis `DERIVED` with
   `FieldClassification.derivedFrom()`. `@Exempt` is only for technical fields: a derived value is data. Sources are
   resolved field by field, so classes may derive from each other's other fields and a composite from a class that
   holds it; only derived fields that depend on each other are a `CYCLE` (found exactly, with Tarjan's algorithm), and
   the result does not depend on the order in which classes are classified.
 - `@Composite` for classes that are part of other records, such as an embedded address: an unannotated field of a
-  composite type, or an array, collection or `Optional` of one, is classified by the composite's fields with paths
-  such as `home.street`, under the composite's own default. A composite stored as one value must protect at least
-  as much as its fields (`WEAKER_THAN_PARTS`); a composite that contains itself is a `CYCLE`. `Classifier` reads each
-  class once per call and stays immutable.
+  composite type, or an array, collection, `Optional` or map value of one at any depth, is classified by the
+  composite's fields with paths such as `home.street`, under the composite's own default. The marker is inherited,
+  and type variables are resolved through the superclasses of the class being classified. A field that may hold data
+  the classifier cannot see (a composite it cannot split, a value typed `Object` or by an unbound type variable,
+  another class with classified fields) never takes a class default. A field that stores composites as one value,
+  declared or derived, must protect at least as much as their fields (`WEAKER_THAN_PARTS`), a composite that stores
+  itself included; a composite that contains itself is a `CYCLE`. A `transient` field is classified when it carries
+  an annotation. `Classifier` reads each class once per call and stays immutable.
 - `Governance`: the part of a processing activity the data protection function decides (lawful bases, legal
   reference, retention, recipients, transfers, impact assessment), separate from the scope the code declares
   (purposes, data subjects, personal data). `ProcessingActivity.governance()` and `withGovernance(...)` combine what
   an officer keeps in the application's storage with the scope in code; the builder's governance methods give initial
   values. `ProcessingViolation.element()` tells which part a problem is in and `Element.isGovernance()` who should fix
-  it, so an application can fail the build on scope errors and show governance gaps where they are edited.
+  it, so an application can fail the build on scope errors and show governance gaps where they are edited. The risk
+  factors the code declares are a minimum a stored governance cannot drop, and an activity may rest on several
+  article 9.2 conditions (`specialCategoryConditions`).
 - `ProcessingChecker.checkAll` and `verify` classify each entity once for all the activities.
 - `FieldClassification.covers(DataCategory)`: whether a row of a `@CategoryByRow` field may hold a category, and
   whether a classification raised at run time still covers the code's.
 - The taxonomy as data: `Taxonomy.toTsv()` writes every term with its effective protection as deterministic
   tab-separated text, `Taxonomy.fromTsv(String)` reads it back through the builder, `fingerprint()` identifies it, and
   two taxonomies with the same terms are equal. `TaxonomyDiff.between(before, after)` lists the `TermChange`s (added,
-  removed, protection with its direction, deprecation, replacement, name, description, attributes, origin, versions),
-  grades them with `requiredBump()` and refuses incompatible ones with `requireCompatible()`. `ReleasedTaxonomyTest`
-  checks Linneo's own taxonomy against the copy kept for the last release.
+  removed, protection with its direction, traits, deprecation, replacement, name, description, attributes, origin,
+  versions), grades them with `requiredBump()` and refuses incompatible ones with `requireCompatible()`.
+  `ReleasedTaxonomyTest` checks Linneo's own taxonomy against the copy kept for the last release of its line and
+  that no key removed by any release comes back.
 - `DataInventory`: the classification of a model as data, one object per class under a key the application chooses
   (`Classifier.inventory(types, objectKey)`), with what each field declares (`InventoryField`: key, basis, raised
-  levels, identifiability, reason; exempted fields included), per-object and global fingerprints and a deterministic
-  text form. `InventoryDiff.between(stored, declared, taxonomy)` lists the `FieldChange`s to apply to a stored copy and
-  how each moves protection; `weakening()` lists the ones to review. `DataInventory.affectedBy(TaxonomyDiff)` gives
-  the fields each changed category reaches. Processing activities can name inventory objects
+  levels, declared identifiability, reason; exempted fields included), per-object and global fingerprints and a
+  deterministic text form, in which lone UTF-16 surrogates are escaped so that different texts never share a
+  fingerprint. `InventoryDiff.between(stored, declared, taxonomy)` lists the `FieldChange`s to apply to a stored copy
+  and how each moves protection; `weakening()` lists the ones to review. `DataInventory.affectedBy(TaxonomyDiff)`
+  gives the fields each changed category reaches, those whose deprecated key it replaces included. Processing activities can name inventory objects
   (`ProcessingActivity.objects`) and be checked with `ProcessingChecker(taxonomy, jurisdiction, inventory)` without
   the model classes. `tools/bench/InventoryBench.java` measures all of it on a model of 800 entities.
 - Catalogs from stored records: `OpenMetadataCatalog.tagsOf(InventoryField)`, `DataHubCatalog.termsOf(InventoryField)`
@@ -122,32 +142,41 @@ All notable changes to this project are documented in this file. The format foll
 - `DisclosurePolicy`: whether the values of a field may be shown, must be masked or left out (`Treatment`) in a
   channel such as logs, exports or test copies, from thresholds on the `Protection` order, so a field that needs more
   protection never gets a laxer treatment and secrets are always left out; `forLogs()` as a starting point.
-- `SubjectRights.of(record, dataSubject, jurisdiction)`: for a request of a data subject, the activities that
-  process their data, the categories, the stored fields to search (`storedFields(inventory, taxonomy)`) and, per
+- `SubjectRights.of(record, taxonomy, dataSubject, jurisdiction)`: for a request of a data subject, the activities
+  that process their data, the categories, the stored fields to search (`storedFields(inventory, taxonomy)`) and, per
   activity, whether access, rectification, erasure, restriction, portability and objection apply under its lawful
-  basis (GDPR articles 15 to 21), with the provisions; under Spanish law, erased or rectified data is blocked first
-  (LOPDGDD article 32).
+  basis (GDPR articles 15 to 21), with the provisions: objection to direct marketing (purposes with that trait) is
+  absolute and erases what no legal obligation keeps, and explicit consent to special category data gives
+  portability and erasure on withdrawal. The key is resolved with the taxonomy, so a misspelt one is an error. Under
+  Spanish law, erased or rectified data is blocked first (LOPDGDD article 32).
 - `ImpactScreening`: whether an activity needs a data protection impact assessment, screened against the nine
   criteria of the EDPB guidelines (WP248) and the mandatory cases of GDPR article 35.3, with the evidence of each
-  criterion. The criteria the code can see (sensitive or highly personal data, vulnerable data subjects, profiling and
-  monitoring purposes) are found; the rest the data protection officer declares as `Governance.riskFactors`. The
+  criterion. The criteria the code can see (sensitive or highly personal data, vulnerable data subjects, evaluation
+  and monitoring purposes) are found from the traits of the terms, with sorted evidence; the rest the data
+  protection officer declares as `Governance.riskFactors`. The
   checker reports a mandatory case without an assessment as the error `IMPACT_ASSESSMENT_REQUIRED` and two criteria
   or more without one as the warning `IMPACT_ASSESSMENT_RECOMMENDED`; a single criterion, such as special category
   data alone, no longer raises a warning. The record shows the screening of each activity.
 - `BreachAssessment`: the severity of a personal data breach with ENISA's methodology (context × ease of
-  identification + circumstances), scored from the classification of the affected fields, and whether to notify the
-  supervisory authority (GDPR article 33) and tell the data subjects (article 34).
+  identification + circumstances), scored from the classification of the affected fields and the traits of their
+  categories (anonymized and aggregated values identify no one), and whether to notify the supervisory authority
+  (GDPR article 33, not for the lost confidentiality of unintelligible data alone) and tell the data subjects
+  (article 34).
 - `EnsCategorization` (package `ens`): the security category of a system under the Spanish Esquema Nacional de
   Seguridad, with confidentiality and integrity valued from the classification and the other dimensions declared.
+  Only a classification without errors gives information, and the category is final only once information is given
+  and every other dimension declared.
 - Exports to more tools, in the `export` packages: `PostgresAnonymizer` (masking rules for PostgreSQL Anonymizer
-  that follow a `DisclosurePolicy`), `OpenApiExtension` (the `x-linneo` extension of each API property) and
-  `OdcsSchema` (the schema of an Open Data Contract Standard contract from a data inventory).
-- A command line in the JAR (`java -jar linneo.jar`): write a taxonomy, compare taxonomies or inventories with exit
-  codes for build pipelines, and export the taxonomy to the catalogs.
+  that follow a `DisclosurePolicy`: one statement per column, the value left out when the fields of a shared column
+  need different rules, `withValue` for `NOT NULL` columns, quoted identifiers), `OpenApiExtension` (the `x-linneo`
+  extension of each API property) and `OdcsSchema` (the schema of an Open Data Contract Standard contract from a data
+  inventory). An object the inventory does not hold is an error, never an empty output.
 - The Java samples of the README and the documentation site are compiled against the library in the build
   (`DocumentationSamplesTest`), type signatures are compared with the real types and module declarations with
-  `module-info.java`.
+  `module-info.java`, and a type no sample declares, such as a renamed one of the library, fails. A Javadoc warning
+  fails the build.
 - `ClassificationException` and `ProcessingException` list the first 50 errors and count all of them by code, so
   the message of a large model stays readable.
 - `AtlasCatalog`: the taxonomy as Apache Atlas classification types (category tree as super types, protection
-  levels as separate classifications), and the classifications of each column.
+  levels as separate classifications), and the classifications of each column. `createJson` and `updateJson` publish
+  again after the taxonomy gains terms, since Atlas creates a request's types all or none.

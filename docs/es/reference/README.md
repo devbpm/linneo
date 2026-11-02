@@ -17,7 +17,6 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/export/odcs/package-info.java
   - src/main/java/io/github/devbpm/linneo/export/openapi/package-info.java
   - src/main/java/io/github/devbpm/linneo/export/postgresql/package-info.java
-  - src/main/java/io/github/devbpm/linneo/internal/Cli.java
   - src/main/java/io/github/devbpm/linneo/extension/university/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/finance/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/supplychain/package-info.java
@@ -41,10 +40,9 @@ OpenMetadata), `DataHubCatalog` (un glosario de negocio de DataHub) y `AtlasCata
 Otros tres exportadores publican la clasificación de los campos de un modelo en las herramientas que acompañan al
 código: una extensión de OpenAPI, reglas de enmascaramiento para PostgreSQL Anonymizer y el esquema de un contrato de
 datos del Open Data Contract Standard. Unos ayudantes opcionales orientan la gravedad de una violación de seguridad de
-los datos personales y la categoría de seguridad de un sistema según el ENS español, y el JAR tiene una línea de
-comandos. Las aplicaciones añaden sus propios términos mediante una `TaxonomyExtension`, y Linneo incluye cinco
-opcionales (universidades, finanzas, cadena de suministro, operaciones de proyecto y recursos humanos) que solo se
-aplican si se piden.
+los datos personales y la categoría de seguridad de un sistema según el ENS español. Las aplicaciones añaden sus
+propios términos mediante una `TaxonomyExtension`, y Linneo incluye cinco opcionales (universidades, finanzas, cadena
+de suministro, operaciones de proyecto y recursos humanos) que solo se aplican si se piden.
 
 Esta referencia describe todos los tipos públicos. Para una introducción guiada, consulta el
 [curso](../course/README.md).
@@ -78,7 +76,7 @@ module io.github.devbpm.linneo {
 
 | Paquete | Exportado | Contenido |
 |---|---|---|
-| `io.github.devbpm.linneo` | sí | La taxonomía (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), las diferencias entre dos versiones de ella (`TaxonomyDiff`, `TermChange`), sus términos (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), los enumerados de protección y `Protection`, y las constantes de claves (`Categories`, `DataUses`, `DataSubjects`) |
+| `io.github.devbpm.linneo` | sí | La taxonomía (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), las diferencias entre dos versiones de ella (`TaxonomyDiff`, `TermChange`), sus términos (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`, `Trait`), los enumerados de protección y `Protection`, y las constantes de claves (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | sí | Las anotaciones que declaran qué contiene cada campo de un modelo: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite`, `@Exempt` |
 | `io.github.devbpm.linneo.classify` | sí | Lectura y verificación de las anotaciones de un modelo: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException`, `ModelClasses`; lo que puede salir del sistema de un campo: `DisclosurePolicy`; y la clasificación conservada como datos que una aplicación puede guardar y comparar: `DataInventory`, `InventoryField`, `InventoryDiff`, `FieldChange` |
 | `io.github.devbpm.linneo.processing` | sí | Las actividades de tratamiento y el registro de actividades de tratamiento del RGPD: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord`, `RecordDiff`, `ActivityChange`, `SubjectRights`; el cribado de la necesidad de una evaluación de impacto, `ImpactScreening`; y la gravedad de una violación de seguridad de los datos personales, `BreachAssessment` |
@@ -94,7 +92,7 @@ module io.github.devbpm.linneo {
 | `io.github.devbpm.linneo.extension.supplychain` | sí | Una extensión opcional para la gestión de la cadena de suministro, que no se aplica por defecto: `SupplyChainTaxonomy` y sus constantes de claves `SupplyChainCategories`, `SupplyChainDataUses`, `SupplyChainDataSubjects` |
 | `io.github.devbpm.linneo.extension.projectoperations` | sí | Una extensión opcional para las operaciones de proyecto, que no se aplica por defecto: `ProjectOperationsTaxonomy` y sus constantes de claves `ProjectOperationsCategories`, `ProjectOperationsDataUses`, `ProjectOperationsDataSubjects` |
 | `io.github.devbpm.linneo.extension.humanresources` | sí | Una extensión opcional para recursos humanos y nómina, que no se aplica por defecto: `HumanResourcesTaxonomy` y sus constantes de claves `HumanResourcesCategories`, `HumanResourcesDataUses`, `HumanResourcesDataSubjects` |
-| `io.github.devbpm.linneo.internal` | no | `StandardTaxonomy`, que carga los recursos TSV incluidos, `Json`, el escritor JSON mínimo que comparten los exportadores, y la [línea de comandos](command-line.md) del JAR. No forma parte de la API pública |
+| `io.github.devbpm.linneo.internal` | no | `StandardTaxonomy`, que carga los recursos TSV incluidos, y `Json`, el escritor JSON mínimo que comparten los exportadores. No forma parte de la API pública |
 
 La cláusula `uses` permite que `Taxonomy.load()` y `TaxonomyBuilder.withExtensions()` encuentren extensiones con
 `java.util.ServiceLoader`; consulta [Extender la taxonomía](extending.md). El módulo no tiene cláusula `provides`:
@@ -114,7 +112,7 @@ module com.example.app {
 
 - [Taxonomía](taxonomy.md) — `Taxonomy` (`standard`, `load`, `builder`, búsquedas, obsolescencia, navegación, forma de
   texto y huella) y `TaxonomyException`.
-- [Términos](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`.
+- [Términos](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`, `Trait`.
 - [Niveles de protección](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`,
   `Protection` y la regla de herencia.
 - [Taxonomía estándar](standard-taxonomy.md) — la taxonomía de fideslang incluida, los añadidos y la política de
@@ -214,11 +212,6 @@ module com.example.app {
 - [Open Data Contract Standard](export/odcs.md) — `OdcsSchema`: el `schema` de un contrato de datos a partir de un
   inventario de datos.
 
-**Línea de comandos**
-
-- [Línea de comandos](command-line.md) — `java -jar linneo.jar`: escribe la taxonomía, compara taxonomías e
-  inventarios y escribe las peticiones de catálogo, con códigos de salida para una cadena de compilación.
-
 ## Comparativa de catálogos de datos
 
 Los tres exportadores publican la misma taxonomía y calculan las etiquetas de cada campo clasificado a partir del
@@ -236,7 +229,7 @@ las etiquetas a tus tablas: construyen cuerpos de petición y nombres.
 | Niveles y secreto | `Confidentiality.*`, `Integrity.*`, `Identifiability.*`, `DataHandling.Secret` | los mismos, como términos del glosario | los mismos, como clasificaciones (no son supertipos de las categorías) |
 | Se crea con la taxonomía estándar | 5 clasificaciones y 138 etiquetas | 295 propuestas: 28 nodos, 141 términos y 126 aspectos de relaciones | 147 tipos de clasificación |
 | Peticiones | `PUT /api/v1/classifications`, `PUT /api/v1/tags`, una por cuerpo | `POST /aspects?action=ingestProposal`, una por propuesta | un único `POST /api/atlas/v2/types/typedefs` |
-| Volver a enviar | crea o actualiza | `UPSERT` (sustituye cada aspecto) | `POST` responde 409 si los tipos existen; se actualizan con `PUT` |
+| Volver a enviar | crea o actualiza | `UPSERT` (sustituye cada aspecto) | `POST` crea todos o ninguno (409 si uno existe): `createJson` y `updateJson` reparten los tipos para `POST` y `PUT` |
 | Etiquetas de un campo | `tagsOf(field)`: nombres de etiqueta | `termsOf(field)`: URN de términos | `classificationsOf(field)`: nombres; `classificationsJson(field)`: cuerpo de la petición |
 | Aplicarlas (tu código) | la API de tablas que ya uses | por ejemplo, la mutación GraphQL `addTerms` con la ruta del campo como `subResource` | `POST /api/atlas/v2/entity/guid/{guid}/classifications` |
 | Nombres | [`OpenMetadataMapping`](openmetadata/mapping.md): siete nombres y un umbral | [`DataHubMapping`](datahub/mapping.md): seis nombres de nodo | [`AtlasMapping`](atlas/mapping.md): seis nombres de raíz |

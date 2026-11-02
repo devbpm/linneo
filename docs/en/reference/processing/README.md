@@ -70,6 +70,11 @@ The vocabularies of the bases follow fideslang's privacy declarations: `LegalBas
 `TransferSafeguard` carry the values of `legal_basis_for_processing`, `special_category_legal_basis` and
 `legal_basis_for_transfers` in `fideslangName()`.
 
+The legal rules that depend on what a term is, rather than on what it is called, read the [traits](../terms.md#trait) of
+the terms and not lists of keys: the [impact screening](impact-screening.md), the
+[breach assessment](breach-assessment.md) and the [subject rights](subject-rights.md). A term of an extension or of your
+own weighs in them as soon as it declares its traits.
+
 ## Scope and governance
 
 An activity has two parts with different owners. Its **scope**, the purposes, the data subjects and the personal data,
@@ -94,7 +99,9 @@ severity:
   `Jurisdiction.SPAIN`, also explicit consent as the only condition for the special categories of LOPDGDD article 9.1.
   `verify` throws a `ProcessingException` and no record is produced.
 - **Warning**: the record is incomplete or should be reviewed. A deprecated key, a non-personal category, a basis
-  resting on law without naming the law, legitimate interests without the interest pursued, no retention, a
+  resting on law without naming the law (with `Jurisdiction.SPAIN`, the warning names the LOPDGDD provisions that
+  require a law with the rank of statute, and administrative sanction data without consent or a legal reference is
+  one too, under LOPDGDD article 27), legitimate interests without the interest pursued, no retention, a
   condition declared for data the activity does not process, and an activity whose [screening](impact-screening.md)
   makes an impact assessment likely (two criteria or more) and that refers to none. Special category data alone is one
   criterion and raises nothing. Verification passes and the warnings appear in the record as **open points**.

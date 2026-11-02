@@ -88,7 +88,7 @@ class ProcessingCheckerTest {
                 .dataSubjects(DataSubjects.STUDENT)
                 .entities(Student.class)
                 .legalBasis(LegalBasis.PUBLIC_INTEREST)
-                .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+                .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
                 .legalReference("Higher Education Act, art. 12")
                 .retention("Five years after the student leaves")
                 .impactAssessment("DPIA-2026-01");
@@ -135,8 +135,11 @@ class ProcessingCheckerTest {
     @Test
     @DisplayName("special category data without an article 9.2 condition is an error")
     void specialCategory() {
-        CheckedActivity checked = checker.check(enrollment().specialCategoryCondition(null).impactAssessment(null)
-                .build());
+        ProcessingActivity declared = enrollment().build();
+        Governance g = declared.governance();
+        CheckedActivity checked = checker.check(declared.withGovernance(new Governance(g.legalBasis(),
+                g.legitimateInterest(), Set.of(), g.criminalDataBasis(), g.legalReference(), g.retention(),
+                g.recipients(), g.transfers(), null, g.riskFactors())));
         assertAll(
                 () -> assertEquals(Set.of(Code.MISSING_SPECIAL_CATEGORY_CONDITION), codes(checked)),
                 () -> assertEquals(ImpactScreening.Outcome.POSSIBLE, checked.screening().outcome()),
@@ -151,12 +154,12 @@ class ProcessingCheckerTest {
         ProcessingActivity.Builder chaplaincy = ProcessingActivity.builder("chaplaincy", "Chaplaincy")
                 .purposes(DataUses.EDUCATION_TEACHING).dataSubjects(DataSubjects.STUDENT)
                 .dataCategories(Categories.USER_DEMOGRAPHIC_RELIGIOUS_BELIEF, Categories.USER_CONTACT_EMAIL)
-                .legalBasis(LegalBasis.CONSENT).specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT)
+                .legalBasis(LegalBasis.CONSENT).specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
                 .retention("While the student is enrolled").impactAssessment("DPIA-2026-03");
         ProcessingChecker spain = new ProcessingChecker(taxonomy, Jurisdiction.SPAIN);
         CheckedActivity inSpain = spain.check(chaplaincy.build());
         CheckedActivity health = spain.check(enrollment()
-                .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT).build());
+                .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT).build());
         CheckedActivity unnamedLaw = spain.check(enrollment().legalReference(null).build());
         assertAll(
                 () -> assertEquals(Jurisdiction.EU, checker.jurisdiction()),
@@ -167,7 +170,10 @@ class ProcessingCheckerTest {
                 () -> assertFalse(inSpain.errors().get(0).message().contains(Categories.USER_CONTACT_EMAIL)),
                 () -> assertEquals(List.of(), health.violations()),
                 () -> assertEquals(Set.of(Code.MISSING_LEGAL_REFERENCE), codes(unnamedLaw)),
-                () -> assertTrue(unnamedLaw.warnings().get(0).message().contains("LOPDGDD article 9.2")));
+                () -> assertTrue(unnamedLaw.warnings().get(0).message().contains("LOPDGDD article(s) 8, 9.2: a law"
+                        + " with the rank of statute")),
+                () -> assertEquals(List.of(), spain.check(chaplaincy.specialCategoryConditions(
+                        SpecialCategoryCondition.NOT_FOR_PROFIT_BODIES).build()).errors()));
     }
 
     @Test
@@ -267,7 +273,7 @@ class ProcessingCheckerTest {
                 .purposes(DataUses.MARKETING_COMMUNICATIONS_EMAIL).dataSubjects(DataSubjects.ALUMNUS)
                 .dataCategories(Categories.USER_NAME, Categories.USER_CONTACT_EMAIL)
                 .legalBasis(LegalBasis.LEGITIMATE_INTERESTS)
-                .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT).build());
+                .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT).build());
         CheckedActivity stated = checker.check(ProcessingActivity.builder("newsletter", "Alumni newsletter")
                 .purposes(DataUses.MARKETING_COMMUNICATIONS_EMAIL).dataSubjects(DataSubjects.ALUMNUS)
                 .dataCategories(Categories.USER_NAME).legitimateInterest("Keeping in touch with former students")

@@ -121,9 +121,9 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
                     : "Art. " + governance.legalBasis().article() + ": " + governance.legalBasis().fideslangName());
             row(out, "Legitimate interest", governance.legalBasis() == LegalBasis.LEGITIMATE_INTERESTS
                     ? governance.legitimateInterest() : null);
-            row(out, "Special categories (art. 9.2)", governance.specialCategoryCondition() == null ? null
-                    : "Art. " + governance.specialCategoryCondition().article() + ": "
-                    + governance.specialCategoryCondition().fideslangName());
+            row(out, "Special categories (art. 9.2)", governance.specialCategoryConditions().isEmpty() ? null
+                    : String.join("; ", governance.specialCategoryConditions().stream()
+                    .map(condition -> "Art. " + condition.article() + ": " + condition.fideslangName()).toList()));
             row(out, "Criminal offence data (art. 10)", governance.criminalDataBasis() == null ? null
                     : "Art. 10: " + label(governance.criminalDataBasis()));
             row(out, "Legal reference", governance.legalReference());
@@ -175,10 +175,10 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
             if (governance.legalBasis() == LegalBasis.LEGITIMATE_INTERESTS && governance.legitimateInterest() != null) {
                 json.field("legitimateInterest", governance.legitimateInterest());
             }
-            if (governance.specialCategoryCondition() != null) {
-                SpecialCategoryCondition condition = governance.specialCategoryCondition();
-                json.raw("specialCategoryCondition", basis(condition.name(), condition.article(),
-                        condition.fideslangName()));
+            if (!governance.specialCategoryConditions().isEmpty()) {
+                json.raw("specialCategoryConditions", Json.array(governance.specialCategoryConditions().stream()
+                        .map(condition -> basis(condition.name(), condition.article(), condition.fideslangName()))
+                        .toList()));
             }
             if (governance.criminalDataBasis() != null) {
                 json.raw("criminalDataBasis", basis(governance.criminalDataBasis().name(), "10", null));
@@ -248,9 +248,22 @@ public record ProcessingRecord(List<CheckedActivity> activities) {
     }
 
     // A table cell is one line: line breaks and the blanks around them become a single space. Done line by line,
-    // without a regular expression, so the time stays linear for any text.
+    // without a regular expression, so the time stays linear for any text. Text from the activities is shown as
+    // text: a backslash, a cell separator, brackets and HTML characters are escaped, so a description can neither
+    // break the table nor become a link or HTML where the Markdown is rendered.
     private static String cell(String text) {
-        String escaped = text.replace("|", "\\|");
+        StringBuilder out = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            switch (c) {
+                case '\\', '|', '[', ']' -> out.append('\\').append(c);
+                case '&' -> out.append("&amp;");
+                case '<' -> out.append("&lt;");
+                case '>' -> out.append("&gt;");
+                default -> out.append(c);
+            }
+        }
+        String escaped = out.toString();
         if (escaped.indexOf('\n') < 0 && escaped.indexOf('\r') < 0) {
             return escaped;
         }

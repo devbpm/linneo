@@ -23,6 +23,7 @@ import io.github.devbpm.linneo.TaxonomyBuilder;
 import io.github.devbpm.linneo.TaxonomyException;
 import io.github.devbpm.linneo.TermDraft;
 import io.github.devbpm.linneo.TermInfo;
+import io.github.devbpm.linneo.Trait;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,6 +31,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -37,7 +39,8 @@ import java.util.function.Consumer;
  * Loads the standard taxonomy from the tab-separated resources bundled next to this class.
  * <p>
  * The {@code fideslang-*.tsv} files hold the fideslang default taxonomy unchanged (see their header and the
- * {@code NOTICE} file); the {@code linneo-*.tsv} files hold Linneo's additions and its protection policy. Not part
+ * {@code NOTICE} file); the {@code linneo-*.tsv} files hold Linneo's additions, its protection policy and the
+ * {@linkplain io.github.devbpm.linneo.Trait traits} of the standard terms. Not part
  * of the public API.
  */
 public final class StandardTaxonomy {
@@ -74,6 +77,16 @@ public final class StandardTaxonomy {
                 builder.dataSubject(row.get(0), row.get(2), row.get(3), lifecycle));
         for (List<String> row : read("linneo-category-policy.tsv", 5)) {
             builder.refineCategory(row.get(0), draft -> applyPolicy(draft, row));
+        }
+        for (List<String> row : read("linneo-traits.tsv", 3)) {
+            Trait[] traits = Arrays.stream(row.get(2).split(",")).map(String::strip).map(Trait::valueOf)
+                    .toArray(Trait[]::new);
+            switch (row.get(0)) {
+                case "category" -> builder.refineCategory(row.get(1), draft -> draft.traits(traits));
+                case "use" -> builder.refineDataUse(row.get(1), draft -> draft.traits(traits));
+                case "subject" -> builder.refineDataSubject(row.get(1), draft -> draft.traits(traits));
+                default -> throw new TaxonomyException("linneo-traits.tsv: unknown kind '" + row.get(0) + "'");
+            }
         }
     }
 

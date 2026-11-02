@@ -17,6 +17,7 @@ package io.github.devbpm.linneo;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * What a field holds, with the protection that kind of data requires.
@@ -32,10 +33,11 @@ import java.util.Objects;
  *        published, only verified
  * @param attributes application-defined properties, inherited by children unless they set their own value; for
  *        example the group of a record of processing activities or a retention class
+ * @param traits the traits the category declares or inherits, which Linneo's legal rules read
  * @since 0.1.0
  */
 public record DataCategory(TermInfo info, LegalNature nature, Confidentiality confidentiality, Integrity integrity,
-                           boolean secret, Map<String, String> attributes) implements Term {
+                           boolean secret, Map<String, String> attributes, Set<Trait> traits) implements Term {
 
     /**
      * Checks the components and makes the attributes immutable.
@@ -46,6 +48,8 @@ public record DataCategory(TermInfo info, LegalNature nature, Confidentiality co
      * @param integrity the integrity level
      * @param secret whether it is a secret
      * @param attributes the application-defined attributes
+     * @param traits the traits, or {@code null} for none
+     * @throws IllegalArgumentException if a trait does not apply to data categories
      */
     public DataCategory {
         Objects.requireNonNull(info, "info");
@@ -53,6 +57,7 @@ public record DataCategory(TermInfo info, LegalNature nature, Confidentiality co
         Objects.requireNonNull(confidentiality, "confidentiality");
         Objects.requireNonNull(integrity, "integrity");
         attributes = attributes == null ? Map.of() : Map.copyOf(attributes);
+        traits = Trait.checked(traits, TermChange.Hierarchy.DATA_CATEGORY, info.key());
     }
 
     /**

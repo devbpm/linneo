@@ -53,21 +53,30 @@ public class InventoryBench {
         int entities = args.length > 0 ? Integer.parseInt(args[0]) : 800;
         int heavy = args.length > 1 ? Integer.parseInt(args[1]) : 40;
         Path dir = Files.createTempDirectory("linneo-bench");
-        List<Path> sources = generate(dir, entities, heavy);
-        JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
-        List<String> options = new ArrayList<>(List.of("-proc:none", "-d", dir.toString(), "-cp",
-                System.getProperty("java.class.path")));
-        sources.forEach(source -> options.add(source.toString()));
-        if (javac.run(null, null, null, options.toArray(String[]::new)) != 0) {
-            throw new IllegalStateException("The generated entities do not compile");
-        }
-        try (URLClassLoader loader = new URLClassLoader(new URL[]{dir.toUri().toURL()},
-                InventoryBench.class.getClassLoader())) {
-            List<Class<?>> types = new ArrayList<>();
-            for (int e = 0; e < entities; e++) {
-                types.add(loader.loadClass("bench.E" + e));
+        try {
+            List<Path> sources = generate(dir, entities, heavy);
+            JavaCompiler javac = ToolProvider.getSystemJavaCompiler();
+            List<String> options = new ArrayList<>(List.of("-proc:none", "-d", dir.toString(), "-cp",
+                    System.getProperty("java.class.path")));
+            sources.forEach(source -> options.add(source.toString()));
+            if (javac.run(null, null, null, options.toArray(String[]::new)) != 0) {
+                throw new IllegalStateException("The generated entities do not compile");
             }
-            run(types);
+            try (URLClassLoader loader = new URLClassLoader(new URL[]{dir.toUri().toURL()},
+                    InventoryBench.class.getClassLoader())) {
+                List<Class<?>> types = new ArrayList<>();
+                for (int e = 0; e < entities; e++) {
+                    types.add(loader.loadClass("bench.E" + e));
+                }
+                run(types);
+            }
+        } finally {
+            // The generated sources and classes, deepest first.
+            try (var paths = Files.walk(dir)) {
+                for (Path path : paths.sorted(java.util.Comparator.reverseOrder()).toList()) {
+                    Files.deleteIfExists(path);
+                }
+            }
         }
     }
 

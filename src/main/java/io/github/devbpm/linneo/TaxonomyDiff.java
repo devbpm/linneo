@@ -50,9 +50,13 @@ import java.util.stream.Collectors;
  */
 public final class TaxonomyDiff {
 
+    private final Taxonomy before;
+    private final Taxonomy after;
     private final List<TermChange> changes;
 
-    private TaxonomyDiff(List<TermChange> changes) {
+    private TaxonomyDiff(Taxonomy before, Taxonomy after, List<TermChange> changes) {
+        this.before = before;
+        this.after = after;
         this.changes = List.copyOf(changes);
     }
 
@@ -70,7 +74,25 @@ public final class TaxonomyDiff {
         compare(Hierarchy.DATA_CATEGORY, before.categories(), after.categories(), changes);
         compare(Hierarchy.DATA_USE, before.dataUses(), after.dataUses(), changes);
         compare(Hierarchy.DATA_SUBJECT, before.dataSubjects(), after.dataSubjects(), changes);
-        return new TaxonomyDiff(changes);
+        return new TaxonomyDiff(before, after, changes);
+    }
+
+    /**
+     * The earlier version compared.
+     *
+     * @return the taxonomy given as {@code before}
+     */
+    public Taxonomy before() {
+        return before;
+    }
+
+    /**
+     * The later version compared.
+     *
+     * @return the taxonomy given as {@code after}
+     */
+    public Taxonomy after() {
+        return after;
     }
 
     /**
@@ -176,6 +198,9 @@ public final class TaxonomyDiff {
             if (!c.attributes().equals(d.attributes())) {
                 aspects.add(Aspect.ATTRIBUTES);
             }
+        }
+        if (!was.traits().equals(is.traits())) {
+            aspects.add(Aspect.TRAITS);
         }
         if (a.isDeprecated() != b.isDeprecated()) {
             aspects.add(Aspect.DEPRECATION);

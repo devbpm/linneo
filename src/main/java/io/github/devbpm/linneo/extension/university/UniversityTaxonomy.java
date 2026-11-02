@@ -20,6 +20,7 @@ import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
 import io.github.devbpm.linneo.TaxonomyBuilder;
 import io.github.devbpm.linneo.TaxonomyExtension;
+import io.github.devbpm.linneo.Trait;
 
 import static io.github.devbpm.linneo.extension.university.UniversityCategories.*;
 import static io.github.devbpm.linneo.extension.university.UniversityDataSubjects.*;
@@ -111,6 +112,17 @@ public final class UniversityTaxonomy implements TaxonomyExtension {
         categories(builder);
         dataUses(builder);
         dataSubjects(builder);
+        traits(builder);
+    }
+
+    // The traits Linneo's legal rules read (see Trait): advancement is direct marketing, fundraising included, so the
+    // right to object to it is absolute (GDPR article 21.2); prospect research, means assessment and learning
+    // analytics evaluate people, and learning analytics observes them systematically (WP248).
+    private static void traits(TaxonomyBuilder builder) {
+        builder.refineDataUse(ADVANCEMENT, u -> u.traits(Trait.DIRECT_MARKETING))
+                .refineDataUse(ADVANCEMENT_PROSPECT_RESEARCH, u -> u.traits(Trait.EVALUATION))
+                .refineDataUse(EDUCATION_FINANCIAL_AID_MEANS_ASSESSMENT, u -> u.traits(Trait.EVALUATION))
+                .refineDataUse(EDUCATION_LEARNING_ANALYTICS, u -> u.traits(Trait.EVALUATION, Trait.MONITORING));
     }
 
     private static void categories(TaxonomyBuilder builder) {

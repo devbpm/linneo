@@ -7,6 +7,7 @@ nav_order: 1
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/Taxonomy.java
   - src/main/java/io/github/devbpm/linneo/TaxonomyException.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
   - src/main/resources/io/github/devbpm/linneo/internal/linneo-data-categories.tsv
 -->
 
@@ -96,6 +97,7 @@ email.isA("user.con");                // false (solo segmentos completos)
 | `List<DataUse> dataUses()` | lista inmutable | Todos los usos de datos, ordenados por clave. |
 | `Optional<DataUse> dataUse(String key)` | `Optional` | Un uso por clave; vacío si no existe. |
 | `DataUse requireDataUse(String key)` | `DataUse` | Un uso por clave. Lanza `TaxonomyException` (`Unknown data use '<key>'`) si no existe. |
+| `DataUse resolveDataUse(String key)` | `DataUse` | El uso de datos **que hay que usar** para una clave: el propio uso o, si está obsoleto con una sustituta, el uso vigente que lo sustituye. Lanza `TaxonomyException` si la clave, o una sustituta de la cadena, no existe. |
 | `List<DataUse> childrenOf(DataUse use)` | lista inmutable | Los hijos directos, ordenados por clave. |
 
 ## Sujetos de datos
@@ -105,10 +107,13 @@ email.isA("user.con");                // false (solo segmentos completos)
 | `List<DataSubject> dataSubjects()` | lista inmutable | Todos los sujetos de datos, ordenados por clave. |
 | `Optional<DataSubject> dataSubject(String key)` | `Optional` | Un sujeto por clave; vacío si no existe. |
 | `DataSubject requireDataSubject(String key)` | `DataSubject` | Un sujeto por clave. Lanza `TaxonomyException` (`Unknown data subject '<key>'`) si no existe. |
+| `DataSubject resolveDataSubject(String key)` | `DataSubject` | El sujeto de datos **que hay que usar** para una clave: el propio sujeto o, si está obsoleto con una sustituta, el sujeto vigente que lo sustituye. Lanza `TaxonomyException` si la clave, o una sustituta de la cadena, no existe. |
 
-`parentOf`, `ancestorsOf` y `resolveCategory` solo existen para categorías de datos; para usos y sujetos usa
-`info().parent()` y las búsquedas anteriores. Los usos y los sujetos describen actividades de tratamiento, no campos,
-por lo que ninguna anotación se refiere a ellos.
+`resolveDataUse` y `resolveDataSubject` siguen `replacedBy` igual que `resolveCategory`, así que una clave guardada
+antes de que su término quedara obsoleto sigue llegando al término vigente: [`SubjectRights`](processing/subject-rights.md)
+resuelve el sujeto de datos con el segundo. `parentOf` y `ancestorsOf` solo existen para categorías de datos; para usos
+y sujetos usa `info().parent()` y las búsquedas anteriores. Los usos y los sujetos describen actividades de
+tratamiento, no campos, por lo que ninguna anotación se refiere a ellos.
 
 ## La taxonomía como datos
 
@@ -118,7 +123,8 @@ auditor puede reproducir la clasificación del pasado con la taxonomía del pasa
 
 | Método | Devuelve | Descripción |
 |---|---|---|
-| `String toTsv()` | `String` | La taxonomía como texto separado por tabuladores: cada término con su ciclo de vida y, en las categorías de datos, su protección y sus atributos **efectivos**, por orden de clave. Determinista: la misma taxonomía da siempre el mismo texto. |
+| `String toTsv()` | `String` | La taxonomía como texto separado por tabuladores: cada término con su ciclo de vida y, en las categorías de datos, su protección y sus atributos **efectivos**, y los [rasgos](terms.md#trait) de cada término,
+por orden de clave. Determinista: la misma taxonomía da siempre el mismo texto. |
 | `static Taxonomy fromTsv(String text)` | `Taxonomy` | Lee un texto escrito por `toTsv()`. Los términos pasan por un `TaxonomyBuilder`, así que el texto debe cumplir las mismas reglas que cualquier otra taxonomía. Lanza `TaxonomyException` si el texto no es una taxonomía de una versión de formato conocida, una fila está mal formada o los términos incumplen una regla del constructor. |
 | `String fingerprint()` | `String` | El SHA-256 de `toTsv()` (UTF-8), como 64 dígitos hexadecimales en minúscula. Las taxonomías iguales tienen la misma huella; se calcula una vez y se conserva. |
 | `boolean equals(Object)`, `int hashCode()` | | Dos taxonomías son iguales cuando tienen las mismas categorías, usos y sujetos de datos: mismas claves, nombres, descripciones, orígenes, ciclos de vida, protección y atributos. |
@@ -129,8 +135,8 @@ qué cambió usa [`TaxonomyDiff`](taxonomy-diff.md).
 ### Formato del texto
 
 La primera línea es `#linneo-taxonomy`, un tabulador y la versión del formato, `1`; `fromTsv` rechaza cualquier otra
-primera línea. Las líneas en blanco y las que empiezan por `#` a continuación son comentarios; `toTsv` escribe tres que
-nombran las columnas. Cualquier otra línea es una fila de celdas separadas por tabuladores, y la primera celda dice de
+primera línea. Las líneas en blanco y las que empiezan por `#` a continuación son comentarios; `toTsv` escribe cuatro
+que nombran las columnas. Cualquier otra línea es una fila de celdas separadas por tabuladores, y la primera celda dice de
 qué fila se trata:
 
 | Fila | Celdas |
@@ -138,13 +144,17 @@ qué fila se trata:
 | `category` | `category`, clave, nombre, descripción, origen, versión que la introdujo, versión que la declaró obsoleta, sustituta, naturaleza, confidencialidad, integridad, secreto (`true` o `false`): 12 celdas |
 | `use`, `subject` | el tipo, clave, nombre, descripción, origen, versión que lo introdujo, versión que lo declaró obsoleto, sustituto: 8 celdas |
 | `attribute` | `attribute`, clave de la categoría, nombre, valor: 4 celdas. Una fila por cada atributo de una categoría, incluidos los heredados de sus ancestros |
+| `trait` | `trait`, el tipo de término (`category`, `use` o `subject`), clave, rasgo: 4 celdas. Una fila por cada rasgo de un término, incluidos los heredados de sus ancestros |
 
-Las filas se escriben en este orden: categorías, usos y sujetos de datos, cada grupo por clave, y después los atributos
-por clave de categoría y nombre. Una celda vacía es un valor ausente. Una barra invertida, un tabulador, un salto de
-línea y un retorno de carro dentro de una celda se escriben `\\`, `\t`, `\n` y `\r`, de modo que una fila es siempre
-una línea. La naturaleza, la confidencialidad y la integridad son los nombres de las constantes de
-[`LegalNature`, `Confidentiality` e `Integrity`](protection-levels.md). `fromTsv` lee las filas en cualquier orden: los
-padres se comprueban al construir la taxonomía y las filas de atributos se aplican después de todos los términos.
+Las filas se escriben en este orden: categorías, usos y sujetos de datos, cada grupo por clave, después los atributos
+por clave de categoría y nombre, y después los rasgos de las categorías, de los usos y de los sujetos. Una celda vacía
+es un valor ausente. Una barra invertida, un tabulador, un salto de línea y un retorno de carro dentro de una celda se
+escriben `\\`, `\t`, `\n` y `\r`, de modo que una fila es siempre una línea; un sustituto UTF-16 suelto, que UTF-8 no
+puede codificar, se escribe como una barra invertida, `u` y sus cuatro dígitos hexadecimales, para que dos taxonomías
+distintas nunca tengan los mismos bytes ni la misma huella. La naturaleza, la confidencialidad y la integridad son los
+nombres de las constantes de [`LegalNature`, `Confidentiality` e `Integrity`](protection-levels.md), y el rasgo es el
+nombre de un [`Trait`](terms.md#trait). `fromTsv` lee las filas en cualquier orden: los padres se comprueban al
+construir la taxonomía y las filas de atributos y de rasgos se aplican después de todos los términos.
 
 ```java
 Taxonomy taxonomy = Taxonomy.builder()
@@ -167,6 +177,7 @@ read.fingerprint().equals(taxonomy.fingerprint());   // true
 # category key name description origin since deprecated_since replaced_by nature confidentiality integrity secret
 # use|subject key name description origin since deprecated_since replaced_by
 # attribute category_key name value
+# trait category|use|subject key trait
 category→data→Data→Any data.→my-app→→→→ORDINARY→LOW→LOW→false
 category→data.note→Note→A free text note.→my-app→→→→ORDINARY→LOW→LOW→false
 attribute→data.note→retention→1y
@@ -187,7 +198,7 @@ implicada.
 
 La lanzan:
 
-- `Taxonomy.requireCategory`, `requireDataUse`, `requireDataSubject` y `resolveCategory` ante una clave
+- `Taxonomy.requireCategory`, `requireDataUse`, `requireDataSubject` y los tres métodos `resolve` ante una clave
   desconocida;
 - `Taxonomy.load()` y los métodos de `TaxonomyBuilder` cuando se incumple una regla (mensajes en
   [Extender la taxonomía](extending.md#errores));

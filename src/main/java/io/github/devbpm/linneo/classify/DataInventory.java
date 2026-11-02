@@ -18,6 +18,7 @@ package io.github.devbpm.linneo.classify;
 import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.Integrity;
+import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.TaxonomyDiff;
 import io.github.devbpm.linneo.TermChange;
 import io.github.devbpm.linneo.classify.FieldClassification.Basis;
@@ -128,9 +129,10 @@ public final class DataInventory {
     }
 
     /**
-     * The fields each change of a taxonomy reaches: for each changed data category, the fields that declare its key.
-     * An application uses it to migrate the keys it stores when a category is deprecated, and to record one entry
-     * per changed category, with the fields it affects, instead of one entry per field.
+     * The fields each change of a taxonomy reaches: for each changed data category, the fields that declare its key
+     * and those whose deprecated key is replaced by it, in either version, since such a field takes the protection
+     * of the replacement. An application uses it to migrate the keys it stores when a category is deprecated, and to
+     * record one entry per changed category, with the fields it affects, instead of one entry per field.
      *
      * @param diff the changes of the taxonomy
      * @return the data category changes that reach at least one field, in the order of the diff, with their fields
@@ -139,13 +141,19 @@ public final class DataInventory {
         Map<TermChange, List<InventoryField>> affected = new LinkedHashMap<>();
         for (TermChange change : diff.changes()) {
             if (change.hierarchy() == TermChange.Hierarchy.DATA_CATEGORY) {
-                List<InventoryField> fields = fieldsWith(change.key());
+                List<InventoryField> fields = fields().stream().filter(field -> !field.isExempt()
+                        && (field.key().equals(change.key()) || resolvesTo(diff.before(), field.key(), change.key())
+                        || resolvesTo(diff.after(), field.key(), change.key()))).toList();
                 if (!fields.isEmpty()) {
                     affected.put(change, fields);
                 }
             }
         }
         return Collections.unmodifiableMap(affected);
+    }
+
+    private static boolean resolvesTo(Taxonomy taxonomy, String key, String target) {
+        return taxonomy.category(key).isPresent() && taxonomy.resolveCategory(key).key().equals(target);
     }
 
     /**

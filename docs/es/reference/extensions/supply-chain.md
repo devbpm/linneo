@@ -178,7 +178,8 @@ campos con la clave más estricta, no con la de la extensión:
 
 ## Usos de datos
 
-Todos los usos son hijos de los usos estándar `operations` o `sales`. Los usos de datos no tienen facetas de protección.
+Todos los usos son hijos de los usos estándar `operations` o `sales`. Los usos de datos no tienen facetas de
+protección, solo [rasgos](#rasgos).
 
 | Clave | Nombre | Madre | Finalidad |
 |---|---|---|---|
@@ -204,6 +205,18 @@ Todos los interesados de la extensión son planos, como los de fideslang, que no
 | `delivery_recipient` | Delivery Recipient | Una persona que recibe o firma una entrega y que puede no ser el cliente. |
 | `driver` | Driver | Una persona que conduce un vehículo con mercancías de la organización, como empleado o por cuenta de un transportista. |
 | `supplier_contact` | Supplier Contact | Una persona que actúa en nombre de una organización proveedora, como un representante comercial. |
+
+## Rasgos
+
+La extensión declara los [rasgos](../terms.md#trait) que leen las reglas jurídicas de Linneo, de modo que sus términos
+pesan en el [cribado de impacto](../processing/impact-screening.md), la
+[evaluación de violaciones](../processing/breach-assessment.md) y los
+[derechos del interesado](../processing/subject-rights.md) igual que los estándar:
+
+| Términos | Rasgo | Por qué |
+|---|---|---|
+| Uso de datos `operations.logistics.fleet_management` | `MONITORING` | La gestión de flotas rastrea los tiempos y la ubicación de los conductores (criterio 3 del WP248) |
+| Sujeto de datos `driver` | `VULNERABLE` | Los conductores trabajan para la organización o para sus transportistas, en una posición más débil que el responsable (criterio 7 del WP248) |
 
 ## Claves estándar para todo lo demás
 

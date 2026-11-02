@@ -60,8 +60,10 @@ depende del orden en que se clasifiquen las clases.
 «Al menos tanto» es [`Protection.covers`](../protection-levels.md#protection): se cubre cada naturaleza legal de la
 fuente, los niveles no son inferiores y un secreto sigue siendo secreto. La única forma explícita de proteger menos es
 declarar el valor anonimizado o agregado: una categoría **personal** con una `identifiability` de `ANONYMIZED` o
-`AGGREGATED`, como un promedio sobre muchas personas, algo que una revisión puede ver. Declarar una categoría no
-personal para un valor derivado de datos personales es un error.
+`AGGREGATED`, como un promedio sobre muchas personas, algo que una revisión puede ver. Un valor así ya no apunta a una
+persona, así que puede perder solo la **naturaleza personal** de sus fuentes: sigue necesitando su confidencialidad, su
+integridad y su carácter secreto. Declarar una categoría no personal para un valor derivado de datos personales es un
+error.
 
 ## Reglas que aplica el Classifier
 
@@ -70,7 +72,7 @@ personal para un valor derivado de datos personales es un error.
 | Al menos una fuente | `UNKNOWN_SOURCE` (`@DerivedFrom needs at least one source`) | error | no |
 | Cada fuente es un campo clasificado | `UNKNOWN_SOURCE` (`the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` / `the source '<Class>.<s>' has an error` para un campo de otra clase) | error | no |
 | Sin `@Category`, las varias fuentes coinciden | `AMBIGUOUS_DERIVATION` (`its sources [<s>, ...] have different classifications; declare the category of the derived value with @Category`) | error | no |
-| Con `@Category`, protege al menos tanto como cada fuente, salvo que sea anonimizado o agregado | `WEAKER_THAN_SOURCE` (`'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, unless it is declared anonymized or aggregated`) | error | no |
+| Con `@Category`, protege al menos tanto como cada fuente; si es anonimizado o agregado, puede perder solo la naturaleza personal | `WEAKER_THAN_SOURCE` (`'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature`) | error | no |
 | Ningún campo derivado depende de sí mismo, dentro de una clase o entre clases | `CYCLE` (`is derived from itself through other derived fields`) | error | no |
 | Las comprobaciones habituales de `@Category`, cuando está presente | como en [`@Category`](category.md) | | |
 | No combinarla con `@Exempt` ni con `@CategoryByRow` | `CONFLICTING_ANNOTATIONS` | error | no |

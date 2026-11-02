@@ -71,7 +71,7 @@ class SubjectRightsTest {
     @Test
     @DisplayName("the activities, categories and stored fields of one category of data subjects")
     void scope() {
-        SubjectRights students = SubjectRights.of(record(), DataSubjects.STUDENT);
+        SubjectRights students = SubjectRights.of(record(), taxonomy, DataSubjects.STUDENT);
         Map<String, List<InventoryField>> stored = students.storedFields(inventory, taxonomy);
         assertAll(
                 () -> assertEquals(List.of("enrollment", "grades", "newsletter"), students.activities().stream()
@@ -82,14 +82,14 @@ class SubjectRightsTest {
                 () -> assertEquals(List.of("grades", "students"), List.copyOf(stored.keySet())),
                 () -> assertEquals(List.of("email", "name"), stored.get("students").stream()
                         .map(InventoryField::path).toList()),
-                () -> assertTrue(SubjectRights.of(record(), DataSubjects.APPLICANT).isEmpty()));
+                () -> assertTrue(SubjectRights.of(record(), taxonomy, DataSubjects.APPLICANT).isEmpty()));
     }
 
     @Test
     @DisplayName("each lawful basis gives the rights the GDPR provides for it")
     void rightsByBasis() {
-        SubjectRights students = SubjectRights.of(record(), DataSubjects.STUDENT);
-        SubjectRights employees = SubjectRights.of(record(), DataSubjects.EMPLOYEE);
+        SubjectRights students = SubjectRights.of(record(), taxonomy, DataSubjects.STUDENT);
+        SubjectRights employees = SubjectRights.of(record(), taxonomy, DataSubjects.EMPLOYEE);
         assertAll(
                 () -> assertEquals(Availability.CONDITIONAL, availability(students, "enrollment", Right.ERASURE)),
                 () -> assertEquals(Availability.YES, availability(students, "enrollment", Right.PORTABILITY)),
@@ -110,9 +110,9 @@ class SubjectRightsTest {
     @Test
     @DisplayName("under Spanish law, erased or rectified data is blocked first")
     void blocking() {
-        String spain = SubjectRights.of(record(), DataSubjects.STUDENT, Jurisdiction.SPAIN).activity("enrollment")
+        String spain = SubjectRights.of(record(), taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN).activity("enrollment")
                 .orElseThrow().entitlement(Right.ERASURE).explanation();
-        String eu = SubjectRights.of(record(), DataSubjects.STUDENT).activity("enrollment").orElseThrow()
+        String eu = SubjectRights.of(record(), taxonomy, DataSubjects.STUDENT).activity("enrollment").orElseThrow()
                 .entitlement(Right.ERASURE).explanation();
         assertAll(
                 () -> assertTrue(spain.contains("LOPDGDD art. 32"), spain),

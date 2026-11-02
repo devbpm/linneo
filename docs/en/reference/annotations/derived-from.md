@@ -60,8 +60,9 @@ order the classes are classified in.
 "At least as much" is [`Protection.covers`](../protection-levels.md#protection): each legal nature of the source is
 covered, the levels are not lower, and a secret stays a secret. The one explicit way to protect less is to declare
 the value anonymized or aggregated: a **personal** category with an `identifiability` of `ANONYMIZED` or `AGGREGATED`,
-such as an average over many people, which a review can see. Declaring a non-personal category for a value derived
-from personal data is an error.
+such as an average over many people, which a review can see. Such a value no longer points to a person, so it may drop
+only the **personal nature** of its sources: it still needs their confidentiality, integrity and secrecy. Declaring a
+non-personal category for a value derived from personal data is an error.
 
 ## Rules enforced by the Classifier
 
@@ -70,7 +71,7 @@ from personal data is an error.
 | At least one source | `UNKNOWN_SOURCE` (`@DerivedFrom needs at least one source`) | error | no |
 | Each source is a classified field | `UNKNOWN_SOURCE` (`the source '<s>' is not a classified field of <Class>` / `the source '<s>' has an error` / `the source '<Class>.<s>' has an error` for a field of another class) | error | no |
 | Without `@Category`, several sources agree | `AMBIGUOUS_DERIVATION` (`its sources [<s>, ...] have different classifications; declare the category of the derived value with @Category`) | error | no |
-| With `@Category`, it protects at least as much as every source, unless anonymized or aggregated | `WEAKER_THAN_SOURCE` (`'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, unless it is declared anonymized or aggregated`) | error | no |
+| With `@Category`, it protects at least as much as every source; anonymized or aggregated, it may drop only the personal nature | `WEAKER_THAN_SOURCE` (`'<key>' protects less than its source(s) [<s>, ...]; a value derived from data needs at least its protection, and an anonymized or aggregated value may drop only the personal nature`) | error | no |
 | No derived field depends on itself, within a class or across classes | `CYCLE` (`is derived from itself through other derived fields`) | error | no |
 | The usual checks of `@Category`, when it is present | as in [`@Category`](category.md) | | |
 | Not combined with `@Exempt` or `@CategoryByRow` | `CONFLICTING_ANNOTATIONS` | error | no |

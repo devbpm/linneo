@@ -158,10 +158,12 @@ class ClassifierCompositeTest {
             private Broken broken;
             private Node tree;
             private Map<String, Address> byType;
+            private Map<Address, String> byAddress;
         }
         ClassClassification holder = classifier.classify(Holder.class);
         assertAll(
-                () -> assertEquals(List.of("broken.unclassified", "byType"), holder.errors().stream()
+                () -> assertTrue(holder.field("byType.city").isPresent()),
+                () -> assertEquals(List.of("broken.unclassified", "byAddress"), holder.errors().stream()
                         .filter(v -> v.code() == Code.UNCLASSIFIED_FIELD).map(Violation::path).toList()),
                 () -> assertEquals(List.of("tree.children"), holder.errors().stream()
                         .filter(v -> v.code() == Code.CYCLE).map(Violation::path).toList()),

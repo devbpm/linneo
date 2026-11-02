@@ -91,17 +91,26 @@ void everyClassOfTheModelIsClassified() {
   A field is identified by its `path`, which is its name, never by its position.
 - Because a field is identified by its name, a field that **hides** a superclass field of the same name is a
   `DUPLICATE_FIELD` error: only the superclass field is classified.
-- **Excluded** without any annotation: `static`, `transient` and synthetic fields (such as the reference to the
-  enclosing instance in an inner class), and fields whose name starts with `$$_` (added by bytecode tools, for
-  example Hibernate's enhancement: `$$_hibernate_interceptor`).
+- **Excluded** without any annotation: `static` and synthetic fields (such as the reference to the enclosing instance
+  in an inner class), fields whose name starts with `$$_` (added by bytecode tools, for example Hibernate's
+  enhancement: `$$_hibernate_interceptor`), and `transient` fields. A `transient` field is not stored, so it is skipped,
+  **unless it carries one of Linneo's field annotations** (`@Category`, `@CategoryByRow`, `@DerivedFrom` or
+  `@Exempt`): an annotation says it holds data to classify, and it is classified like any other field.
 - **Hibernate proxies.** A class whose name contains `$HibernateProxy$` is classified as the entity it extends: the
   `type()` of its [`ClassClassification`](results.md#classclassification) is the entity, not the proxy.
 - **Composites are entered.** A field with no annotation of its own whose type is a
-  [`@Composite`](../annotations/composite.md) class, or an array, a collection or an `Optional` of one, is classified by
+  [`@Composite`](../annotations/composite.md) class (which a subclass of a composite also is: the annotation is
+  inherited), or an array, a collection, an `Optional` or the values of a `Map` of one, at any depth, is classified by
   the composite's fields: one entry per field, with the path `field.part` (`home.street`), under the composite's own
-  annotations and `@DefaultCategory`, not the holder's. A `Map` is never descended into. A class that is not marked
-  `@Composite`, such as a JPA `@Embedded` class, is one ordinary field that needs a category of its own (or a class
-  default): mark the class `@Composite` rather than passing it to `verify` separately.
+  annotations and `@DefaultCategory`, not the holder's. Type variables are resolved through the superclasses of the
+  class being classified.
+- **Data the classifier cannot see.** A field that may hold data the classifier cannot split into fields never takes a
+  class default and is an `UNCLASSIFIED_FIELD` error unless it is annotated: a composite as a map key or as the type
+  argument of a class that is not a collection, several composites in one type, a value typed `Object`, an unbound type
+  variable or a raw container, and a class with classified fields that is not `@Composite`, such as a referenced
+  entity or a JPA `@Embedded` class. For the last, mark the class `@Composite` rather than passing it to `verify`
+  separately, or declare what the field stores (such as the record's key). A class default would otherwise classify
+  as non-personal what wraps personal data.
 - **Derived fields.** A field marked [`@DerivedFrom`](../annotations/derived-from.md) takes the classification of its
   source, or declares one that protects at least as much. Its sources may be declared after it, be derived fields
   themselves, be parts of a composite, or belong to another class (`type`), which the classifier reads as well.
@@ -123,9 +132,11 @@ problems with no path come first, such as the checks of each `@DefaultCategory` 
 problems of a composite are at the position of the field that holds it (path `field.part`). The order does not depend
 on the order the classes are classified in.
 
-Protection never drops silently: a derived field must protect at least as much as each of its sources unless it
-declares an anonymized or aggregated value, and a composite stored as one value must protect at least as much as the
-fields of the composite. A composite that contains itself, and derived fields that depend on each other (within one
+Protection never drops silently: a derived field must protect at least as much as each of its sources, and a value it
+declares anonymized or aggregated may drop only the **personal nature** of its sources, never their confidentiality,
+integrity or secrecy. A field that stores composites as one value, declared or derived, must protect at least as much
+as the fields of the composites, a composite that holds itself or two that hold each other included, whatever the order
+of the classes. A composite that contains itself, and derived fields that depend on each other (within one
 class or across classes, also through the parts of a composite), are a `CYCLE`. Classes that derive from each other's
 other fields are not. A field that derives from a field with an error, even one in a cycle, but is not itself in the
 cycle, is an `UNKNOWN_SOURCE`.
@@ -145,8 +156,9 @@ Nothing is classified by default. These are **errors** (they fail `verify` and m
 - a field that hides a superclass field of the same name (`DUPLICATE_FIELD`);
 - a derived field whose source is missing, exempted or in error, or that has none (`UNKNOWN_SOURCE`);
 - a derived field without a category whose sources are classified differently (`AMBIGUOUS_DERIVATION`);
-- a derived field that protects less than a source and is not declared anonymized or aggregated (`WEAKER_THAN_SOURCE`);
-- a composite stored as one value that protects less than its fields (`WEAKER_THAN_PARTS`);
+- a derived field that protects less than a source, or that is declared anonymized or aggregated and drops more than
+  the personal nature (`WEAKER_THAN_SOURCE`);
+- a field that stores composites as one value and protects less than their fields (`WEAKER_THAN_PARTS`);
 - a composite that contains itself, or derived fields that depend on each other (`CYCLE`).
 
 A deprecated key is the only **warning** (`DEPRECATED_CATEGORY`): the field is classified with the current
@@ -158,7 +170,9 @@ effect of each code.
 `inventory(types, objectKey)` returns the classes as a [`DataInventory`](inventory.md): for each class, an object under
 the key `objectKey` gives for it, with every field as the code declares it (the key as written, the levels the field
 raises itself, the identifiability, the reason) and the exempted fields with their reasons. It is the form of the
-classification an application stores and compares, instead of the classes.
+classification an application stores and compares, instead of the classes. The identifiability is the one the field
+**declares**, not the one the taxonomy gives it, so an inventory never depends on the taxonomy it was built with:
+a field that declares none, or `IDENTIFIED`, which a personal category takes anyway, stores none.
 
 ```java
 Map<Class<?>, String> objectKeys = Map.of(Student.class, "student", Invoice.class, "invoice");

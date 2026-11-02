@@ -165,7 +165,7 @@ public final class DisclosurePolicy {
      * @throws TaxonomyException if the taxonomy does not contain the field's key
      */
     public Treatment treatment(InventoryField field, Taxonomy taxonomy) {
-        return treatment(field.protection(taxonomy));
+        return field.isExempt() ? Treatment.CLEAR : treatment(field.protection(taxonomy));
     }
 
     /**

@@ -104,9 +104,13 @@ public final class OdcsSchema {
      * @param inventory the inventory
      * @param object the key of the object
      * @return a JSON object with {@code name}, {@code logicalType} and {@code properties}
+     * @throws IllegalArgumentException if the inventory has no such object
      * @throws TaxonomyException if the taxonomy does not contain a key of the object
      */
     public String objectJson(DataInventory inventory, String object) {
+        if (!inventory.objects().contains(Objects.requireNonNull(object, "object"))) {
+            throw new IllegalArgumentException("The inventory has no object '" + object + "'");
+        }
         List<String> properties = new ArrayList<>();
         for (InventoryField field : inventory.fields(object)) {
             if (!field.isExempt()) {

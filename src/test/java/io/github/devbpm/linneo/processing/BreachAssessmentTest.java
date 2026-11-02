@@ -116,14 +116,21 @@ class BreachAssessmentTest {
     }
 
     @Test
-    @DisplayName("unintelligible data spares telling the people, and data that is not personal is no personal breach")
+    @DisplayName("unintelligible data spares telling the people and, lost only in confidentiality, notifying the"
+            + " authority; data that is not personal is no personal breach")
     void exceptions() {
         BreachAssessment encrypted = BreachAssessment.builder().affected(fields("name", "disability"))
                 .confidentiality(Exposure.UNKNOWN_RECIPIENTS).unintelligible(true).build();
+        BreachAssessment encryptedAndLost = BreachAssessment.builder().affected(fields("name", "disability"))
+                .confidentiality(Exposure.UNKNOWN_RECIPIENTS).availability(Unavailability.TEMPORARY)
+                .unintelligible(true).build();
         BreachAssessment technical = BreachAssessment.builder().affected(fields("version"))
                 .confidentiality(Exposure.UNKNOWN_RECIPIENTS).build();
         assertAll(
-                () -> assertTrue(encrypted.notifyAuthority()),
+                () -> assertFalse(encrypted.notifyAuthority()),
+                () -> assertTrue(encrypted.explanation().contains("EDPB Guidelines 9/2022")),
+                () -> assertTrue(encryptedAndLost.notifyAuthority()),
+                () -> assertFalse(encryptedAndLost.communicateToSubjects()),
                 () -> assertFalse(encrypted.communicateToSubjects()),
                 () -> assertTrue(encrypted.explanation().contains("art. 34.3.a")),
                 () -> assertEquals(0, technical.dataProcessingContext()),

@@ -188,7 +188,7 @@ campos con la clave más estricta, no con la de la extensión:
 ## Usos de datos
 
 Todos los usos son hijos del uso estándar `employment` (`employment.recruitment.background_check` cuelga del estándar
-`employment.recruitment`). Los usos de datos no tienen facetas de protección.
+`employment.recruitment`). Los usos de datos no tienen facetas de protección, solo [rasgos](#rasgos).
 
 | Clave | Nombre | Madre | Finalidad |
 |---|---|---|---|
@@ -220,6 +220,22 @@ Todos los interesados de la extensión son planos, como los de fideslang, que no
 | `retiree` | Retiree | Un antiguo empleado que recibe de la organización una pensión u otra prestación de jubilación. |
 | `temporary_agency_worker` | Temporary Agency Worker | Un trabajador contratado por una empresa de trabajo temporal y destinado a la organización. |
 | `worker_representative` | Worker Representative | Un trabajador elegido o designado para representar a la plantilla, como un miembro del comité de empresa. |
+
+## Rasgos
+
+La extensión declara los [rasgos](../terms.md#trait) que leen las reglas jurídicas de Linneo, de modo que sus términos
+pesan en el [cribado de impacto](../processing/impact-screening.md), la
+[evaluación de violaciones](../processing/breach-assessment.md) y los
+[derechos del interesado](../processing/subject-rights.md) igual que los estándar:
+
+| Términos | Rasgo | Por qué |
+|---|---|---|
+| Categorías `user.employment.compensation`, `user.employment.benefit` y `user.employment.payroll` (y sus hijas) | `FINANCIAL` | La remuneración es un dato de naturaleza altamente personal |
+| Categoría `user.employment.monitoring`; uso de datos `employment.monitoring` | `MONITORING` | Observación sistemática de los trabajadores (criterio 3 del WP248) |
+| Usos de datos `employment.performance` y `employment.recruitment.background_check` | `EVALUATION` | Evaluación o puntuación de personas (criterio 1 del WP248) |
+| Sujetos de datos `dependant`, `reporting_person`, `temporary_agency_worker` y `worker_representative` | `VULNERABLE` | Personas en una posición más débil que el responsable (criterio 7 del WP248) |
+
+Los sujetos de datos estándar `employee`, `job_applicant` y `staff_member` ya son `VULNERABLE`.
 
 ## Claves estándar para todo lo demás
 

@@ -45,7 +45,8 @@ The inventory records what the code **declares**, never what the taxonomy gives 
 - the **basis**: where the category comes from ([`Basis`](results.md#basis));
 - the `confidentiality` and `integrity` the field raises explicitly with `@Category`, or `null` when it takes the
   category's;
-- the **identifiability**, for a personal category;
+- the **identifiability** as the field declares it (`PSEUDONYMIZED`, `ANONYMIZED`, `AGGREGATED`), or `null` when it
+  declares none or `IDENTIFIED`, which a personal category takes anyway: equal declarations give equal fields;
 - the **reason**: that of a class default, or the `declaredBy` of a per-row category.
 
 A field excluded with [`@Exempt`](../annotations/exempt.md) is kept too, with only its reason, so that excluding a field
@@ -127,8 +128,8 @@ compared and resolved later against the taxonomy of the day.
 | `basis` | yes | Where the category comes from: `DECLARED`, `CLASS_DEFAULT`, `BY_ROW` or `DERIVED`; `null` for an exempted field. |
 | `confidentiality` | yes | The confidentiality the field declares above its category's, or `null` when it takes the category's. |
 | `integrity` | yes | The integrity the field declares above its category's, or `null` when it takes the category's. |
-| `identifiability` | yes | How the value points to the person; `null` when the category is not personal, and read as `IDENTIFIED` when absent for a personal category. |
-| `reason` | yes | The reason of an exemption or of a class default, or what decides a per-row category (`declaredBy`); `null` otherwise. |
+| `identifiability` | yes | How the value points to the person, as the field declares it; `null` when it declares none, and read as `IDENTIFIED` for a personal category. `IDENTIFIED` itself is stored as `null`, so that equal declarations give equal fields. |
+| `reason` | yes | The reason of an exemption or of a class default, or what decides a per-row category (`declaredBy`); `null` otherwise. A blank reason of a classified field is stored as `null`. |
 
 The canonical constructor throws `NullPointerException` if `object` or `path` is `null`, and `IllegalArgumentException`
 if either is blank, if only one of `key` and `basis` is given, or if an exempted field (no key) has levels, an
@@ -191,7 +192,9 @@ line is a row of cells separated by tabs, and the first cell says which row it i
 Each object is a row `object` followed by its `field` and `exempt` rows by path, and the objects are by key, so the
 same inventory always gives the same text. An empty cell is an absent value. A backslash, tab, line feed and carriage
 return inside a cell are written `\\`, `\t`, `\n` and `\r`, as in the
-[text of a taxonomy](../taxonomy.md#text-format), so a row is always one line. The basis, confidentiality, integrity and
+[text of a taxonomy](../taxonomy.md#text-format), so a row is always one line; a lone UTF-16 surrogate, which UTF-8
+cannot encode, is written as a backslash, `u` and its four hexadecimal digits, so two different inventories never have
+the same bytes or fingerprint. The basis, confidentiality, integrity and
 identifiability are the names of their constants. `fromTsv` throws `IllegalArgumentException` for another first line,
 a row with another number of cells, an unknown kind of row or constant, an empty cell that must have a value, or two
 rows for the same field.
@@ -206,7 +209,7 @@ For `Student` with a personal `email` that raises its confidentiality, a class d
 # exempt object path reason
 object→student
 exempt→student→card→cache of the rendered card
-field→student→email→user.contact.email→DECLARED→HIGH→→IDENTIFIED→
+field→student→email→user.contact.email→DECLARED→HIGH→→→
 field→student→version→system.operations→CLASS_DEFAULT→→→→technical columns
 ```
 
@@ -306,8 +309,9 @@ identifying it again is `TIGHTENED`, and pseudonymizing a field while raising it
 
 `affectedBy(TaxonomyDiff diff)` answers the other question: the code did not change but the taxonomy did. For each
 changed **data category** in the [`TaxonomyDiff`](../taxonomy-diff.md) that at least one field declares, it returns the
-change with the fields that declare its key, in the order of the diff. Data uses and data subjects are not in an
-inventory, so their changes are never returned.
+change with the fields that declare its key, in the order of the diff, and with the fields whose **deprecated key is
+replaced** by it in either version, since such a field takes the protection of the replacement (exempted fields are
+never returned). Data uses and data subjects are not in an inventory, so their changes are never returned.
 
 An application uses it to migrate the keys it stores when a category is deprecated, and to record **one entry per
 changed category**, with the fields it affects, instead of one entry per field. The inventory itself does not change:

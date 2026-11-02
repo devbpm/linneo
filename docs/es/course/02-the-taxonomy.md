@@ -22,6 +22,7 @@ Al terminar este módulo serás capaz de:
   jerarquías;
 - leer una clave con puntos y encontrar su madre y sus antepasadas;
 - explicar cómo se heredan las facetas de protección y por qué una hija solo puede hacerlas más estrictas;
+- decir qué es un rasgo y qué reglas de Linneo lo leen;
 - usar la API `Taxonomy` para buscar, recorrer y listar categorías;
 - reconocer las claves obsoletas y cómo se resuelven en su sustituta.
 
@@ -107,6 +108,7 @@ libres:
 | `integrity` | `LOW` < `MEDIUM` < `HIGH` | se hereda; una hija puede subirla, nunca bajarla |
 | `secret` | `true` / `false` | si una categoría es secreta, todas sus hijas lo son |
 | `attributes` | pares clave/valor | se heredan salvo que la hija fije su propio valor (las usan las extensiones, módulo 6) |
+| `traits` | un conjunto de `Trait` | se heredan y se suman; los leen las reglas jurídicas de Linneo (ver [Rasgos](#rasgos)) |
 
 La política solo enumera las claves que *cambian* algo; las demás heredan de su madre. Un extracto:
 
@@ -148,8 +150,9 @@ Resolvamos a mano algunas claves del modelo de la universidad:
 - `user.financial.credit_card` sube la confidencialidad a `HIGH` y hereda la integridad `HIGH` de `user.financial`.
 
 Los valores que obtienes de una `DataCategory` son siempre estas facetas **efectivas**: lo que declara la categoría
-o, si no declara nada, lo que hereda. La taxonomía garantiza que nunca son más débiles que las de la madre; en caso
-contrario se niega a construirse (el módulo 6 muestra los mensajes de error).
+o, si no declara nada, lo que hereda. La taxonomía garantiza que nunca son más débiles que las de la madre: toda faceta
+declarada es un mínimo, así que un nivel declarado por debajo del de la madre se eleva al de la madre (el módulo 6
+muestra qué rechaza el builder).
 
 ```java
 DataCategory grade = Taxonomy.standard().requireCategory(Categories.USER_EDUCATION_GRADE);
@@ -165,6 +168,25 @@ Las cuatro facetas también vienen como un único valor, `grade.protection()`, u
 [`Protection`](../reference/protection-levels.md#protection) que se puede comparar con `covers` y combinar con `join`.
 El módulo 5 la usa para campos y clases enteras.
 
+## Rasgos
+
+La protección dice cómo hay que tratar un campo; algunas reglas jurídicas de Linneo necesitan saber *de qué tipo* es el
+término que miran. Un **rasgo** (`Trait`) es una propiedad de un término de cualquiera de las tres jerarquías que esas
+reglas leen: `FINANCIAL`, `BEHAVIOURAL` y `PRIVATE_LIFE` marcan datos de naturaleza muy personal; `DIRECT_IDENTIFIER`,
+`CONTACT_IDENTIFIER` e `INDIRECT_IDENTIFIER` dicen cómo identifica una categoría a una persona; `EVALUATION`,
+`MONITORING`, `VULNERABLE` y `DIRECT_MARKETING` marcan finalidades e interesados que el cribado de impacto y los derechos
+del interesado tratan de forma especial. Los términos propios de Linneo declaran los suyos, una hija hereda los de su
+madre, y cada rasgo se aplica solo a algunas jerarquías. El módulo 9 muestra las reglas que los leen.
+
+```java
+DataCategory email = Taxonomy.standard().requireCategory(Categories.USER_CONTACT_EMAIL);
+email.has(Trait.CONTACT_IDENTIFIER);   // true: heredado de user.contact
+email.traits();                        // [CONTACT_IDENTIFIER]
+```
+
+La [referencia](../reference/terms.md#trait) enumera todos los rasgos. Tus propios términos declaran los suyos en el
+módulo 6.
+
 ## Explorar con la API `Taxonomy`
 
 Una `Taxonomy` es inmutable y segura entre hilos; construye una por aplicación y compártela.
@@ -178,8 +200,8 @@ Una `Taxonomy` es inmutable y segura entre hilos; construye una por aplicación 
 | `requireCategory(key)` | buscar una clave; lanza `TaxonomyException("Unknown data category '...'")` si no existe |
 | `resolveCategory(key)` | buscar una clave y seguir las sustituciones de las obsoletas hasta la categoría vigente |
 | `parentOf(c)`, `childrenOf(c)`, `ancestorsOf(c)` | recorrer el árbol |
-| `dataUses()`, `dataUse(key)`, `requireDataUse(key)`, `childrenOf(use)` | lo mismo para los usos de datos |
-| `dataSubjects()`, `dataSubject(key)`, `requireDataSubject(key)` | lo mismo para los interesados |
+| `dataUses()`, `dataUse(key)`, `requireDataUse(key)`, `resolveDataUse(key)`, `childrenOf(use)` | lo mismo para los usos de datos |
+| `dataSubjects()`, `dataSubject(key)`, `requireDataSubject(key)`, `resolveDataSubject(key)` | lo mismo para los interesados |
 
 Explorar el subárbol académico:
 
@@ -359,7 +381,8 @@ sí lo está, porque mientras la sesión es válida da acceso como una credencia
 
 1. `user.contact.address`.
 2. 126, de las que 85 proceden de fideslang.
-3. No: una hija solo puede subir un nivel. La taxonomía se niega a construirse.
+3. No: una hija solo puede subir un nivel. Lo que declara es un mínimo, así que un `LOW` bajo un `MEDIUM` de la madre
+   vuelve a subir a `MEDIUM`.
 4. `requireCategory` devuelve la categoría de esa clave exacta, obsoleta o no; `resolveCategory` sigue `replacedBy`
    hasta la categoría vigente.
 5. Porque es una constante de compilación (`public static final String` inicializada con un literal).

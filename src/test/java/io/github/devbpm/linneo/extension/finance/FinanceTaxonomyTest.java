@@ -120,6 +120,7 @@ class FinanceTaxonomyTest {
                 .entities(CustomerAccount.class)
                 .legalBasis(LegalBasis.CONTRACT)
                 .retention("Six years after the end of the relationship")
+                .impactAssessment("DPIA-2026-07: credit scoring of customers")
                 .build()).violations();
         assertAll(
                 () -> assertEquals(List.of(), violations),

@@ -7,6 +7,7 @@ nav_order: 7
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # BreachAssessment
@@ -21,14 +22,17 @@ data breaches", v1.0, 2013):
 severity = data processing context × ease of identification + circumstances of the breach
 ```
 
-Linneo scores the first two from the classification of the affected fields, and says which fields set each score. The
-circumstances (how confidentiality, integrity and availability were lost, and malicious intent) are declared by whoever
-handles the breach. Instances are immutable; build one with [`BreachAssessment.builder()`](#builder).
+Linneo scores the first two from the classification of the affected fields and the [traits](../terms.md#trait) of their
+categories, and says which fields set each score. The circumstances (how confidentiality, integrity and availability
+were lost, and malicious intent) are declared by whoever handles the breach. Instances are immutable; build one with
+[`BreachAssessment.builder()`](#builder).
 
 It is an **orientation for the first hours, not a decision**: the controller assesses the risk of each breach, and the
 data protection officer decides whether to notify. A low severity is read as a breach unlikely to result in a risk
 (article 33.1), which is recorded (article 33.5) but not notified; a high or very high one as a high risk, which is
-also communicated to the data subjects (article 34.1) unless the data was unintelligible (article 34.3.a).
+also communicated to the data subjects (article 34.1) unless the data was unintelligible (article 34.3.a). A breach of
+the confidentiality alone of data that was unintelligible, such as encrypted with a key that was not compromised, is
+also unlikely to result in a risk, and is not notified whatever its score (EDPB Guidelines 9/2022, and 01/2021 case 1).
 
 ## How it is scored
 
@@ -38,19 +42,22 @@ among those affected.
 | Context | The affected data |
 |---|---|
 | 4 | special category data or criminal offence data |
-| 3 | financial data: a category `user.financial` or below |
-| 2 | behavioural data: `user.behavior` or `user.location` or below |
+| 3 | financial data: a category with the `FINANCIAL` trait (`user.financial` and below in the standard taxonomy) |
+| 2 | behavioural data: a category with the `BEHAVIOURAL` trait (`user.behavior` and `user.location` and below) |
 | 1 | other personal data |
 | 0 | no affected field holds personal data: this is not a personal data breach (GDPR article 4.12) |
 
+A field declared anonymized or aggregated is not personal data, so it counts for neither the context nor the ease of
+identification.
+
 **Ease of identification**: how easily the affected data identifies the people it is about. It is the highest of the
-levels of the affected fields.
+levels of the affected personal fields, read from the identifier traits of their categories.
 
 | Level | Score | The affected fields |
 |---|---|---|
-| `MAXIMUM` | 1 | include a name (`user.name`), an identity document (`user.government_id`), biometric data (`user.biometric`) or a picture (`user.content.self_image`) |
-| `SIGNIFICANT` | 0.75 | include contact data (`user.contact`) or account data (`user.account`) |
-| `LIMITED` | 0.5 | include internal identifiers (`user.unique_id`), device identifiers (`user.device`) or any value declared pseudonymized; a pseudonymized name, contact or account is also `LIMITED` |
+| `MAXIMUM` | 1 | include a `DIRECT_IDENTIFIER`: a name (`user.name`), an identity document (`user.government_id`), biometric data (`user.biometric`) or a picture (`user.content.self_image`) |
+| `SIGNIFICANT` | 0.75 | include a `CONTACT_IDENTIFIER`: contact data (`user.contact`) or account data (`user.account`) |
+| `LIMITED` | 0.5 | include an `INDIRECT_IDENTIFIER`: internal identifiers (`user.unique_id`) or device identifiers (`user.device`); or any value declared pseudonymized; a pseudonymized direct or contact identifier is also `LIMITED` |
 | `NEGLIGIBLE` | 0.25 | have none of those |
 
 Both can be adjusted, as the methodology foresees, when the context of the data calls for it: see
@@ -84,7 +91,7 @@ Both can be adjusted, as the methodology foresees, when the context of the data 
 
 | Method | `true` when | Article |
 |---|---|---|
-| `notifyAuthority()` | personal data is affected and the severity is not `LOW` | 33.1: notify the supervisory authority within 72 hours of becoming aware of the breach. A `LOW` breach is only recorded (33.5). |
+| `notifyAuthority()` | personal data is affected, the severity is not `LOW`, and it is **not** only the confidentiality of unintelligible data that was lost (`unintelligible(true)` with no integrity or availability loss declared) | 33.1: notify the supervisory authority within 72 hours of becoming aware of the breach. A `LOW` breach, and a breach of confidentiality alone of unintelligible data (EDPB Guidelines 9/2022 and 01/2021 case 1), is only recorded (33.5). |
 | `communicateToSubjects()` | personal data is affected, the severity is `HIGH` or `VERY_HIGH` and the data was **not** declared unintelligible | 34.1: tell the data subjects without undue delay. 34.3.a: not needed if the data was unintelligible to anyone without access to it, such as strongly encrypted with a key that was not compromised (`unintelligible(true)`). |
 | `manyIndividuals()` | more than 100 people were declared affected | A flag of the methodology that weighs on the assessment without changing the score. |
 
@@ -160,9 +167,12 @@ This is an orientation: the controller assesses the risk of each breach.
 ```
 
 The score is `4 × 1 + 0.25`: sensitive data that names the people, sent to known recipients. If the same data had been
-declared `unintelligible(true)`, the authority would still be notified but the line before the last would say that the
-data subjects need not be told (article 34.3.a). A breach of grades and internal identifiers only, with nothing
-disclosed, scores 0.5 (`LOW`): record it, do not notify.
+declared `unintelligible(true)`, only its confidentiality would have been lost, so the authority would not be notified
+either: the explanation would say that only the confidentiality of unintelligible data was lost (EDPB Guidelines
+9/2022) and that the breach is to be recorded, not notified. With an integrity or availability loss declared, the
+authority would be notified, and the line before the last would say that the data subjects need not be told (article
+34.3.a). A breach of grades and internal identifiers only, with nothing disclosed, scores 0.5 (`LOW`): record it, do not
+notify.
 
 See also: [ImpactScreening](impact-screening.md) · [ProcessingChecker](checker.md) ·
 [Classifier](../classify/classifier.md) · [Processing activities](README.md)

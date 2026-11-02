@@ -61,8 +61,12 @@ niveles del ENS:
 | `Confidentiality.HIGH`, `Integrity.HIGH` | `HIGH` (`ALTO`) |
 
 Los niveles son los del campo: los de la categoría, con la elevación que declare el campo. La valoración de cada
-dimensión es la más alta entre los campos, y su motivo nombra el primer campo que la fija (`field <path> (<key>)`). Un
-sistema que maneja datos de categorías especiales, que son `HIGH` en ambas, es de categoría `ALTA`.
+dimensión es la más alta entre los campos, y su motivo nombra el primer campo que la fija (`field <path> (<key>)`, con
+la ruta como `<clase>.<campo>` en una clase clasificada y `<objeto>.<ruta>` en una guardada). Un sistema que maneja
+datos de categorías especiales, que son `HIGH` en ambas, es de categoría `ALTA`.
+
+Solo una clasificación **sin errores** da información: un campo con un error no tiene nivel, y omitirlo infravaloraría
+la categoría, así que `information(ClassClassification)` lanza `IllegalArgumentException` ante una.
 
 El responsable del sistema declara las otras tres dimensiones, y también puede elevar la confidencialidad o la
 integridad, **nunca bajarlas**: el código fija el suelo. Declarar un nivel inferior al que necesitan los campos deja la
@@ -71,9 +75,10 @@ declaración es `declared: <tu motivo>`.
 
 ## Completa o cota inferior
 
-Mientras no se declare la autenticidad, la trazabilidad o la disponibilidad, la categoría es solo una **cota inferior**:
-el sistema podría estar en una superior. `isComplete()` es `true` cuando las tres están valoradas, y `missing()` lista
-las que no.
+Mientras no se haya dado información, o no se declare la autenticidad, la trazabilidad o la disponibilidad, la categoría
+es solo una **cota inferior**: el sistema podría estar en una superior. `isComplete()` es `true` cuando se dio
+información **y** las tres dimensiones están valoradas, y `missing()` lista las que no. Sin información, `summary()`
+termina con `; no information given (lower bound)`.
 
 ## Miembros
 
@@ -83,7 +88,7 @@ las que no.
 | `Optional<Valuation> valuation(Dimension dimension)` | optional | La valoración de una dimensión, o vacío si la información no fija ningún requisito y no se declaró nada. |
 | `List<Valuation> valuations()` | lista inmutable | Todas las valoraciones, en el orden de las dimensiones. |
 | `Category category()` | categoría | El nivel más alto de cualquier dimensión; `BASIC` cuando ninguna dimensión tiene nivel. |
-| `boolean isComplete()` | `boolean` | Si la autenticidad, la trazabilidad y la disponibilidad están valoradas, de modo que la categoría es definitiva y no una cota inferior. |
+| `boolean isComplete()` | `boolean` | Si se dio información y la autenticidad, la trazabilidad y la disponibilidad están valoradas, de modo que la categoría es definitiva y no una cota inferior. |
 | `Set<Dimension> missing()` | conjunto | Las dimensiones de autenticidad, trazabilidad y disponibilidad sin valoración, en el orden de las dimensiones. La confidencialidad y la integridad nunca se listan. |
 | `String summary()` | `String` | Un resumen de una línea en inglés con los nombres del ENS, como `Category MEDIUM (MEDIA): C MEDIUM, I HIGH; not declared: T, A, D (lower bound)`. |
 
@@ -107,7 +112,7 @@ tiene constructor público.
 
 | Miembro | Efecto |
 |---|---|
-| `Builder information(Collection<FieldClassification> fields)` | **Añade** los campos de la información que maneja el sistema. |
+| `Builder information(ClassClassification classification)` | **Añade** los campos de una clase de la información que maneja el sistema; el motivo nombra `<clase>.<ruta>`. `IllegalArgumentException` si la clasificación tiene errores (llámalo una vez por cada clase). |
 | `Builder information(Collection<InventoryField> fields, Taxonomy taxonomy)` | **Añade** campos guardados de un [inventario de datos](classify/inventory.md), resueltos con la taxonomía; los campos exentos se omiten, y el motivo nombra `<object>.<path>`. `TaxonomyException` si la taxonomía no contiene una clave. |
 | `Builder declare(Dimension dimension, Level level, String reason)` | Declara el nivel de una dimensión y por qué. En confidencialidad e integridad solo puede elevar lo que fija la información. `NullPointerException` si un argumento es `null`. |
 | `EnsCategorization build()` | Crea la categorización. |
@@ -122,7 +127,7 @@ import io.github.devbpm.linneo.ens.EnsCategorization.Level;
 ClassClassification student = classifier.classify(Student.class);
 
 EnsCategorization ens = EnsCategorization.builder()
-        .information(student.fields())
+        .information(student)
         .build();
 ens.summary();      // Category HIGH (ALTA): C HIGH, I HIGH; not declared: T, A, D (lower bound)
 ens.isComplete();   // false
@@ -140,7 +145,7 @@ import io.github.devbpm.linneo.ens.EnsCategorization.Level;
 ClassClassification student = classifier.classify(Student.class);
 
 EnsCategorization complete = EnsCategorization.builder()
-        .information(student.fields())
+        .information(student)
         .declare(Dimension.AVAILABILITY, Level.MEDIUM, "enrollment closes on fixed dates")
         .declare(Dimension.AUTHENTICITY, Level.MEDIUM, "students sign in")
         .declare(Dimension.TRACEABILITY, Level.MEDIUM, "changes to records are audited")

@@ -28,9 +28,11 @@ import io.github.devbpm.linneo.classify.InventoryField;
 import io.github.devbpm.linneo.internal.Json;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * The taxonomy translated to Apache Atlas: the classification types to create, and the classifications of each
@@ -123,14 +125,44 @@ public final class AtlasCatalog {
     }
 
     /**
-     * The body of {@code POST /api/atlas/v2/types/typedefs} that creates every classification type at once. Atlas
-     * answers 409 when the types already exist; send the same body with {@code PUT} to update them.
+     * The body of {@code POST /api/atlas/v2/types/typedefs} that creates every classification type at once, for the
+     * first publication. Atlas creates all the types of a request or none, and answers 409 if one exists; it updates
+     * with {@code PUT} only types that exist. So to publish again, after the taxonomy gained terms, read the names
+     * Atlas has ({@code GET /api/atlas/v2/types/typedefs/headers}) and send {@link #createJson(Collection)} with
+     * {@code POST} and then {@link #updateJson(Collection)} with {@code PUT}.
      *
      * @return a JSON object with the member {@code classificationDefs}
      */
     public String typeDefsJson() {
-        return new Json().raw("classificationDefs", Json.array(classificationDefs().stream()
-                .map(AtlasClassificationDef::toJson).toList())).end();
+        return typeDefsJson(classificationDefs());
+    }
+
+    /**
+     * The body of {@code POST /api/atlas/v2/types/typedefs} that creates the classification types Atlas does not have
+     * yet, parents before children.
+     *
+     * @param existingNames the names of the types Atlas has
+     * @return a JSON object with the member {@code classificationDefs}, empty when there is nothing to create
+     */
+    public String createJson(Collection<String> existingNames) {
+        Set<String> existing = Set.copyOf(existingNames);
+        return typeDefsJson(classificationDefs().stream().filter(def -> !existing.contains(def.name())).toList());
+    }
+
+    /**
+     * The body of {@code PUT /api/atlas/v2/types/typedefs} that updates the classification types Atlas already has.
+     *
+     * @param existingNames the names of the types Atlas has
+     * @return a JSON object with the member {@code classificationDefs}, empty when there is nothing to update
+     */
+    public String updateJson(Collection<String> existingNames) {
+        Set<String> existing = Set.copyOf(existingNames);
+        return typeDefsJson(classificationDefs().stream().filter(def -> existing.contains(def.name())).toList());
+    }
+
+    private static String typeDefsJson(List<AtlasClassificationDef> defs) {
+        return new Json().raw("classificationDefs", Json.array(defs.stream().map(AtlasClassificationDef::toJson)
+                .toList())).end();
     }
 
     /**

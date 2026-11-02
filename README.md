@@ -89,8 +89,6 @@ the build fail when the model and its classification drift apart.
   (classifications and nested tags), [DataHub](https://datahub.com/) (a business glossary) and
   [Apache Atlas](https://atlas.apache.org/) (classification types, usable by Apache Ranger tag policies), plus the
   `x-linneo` extension of an OpenAPI description and the schema of an Open Data Contract Standard contract.
-- **A command line.** `java -jar linneo.jar` writes a taxonomy, compares taxonomies or stored inventories with exit
-  codes a build pipeline can act on, and exports the taxonomy to the catalogs, with no Java to write.
 - **Extensible.** Add your own terms or tighten existing ones through a `TaxonomyExtension`, loaded with
   `ServiceLoader`.
 
@@ -354,7 +352,7 @@ ProcessingActivity enrollment = ProcessingActivity.builder("enrollment", "Studen
         .dataSubjects(DataSubjects.STUDENT)
         .entities(Person.class)                          // its personal fields are the data processed
         .legalBasis(LegalBasis.PUBLIC_INTEREST)          // article 6.1.e
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)   // article 9.2.g
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)   // article 9.2.g
         .legalReference("Higher Education Act, art. 12")
         .retention("Five years after the student leaves")
         .build();

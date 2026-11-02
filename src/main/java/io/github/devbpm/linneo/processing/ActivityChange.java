@@ -224,7 +224,8 @@ public record ActivityChange(String activity, CheckedActivity before, CheckedAct
         content.put(Aspect.PROTECTION, levels);
         content.put(Aspect.LEGAL_BASIS, value(governance.legalBasis()));
         content.put(Aspect.LEGITIMATE_INTEREST, value(governance.legitimateInterest()));
-        content.put(Aspect.SPECIAL_CATEGORY_CONDITION, value(governance.specialCategoryCondition()));
+        content.put(Aspect.SPECIAL_CATEGORY_CONDITION, sorted(governance.specialCategoryConditions().stream()
+                .map(Enum::name)));
         content.put(Aspect.CRIMINAL_DATA_BASIS, value(governance.criminalDataBasis()));
         content.put(Aspect.LEGAL_REFERENCE, value(governance.legalReference()));
         content.put(Aspect.RECIPIENTS, sorted(governance.recipients().stream()));

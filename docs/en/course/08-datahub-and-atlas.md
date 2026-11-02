@@ -243,8 +243,8 @@ String typeDefs = atlas.typeDefsJson();
 ```
 
 `classificationDefs()` lists 147 types for the standard taxonomy — six roots, 15 levels, 126 categories, every super
-type first — and `typeDefsJson()` puts them all in one body for `POST /api/atlas/v2/types/typedefs`. The definition
-of `Grade`:
+type first — and `typeDefsJson()` puts them all in one body for the first `POST /api/atlas/v2/types/typedefs`. The
+definition of `Grade`:
 
 ```json
 {"name":"DataCategory.user.education.grade","description":"Grade: Marks, grades or assessment results obtained by the subject.","superTypes":["DataCategory.user.education"],"attributeDefs":[]}
@@ -280,6 +280,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class PublishToAtlas {
 
@@ -290,14 +294,30 @@ public final class PublishToAtlas {
             (System.getenv("ATLAS_USER") + ":" + System.getenv("ATLAS_PASSWORD")).getBytes(StandardCharsets.UTF_8));
     private final AtlasCatalog catalog = AtlasCatalog.of(Taxonomy.load());
 
-    /** Creates every classification type in one request; Atlas answers 409 if they already exist. */
-    void createTypes() throws IOException, InterruptedException {
-        send("POST", API.resolve("types/typedefs"), catalog.typeDefsJson());
+    /** Creates the types Atlas lacks and updates the ones it has: a POST is all or nothing, so they go apart. */
+    void publishTypes() throws IOException, InterruptedException {
+        Set<String> existing = existingTypes();
+        sendTypes("POST", catalog.createJson(existing));
+        sendTypes("PUT", catalog.updateJson(existing));
     }
 
-    /** Updates the types that already exist, with the same body. */
-    void updateTypes() throws IOException, InterruptedException {
-        send("PUT", API.resolve("types/typedefs"), catalog.typeDefsJson());
+    /** The names of the types Atlas has, read from the headers with a regular expression. */
+    private Set<String> existingTypes() throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder(API.resolve("types/typedefs/headers"))
+                .header("Authorization", authorization).GET().build();
+        String body = http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        Set<String> names = new HashSet<>();
+        Matcher name = Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
+        while (name.find()) {
+            names.add(name.group(1));
+        }
+        return names;
+    }
+
+    private void sendTypes(String method, String json) throws IOException, InterruptedException {
+        if (!json.equals("{\"classificationDefs\":[]}")) {   // nothing for this verb
+            send(method, API.resolve("types/typedefs"), json);
+        }
     }
 
     /** Adds the classifications of a field to the column entity with the given guid. */
@@ -324,10 +344,11 @@ Three things are left to your integration:
 
 - **Finding the column.** Linneo does not know the `guid` of the column entity; look it up in Atlas from the
   column's qualified name.
-- **Running it again.** `POST /types/typedefs` creates types and answers 409 when they already exist: on later runs
-  send the same body with `PUT` to update them (`updateTypes()` above). Likewise, Atlas rejects a classification a
-  column already has. The bodies were checked against Apache Atlas 2.3.0; classification names with dots are valid
-  since Atlas 1.0 and the API is unchanged up to 2.5.0.
+- **Running it again.** `POST /types/typedefs` creates all the types of a request or none, and answers 409 if one
+  exists, while `PUT` updates only types that exist: that is why `publishTypes()` above reads the names Atlas has and
+  sends `createJson(existing)` with `POST` and `updateJson(existing)` with `PUT`. Likewise, Atlas rejects a
+  classification a column already has. The bodies were checked against Apache Atlas 2.3.0; classification names with
+  dots are valid since Atlas 1.0 and the API is unchanged up to 2.5.0.
 - **Propagation.** The body sets no `propagate` flag, so Atlas applies its default: in a stock installation the
   classifications flow along lineage to derived columns. A statistics column computed from `Grade.mark` would then carry
   `PersonalData.Personal` and `Identifiability.Identified` next to its own `Identifiability.Aggregated`. Decide what
@@ -368,8 +389,8 @@ Linneo, so you can rename all of them freely.
 - **Editing Linneo's terms in the DataHub UI.** The next run of the publisher replaces those aspects.
 - **Attaching only the category classification in Atlas.** `DataCategory.user.health_and_medical.disability` does not
   carry `Confidentiality.High` through its super types; send `classificationsJson(field)`, which lists every label.
-- **Posting the Atlas typedefs a second time unchanged.** `POST` answers 409 for existing types; send the same body with
-  `PUT`.
+- **Posting the Atlas typedefs a second time unchanged.** `POST` answers 409 if one type exists and creates none of
+  them; split the types with `createJson` and `updateJson`.
 - **Ignoring Atlas propagation.** Derived columns may receive the personal-data classifications of their sources.
 - **Computing labels from the category instead of the field** (`termsOf(field.category())`): you lose the raised
   levels, the identifiability and the aggregated/anonymised distinction, as in module 7.

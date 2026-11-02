@@ -88,6 +88,24 @@ public final class ProcessingChecker {
             SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST, SpecialCategoryCondition.HEALTH_OR_SOCIAL_CARE,
             SpecialCategoryCondition.PUBLIC_HEALTH);
 
+    // The provisions of the LOPDGDD that require a law with the rank of statute ("norma con rango de ley") for the
+    // bases the activity declares: article 8 for a legal obligation or a task in the public interest, article 9.2
+    // for some special category conditions, article 10 for criminal offence data authorised by law.
+    private static List<String> statuteArticles(Governance governance, boolean special, boolean criminal) {
+        List<String> articles = new ArrayList<>();
+        if (governance.legalBasis() == LegalBasis.LEGAL_OBLIGATION
+                || governance.legalBasis() == LegalBasis.PUBLIC_INTEREST) {
+            articles.add("8");
+        }
+        if (special && governance.specialCategoryConditions().stream().anyMatch(STATUTE_REQUIRED_IN_SPAIN::contains)) {
+            articles.add("9.2");
+        }
+        if (criminal && governance.criminalDataBasis() == CriminalDataBasis.AUTHORISED_BY_LAW) {
+            articles.add("10");
+        }
+        return articles;
+    }
+
     private final Taxonomy taxonomy;
     private final Classifier classifier;
     private final Jurisdiction jurisdiction;
@@ -346,19 +364,21 @@ public final class ProcessingChecker {
             }
 
             boolean special = categories.values().stream().anyMatch(c -> c.nature() == LegalNature.SPECIAL_CATEGORY);
-            SpecialCategoryCondition condition = governance.specialCategoryCondition();
-            if (special && condition == null) {
+            Set<SpecialCategoryCondition> conditions = governance.specialCategoryConditions();
+            if (special && conditions.isEmpty()) {
                 error(Element.SPECIAL_CATEGORY_CONDITION, Code.MISSING_SPECIAL_CATEGORY_CONDITION,
                         "Special categories of data ("
                         + keysOf(LegalNature.SPECIAL_CATEGORY) + ") need a condition of GDPR article 9.2");
-            } else if (!special && condition != null) {
-                warning(Element.SPECIAL_CATEGORY_CONDITION, Code.UNNEEDED_CONDITION, "Article "
-                        + condition.article()
-                        + " is declared but the activity processes no special category of data");
-            } else if (condition != null && condition.requiresLegalReference()) {
-                resting.add(condition.article());
+            } else if (!special && !conditions.isEmpty()) {
+                warning(Element.SPECIAL_CATEGORY_CONDITION, Code.UNNEEDED_CONDITION, "Article(s) "
+                        + String.join(", ", conditions.stream().map(SpecialCategoryCondition::article).toList())
+                        + " declared but the activity processes no special category of data");
+            } else {
+                conditions.stream().filter(SpecialCategoryCondition::requiresLegalReference)
+                        .forEach(condition -> resting.add(condition.article()));
             }
-            if (special && condition == SpecialCategoryCondition.EXPLICIT_CONSENT
+            // With explicit consent alone; another condition declared beside it covers the data consent cannot.
+            if (special && conditions.equals(Set.of(SpecialCategoryCondition.EXPLICIT_CONSENT))
                     && jurisdiction == Jurisdiction.SPAIN) {
                 String keys = String.join(", ", categories.keySet().stream()
                         .filter(key -> CONSENT_INSUFFICIENT_IN_SPAIN.stream()
@@ -387,12 +407,22 @@ public final class ProcessingChecker {
             }
 
             if (!resting.isEmpty() && governance.legalReference() == null) {
-                boolean statute = jurisdiction == Jurisdiction.SPAIN && special
-                        && STATUTE_REQUIRED_IN_SPAIN.contains(condition);
+                List<String> statute = jurisdiction == Jurisdiction.SPAIN
+                        ? statuteArticles(governance, special, criminal) : List.of();
                 warning(Element.LEGAL_REFERENCE, Code.MISSING_LEGAL_REFERENCE, "GDPR article(s) "
                         + String.join(", ", resting)
                         + " rest on Union or Member State law; name it as the legal reference"
-                        + (statute ? " (LOPDGDD article 9.2: a law with the rank of statute)" : ""));
+                        + (statute.isEmpty() ? "" : " (LOPDGDD article(s) " + String.join(", ", statute)
+                        + ": a law with the rank of statute)"));
+            }
+            if (jurisdiction == Jurisdiction.SPAIN && governance.legalReference() == null
+                    && governance.legalBasis() != LegalBasis.CONSENT
+                    && categories.keySet().stream().anyMatch(key -> key.equals(Categories.USER_ADMINISTRATIVE_SANCTION)
+                    || key.startsWith(Categories.USER_ADMINISTRATIVE_SANCTION + "."))) {
+                warning(Element.LEGAL_REFERENCE, Code.MISSING_LEGAL_REFERENCE, "Data on administrative"
+                        + " infringements and sanctions may only be processed by the bodies competent for the"
+                        + " sanctioning procedure, with the consent of the person, or as a law with the rank of statute"
+                        + " allows (LOPDGDD article 27); name that law as the legal reference");
             }
             if (governance.retention() == null) {
                 warning(Element.RETENTION, Code.MISSING_RETENTION,
@@ -407,7 +437,9 @@ public final class ProcessingChecker {
                             + screening.summary());
                 } else if (screening.outcome() == ImpactScreening.Outcome.LIKELY) {
                     warning(Element.IMPACT_ASSESSMENT, Code.IMPACT_ASSESSMENT_RECOMMENDED, "GDPR article 35 likely"
-                            + " requires an impact assessment. " + screening.summary());
+                            + " requires an impact assessment" + (jurisdiction == Jurisdiction.SPAIN ? " (the AEPD's"
+                            + " list under article 35.4 requires one in most cases that meet two criteria or more)"
+                            : "") + ". " + screening.summary());
                 }
             }
         }

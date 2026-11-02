@@ -54,8 +54,10 @@ without it the checker reports the error `MISSING_LEGAL_BASIS`.
 
 The exception to the prohibition of processing special categories of personal data (GDPR article 9.2). An activity
 that processes a category of nature `SPECIAL_CATEGORY` needs one, besides its lawful basis; without it the checker
-reports the error `MISSING_SPECIAL_CATEGORY_CONDITION`. Declaring one for an activity without special category data
-is the warning `UNNEEDED_CONDITION`.
+reports the error `MISSING_SPECIAL_CATEGORY_CONDITION`. An activity declares a **set** of them
+(`Governance.specialCategoryConditions`), one for each kind of special data it processes under a different condition,
+such as explicit consent for health data and an employment law obligation for trade union membership. Declaring any
+for an activity without special category data is the warning `UNNEEDED_CONDITION`.
 
 | Constant | `article()` | `fideslangName()` | `requiresLegalReference()` |
 |---|---|---|---|
@@ -101,13 +103,17 @@ the `safeguard` of a [`Transfer`](activity.md#transfer). It has no `requiresLega
 ## The legal reference
 
 When an activity's bases rest on law, the checker collects the articles of every such basis that applies — the
-lawful basis, the article 9.2 condition when the activity processes special category data, and the article 10 basis
+lawful basis, the article 9.2 conditions when the activity processes special category data, and the article 10 basis
 when it processes criminal offence data — and, if `legalReference` is `null`, reports one `MISSING_LEGAL_REFERENCE`
 warning naming them all:
 
 ```text
 WARNING MISSING_LEGAL_REFERENCE screening: GDPR article(s) 6.1.c, 9.2.b, 10 rest on Union or Member State law; name it as the legal reference
 ```
+
+With `Jurisdiction.SPAIN` the warning adds `(LOPDGDD article(s) 8, 9.2, 10: a law with the rank of statute)`, naming
+the ones that apply: article 8 for a legal obligation or a task in the public interest, 9.2 for the conditions of
+article 9.2.g, h and i, and 10 for criminal offence data authorised by law.
 
 `legalReference` is a single text for the whole activity, so name every law involved in it, for example
 `Higher Education Act, arts. 12 and 31` (a fictional law).

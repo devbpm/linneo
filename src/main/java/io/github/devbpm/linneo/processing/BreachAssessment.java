@@ -20,6 +20,7 @@ import io.github.devbpm.linneo.Identifiability;
 import io.github.devbpm.linneo.LegalNature;
 import io.github.devbpm.linneo.Taxonomy;
 import io.github.devbpm.linneo.TaxonomyException;
+import io.github.devbpm.linneo.Trait;
 import io.github.devbpm.linneo.classify.FieldClassification;
 import io.github.devbpm.linneo.classify.InventoryField;
 
@@ -37,11 +38,14 @@ import java.util.Objects;
  * <pre>
  * severity = data processing context &times; ease of identification + circumstances of the breach
  * </pre>
- * Linneo scores the first two from the classification of the affected fields, and says which field sets each score:
- * the context is 4 for special category or criminal offence data, 3 for financial data, 2 for behavioural data
- * (behaviour, location), 1 for other personal data; the ease of identification is maximum when the fields include a
- * name, an identity document, biometric data or a picture, significant with contact or account data, limited with
- * internal identifiers, device identifiers or pseudonymized values, and negligible otherwise. Both can be adjusted, as
+ * Linneo scores the first two from the classification of the affected fields and the
+ * {@linkplain io.github.devbpm.linneo.Trait traits} of their categories, and says which field sets each score: the
+ * context is 4 for special category or criminal offence data, 3 for {@link Trait#FINANCIAL financial} data, 2 for
+ * {@link Trait#BEHAVIOURAL behavioural} data, 1 for other personal data; the ease of identification is maximum when a
+ * field is a {@link Trait#DIRECT_IDENTIFIER direct identifier} (a name, an identity document, biometric data, a
+ * picture), significant with a {@link Trait#CONTACT_IDENTIFIER contact identifier} (contact or account data), limited
+ * with an {@link Trait#INDIRECT_IDENTIFIER indirect identifier} or a pseudonymized value, and negligible otherwise. A
+ * field declared anonymized or aggregated is not personal data and counts for neither. Both scores can be adjusted, as
  * the methodology foresees, when the context of the data calls for it. The circumstances (how confidentiality,
  * integrity and availability were lost, and malicious intent) are declared by whoever handles the breach.
  * <pre>{@code
@@ -54,18 +58,14 @@ import java.util.Objects;
  * }</pre>
  * A low severity is read as a breach unlikely to result in a risk (article 33.1), which is recorded (article 33.5)
  * but not notified; a high or very high severity as a high risk, which is also communicated to the data subjects
- * (article 34.1) unless the data was unintelligible (article 34.3.a). It is an orientation for the first hours, not a
+ * (article 34.1) unless the data was unintelligible (article 34.3.a). A breach of confidentiality alone of data that
+ * was unintelligible, such as encrypted with a key that was not compromised, is unlikely to result in a risk and is
+ * not notified either (EDPB Guidelines 9/2022, and 01/2021 case 1). It is an orientation for the first hours, not a
  * decision: the controller assesses the risk of each breach. Instances are immutable.
  *
  * @since 0.1.0
  */
 public final class BreachAssessment {
-
-    private static final List<String> BEHAVIOURAL = List.of("user.behavior", "user.location");
-    private static final List<String> MAXIMUM_IDENTIFIERS = List.of("user.name", "user.government_id",
-            "user.biometric", "user.content.self_image");
-    private static final List<String> SIGNIFICANT_IDENTIFIERS = List.of("user.contact", "user.account");
-    private static final List<String> LIMITED_IDENTIFIERS = List.of("user.unique_id", "user.device");
 
     /**
      * How easily the affected data identifies the people it is about, with ENISA's scores.
@@ -367,10 +367,17 @@ public final class BreachAssessment {
      * Whether the supervisory authority should be notified, within 72 hours of becoming aware of the breach (GDPR
      * article 33.1).
      *
-     * @return {@code true} unless no personal data is affected or the severity is low
+     * @return {@code true} unless no personal data is affected, the severity is low, or only the confidentiality of
+     *         unintelligible data was lost
      */
     public boolean notifyAuthority() {
-        return context > 0 && severity() != Severity.LOW;
+        return context > 0 && severity() != Severity.LOW && !unintelligibleOnly();
+    }
+
+    // Only the confidentiality of data no one can read was lost: unlikely to result in a risk (EDPB Guidelines
+    // 9/2022 and 01/2021, case 1), whatever the score of the data.
+    private boolean unintelligibleOnly() {
+        return unintelligible && alteration == Alteration.NONE && unavailability == Unavailability.NONE;
     }
 
     /**
@@ -407,8 +414,9 @@ public final class BreachAssessment {
         }
         lines.add(notifyAuthority()
                 ? "Notify the supervisory authority within 72 hours of becoming aware of the breach (GDPR art. 33.1)."
-                : "The breach is unlikely to result in a risk: record it (GDPR art. 33.5); notification is not"
-                + " required (art. 33.1).");
+                : (unintelligibleOnly() && severity() != Severity.LOW ? "Only the confidentiality of unintelligible"
+                + " data was lost (EDPB Guidelines 9/2022). " : "") + "The breach is unlikely to result in a risk:"
+                + " record it (GDPR art. 33.5); notification is not required (art. 33.1).");
         if (communicateToSubjects()) {
             lines.add("Tell the data subjects without undue delay (GDPR art. 34.1).");
         } else if (unintelligible && (severity() == Severity.HIGH || severity() == Severity.VERY_HIGH)) {
@@ -610,7 +618,7 @@ public final class BreachAssessment {
                 Identification identifies = identificationOf(field);
                 if (identifies.compareTo(level) > 0) {
                     level = identifies;
-                    levelReason = (field.personal() && field.identifiability() == Identifiability.PSEUDONYMIZED
+                    levelReason = (field.identifiability() == Identifiability.PSEUDONYMIZED
                             && identifies == Identification.LIMITED ? "pseudonymized " : "identifier ")
                             + field.category().key();
                 }
@@ -629,10 +637,10 @@ public final class BreachAssessment {
                     || category.nature() == LegalNature.CRIMINAL_OFFENCE) {
                 return 4;
             }
-            if (category.isA("user.financial")) {
+            if (category.has(Trait.FINANCIAL)) {
                 return 3;
             }
-            return BEHAVIOURAL.stream().anyMatch(category::isA) ? 2 : 1;
+            return category.has(Trait.BEHAVIOURAL) ? 2 : 1;
         }
 
         private static String typeOf(int score) {
@@ -644,21 +652,21 @@ public final class BreachAssessment {
             };
         }
 
+        // A value that is not personal data, an anonymized or aggregated one included, identifies no one.
         private static Identification identificationOf(Affected field) {
+            if (!field.personal()) {
+                return Identification.NEGLIGIBLE;
+            }
             DataCategory category = field.category();
-            if (MAXIMUM_IDENTIFIERS.stream().anyMatch(category::isA)) {
-                return field.identifiability() == Identifiability.PSEUDONYMIZED ? Identification.LIMITED
-                        : Identification.MAXIMUM;
+            boolean pseudonymized = field.identifiability() == Identifiability.PSEUDONYMIZED;
+            if (category.has(Trait.DIRECT_IDENTIFIER)) {
+                return pseudonymized ? Identification.LIMITED : Identification.MAXIMUM;
             }
-            if (SIGNIFICANT_IDENTIFIERS.stream().anyMatch(category::isA)) {
-                return field.identifiability() == Identifiability.PSEUDONYMIZED ? Identification.LIMITED
-                        : Identification.SIGNIFICANT;
+            if (category.has(Trait.CONTACT_IDENTIFIER)) {
+                return pseudonymized ? Identification.LIMITED : Identification.SIGNIFICANT;
             }
-            if (LIMITED_IDENTIFIERS.stream().anyMatch(category::isA)
-                    || field.personal() && field.identifiability() == Identifiability.PSEUDONYMIZED) {
-                return Identification.LIMITED;
-            }
-            return Identification.NEGLIGIBLE;
+            return category.has(Trait.INDIRECT_IDENTIFIER) || pseudonymized ? Identification.LIMITED
+                    : Identification.NEGLIGIBLE;
         }
     }
 }

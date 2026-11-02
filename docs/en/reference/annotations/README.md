@@ -36,13 +36,13 @@ On a record component, the annotations also apply to the component's field, whic
 ## Which fields are classified
 
 The classifier walks the class and its superclasses (stopping before `Object`, `Record` and `Enum`) and considers every
-field declared by them except **static**, **transient** and **synthetic** fields (and those named `$$_...`, added by
-Hibernate), which are always skipped without any annotation. See
-[Classifier](../classify/classifier.md#which-fields-are-scanned).
+field declared by them except **static** and **synthetic** fields (and those named `$$_...`, added by Hibernate), which
+are always skipped without any annotation, and **transient** fields, which are skipped unless they carry one of Linneo's
+field annotations. See [Classifier](../classify/classifier.md#which-fields-are-scanned).
 
 A field without an annotation of its own whose type is a [`@Composite`](composite.md) class (or an array,
-collection or `Optional` of one) is not classified as one field: each field of the composite is, with the path
-`field.part`.
+collection, `Optional` or map value of one, at any depth) is not classified as one field: each field of the composite
+is, with the path `field.part`.
 
 ## Resolution order
 
@@ -54,9 +54,9 @@ For each considered field, the first rule that applies wins:
 | 2 | The field has `@Category` | the declared category (`DECLARED`; `DERIVED` if it also has `@DerivedFrom`) |
 | 2 | The field has `@CategoryByRow` | the ceiling category (`BY_ROW`) |
 | 3 | The field has `@DerivedFrom` and no `@Category` | the classification of its source (`DERIVED`) |
-| 4 | The type of the field is a `@Composite` class, or an array, collection or `Optional` of one | one classification per field of the composite, with the path `field.part`, each as its own class resolves it |
-| 5 | The class that **declares** the field has `@DefaultCategory` | that default (`CLASS_DEFAULT`) |
-| 6 | The class **being classified** has `@DefaultCategory` | that default (`CLASS_DEFAULT`) |
+| 4 | The type of the field is a `@Composite` class, or an array, collection, `Optional` or map value of one, at any depth | one classification per field of the composite, with the path `field.part`, each as its own class resolves it |
+| 5 | The class that **declares** the field has `@DefaultCategory`, and the field cannot hold data the classifier does not see | that default (`CLASS_DEFAULT`) |
+| 6 | The class **being classified** has `@DefaultCategory`, and the same holds | that default (`CLASS_DEFAULT`) |
 | 7 | none of the above | error `UNCLASSIFIED_FIELD` |
 
 Consequences:
@@ -64,6 +64,10 @@ Consequences:
 - An annotation on a field always overrides a class default.
 - The fields of a composite are resolved with the composite's own annotations and `@DefaultCategory`, never with the
   default of the class that holds it.
+- A class default never applies to a field that may hold data the classifier cannot see (a map key that is a
+  composite, several composites, `Object`, an unbound type variable, a raw container, or a class with classified fields
+  that is not `@Composite`): such a field needs its own annotation, or it is an `UNCLASSIFIED_FIELD`. See
+  [`@Composite`](composite.md#what-the-classifier-does).
 - A superclass's `@DefaultCategory` covers the fields that superclass declares, even when you classify a subclass.
 - A subclass's `@DefaultCategory` covers the fields it declares and the unannotated fields inherited from superclasses
   that have no default of their own.

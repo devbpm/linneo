@@ -100,7 +100,7 @@ Each `InventoryField` records what the code **declares**, not what a taxonomy ma
 | `key` | `"user.contact.email"`, even if a later taxonomy deprecates it |
 | `basis` | `DECLARED` (or `CLASS_DEFAULT`, `BY_ROW`, `DERIVED`) |
 | `confidentiality`, `integrity` | `HIGH`, `null`: only the levels the field raises itself |
-| `identifiability` | `IDENTIFIED` |
+| `identifiability` | `null`: the field declares none; a personal category reads as `IDENTIFIED`, which is never stored |
 | `reason` | the reason of a class default or what decides a per-row category; `null` here |
 
 A composite field appears once per part (`home.street`), a derived field with the key of its source, and an

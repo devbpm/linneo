@@ -34,6 +34,8 @@ La misma comparación gradúa los cambios de la propia taxonomía de Linneo seg�
 | Miembro | Devuelve | Descripción |
 |---|---|---|
 | `static TaxonomyDiff between(Taxonomy before, Taxonomy after)` | `TaxonomyDiff` | Compara dos versiones: `before` es la anterior, como la que una aplicación aplicó por última vez, y `after` la posterior, como con la que se ejecuta ahora. Los términos se emparejan por clave dentro de cada jerarquía. `NullPointerException` si alguna es `null`. |
+| `Taxonomy before()` | `Taxonomy` | La versión anterior comparada, tal como se pasó a `between`. |
+| `Taxonomy after()` | `Taxonomy` | La versión posterior comparada, tal como se pasó a `between`. [`DataInventory.affectedBy`](classify/inventory.md) lee ambas taxonomías para alcanzar también los campos cuya clave obsoleta tiene como sustituta una categoría modificada. |
 | `List<TermChange> changes()` | lista inmutable | Los cambios: primero las categorías de datos, después los usos y los sujetos de datos, cada grupo por clave. Un término que no cambió no aparece. |
 | `boolean isEmpty()` | `boolean` | `true` si las dos versiones tienen los mismos términos. |
 | `TermChange change(TermChange.Hierarchy hierarchy, String key)` | `TermChange` | El cambio de un término, o `null` si el término no cambió (o no está en ninguna de las dos versiones). |
@@ -52,8 +54,8 @@ Linneo lo aplica a las taxonomías. Las constantes se declaran de menor a mayor,
 |---|---|
 | `NONE` | Ningún cambio. |
 | `PATCH` | Solo cambios descriptivos: nombres, descripciones, atributos, orígenes, versiones del ciclo de vida. |
-| `MINOR` | Cambios compatibles: términos añadidos, protección más estricta, declaraciones de obsolescencia, una sustituta para un término obsoleto que no tenía. |
-| `MAJOR` | Cambios incompatibles: términos eliminados, protección más débil o mixta, un término obsoleto que ahora se resuelve a otra sustituta. |
+| `MINOR` | Cambios compatibles: términos añadidos, protección más estricta, rasgos añadidos, declaraciones de obsolescencia, una sustituta para un término obsoleto que no tenía. |
+| `MAJOR` | Cambios incompatibles: términos o rasgos eliminados, protección más débil o mixta, un término obsoleto que ahora se resuelve a otra sustituta. |
 
 ## TermChange
 
@@ -99,6 +101,7 @@ Copia los aspectos en un conjunto inmutable.
 | `REPLACEMENT` | Se fijó o cambió la clave que sustituye a un término obsoleto, de modo que el término se resuelve a otro. | `MAJOR` si el término ya tenía sustituta, `MINOR` si no tenía |
 | `NAME` | Difiere el nombre. | `PATCH` |
 | `DESCRIPTION` | Difiere la descripción. Es solo texto, pero una descripción que dice otra cosa puede ocultar un cambio de significado, lo que nunca se permite: revísala. | `PATCH` |
+| `TRAITS` | Difieren los [rasgos](terms.md#trait) del término, declarados o heredados. Las reglas jurídicas de Linneo los leen, así que añadir uno las endurece y quitarlo puede levantar una obligación. | `MINOR` si se conservan todos los rasgos anteriores, `MAJOR` si se quita alguno |
 | `ATTRIBUTES` | Difieren los atributos de una categoría de datos. | `PATCH` |
 | `ORIGIN` | Difiere el origen, por ejemplo cuando un término pasa de una extensión a la taxonomía estándar. | `PATCH` |
 | `VERSIONS` | Difiere la versión que introdujo el término, o la versión que lo declaró obsoleto sin que cambie el estado de obsolescencia. | `PATCH` |
@@ -165,23 +168,29 @@ Una taxonomía que extiendes tú puede usar la misma comprobación para seguir s
 Las aplicaciones guardan y publican las claves de la taxonomía, así que Linneo la versiona con versionado semántico y
 estas reglas, que aplica `requiredBump()`:
 
-- **Mayor** (`MAJOR`): eliminar un término, debilitar la protección de una categoría en cualquier faceta, o cambiar a
-  qué se resuelve una clave obsoleta.
-- **Menor** (`MINOR`): añadir un término, endurecer la protección, declarar obsoleto un término, o dar a un término
-  obsoleto su primera sustituta.
+- **Mayor** (`MAJOR`): eliminar un término o un rasgo, debilitar la protección de una categoría en cualquier faceta, o
+  cambiar a qué se resuelve una clave obsoleta.
+- **Menor** (`MINOR`): añadir un término o un rasgo, endurecer la protección, declarar obsoleto un término, o dar a un
+  término obsoleto su primera sustituta.
 - **Parche** (`PATCH`): cambios descriptivos (nombres, descripciones, atributos, orígenes, versiones del ciclo de vida).
 
-Dos reglas no las comprueba ningún programa: nunca cambiar el significado de una clave, y nunca reutilizar una clave
-eliminada. Un cambio `DESCRIPTION` se informa para que alguien revise que el significado se mantiene.
+Nunca cambiar el significado de una clave no lo comprueba ningún programa: un cambio `DESCRIPTION` se informa para que
+alguien revise que el significado se mantiene. Nunca reutilizar una clave eliminada solo lo comprueba la propia
+compilación de Linneo, más abajo.
 
 La propia compilación de Linneo comprueba estas reglas. Cada versión publicada conserva una copia de la taxonomía que
 distribuye, la taxonomía estándar con todas las extensiones incluidas, en
 `src/test/resources/io/github/devbpm/linneo/released/<version>.tsv`, escrita con `toTsv()`. `ReleasedTaxonomyTest`,
-que recibe de Maven la versión del proyecto como propiedad del sistema `linneo.version`, compara la taxonomía actual
-con la copia de la última versión publicada y falla cuando `requiredBump()` es mayor de lo que permite el salto de
-versión: el primero de mayor, menor y parche que difiere entre la versión publicada y la actual. Por ejemplo, un
-término eliminado hace fallar la compilación en una versión menor o de parche. Mientras no exista ninguna copia, la
-prueba se omite.
+que recibe de Maven la versión del proyecto como propiedad del sistema `linneo.version`, hace dos comprobaciones:
+
+- Compara la taxonomía actual con la copia de la **versión publicada más alta que no supera la del proyecto** (así una
+  rama de mantenimiento se compara con su propia línea y no con una versión posterior) y falla cuando `requiredBump()`
+  es mayor de lo que permite el salto de versión: el primero de mayor, menor y parche que difiere entre la versión
+  publicada y la actual. Por ejemplo, un término eliminado hace fallar la compilación en una versión menor o de parche.
+- Falla si una clave que **cualquiera** de las versiones registradas hasta esa eliminó ha vuelto a la taxonomía, ya que
+  una clave eliminada no se reutiliza nunca.
+
+Mientras no exista ninguna copia, ambas comprobaciones se omiten.
 
 Véase también: [Taxonomía](taxonomy.md#la-taxonomía-como-datos) ·
 [Niveles de protección](protection-levels.md#direction) · [Extender la taxonomía](extending.md) ·

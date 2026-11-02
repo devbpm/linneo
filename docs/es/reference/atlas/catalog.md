@@ -37,7 +37,9 @@ Inmutable y seguro entre hilos. No tiene constructor público.
 | `static AtlasCatalog of(Taxonomy taxonomy)` | catálogo | Con los [nombres por defecto](mapping.md) (`AtlasMapping.defaults()`). |
 | `static AtlasCatalog of(Taxonomy taxonomy, AtlasMapping mapping)` | catálogo | Con los nombres de raíz indicados. `NullPointerException` si algún argumento es `null`. |
 | `List<AtlasClassificationDef> classificationDefs()` | lista nueva y modificable | Los tipos de clasificación que hay que crear, en orden de creación (consulta [Tipos de clasificación](#tipos-de-clasificación)). |
-| `String typeDefsJson()` | `String` | El cuerpo de `POST /api/atlas/v2/types/typedefs` que crea todos los tipos de clasificación a la vez: `{"classificationDefs":[…]}`. |
+| `String typeDefsJson()` | `String` | El cuerpo de `POST /api/atlas/v2/types/typedefs` que crea todos los tipos de clasificación a la vez: `{"classificationDefs":[…]}`. Solo para la primera publicación: es todo o nada, así que falla si alguno de los tipos existe. |
+| `String createJson(Collection<String> existingNames)` | `String` | El cuerpo de `POST /api/atlas/v2/types/typedefs` con los tipos que Atlas aún no tiene, los padres primero; `{"classificationDefs":[]}` si no hay ninguno. |
+| `String updateJson(Collection<String> existingNames)` | `String` | El cuerpo de `PUT /api/atlas/v2/types/typedefs` con los tipos que Atlas ya tiene. |
 | `String classificationOf(DataCategory category)` | `String` | El nombre de la clasificación de la categoría, como `DataCategory.user.contact.email`. |
 | `List<String> classificationsOf(DataCategory category)` | lista | La clasificación propia de la categoría seguida de las de la protección que implica. |
 | `List<String> classificationsOf(FieldClassification field)` | lista | Las clasificaciones de una columna clasificada: su categoría, su naturaleza jurídica si es dato personal y la protección efectiva del campo. |
@@ -130,10 +132,18 @@ plus extensions).` Las descripciones se generan en inglés.
 {"classificationDefs":[{"name":"PersonalData","description":"Legal nature of personal data under the GDPR.","superTypes":[],"attributeDefs":[]},{"name":"Confidentiality","description":"Harm that disclosing the data would cause.","superTypes":[],"attributeDefs":[]}, …]}
 ```
 
-`POST /api/atlas/v2/types/typedefs` **crea** tipos y responde 409 si ya existen. En ejecuciones posteriores
-—por ejemplo, después de añadir términos a la taxonomía— envía el mismo cuerpo con `PUT /api/atlas/v2/types/typedefs`
-para actualizarlos. Para enviar solo lo nuevo, enumera los tipos existentes en
-`GET /api/atlas/v2/types/typedefs/headers` y construye los cuerpos a partir de `classificationDefs()`.
+`POST /api/atlas/v2/types/typedefs` **crea** tipos, todos los de una petición o ninguno: responde 409 si alguno ya
+existe. `PUT` actualiza, pero solo tipos que existen. Así que `typeDefsJson()` sirve para la primera publicación, y en
+ejecuciones posteriores —por ejemplo, después de añadir términos a la taxonomía— hace falta un cuerpo para cada verbo:
+lee los nombres que Atlas tiene en `GET /api/atlas/v2/types/typedefs/headers` y reparte las definiciones con ellos.
+
+```java
+Collection<String> existing = names;               // los nombres leídos de Atlas
+String create = catalog.createJson(existing);      // POST: los tipos que Atlas no tiene, los padres primero
+String update = catalog.updateJson(existing);      // PUT: los tipos que tiene
+```
+
+Cualquiera de los dos cuerpos es `{"classificationDefs":[]}` si no hay nada para ese verbo: omite la petición.
 
 ## Clasificaciones de una categoría
 

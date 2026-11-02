@@ -156,11 +156,16 @@ identificabilidad.
 `TaxonomyBuilder.build()` resuelve las facetas empezando por el padre:
 
 - Una categoría **raíz** debe declarar `nature`, `confidentiality` e `integrity`.
-- Una categoría **hija** hereda toda faceta que no declara. Una faceta que declara solo puede ser **igual o más
-  estricta**:
-  - `nature`: debe admitirla la naturaleza del padre (`parent.nature().admits(child)`);
-  - `confidentiality`, `integrity`: no pueden ser inferiores a las del padre (`compareTo`).
-  En caso contrario, `build()` lanza `TaxonomyException`.
+- Una categoría **hija** hereda toda faceta que no declara, y toda faceta que declara es un **mínimo**, de modo que el
+  resultado nunca es más débil que el del padre:
+  - `nature`: la del padre, o una que el padre admita (`parent.nature().admits(child)`), que precisa datos personales
+    ordinarios como categoría especial o infracciones penales. Un dato ordinario declarado bajo un padre de categoría
+    especial toma la naturaleza del padre; una naturaleza que cambia si el dato es personal, o que pasa de categoría
+    especial a infracciones penales o al revés, hace que `build()` lance `TaxonomyException`;
+  - `confidentiality`, `integrity`: un nivel inferior al del padre se **eleva** al del padre (`max`), no es un error.
+    Elevar una categoría eleva, por tanto, todas las que cuelgan de ella.
+  Lo mismo vale cuando se refina una categoría, como hacen dos extensiones que elevan la misma categoría: se conserva
+  el nivel más estricto, se aplique primero la que se aplique.
 - Una categoría cuya naturaleza efectiva cumple `requiresMaximumProtection()` (`SPECIAL_CATEGORY` o
   `CRIMINAL_OFFENCE`) debe acabar con confidencialidad `HIGH` e integridad `HIGH`, declaradas o heredadas. Una hija
   que pasa a ser categoría especial bajo un padre con niveles inferiores debe, por tanto, subirlos también.

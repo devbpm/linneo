@@ -163,7 +163,7 @@ assessment *possible*, not likely (see [Impact assessment and breaches](#impact-
 anyway, a reference to it:
 
 ```java
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .legalReference("Higher Education Act, arts. 12 and 31")
         .impactAssessment("DPIA-2026-01")
 ```
@@ -174,9 +174,13 @@ articles. One `legalReference` text covers every basis of the activity, so name 
 
 The checker applies the GDPR alone by default. For a Spanish institution, create it with a jurisdiction:
 `new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)`. It then also reports the error
-`CONSENT_NOT_SUFFICIENT` when explicit consent is the only condition for beliefs, trade union membership or other
-data of LOPDGDD article 9.1, and says in `MISSING_LEGAL_REFERENCE` that article 9.2.g, h and i need a law with the
-rank of statute.
+`CONSENT_NOT_SUFFICIENT` when explicit consent is the **only** condition for beliefs, trade union membership or other
+data of LOPDGDD article 9.1 (an activity may declare several conditions, one for each kind of special data, and another
+condition beside consent covers what consent cannot), and says in `MISSING_LEGAL_REFERENCE` which provisions need a
+law with the rank of statute: LOPDGDD article 8 for a legal obligation or a task in the public interest, 9.2 for the
+conditions of article 9.2.g, h and i, and 10 for criminal offence data authorised by law. It also warns when data on
+administrative sanctions (`user.administrative_sanction`) is processed without consent or a legal reference (LOPDGDD
+article 27), and its warning about an impact assessment cites the AEPD's list under article 35.4.
 
 The reference page [Legal bases](../reference/processing/bases.md) lists every constant with its article and its
 fideslang name.
@@ -276,7 +280,7 @@ public final class UniversityActivities {
             .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_EDUCATION_PREVIOUS_EDUCATION,
                     USER_EDUCATION_TEST_SCORE, USER_HEALTH_AND_MEDICAL_DISABILITY)
             .legalBasis(LegalBasis.PUBLIC_INTEREST)
-            .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+            .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
             .legalReference("Higher Education Act, arts. 12 and 31")
             .retention("Until the end of the admission cycle; admitted applicants move to the student record")
             .recipients("Admissions board")
@@ -400,7 +404,7 @@ ProcessingActivity support = ProcessingActivity.builder("learning-support", "Lea
 // In the officer's storage: what she decides.
 Governance stored = Governance.builder()
         .legalBasis(LegalBasis.PUBLIC_INTEREST)
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .legalReference("Higher Education Act, arts. 12 and 31")
         .retention("Until the end of the studies")
         .impactAssessment("DPIA-2026-07")
@@ -408,6 +412,10 @@ Governance stored = Governance.builder()
 
 CheckedActivity checked = checker.check(support.withGovernance(stored));   // valid, no violations
 ```
+
+`withGovernance` keeps what the code declares about the activity: the risk factors the code gives it (for instance
+`Factor.AUTOMATED_DECISIONS`) are a minimum that the stored governance adds to and cannot drop, so a governance saved
+before the code changed never lifts an impact assessment.
 
 The scope in code has no governance yet, so its check finds only governance problems. Each `ProcessingViolation`
 carries the `element()` of the activity it is in:
@@ -520,8 +528,13 @@ The checker also screens each activity for the need of a data protection impact 
 counts the criteria of the European Data Protection Board's guidelines that the activity meets, warns when two are met
 and no assessment is referred to, and reports a case of article 35.3 as an error. What only the officer knows, such as
 the scale of the processing, she declares with `riskFactors(...)`: `Factor.LARGE_SCALE` on `learning-support` would
-make it an error until it refers to an assessment. When a breach happens, `BreachAssessment` scores its severity from
-the classification of the affected fields, as an orientation for the first hours. See
+make it an error until it refers to an assessment. The criteria the code can see are read from the **traits** of the
+terms (module 2): a purpose with `EVALUATION` is criterion 1, `MONITORING` criterion 3, a category with `FINANCIAL`,
+`BEHAVIOURAL` or `PRIVATE_LIFE` criterion 4, and a data subject or category with `VULNERABLE` criterion 7, so a term of
+your own extension (module 6) counts as soon as it declares its traits. When a breach happens, `BreachAssessment` scores
+its severity from the classification of the affected fields and the traits of their categories, as an orientation for
+the first hours; a breach of the confidentiality alone of data that was unintelligible, such as strongly encrypted, is
+not notified to the authority. See
 [ImpactScreening](../reference/processing/impact-screening.md) and
 [BreachAssessment](../reference/processing/breach-assessment.md).
 
@@ -531,8 +544,9 @@ An alumnus writes to the university: what do you do with my data, and can you de
 of the answer, and `SubjectRights` reads it for one category of data subjects:
 
 ```java
-ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
-SubjectRights alumni = SubjectRights.of(record, DataSubjects.ALUMNUS);
+Taxonomy taxonomy = Taxonomy.load();
+ProcessingRecord record = new ProcessingChecker(taxonomy).verify(UniversityActivities.all());
+SubjectRights alumni = SubjectRights.of(record, taxonomy, DataSubjects.ALUMNUS);
 
 for (SubjectRights.ActivityRights activity : alumni.activities()) {
     System.out.println(activity.activity().activity().name());
@@ -549,7 +563,7 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 |---|---|---|
 | `ACCESS` | `YES` | Art. 15: always, with the purposes, recipients, transfers and retention of the activity |
 | `RECTIFICATION` | `YES` | Art. 16 |
-| `ERASURE` | `YES` | The purpose is direct marketing: the person may object at any time and the data is then erased |
+| `ERASURE` | `YES` | The purpose is direct marketing (the `DIRECT_MARKETING` trait of `marketing` and its children): the person may object at any time and the data is then erased |
 | `RESTRICTION` | `CONDITIONAL` | Art. 18.1 lists the cases |
 | `PORTABILITY` | `NO` | Only for processing based on consent or a contract; this one rests on legitimate interests |
 | `OBJECTION` | `YES` | Art. 21.2: direct marketing |
@@ -557,7 +571,7 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 The same call for a student shows what the basis changes. Enrollment rests on a task in the public interest:
 
 ```java
-SubjectRights students = SubjectRights.of(record, DataSubjects.STUDENT);
+SubjectRights students = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT);
 SubjectRights.Entitlement erasure = students.activity("enrollment").orElseThrow()
         .entitlement(SubjectRights.Right.ERASURE);
 System.out.println(erasure.availability() + ": " + erasure.explanation());
@@ -570,8 +584,11 @@ NO: Art. 17.3.b: the data is kept while the task in the public interest requires
 Every `Entitlement` carries an English explanation that cites the articles. To find the data,
 `dataCategories()`, `entities()`, `objects()` and, with a [data inventory](10-reconciliation.md),
 `storedFields(inventory, taxonomy)` give the personal fields to look at, object by object. With
-`SubjectRights.of(record, DataSubjects.ALUMNUS, Jurisdiction.SPAIN)` the explanations of rectification and erasure add
-that the data is blocked before it is deleted (LOPDGDD art. 32).
+`SubjectRights.of(record, taxonomy, DataSubjects.ALUMNUS, Jurisdiction.SPAIN)` the explanations of rectification and
+erasure add that the data is blocked before it is deleted (LOPDGDD art. 32). The key is resolved with the taxonomy, so a
+data subject it does not have is a `TaxonomyException` and not an empty answer, and an activity with `DIRECT_MARKETING`
+purposes and a legal obligation or public task basis gets a `CONDITIONAL` erasure instead of `YES`: the data is erased
+except what art. 17.3.b keeps.
 
 This is the start of the answer, not the answer. `CONDITIONAL` means the article lists cases, and whether this request
 meets them is for the data protection officer to decide, as is every request. Linneo reads the record; giving the
@@ -643,7 +660,7 @@ this module, which was declared in code with no governance:
 ```java
 Governance saved = Governance.builder()
         .legalBasis(LegalBasis.CONSENT)
-        .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
         .build();
 ```
 

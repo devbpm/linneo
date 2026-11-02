@@ -94,18 +94,28 @@ void everyClassOfTheModelIsClassified() {
   pero no está garantizado. Un campo se identifica por su `path`, que es su nombre, nunca por su posición.
 - Como un campo se identifica por su nombre, un campo que **oculta** otro del mismo nombre de una superclase es un
   error `DUPLICATE_FIELD`: solo se clasifica el campo de la superclase.
-- Se **excluyen** sin necesidad de anotación los campos `static`, `transient` y sintéticos (como la referencia a la
-  instancia contenedora en una clase interna) y los campos cuyo nombre empieza por `$$_` (los añaden herramientas de
-  bytecode, por ejemplo la mejora de Hibernate: `$$_hibernate_interceptor`).
+- Se **excluyen** sin necesidad de anotación los campos `static` y sintéticos (como la referencia a la instancia
+  contenedora en una clase interna), los campos cuyo nombre empieza por `$$_` (los añaden herramientas de bytecode, por
+  ejemplo la mejora de Hibernate: `$$_hibernate_interceptor`) y los campos `transient`. Un campo `transient` no se
+  guarda, así que se omite, **salvo que lleve una de las anotaciones de campo de Linneo** (`@Category`,
+  `@CategoryByRow`, `@DerivedFrom` o `@Exempt`): una anotación dice que contiene datos que clasificar, y se clasifica
+  como cualquier otro campo.
 - **Proxies de Hibernate.** Una clase cuyo nombre contiene `$HibernateProxy$` se clasifica como la entidad que
   extiende: el `type()` de su [`ClassClassification`](results.md#classclassification) es la entidad, no el proxy.
 - **Se entra en los compuestos.** Un campo sin anotación propia cuyo tipo es una clase
-  [`@Composite`](../annotations/composite.md), o un array, una colección o un `Optional` de ella, se clasifica por los
+  [`@Composite`](../annotations/composite.md) (lo es también una subclase de un compuesto: la anotación se hereda), o un
+  array, una colección, un `Optional` o los valores de un `Map` de ella, a cualquier profundidad, se clasifica por los
   campos del compuesto: una entrada por campo, con la ruta `campo.parte` (`home.street`), con las anotaciones y el
-  `@DefaultCategory` del propio compuesto, no los de la clase contenedora. Un `Map` nunca se recorre. Una clase que no
-  está marcada `@Composite`, como una clase `@Embedded` de JPA, es un campo ordinario que necesita una categoría
-  propia (o un valor por defecto de la clase): marca la clase `@Composite` en lugar de pasarla a `verify` por
-  separado.
+  `@DefaultCategory` del propio compuesto, no los de la clase contenedora. Las variables de tipo se resuelven a través
+  de las superclases de la clase que se clasifica.
+- **Datos que el clasificador no ve.** Un campo que puede contener datos que el clasificador no puede dividir en campos
+  nunca toma un valor por defecto de la clase y es un error `UNCLASSIFIED_FIELD` salvo que esté anotado: un compuesto
+  como clave de mapa o como argumento de tipo de una clase que no es una colección, varios compuestos en un mismo tipo,
+  un valor tipado `Object`, una variable de tipo sin enlazar o un contenedor sin parametrizar, y una clase con campos
+  clasificados que no es `@Composite`, como una entidad referenciada o una clase `@Embedded` de JPA. En el último caso,
+  marca la clase `@Composite` en lugar de pasarla a `verify` por separado, o declara lo que guarda el campo (como la
+  clave del registro). Un valor por defecto de la clase clasificaría, si no, como no personal lo que envuelve datos
+  personales.
 - **Campos derivados.** Un campo marcado con [`@DerivedFrom`](../annotations/derived-from.md) toma la clasificación de
   su fuente, o declara una que protege al menos tanto. Sus fuentes pueden estar declaradas después de él, ser a su vez
   campos derivados, ser partes de un compuesto o pertenecer a otra clase (`type`), que el clasificador también lee.
@@ -127,11 +137,13 @@ Los que no tienen ruta van primero, como las comprobaciones de cada `@DefaultCat
 abajo), y los problemas de un compuesto están en la posición del campo que lo contiene (ruta `campo.parte`). El orden
 no depende del orden en que se clasifiquen las clases.
 
-La protección nunca baja en silencio: un campo derivado debe proteger al menos tanto como cada una de sus fuentes,
-salvo que declare un valor anonimizado o agregado, y un compuesto guardado como un solo valor debe proteger al menos
-tanto como los campos del compuesto. Un compuesto que se contiene a sí mismo, y campos derivados que dependen unos de
-otros (dentro de una clase o entre clases, también a través de las partes de un compuesto), son un `CYCLE`. Las clases
-que derivan de los otros campos de la otra no lo son. Un campo que deriva de un campo con error, incluso uno en un
+La protección nunca baja en silencio: un campo derivado debe proteger al menos tanto como cada una de sus fuentes, y un
+valor que declara anonimizado o agregado puede perder solo la **naturaleza personal** de sus fuentes, nunca su
+confidencialidad, su integridad ni su carácter secreto. Un campo que guarda compuestos como un solo valor, declarado o
+derivado, debe proteger al menos tanto como los campos de los compuestos, incluidos un compuesto que se contiene a sí
+mismo y dos que se contienen entre sí, sea cual sea el orden de las clases. Un compuesto que se contiene a sí mismo, y
+campos derivados que dependen unos de otros (dentro de una clase o entre clases, también a través de las partes de un
+compuesto), son un `CYCLE`. Las clases que derivan de los otros campos de la otra no lo son. Un campo que deriva de un campo con error, incluso uno en un
 ciclo, pero que no está él mismo en el ciclo, es un `UNKNOWN_SOURCE`.
 
 ## Comportamiento cerrado ante fallos (fail-closed)
@@ -149,8 +161,9 @@ Nada se clasifica por defecto. Son **errores** (hacen fallar `verify` y ponen `i
 - un campo que oculta otro del mismo nombre de una superclase (`DUPLICATE_FIELD`);
 - un campo derivado cuya fuente no existe, está exenta o tiene un error, o que no tiene ninguna (`UNKNOWN_SOURCE`);
 - un campo derivado sin categoría cuyas fuentes se clasifican de forma distinta (`AMBIGUOUS_DERIVATION`);
-- un campo derivado que protege menos que una fuente y no se declara anonimizado o agregado (`WEAKER_THAN_SOURCE`);
-- un compuesto guardado como un solo valor que protege menos que sus campos (`WEAKER_THAN_PARTS`);
+- un campo derivado que protege menos que una fuente, o que se declara anonimizado o agregado y pierde más que la
+  naturaleza personal (`WEAKER_THAN_SOURCE`);
+- un campo que guarda compuestos como un solo valor y protege menos que sus campos (`WEAKER_THAN_PARTS`);
 - un compuesto que se contiene a sí mismo, o campos derivados que dependen unos de otros (`CYCLE`).
 
 Una clave obsoleta es el único **aviso** (`DEPRECATED_CATEGORY`): el campo se clasifica con la sustituta vigente. Un
@@ -162,7 +175,10 @@ de cada código.
 `inventory(types, objectKey)` devuelve las clases como un [`DataInventory`](inventory.md): por cada clase, un objeto
 bajo la clave que `objectKey` da para ella, con cada campo tal como el código lo declara (la clave tal como está
 escrita, los niveles que el propio campo eleva, la identificabilidad, el motivo) y los campos exentos con sus motivos.
-Es la forma de la clasificación que una aplicación guarda y compara, en lugar de las clases.
+Es la forma de la clasificación que una aplicación guarda y compara, en lugar de las clases. La identificabilidad es la
+que el campo **declara**, no la que le da la taxonomía, de modo que un inventario nunca depende de la taxonomía con la
+que se construyó: un campo que no declara ninguna, o `IDENTIFIED`, que una categoría personal toma de todos modos, no
+guarda ninguna.
 
 ```java
 Map<Class<?>, String> objectKeys = Map.of(Student.class, "student", Invoice.class, "invoice");

@@ -173,7 +173,8 @@ stricter key, not with the extension's:
 
 ## Data uses
 
-Every use is a child of the standard `operations` or `sales` use. Data uses have no protection facets.
+Every use is a child of the standard `operations` or `sales` use. Data uses have no protection facets, only
+[traits](#traits).
 
 | Key | Name | Parent | Purpose |
 |---|---|---|---|
@@ -199,6 +200,17 @@ All the data subjects of the extension are flat, as fideslang data subjects have
 | `delivery_recipient` | Delivery Recipient | A person who receives or signs for a delivery, who may not be the customer. |
 | `driver` | Driver | A person who drives a vehicle carrying the organization's goods, as an employee or for a carrier. |
 | `supplier_contact` | Supplier Contact | A person who acts for a supplier organization, such as a sales representative. |
+
+## Traits
+
+The extension declares the [traits](../terms.md#trait) that Linneo's legal rules read, so its terms weigh in the
+[impact screening](../processing/impact-screening.md), the [breach assessment](../processing/breach-assessment.md) and
+the [subject rights](../processing/subject-rights.md) like the standard ones:
+
+| Terms | Trait | Why |
+|---|---|---|
+| Data use `operations.logistics.fleet_management` | `MONITORING` | Fleet management tracks the times and the location of drivers (WP248 criterion 3) |
+| Data subject `driver` | `VULNERABLE` | Drivers work for the organization or for its carriers, in a weaker position than the controller (WP248 criterion 7) |
 
 ## Standard keys for everything else
 

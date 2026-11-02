@@ -168,7 +168,7 @@ class UniversityTaxonomyTest {
                 .dataSubjects(DataSubjects.STUDENT)
                 .entities(ExamArrangement.class)
                 .legalBasis(LegalBasis.LEGAL_OBLIGATION)
-                .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+                .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
                 .legalReference("Equal Opportunities Act, art. 3")
                 .retention("Until the student graduates")
                 .impactAssessment("DPIA-2026-07")

@@ -218,7 +218,7 @@ El mismo razonamiento vale para otras categorías especiales, por ejemplo una as
 La extensión añade dos raíces, `advancement` y `research`, porque fideslang no tiene ninguna finalidad para la
 captación de fondos ni para la investigación científica; todos los demás usos son hijos de uno existente, incluidos
 los nuevos hijos de los estándar `education.academic_records`, `education.assessment` y `education.financial_aid`. Los
-usos de datos no tienen facetas de protección.
+usos de datos no tienen facetas de protección, solo [rasgos](#rasgos).
 
 | Clave | Nombre | Madre | Finalidad |
 |---|---|---|---|
@@ -287,6 +287,19 @@ modelos en los que se basa la extensión los tratan como **roles que una persona
 como tipos de persona: la persona es un `faculty_member` o un `staff_member`, y un profesor ayudante es a menudo un
 `student`. Clasifica el campo que registra el rol con `user.workplace.role` y a la persona con el interesado que sea.
 La excepción es el `external_examiner`, que no pertenece a ningún otro grupo de interesados de la institución.
+
+## Rasgos
+
+La extensión declara los [rasgos](../terms.md#trait) que leen las reglas jurídicas de Linneo, de modo que sus términos
+pesan en el [cribado de impacto](../processing/impact-screening.md), la
+[evaluación de violaciones](../processing/breach-assessment.md) y los
+[derechos del interesado](../processing/subject-rights.md) igual que los estándar:
+
+| Términos | Rasgo | Por qué |
+|---|---|---|
+| Uso de datos `advancement` (y sus hijos) | `DIRECT_MARKETING` | La captación de fondos es mercadotecnia directa, así que el derecho de oposición es absoluto (artículo 21.2 del RGPD) |
+| Usos de datos `advancement.prospect_research` y `education.financial_aid.means_assessment` | `EVALUATION` | La investigación de posibles donantes y la evaluación de recursos evalúan a personas (criterio 1 del WP248) |
+| Uso de datos `education.learning_analytics` | `EVALUATION`, `MONITORING` | La analítica del aprendizaje evalúa a los estudiantes y los observa de forma sistemática (criterios 1 y 3 del WP248) |
 
 ## Claves estándar para todo lo demás
 

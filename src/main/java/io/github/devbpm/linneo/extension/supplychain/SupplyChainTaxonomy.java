@@ -19,6 +19,7 @@ import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.TaxonomyBuilder;
 import io.github.devbpm.linneo.TaxonomyExtension;
+import io.github.devbpm.linneo.Trait;
 
 import static io.github.devbpm.linneo.extension.supplychain.SupplyChainCategories.*;
 import static io.github.devbpm.linneo.extension.supplychain.SupplyChainDataSubjects.*;
@@ -94,6 +95,14 @@ public final class SupplyChainTaxonomy implements TaxonomyExtension {
         categories(builder);
         dataUses(builder);
         dataSubjects(builder);
+        traits(builder);
+    }
+
+    // The traits Linneo's legal rules read (see Trait): fleet management tracks drivers' times and location, and
+    // drivers work for the organization or its carriers.
+    private static void traits(TaxonomyBuilder builder) {
+        builder.refineDataUse(OPERATIONS_LOGISTICS_FLEET_MANAGEMENT, u -> u.traits(Trait.MONITORING))
+                .refineDataSubject(DRIVER, s -> s.traits(Trait.VULNERABLE));
     }
 
     private static void categories(TaxonomyBuilder builder) {

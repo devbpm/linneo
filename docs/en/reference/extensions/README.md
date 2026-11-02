@@ -18,6 +18,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/extension/humanresources/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/humanresources/HumanResourcesTaxonomy.java
   - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # Extensions
@@ -48,9 +49,10 @@ A shipped extension is never part of the taxonomy unless the application asks fo
   the Linneo module registers none: its `module-info.java` has a `uses` clause but no `provides` clause, and the JAR
   has no `META-INF/services` file.
 
-A shipped extension follows the same rules as yours: it adds children of existing terms (a shipped extension may add a
-new root of data uses where fideslang has none for the sector, as the university extension does, or a new branch of
-categories, as the human resources extension does with `user.employment`) and it only makes protection stricter.
+A shipped extension follows the same [rules as yours](../extending.md#what-an-extension-may-do): it adds data
+categories below existing ones, never a root (a new branch, as the human resources extension does with
+`user.employment`), data uses and data subjects (it may add a new root of data uses where fideslang has none for the
+sector, as the university extension does), and it only raises protection and adds traits.
 
 ## Applying a shipped extension
 
@@ -69,6 +71,21 @@ extensions applied it prints `Taxonomy[225 data categories, 136 data uses, 48 da
 it everywhere: in the [`Classifier`](../classify/classifier.md), the [`ProcessingChecker`](../processing/checker.md) and
 the catalogue exporters. A `Classifier` built on `Taxonomy.standard()` reports every key of the extension as
 `UNKNOWN_CATEGORY`.
+
+## Traits
+
+Each shipped extension declares the [traits](../terms.md#trait) of its terms, so that the
+[impact screening](../processing/impact-screening.md), the [breach assessment](../processing/breach-assessment.md) and
+the [subject rights](../processing/subject-rights.md) read them like the standard ones. The personal categories that
+hang from `user.financial` or `user.contact` inherit those traits; the extensions add:
+
+| Extension | Traits it declares |
+|---|---|
+| University | data uses: `advancement` `DIRECT_MARKETING`; `advancement.prospect_research` and `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` and `MONITORING` |
+| Finance | data uses: `finance.credit_management` and `finance.anti_money_laundering` `EVALUATION` |
+| Supply chain | data use: `operations.logistics.fleet_management` `MONITORING`; data subject: `driver` `VULNERABLE` |
+| Human resources | categories: `user.employment.compensation`, `user.employment.benefit` and `user.employment.payroll` `FINANCIAL`, `user.employment.monitoring` `MONITORING`; data uses: `employment.monitoring` `MONITORING`, `employment.performance` and `employment.recruitment.background_check` `EVALUATION`; data subjects: `dependant`, `reporting_person`, `temporary_agency_worker` and `worker_representative` `VULNERABLE` |
+| Project operations | none |
 
 ## Registering a shipped extension
 
@@ -133,7 +150,9 @@ A shipped extension and your own extensions are applied to the same builder and 
   fails with `Duplicate key '<key>'`.
 - **Order.** Your extension can make a term of a shipped extension stricter with `refineCategory` only if the
   shipped extension is applied first; otherwise `refineCategory` fails with
-  `Cannot refine unknown data category '<key>'`. With `extend` the order is the order of the calls. `load()` applies
+  `Cannot refine unknown data category '<key>'`. Raising is independent of order: if two extensions raise the same
+  category, the result is the stricter level whichever is applied first. An extension may not deprecate or set the
+  `since` of a term it did not add. With `extend` the order is the order of the calls. `load()` applies
   the registered extensions sorted by name. To apply a shipped extension first and then every registered extension,
   whatever their names:
 

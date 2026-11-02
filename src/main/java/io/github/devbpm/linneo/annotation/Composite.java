@@ -17,6 +17,7 @@ package io.github.devbpm.linneo.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -38,19 +39,23 @@ import java.lang.annotation.Target;
  *     private Address shipping;
  * }
  * }</pre>
- * A field without an annotation of its own whose type is a composite class, or an array, collection or
- * {@link java.util.Optional} of one, gets one classification per field of the composite, with the path
- * {@code field.part}. The composite's own {@link DefaultCategory @DefaultCategory} applies to its fields; the default
- * of the class that holds it does not. A field that stores the composite as one value, for example as JSON,
- * declares its category with {@link Category @Category} or {@link CategoryByRow @CategoryByRow}, which must protect
- * at least as much as every field of the composite. A {@link java.util.Map} is never descended into.
+ * A field without an annotation of its own whose type is a composite class, or an array, collection,
+ * {@link java.util.Optional} or {@link java.util.Map} value of one at any depth, gets one classification per field of
+ * the composite, with the path {@code field.part}. The composite's own {@link DefaultCategory @DefaultCategory}
+ * applies to its fields; the default of the class that holds it does not. A field that stores the composite as one
+ * value, for example as JSON, or that holds it where its fields cannot be paths (a map key, or a type argument of a
+ * class that is not a collection), declares its category with {@link Category @Category} or
+ * {@link CategoryByRow @CategoryByRow}, which must protect at least as much as every field of the composite.
  * <p>
- * The marker is Linneo's own rather than a framework annotation, so that the library needs no dependency. Forgetting
- * it is safe: the field then has no category and fails verification.
+ * The marker is inherited: a subclass of a composite is a composite. It is Linneo's own rather than a framework
+ * annotation, so that the library needs no dependency. Forgetting it is safe: a field that holds a class whose fields
+ * are classified, without being a composite, takes no class default, so it fails verification until it is marked or
+ * the field declares its own category.
  *
  * @since 0.1.0
  */
 @Documented
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Composite {

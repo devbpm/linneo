@@ -56,7 +56,7 @@ mensajes.
 | `Purposes (art. 30.1.b)` | siempre | ``<name> (`<key>`)`` de cada finalidad, separadas por `; `, o `None` |
 | `Lawful basis (art. 6.1)` | si se declara | `Art. <article>: <fideslang name>` |
 | `Legitimate interest` | solo si la base es `LEGITIMATE_INTERESTS` y se indica un interés | el interés |
-| `Special categories (art. 9.2)` | si se declara | `Art. <article>: <fideslang name>` |
+| `Special categories (art. 9.2)` | si se declara | `Art. <article>: <fideslang name>` por cada condición, separadas por `; ` |
 | `Criminal offence data (art. 10)` | si se declara | `Art. 10: Official authority` o `Art. 10: Authorised by law` |
 | `Legal reference` | si se declara | la referencia |
 | `Data subjects (art. 30.1.c)` | siempre | como las finalidades |
@@ -71,9 +71,11 @@ mensajes.
 El registro indica la protección que los datos **requieren** (los niveles más altos de sus categorías y campos), como
 punto de partida para la descripción de las medidas de seguridad del artículo 30.1.g; no describe las medidas.
 
-En todo texto que se escribe en el documento —título, nombres, descripción y celdas— `|` se escapa como `\|` y los
-saltos de línea (`\n` o `\r`, con los espacios que los rodean) se reducen a un espacio, para que ningún valor rompa la
-tabla. La clave de la actividad se escribe como código, sin escapar.
+Todo texto que se escribe en el documento —título, nombres, descripción y celdas— se escribe como texto, para que un
+valor no pueda romper la tabla ni convertirse en un enlace o en HTML donde se renderiza el Markdown: `\`, `|`, `[` y
+`]` se escapan con una barra invertida (`\|`), `&`, `<` y `>` pasan a `&amp;`, `&lt;` y `&gt;`, y los saltos de línea
+(`\n` o `\r`, con los espacios que los rodean) se reducen a un espacio. La clave de la actividad se escribe como código,
+sin escapar.
 
 ### Ejemplo
 
@@ -84,7 +86,7 @@ ProcessingActivity admissions = ProcessingActivity.builder("admissions", "Admiss
         .dataSubjects(DataSubjects.APPLICANT)
         .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_HEALTH_AND_MEDICAL_DISABILITY)
         .legalBasis(LegalBasis.PUBLIC_INTEREST)
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .recipients("Admissions board")
         .impactAssessment("DPIA-2026-01")
         .build();
@@ -164,7 +166,7 @@ declaración. Los miembros opcionales se omiten cuando la actividad no los decla
 | `purposes`, `dataSubjects`, `dataCategories` | siempre | arrays de claves, ya resueltas (claves obsoletas sustituidas, categorías no personales descartadas) |
 | `legalBasis` | si se declara | `{"code": <constant>, "article": <article>, "fideslang": <fideslang name>}` |
 | `legitimateInterest` | solo si la base es `LEGITIMATE_INTERESTS` y se indica un interés | cadena |
-| `specialCategoryCondition` | si se declara | como `legalBasis` |
+| `specialCategoryConditions` | si se declara | array de objetos como `legalBasis`, uno por cada condición |
 | `criminalDataBasis` | si se declara | `{"code": <constant>, "article": "10"}`, sin `fideslang` |
 | `legalReference` | si se declara | cadena |
 | `recipients` | siempre | array de cadenas |
@@ -177,7 +179,7 @@ declaración. Los miembros opcionales se omiten cuando la actividad no los decla
 El JSON del registro anterior (en una sola línea):
 
 ```json
-{"activities":[{"key":"admissions","name":"Admissions","description":"Receives and assesses applications,\nincluding requests for the disability quota.","purposes":["education.admission"],"dataSubjects":["applicant"],"dataCategories":["user.contact.email","user.health_and_medical.disability","user.name"],"legalBasis":{"code":"PUBLIC_INTEREST","article":"6.1.e","fideslang":"Public interest"},"specialCategoryCondition":{"code":"SUBSTANTIAL_PUBLIC_INTEREST","article":"9.2.g","fideslang":"Reasons of substantial public interest (with a basis in law)"},"recipients":["Admissions board"],"transfers":[],"impactAssessment":"DPIA-2026-01","screening":{"outcome":"POSSIBLE","criteria":["SENSITIVE_DATA"]},"protection":{"natures":["ORDINARY","SPECIAL_CATEGORY"],"confidentiality":"HIGH","integrity":"HIGH","secret":false},"openPoints":["GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference","Declare the envisaged time limit for erasure (GDPR article 30.1.f)"]},{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","screening":{"outcome":"NOT_INDICATED","criteria":[]},"protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
+{"activities":[{"key":"admissions","name":"Admissions","description":"Receives and assesses applications,\nincluding requests for the disability quota.","purposes":["education.admission"],"dataSubjects":["applicant"],"dataCategories":["user.contact.email","user.health_and_medical.disability","user.name"],"legalBasis":{"code":"PUBLIC_INTEREST","article":"6.1.e","fideslang":"Public interest"},"specialCategoryConditions":[{"code":"SUBSTANTIAL_PUBLIC_INTEREST","article":"9.2.g","fideslang":"Reasons of substantial public interest (with a basis in law)"}],"recipients":["Admissions board"],"transfers":[],"impactAssessment":"DPIA-2026-01","screening":{"outcome":"POSSIBLE","criteria":["SENSITIVE_DATA"]},"protection":{"natures":["ORDINARY","SPECIAL_CATEGORY"],"confidentiality":"HIGH","integrity":"HIGH","secret":false},"openPoints":["GDPR article(s) 6.1.e, 9.2.g rest on Union or Member State law; name it as the legal reference","Declare the envisaged time limit for erasure (GDPR article 30.1.f)"]},{"key":"alumni-newsletter","name":"Alumni newsletter","purposes":["marketing.communications.email"],"dataSubjects":["alumnus"],"dataCategories":["user.contact.email","user.name"],"legalBasis":{"code":"LEGITIMATE_INTERESTS","article":"6.1.f","fideslang":"Legitimate interests"},"legitimateInterest":"Keeping former students informed about university events","recipients":["Email delivery provider (processor)"],"transfers":[{"destination":"United States","safeguard":{"code":"STANDARD_CONTRACTUAL_CLAUSES","article":"46.2.c","fideslang":"SCCs"}}],"retention":"Until the alumnus unsubscribes","screening":{"outcome":"NOT_INDICATED","criteria":[]},"protection":{"natures":["ORDINARY"],"confidentiality":"LOW","integrity":"MEDIUM","secret":false},"openPoints":[]}]}
 ```
 
 Los miembros `code` son los nombres de las constantes del enumerado, así que una herramienta puede recuperarlas con
@@ -196,7 +198,9 @@ de datos y el que rige ahora. `fingerprint()` dice de una vez si algo cambió, y
 actividad por orden de clave y aspecto a aspecto como los compara `RecordDiff`. Dos registros tienen la misma huella
 exactamente cuando `RecordDiff` no encuentra ningún cambio entre ellos, sea cual sea el orden de sus actividades. Dice
 que algo cambió, no qué. Una aplicación la guarda junto al registro que aprobó el delegado, para saber si el registro
-sigue siendo ese.
+sigue siendo ese. El texto que se resume escribe un sustituto UTF-16 suelto, que UTF-8 no puede codificar, como una
+barra invertida, `u` y sus cuatro dígitos hexadecimales, de modo que dos registros que solo difieren en un carácter así
+nunca tienen la misma huella.
 
 ### RecordDiff
 
@@ -275,7 +279,7 @@ el aspecto forma parte de la gobernanza y no del alcance declarado en el código
 | `PROTECTION` | `false` | La protección que requieren los datos personales; véase `direction`. |
 | `LEGAL_BASIS` | `true` | La base jurídica. |
 | `LEGITIMATE_INTEREST` | `true` | El interés legítimo perseguido. |
-| `SPECIAL_CATEGORY_CONDITION` | `true` | La condición del artículo 9.2. |
+| `SPECIAL_CATEGORY_CONDITION` | `true` | Las condiciones del artículo 9.2. |
 | `CRIMINAL_DATA_BASIS` | `true` | La base del artículo 10. |
 | `LEGAL_REFERENCE` | `true` | La ley en la que se apoyan las bases. |
 | `RECIPIENTS` | `true` | Los destinatarios. |

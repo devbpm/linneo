@@ -19,33 +19,36 @@ import io.github.devbpm.linneo.DataCategory;
 import io.github.devbpm.linneo.DataSubject;
 import io.github.devbpm.linneo.DataUse;
 import io.github.devbpm.linneo.LegalNature;
-import io.github.devbpm.linneo.Term;
+import io.github.devbpm.linneo.Trait;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Whether a processing activity needs a data protection impact assessment (GDPR article 35), screened against the
  * nine criteria of the European Data Protection Board's guidelines (WP248 rev.01) and the cases article 35.3 makes
  * mandatory. It is a screening, not the assessment: it says which criteria apply and why.
  * <p>
- * The criteria the code can see are found from the activity: special category and criminal offence data, and data
- * of a highly personal nature ({@code user.financial}, {@code user.location}, {@code user.content.private},
- * {@code user.behavior}) are {@link Criterion#SENSITIVE_DATA}; purposes that profile, rate performance at work or
- * assess economic situation are {@link Criterion#EVALUATION}; purposes that monitor employees are
- * {@link Criterion#SYSTEMATIC_MONITORING}; employees, patients and children's data are
+ * The criteria the code can see are found from the {@linkplain io.github.devbpm.linneo.Trait traits} of the
+ * activity's terms, so an extension's terms count as soon as they declare theirs: special category and criminal
+ * offence data, and data of a highly personal nature ({@link io.github.devbpm.linneo.Trait#FINANCIAL},
+ * {@link io.github.devbpm.linneo.Trait#BEHAVIOURAL}, {@link io.github.devbpm.linneo.Trait#PRIVATE_LIFE}) are
+ * {@link Criterion#SENSITIVE_DATA}; purposes with the {@link io.github.devbpm.linneo.Trait#EVALUATION} trait are
+ * {@link Criterion#EVALUATION}; purposes and data categories with the
+ * {@link io.github.devbpm.linneo.Trait#MONITORING} trait are {@link Criterion#SYSTEMATIC_MONITORING}; data subjects
+ * and data categories with the {@link io.github.devbpm.linneo.Trait#VULNERABLE} trait are
  * {@link Criterion#VULNERABLE_SUBJECTS}. The rest only the data protection officer knows, such as the scale of the
- * processing, and declares as {@linkplain Governance#riskFactors() risk factors}.
+ * processing, and declares as {@linkplain Governance#riskFactors() risk factors}. The evidence of each criterion is
+ * sorted, so the screening does not depend on the order in which the activity lists its terms.
  * <p>
  * The outcome follows the guidelines: a case of article 35.3 is {@link Outcome#REQUIRED}; two criteria or more make
  * an assessment {@link Outcome#LIKELY} to be required; one makes it {@link Outcome#POSSIBLE}. The
@@ -59,17 +62,6 @@ import java.util.Set;
  * @since 0.1.0
  */
 public record ImpactScreening(Outcome outcome, List<Finding> findings, String mandatoryCase) {
-
-    private static final Set<String> PROFILING_SEGMENTS = Set.of("profiling", "profiled", "targeted");
-    private static final List<String> EVALUATION_USES = List.of("employment.performance",
-            "education.financial_aid.means_assessment");
-    private static final List<String> MONITORING_USES = List.of("employment.monitoring");
-    private static final List<String> MONITORING_CATEGORIES = List.of("user.employment.monitoring");
-    private static final List<String> HIGHLY_PERSONAL = List.of("user.financial", "user.location",
-            "user.content.private", "user.behavior");
-    private static final List<String> VULNERABLE_SUBJECTS = List.of("employee", "staff_member", "faculty_member",
-            "trainee", "patient");
-    private static final List<String> VULNERABLE_CATEGORIES = List.of("user.childrens");
 
     /**
      * The criteria of the guidelines (WP248 rev.01, section III.B.a).
@@ -277,11 +269,10 @@ public record ImpactScreening(Outcome outcome, List<Finding> findings, String ma
                               Collection<DataCategory> categories, Governance governance) {
         Map<Criterion, Set<String>> evidence = new EnumMap<>(Criterion.class);
         for (DataUse use : purposes) {
-            if (Arrays.stream(use.key().split("\\.")).anyMatch(PROFILING_SEGMENTS::contains)
-                    || isAny(use, EVALUATION_USES)) {
+            if (use.has(Trait.EVALUATION)) {
                 add(evidence, Criterion.EVALUATION, "purpose " + use.key());
             }
-            if (isAny(use, MONITORING_USES)) {
+            if (use.has(Trait.MONITORING)) {
                 add(evidence, Criterion.SYSTEMATIC_MONITORING, "purpose " + use.key());
             }
         }
@@ -291,18 +282,18 @@ public record ImpactScreening(Outcome outcome, List<Finding> findings, String ma
                 special = true;
                 add(evidence, Criterion.SENSITIVE_DATA, (category.nature() == LegalNature.SPECIAL_CATEGORY
                         ? "special category data " : "criminal offence data ") + category.key());
-            } else if (isAny(category, HIGHLY_PERSONAL)) {
+            } else if (category.traits().stream().anyMatch(Trait::isHighlyPersonal)) {
                 add(evidence, Criterion.SENSITIVE_DATA, "highly personal data " + category.key());
             }
-            if (isAny(category, MONITORING_CATEGORIES)) {
+            if (category.has(Trait.MONITORING)) {
                 add(evidence, Criterion.SYSTEMATIC_MONITORING, "data category " + category.key());
             }
-            if (isAny(category, VULNERABLE_CATEGORIES)) {
+            if (category.has(Trait.VULNERABLE)) {
                 add(evidence, Criterion.VULNERABLE_SUBJECTS, "data category " + category.key());
             }
         }
         for (DataSubject subject : subjects) {
-            if (isAny(subject, VULNERABLE_SUBJECTS)) {
+            if (subject.has(Trait.VULNERABLE)) {
                 add(evidence, Criterion.VULNERABLE_SUBJECTS, "data subjects " + subject.key());
             }
         }
@@ -358,11 +349,7 @@ public record ImpactScreening(Outcome outcome, List<Finding> findings, String ma
         return head + ": " + String.join("; ", parts);
     }
 
-    private static boolean isAny(Term term, List<String> keys) {
-        return keys.stream().anyMatch(term::isA);
-    }
-
     private static void add(Map<Criterion, Set<String>> evidence, Criterion criterion, String shown) {
-        evidence.computeIfAbsent(criterion, c -> new LinkedHashSet<>()).add(shown);
+        evidence.computeIfAbsent(criterion, c -> new TreeSet<>()).add(shown);
     }
 }

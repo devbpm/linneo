@@ -54,8 +54,10 @@ necesita una; sin ella el comprobador notifica el error `MISSING_LEGAL_BASIS`.
 
 La excepción a la prohibición de tratar categorías especiales de datos personales (RGPD, artículo 9.2). Una actividad
 que trata una categoría de naturaleza `SPECIAL_CATEGORY` necesita una, además de su base jurídica; sin ella el
-comprobador notifica el error `MISSING_SPECIAL_CATEGORY_CONDITION`. Declararla en una actividad sin datos de categorías
-especiales es el aviso `UNNEEDED_CONDITION`.
+comprobador notifica el error `MISSING_SPECIAL_CATEGORY_CONDITION`. Una actividad declara un **conjunto** de ellas
+(`Governance.specialCategoryConditions`), una por cada tipo de dato especial que trata con una condición distinta,
+como el consentimiento explícito para datos de salud y una obligación de derecho laboral para la afiliación sindical.
+Declarar cualquiera en una actividad sin datos de categorías especiales es el aviso `UNNEEDED_CONDITION`.
 
 | Constante | `article()` | `fideslangName()` | `requiresLegalReference()` |
 |---|---|---|---|
@@ -101,13 +103,17 @@ capítulo V). Es la `safeguard` de una [`Transfer`](activity.md#transfer). No ti
 ## La referencia legal
 
 Cuando las bases de una actividad descansan en una ley, el comprobador reúne los artículos de cada base de ese tipo
-que se aplica —la base jurídica, la condición del artículo 9.2 cuando la actividad trata categorías especiales y la
+que se aplica —la base jurídica, las condiciones del artículo 9.2 cuando la actividad trata categorías especiales y la
 base del artículo 10 cuando trata datos penales— y, si `legalReference` es `null`, notifica un único aviso
 `MISSING_LEGAL_REFERENCE` que los nombra todos:
 
 ```text
 WARNING MISSING_LEGAL_REFERENCE screening: GDPR article(s) 6.1.c, 9.2.b, 10 rest on Union or Member State law; name it as the legal reference
 ```
+
+Con `Jurisdiction.SPAIN` el aviso añade `(LOPDGDD article(s) 8, 9.2, 10: a law with the rank of statute)`, con los que
+se aplican: el artículo 8 para una obligación legal o una misión de interés público, el 9.2 para las condiciones de los
+artículos 9.2.g, h e i, y el 10 para datos penales autorizados por ley.
 
 `legalReference` es un solo texto para toda la actividad, así que nombra en él todas las leyes implicadas, por
 ejemplo `Higher Education Act, arts. 12 and 31` (una ley ficticia).

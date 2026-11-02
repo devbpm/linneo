@@ -37,7 +37,9 @@ import java.util.Set;
  * @param legalBasis the lawful basis (article 6.1), or {@code null} if not declared
  * @param legitimateInterest the interest pursued, when the basis is {@link LegalBasis#LEGITIMATE_INTERESTS}, or
  *        {@code null}
- * @param specialCategoryCondition the article 9.2 condition for special categories of data, or {@code null}
+ * @param specialCategoryConditions the article 9.2 conditions for special categories of data: one for each kind
+ *        of special data the activity processes under a different condition, such as explicit consent for health
+ *        data and an employment law obligation for trade union membership
  * @param criminalDataBasis what allows processing criminal offence data (article 10), or {@code null}
  * @param legalReference the Union or Member State law the bases rest on, or {@code null}
  * @param retention the envisaged time limit for erasure (article 30.1.f), or {@code null}
@@ -49,7 +51,8 @@ import java.util.Set;
  * @since 0.1.0
  */
 public record Governance(LegalBasis legalBasis, String legitimateInterest,
-                         SpecialCategoryCondition specialCategoryCondition, CriminalDataBasis criminalDataBasis,
+                         Set<SpecialCategoryCondition> specialCategoryConditions,
+                         CriminalDataBasis criminalDataBasis,
                          String legalReference, String retention, List<String> recipients, List<Transfer> transfers,
                          String impactAssessment, Set<ImpactScreening.Factor> riskFactors) {
 
@@ -63,7 +66,7 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
      *
      * @param legalBasis the lawful basis
      * @param legitimateInterest the legitimate interest
-     * @param specialCategoryCondition the article 9.2 condition
+     * @param specialCategoryConditions the article 9.2 conditions; {@code null} means none
      * @param criminalDataBasis the article 10 basis
      * @param legalReference the law
      * @param retention the retention
@@ -74,6 +77,8 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
      */
     public Governance {
         legitimateInterest = blankToNull(legitimateInterest);
+        specialCategoryConditions = specialCategoryConditions == null || specialCategoryConditions.isEmpty()
+                ? Set.of() : Collections.unmodifiableSet(EnumSet.copyOf(specialCategoryConditions));
         legalReference = blankToNull(legalReference);
         retention = blankToNull(retention);
         recipients = recipients == null ? List.of() : List.copyOf(recipients);
@@ -101,7 +106,7 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
         Builder builder = new Builder();
         builder.legalBasis = legalBasis;
         builder.legitimateInterest = legitimateInterest;
-        builder.specialCategoryCondition = specialCategoryCondition;
+        builder.specialCategoryConditions.addAll(specialCategoryConditions);
         builder.criminalDataBasis = criminalDataBasis;
         builder.legalReference = legalReference;
         builder.retention = retention;
@@ -125,7 +130,8 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
 
         private LegalBasis legalBasis;
         private String legitimateInterest;
-        private SpecialCategoryCondition specialCategoryCondition;
+        private final Set<SpecialCategoryCondition> specialCategoryConditions =
+                EnumSet.noneOf(SpecialCategoryCondition.class);
         private CriminalDataBasis criminalDataBasis;
         private String legalReference;
         private String retention;
@@ -161,13 +167,13 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
         }
 
         /**
-         * Declares the article 9.2 condition for special categories of data.
+         * Adds article 9.2 conditions for special categories of data.
          *
-         * @param condition the condition
+         * @param conditions the conditions
          * @return this builder
          */
-        public Builder specialCategoryCondition(SpecialCategoryCondition condition) {
-            this.specialCategoryCondition = condition;
+        public Builder specialCategoryConditions(SpecialCategoryCondition... conditions) {
+            this.specialCategoryConditions.addAll(Arrays.asList(conditions));
             return this;
         }
 
@@ -255,7 +261,7 @@ public record Governance(LegalBasis legalBasis, String legitimateInterest,
          * @return the governance
          */
         public Governance build() {
-            return new Governance(legalBasis, legitimateInterest, specialCategoryCondition, criminalDataBasis,
+            return new Governance(legalBasis, legitimateInterest, specialCategoryConditions, criminalDataBasis,
                     legalReference, retention, recipients, transfers, impactAssessment, riskFactors);
         }
     }

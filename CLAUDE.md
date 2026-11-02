@@ -34,7 +34,9 @@ same `Term` model). Sixteen exported packages plus one internal one (not exporte
 
 - **`io.github.devbpm.linneo`** — the taxonomy model, protection enums, key constants, `TaxonomyBuilder`, the
   drafts and `TaxonomyExtension`. `Protection` is the single partial order for comparing protection (`covers`,
-  `join`, `comparedTo`); use it instead of comparing natures and levels by hand. A `Taxonomy` is also data:
+  `join`, `comparedTo`); use it instead of comparing natures and levels by hand. `Trait` holds the properties of terms
+  the legal rules read (financial, behavioural, identifiers, monitoring, vulnerable, evaluation, direct marketing):
+  rules test `term.has(Trait.X)`, never lists of key prefixes, so an extension's terms count once they declare traits. A `Taxonomy` is also data:
   `toTsv`/`fromTsv` (versioned format, read back through the builder), `fingerprint`, value equality, and
   `TaxonomyDiff`/`TermChange` grade the changes between two versions (`requiredBump`). `ReleasedTaxonomyTest`
   compares the shipped taxonomy with the copy of the last release in `src/test/resources/.../released/`. Terms are `DataCategory`, `DataUse`, `DataSubject` (all `Term`s), keyed by
@@ -48,12 +50,17 @@ same `Term` model). Sixteen exported packages plus one internal one (not exporte
   - `linneo-data-{categories,uses,subjects}.tsv` — Linneo's added terms (never redefine fideslang keys).
   - `linneo-category-policy.tsv` — protection facets (nature, confidentiality, integrity, secret) per category key;
     fideslang itself defines no protection levels.
+  - `linneo-traits.tsv` — the `Trait`s of standard terms (kind, key, traits), with the legal sources in its header;
+    each shipped extension declares its own terms' traits in a `traits(builder)` method.
 - **`TaxonomyBuilder`** — the single place where taxonomies are assembled and validated. `Taxonomy.standard()` =
   builder + standard; `Taxonomy.load()` additionally applies `TaxonomyExtension`s found via `ServiceLoader`
-  (sorted by name for determinism). `build()` resolves categories parent-first: roots must declare all facets,
-  children inherit unset facets and may only make them **stricter** (a lower level or an inadmissible `LegalNature`
-  throws `TaxonomyException`); `secret` is OR-ed down the tree. `replaced_by` targets of deprecated terms are
-  checked here too. The built `Taxonomy` is immutable.
+  (sorted by name for determinism). Every declared facet is a **minimum**: refinements keep the stricter value in
+  any order, and `build()` resolves categories parent-first: roots must declare all facets, children inherit unset
+  facets and a lower declared level is raised to the parent's (`TaxonomyBuilderTest` checks that the bundled terms
+  declare none); a nature that cannot be reconciled (personal vs not, special vs criminal) throws
+  `TaxonomyException`; `secret` and traits are OR-ed down the tree. While an extension contributes it cannot add a
+  root category, change the origin, or change the lifecycle of terms it did not add. `replaced_by` targets of
+  deprecated terms are checked here too. The built `Taxonomy` is immutable.
 - **`classify`** — `Classifier` reflects over a class hierarchy's fields (never reads values), resolves each field
   through its annotations, a `@Composite` type (one entry per part, path `field.part`), a `@DerivedFrom` source or a
   class-level `@DefaultCategory`, and collects `Violation`s. Each call runs a private `Run` that collects every
@@ -73,7 +80,10 @@ same `Term` model). Sixteen exported packages plus one internal one (not exporte
   `tools/bench/InventoryBench.java` measures it on 800 entities. `classify` returns a
   `ClassClassification`; `verify` throws `ClassificationException` listing all errors. Design is fail-closed:
   unclassified fields, unknown keys, weakened levels, personal categories used as class defaults and conflicting
-  annotations are errors; deprecated keys are warnings resolved to their replacement.
+  annotations are errors; deprecated keys are warnings resolved to their replacement. Composites are found through
+  arrays, collections, optionals and map values at any depth, subclasses and type variables bound by superclasses;
+  a field that may hold data the classifier cannot see (an unsplittable composite, `Object`, an unbound type
+  variable, another class with classified fields) never takes a class default.
 - **`processing`** — GDPR processing activities. `ProcessingActivity` (builder) declares purposes (data use keys),
   data subjects, personal data (category keys and/or annotated entity classes) and the lawful bases
   (`LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, with fideslang's values).
@@ -87,14 +97,15 @@ same `Term` model). Sixteen exported packages plus one internal one (not exporte
   both use `ActivityChange.content`, so equal fingerprints always mean an empty diff. `SubjectRights` derives, for
   one data subject category, the activities, stored fields and the rights of articles 15-21 per lawful basis; its
   legal rules live in `SubjectRights.entitlements` and cite the articles in their explanations. `ImpactScreening`
-  (WP248 criteria from the activity plus `Governance.riskFactors`) drives the checker's impact assessment error and
-  warning; `BreachAssessment` follows ENISA's 2013 severity methodology. Legal rules are fixed and cited, not
+  (WP248 criteria from the traits of the activity's terms plus `Governance.riskFactors`, which `withGovernance` keeps
+  as a floor) drives the checker's impact assessment error and warning; `BreachAssessment` follows ENISA's 2013
+  severity methodology. Legal rules are fixed and cited, not
   configurable: what the code cannot see is declared, never guessed.
 - **`ens`** — `EnsCategorization`, the Spanish ENS category of a system: confidentiality and integrity from the
   classification (only raised by declarations), authenticity, traceability and availability declared.
 - **`export.postgresql`**, **`export.openapi`**, **`export.odcs`** — `PostgresAnonymizer`, `OpenApiExtension` and
   `OdcsSchema` write text for other tools (masking rules, an API extension, a data contract schema), like the
-  catalogs, and make no connection. `internal.Cli` is the JAR's Main-Class (`java -jar linneo.jar`).
+  catalogs, and make no connection.
 - **`extension.university`** — `UniversityTaxonomy`, an optional `TaxonomyExtension` for higher education with its
   key constants (`UniversityCategories`, `UniversityDataUses`, `UniversityDataSubjects`). Deliberately **not**
   declared as a `provides` service in `module-info.java`, so `Taxonomy.load()` never applies it; users call
@@ -150,7 +161,9 @@ Taxonomy rules (from `CONTRIBUTING.md`; applications persist and publish these k
 
 - Never change the meaning of a key or reuse a removed one.
 - Add terms as children of existing terms; new roots need discussion.
-- Protection may only become stricter down the tree (enforced by `TaxonomyBuilder`).
+- Protection may only become stricter down the tree (enforced by `TaxonomyBuilder`, which raises a lower declared
+  level; Linneo's own terms must not rely on that).
+- Traits are part of a term's meaning: adding one is minor, removing one is major.
 - Deprecate rather than delete: set `version_deprecated` and, where applicable, `replaced_by`.
 - Versioning: adding a term, tightening protection or deprecating is minor; removing a term or lowering protection
   is major.

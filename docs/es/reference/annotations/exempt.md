@@ -23,8 +23,11 @@ Un valor calculado a partir de otros campos **no** es un campo así: la edad cal
 nacimiento es un dato personal. Se clasifica con [`@DerivedFrom`](derived-from.md) o [`@Category`](category.md),
 nunca con `@Exempt`.
 
-Los campos estáticos, sintéticos, `transient` y `$$_...` (los añade Hibernate) se excluyen **siempre** y no necesitan
-anotación. Un `@Exempt` en uno de esos campos se ignora por completo (ni siquiera se comprueba su motivo).
+Los campos estáticos, sintéticos y `$$_...` (los añade Hibernate) se excluyen **siempre** y no necesitan anotación. Un
+`@Exempt` en uno de esos campos se ignora por completo (ni siquiera se comprueba su motivo). Un campo `transient` se
+excluye también, **salvo que lleve una de las anotaciones de campo de Linneo** (`@Category`, `@CategoryByRow`,
+`@DerivedFrom` o `@Exempt`): entonces se clasifica como cualquier otro campo, y un `@Exempt` en él se comprueba y se lista
+en `exempted()`.
 
 ## Elementos
 

@@ -155,10 +155,16 @@ identifiability.
 Facets are resolved by `TaxonomyBuilder.build()`, parent first:
 
 - A **root** category must declare `nature`, `confidentiality` and `integrity`.
-- A **child** inherits every facet it does not declare. A facet it declares may only be **stricter or equal**:
-  - `nature`: must be admitted by the parent's nature (`parent.nature().admits(child)`);
-  - `confidentiality`, `integrity`: must not be lower than the parent's (`compareTo`).
-  Otherwise `build()` throws `TaxonomyException`.
+- A **child** inherits every facet it does not declare, and every facet it declares is a **minimum**, so the result is
+  never weaker than the parent's:
+  - `nature`: the parent's, or one the parent admits (`parent.nature().admits(child)`), which narrows ordinary
+    personal data to special category or criminal offence data. Ordinary data declared below a special category parent
+    takes the parent's nature; a nature that changes whether the data is personal, or that switches between special
+    category and criminal offence data, makes `build()` throw `TaxonomyException`;
+  - `confidentiality`, `integrity`: a level below the parent's is **raised** to the parent's (`max`), not an error.
+    Raising a category therefore raises every category below it.
+  The same holds when a category is refined, as two extensions that raise the same category do: the stricter level
+  is kept, whichever is applied first.
 - A category whose effective nature `requiresMaximumProtection()` (`SPECIAL_CATEGORY` or `CRIMINAL_OFFENCE`) must end
   up with `HIGH` confidentiality and `HIGH` integrity, whether declared or inherited. A child that becomes special
   category under a parent with lower levels must therefore also raise them.

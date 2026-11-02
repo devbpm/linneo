@@ -85,7 +85,12 @@ activity.governance().retention();    // null
 
 `ProcessingActivity withGovernance(Governance governance)` devuelve la misma actividad con otra gobernanza, como la que
 mantiene al día el delegado de protección de datos. El alcance declarado en el código se conserva tal cual, y la
-actividad original no cambia. `NullPointerException` si `governance` es `null`; para vaciarla, pasa `Governance.NONE`.
+actividad original no cambia. También se conservan los **factores de riesgo** que la actividad declara en el código: lo
+que el código dice que hace la actividad, como las decisiones automatizadas, es un mínimo, así que los factores de
+`governance` se unen a los de la actividad y una gobernanza guardada antes de que cambiara el código nunca levanta una
+evaluación de impacto. Llámalo sobre la actividad tal como la declara el código, no sobre una que ya tomó otra
+gobernanza. `NullPointerException` si `governance` es `null`; para vaciarla, pasa `Governance.NONE` (los factores que
+declara el código se mantienen).
 
 ## Builder
 
@@ -103,7 +108,7 @@ actividad original no cambia. `NullPointerException` si `governance` es `null`; 
 | `Builder governance(Governance governance)` | **Sustituye** la gobernanza declarada hasta ahora por `governance`; los métodos de gobernanza que la siguen parten de ella. `NullPointerException` si `governance` es `null`. |
 | `Builder legalBasis(LegalBasis basis)` | Fija la base jurídica; `null` la borra. |
 | `Builder legitimateInterest(String interest)` | Fija la base en `LEGITIMATE_INTERESTS` **y** el interés perseguido. |
-| `Builder specialCategoryCondition(SpecialCategoryCondition condition)` | Fija la condición del artículo 9.2. |
+| `Builder specialCategoryConditions(SpecialCategoryCondition... conditions)` | **Añade** condiciones del artículo 9.2: una por cada tipo de dato especial que la actividad trata con una condición distinta. |
 | `Builder criminalDataBasis(CriminalDataBasis basis)` | Fija la base del artículo 10. |
 | `Builder legalReference(String reference)` | Fija la norma en la que descansan las bases. |
 | `Builder retention(String retention)` | Fija el plazo o la regla de conservación. |
@@ -116,8 +121,9 @@ actividad original no cambia. `NullPointerException` si `governance` es `null`; 
 Los métodos de `legalBasis` a `riskFactors` son los del [`Governance.Builder`](#governancebuilder): dan los
 valores iniciales de la gobernanza de la actividad.
 
-Cada método de lista, y `riskFactors`, añade a lo indicado antes (`purposes("a").purposes("b", "c")` da `[a, b, c]`);
-los demás métodos sustituyen el valor anterior, así que gana la última llamada. `governance(...)` sustituye todo lo que
+Cada método de lista, `specialCategoryConditions` y `riskFactors` añaden a lo indicado antes
+(`purposes("a").purposes("b", "c")` da `[a, b, c]`); los demás métodos sustituyen el valor anterior, así que gana la
+última llamada. `governance(...)` sustituye todo lo que
 declararon antes los métodos de gobernanza, y los que van después cambian la gobernanza que dio:
 
 ```java
@@ -155,7 +161,7 @@ ProcessingActivity admissions = ProcessingActivity.builder("admissions", "Admiss
         .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_EDUCATION_PREVIOUS_EDUCATION,
                 USER_EDUCATION_TEST_SCORE, USER_HEALTH_AND_MEDICAL_DISABILITY)
         .legalBasis(LegalBasis.PUBLIC_INTEREST)
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .legalReference("Higher Education Act, arts. 12 and 31")
         .retention("Until the end of the admission cycle; admitted applicants move to the student record")
         .recipients("Admissions board")
@@ -171,7 +177,8 @@ ProcessingActivity admissions = ProcessingActivity.builder("admissions", "Admiss
 
 ```java
 public record Governance(LegalBasis legalBasis, String legitimateInterest,
-                         SpecialCategoryCondition specialCategoryCondition, CriminalDataBasis criminalDataBasis,
+                         Set<SpecialCategoryCondition> specialCategoryConditions,
+                         CriminalDataBasis criminalDataBasis,
                          String legalReference, String retention, List<String> recipients, List<Transfer> transfers,
                          String impactAssessment, Set<ImpactScreening.Factor> riskFactors)
 ```
@@ -187,7 +194,7 @@ es `true`.
 |---|---|---|---|
 | `legalBasis` | 6.1 | `null` | La base jurídica; consulta [`LegalBasis`](bases.md#legalbasis). `null` significa que no se ha declarado. |
 | `legitimateInterest` | 6.1.f | `null` | El interés perseguido, cuando la base es `LEGITIMATE_INTERESTS`. |
-| `specialCategoryCondition` | 9.2 | `null` | La condición para las categorías especiales de datos; consulta [`SpecialCategoryCondition`](bases.md#specialcategorycondition). |
+| `specialCategoryConditions` | 9.2 | vacío | Las condiciones para las categorías especiales de datos, una por cada tipo de dato especial tratado con una condición distinta, como el consentimiento explícito para datos de salud y una obligación de derecho laboral para la afiliación sindical; consulta [`SpecialCategoryCondition`](bases.md#specialcategorycondition). |
 | `criminalDataBasis` | 10 | `null` | Lo que permite tratar datos penales; consulta [`CriminalDataBasis`](bases.md#criminaldatabasis). |
 | `legalReference` | 6.3 | `null` | La norma de la Unión o del Estado miembro en la que descansan las bases, como texto libre. Un solo texto cubre todas las bases de la actividad. |
 | `retention` | 30.1.f | `null` | El plazo previsto para la supresión, como texto libre. |
@@ -199,23 +206,23 @@ es `true`.
 El constructor canónico **normaliza** los textos opcionales `legitimateInterest`, `legalReference`, `retention` e
 `impactAssessment`: un texto en blanco pasa a ser `null` y a cualquier otro se le quitan los espacios iniciales y
 finales. Los textos de `recipients` no se normalizan. Las listas se copian (inmutables); una lista `null` es una lista
-vacía y un elemento `null` lanza `NullPointerException`. `riskFactors` se copia en un conjunto inmutable; `null` es un
-conjunto vacío.
+vacía y un elemento `null` lanza `NullPointerException`. `specialCategoryConditions` y `riskFactors` se copian en
+conjuntos inmutables; `null` es un conjunto vacío.
 
 | Miembro | Descripción |
 |---|---|
 | `static final Governance NONE` | Gobernanza sin nada declarado todavía: todos los componentes `null` o vacíos. Es la gobernanza de una actividad a la que no se dio ninguna. |
 | `static Builder builder()` | Empieza a declarar una gobernanza desde cero. |
-| `Builder toBuilder()` | Un builder que parte de estos valores, para cambiar una parte: los métodos de lista y `riskFactors` añaden a lo que hay y los demás métodos sustituyen el valor. La gobernanza en sí no cambia. |
+| `Builder toBuilder()` | Un builder que parte de estos valores, para cambiar una parte: los métodos de lista, `specialCategoryConditions` y `riskFactors` añaden a lo que hay y los demás métodos sustituyen el valor. La gobernanza en sí no cambia. |
 
 ### Governance.Builder
 
 `Governance.Builder` — `public static final class`, `@since 0.1.0`. Tiene los mismos métodos, con el mismo efecto, que
 los métodos de gobernanza del [`ProcessingActivity.Builder`](#builder): `legalBasis`, `legitimateInterest`,
-`specialCategoryCondition`, `criminalDataBasis`, `legalReference`, `retention`, `recipients`, `transfer`,
-`impactAssessment` y `riskFactors(ImpactScreening.Factor...)`, más `Governance build()`. Los métodos de lista y
-`riskFactors` añaden a lo indicado antes y los demás métodos sustituyen el valor anterior. `build()` puede llamarse más
-de una vez.
+`specialCategoryConditions(SpecialCategoryCondition...)`, `criminalDataBasis`, `legalReference`, `retention`,
+`recipients`, `transfer`, `impactAssessment` y `riskFactors(ImpactScreening.Factor...)`, más `Governance build()`. Los
+métodos de lista, `specialCategoryConditions` y `riskFactors` añaden a lo indicado antes y los demás métodos sustituyen
+el valor anterior. `build()` puede llamarse más de una vez.
 
 ### Alcance en el código, gobernanza desde el almacenamiento
 
@@ -233,7 +240,7 @@ ProcessingActivity support = ProcessingActivity.builder("learning-support", "Lea
 // En el almacenamiento del delegado: lo que decide la función de protección de datos.
 Governance stored = Governance.builder()
         .legalBasis(LegalBasis.PUBLIC_INTEREST)
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .legalReference("Higher Education Act, arts. 12 and 31")
         .retention("Until the end of the studies")
         .recipients("Teaching staff")

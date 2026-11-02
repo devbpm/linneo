@@ -29,8 +29,10 @@ import java.util.Objects;
  * <p>
  * The first line names the format and its version, separated by a tab. Other lines starting with {@code #} are
  * comments. Each remaining line is a row of cells separated by tabs; in a cell a backslash, a tab, a line feed and a
- * carriage return are written {@code \\}, {@code \t}, {@code \n} and {@code \r}, so a row is always one line. An
- * empty cell is an absent value.
+ * carriage return are written {@code \\}, {@code \t}, {@code \n} and {@code \r}, so a row is always one line, and a
+ * lone UTF-16 surrogate, which UTF-8 cannot encode, is written as a backslash, {@code u} and its four hexadecimal
+ * digits, so two
+ * different texts never have the same UTF-8 bytes or fingerprint. An empty cell is an absent value.
  */
 public final class Tsv {
 
@@ -139,7 +141,16 @@ public final class Tsv {
                 case '\t' -> out.append("\\t");
                 case '\n' -> out.append("\\n");
                 case '\r' -> out.append("\\r");
-                default -> out.append(c);
+                default -> {
+                    if (Character.isHighSurrogate(c) && i + 1 < value.length()
+                            && Character.isLowSurrogate(value.charAt(i + 1))) {
+                        out.append(c).append(value.charAt(++i));
+                    } else if (Character.isSurrogate(c)) {
+                        out.append("\\u").append(HexFormat.of().toHexDigits(c));
+                    } else {
+                        out.append(c);
+                    }
+                }
             }
         }
     }
@@ -163,6 +174,18 @@ public final class Tsv {
                 case 't' -> value.append('\t');
                 case 'n' -> value.append('\n');
                 case 'r' -> value.append('\r');
+                case 'u' -> {
+                    if (i + 4 >= cell.length()) {
+                        throw new IllegalArgumentException("Line " + line + ": '\\u' needs four hexadecimal digits");
+                    }
+                    try {
+                        value.append((char) HexFormat.fromHexDigits(cell, i + 1, i + 5));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Line " + line + ": '\\u' needs four hexadecimal digits",
+                                e);
+                    }
+                    i += 4;
+                }
                 default -> throw new IllegalArgumentException("Line " + line + ": invalid escape '\\"
                         + cell.charAt(i) + "'");
             }

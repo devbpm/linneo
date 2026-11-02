@@ -10,6 +10,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/Governance.java
   - src/main/java/io/github/devbpm/linneo/processing/CheckedActivity.java
   - src/main/java/io/github/devbpm/linneo/processing/ProcessingChecker.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # ImpactScreening
@@ -41,29 +42,37 @@ The canonical constructor throws `NullPointerException` if `outcome` or `finding
 Some criteria show in what the activity declares. The others are facts that only the data protection function knows,
 such as the scale of the processing, and the officer declares them as **risk factors**.
 
+The criteria the code can see are read from the [traits](../terms.md#trait) of the activity's terms, not from lists of
+keys, so a term of an extension or of your own counts as soon as it declares its traits.
+
 | Criterion | Found from the activity | Declared with |
 |---|---|---|
-| 1. `EVALUATION`: evaluation or scoring, including profiling | a purpose with a segment `profiling`, `profiled` or `targeted` in its key, or a purpose that is `employment.performance` or `education.financial_aid.means_assessment` (or below) | `Factor.EVALUATION` |
+| 1. `EVALUATION`: evaluation or scoring, including profiling | a purpose with the `EVALUATION` trait | `Factor.EVALUATION` |
 | 2. `AUTOMATED_DECISIONS`: automated decisions with legal or similarly significant effect | not visible | `Factor.AUTOMATED_DECISIONS` |
-| 3. `SYSTEMATIC_MONITORING`: systematic monitoring | the purpose `employment.monitoring` or the data category `user.employment.monitoring` (or below) | `Factor.SYSTEMATIC_MONITORING`, `Factor.PUBLICLY_ACCESSIBLE_AREA` |
-| 4. `SENSITIVE_DATA`: sensitive data or data of a highly personal nature | a special category or criminal offence data category, or a category `user.financial`, `user.location`, `user.content.private` or `user.behavior` (or below) | — |
+| 3. `SYSTEMATIC_MONITORING`: systematic monitoring | a purpose or a data category with the `MONITORING` trait | `Factor.SYSTEMATIC_MONITORING`, `Factor.PUBLICLY_ACCESSIBLE_AREA` |
+| 4. `SENSITIVE_DATA`: sensitive data or data of a highly personal nature | a special category or criminal offence data category, or a category with the `FINANCIAL`, `BEHAVIOURAL` or `PRIVATE_LIFE` trait | — |
 | 5. `LARGE_SCALE`: data processed on a large scale | not visible | `Factor.LARGE_SCALE` |
 | 6. `DATASET_MATCHING`: matching or combining datasets | not visible | `Factor.DATASET_MATCHING` |
-| 7. `VULNERABLE_SUBJECTS`: data concerning vulnerable data subjects | the data subjects `employee`, `staff_member`, `faculty_member`, `trainee` or `patient`, or the data category `user.childrens` (or below) | `Factor.VULNERABLE_SUBJECTS` |
+| 7. `VULNERABLE_SUBJECTS`: data concerning vulnerable data subjects | a data subject or a data category with the `VULNERABLE` trait | `Factor.VULNERABLE_SUBJECTS` |
 | 8. `INNOVATIVE_TECHNOLOGY`: innovative use or new technological or organisational solutions | not visible | `Factor.INNOVATIVE_TECHNOLOGY` |
 | 9. `PREVENTS_RIGHTS`: processing that prevents people from exercising a right or using a service or a contract | not visible | `Factor.PREVENTS_RIGHTS` |
 
 The purposes, data subjects and data categories are those the checker resolved: deprecated keys are replaced, and only
-personal data counts. A criterion is met once, however many things show it; the findings list them all in its evidence.
+personal data counts. A criterion is met once, however many things show it; the findings list them all in its evidence,
+**sorted**, so the screening does not depend on the order in which the activity lists its terms.
 
-In the standard taxonomy the purposes with such a segment are `marketing.advertising.profiling`,
-`marketing.advertising.first_party.targeted`, `marketing.advertising.third_party.targeted`,
-`personalize.content.profiling`, `personalize.content.profiled` and the deprecated `personalize.profiling` (screened as
-`personalize.content.profiling`). The terms `employment.performance`, `employment.monitoring` and
-`user.employment.monitoring` come from the [human resources extension](../extensions/human-resources.md) and
-`education.financial_aid.means_assessment` from the [university extension](../extensions/university.md); with the
-standard taxonomy alone those rows find nothing. Data uses of any other extension count only if their keys use the
-segments.
+The standard taxonomy declares the traits in [`linneo-traits.tsv`](../standard-taxonomy.md#traits-of-the-standard-terms):
+the purposes with `EVALUATION` are `marketing.advertising.profiling`, `marketing.advertising.first_party.targeted`,
+`marketing.advertising.third_party.targeted`, `personalize.content.profiling`, `personalize.content.profiled` and the
+deprecated `personalize.profiling` (screened as `personalize.content.profiling`); `employee`, `staff_member`,
+`faculty_member`, `trainee`, `patient` and `job_applicant` are `VULNERABLE`, like the category `user.childrens`;
+`user.financial` is `FINANCIAL`, `user.behavior` and `user.location` are `BEHAVIOURAL`, and `user.content.private` is
+`PRIVATE_LIFE`. The standard taxonomy has no `MONITORING` term: those come from the
+[extensions](../extensions/README.md#traits), such as `employment.monitoring` and `user.employment.monitoring` of the
+[human resources extension](../extensions/human-resources.md) or `education.financial_aid.means_assessment`, an
+`EVALUATION` purpose of the [university extension](../extensions/university.md); with the standard taxonomy alone those
+rows find nothing. An extension or an application that declares the traits of its own terms is read like the standard
+ones.
 
 `Criterion.number()` is the number of the criterion in the guidelines, 1 to 9. A `Factor` has a `criterion()`: the one
 it meets.
@@ -144,6 +153,10 @@ When an activity processes personal data and refers to **no** impact assessment 
 | `REQUIRED` | **error** `IMPACT_ASSESSMENT_REQUIRED` | `GDPR article <case> requires an impact assessment; refer to it. <summary>` |
 | `LIKELY` | **warning** `IMPACT_ASSESSMENT_RECOMMENDED` | `GDPR article 35 likely requires an impact assessment. <summary>` |
 | `POSSIBLE`, `NOT_INDICATED` | none | |
+
+Under `Jurisdiction.SPAIN` the warning cites the list of the Spanish supervisory authority (article 35.4) and reads
+`GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases
+that meet two criteria or more). <summary>`.
 
 Both are reported on the element `IMPACT_ASSESSMENT`, which belongs to the governance, and the error makes `verify`
 fail like any other. An activity that refers to an assessment gets no violation, whatever the outcome. The

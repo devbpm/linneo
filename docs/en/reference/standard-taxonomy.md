@@ -13,6 +13,7 @@ doc-sources:
   - src/main/resources/io/github/devbpm/linneo/internal/linneo-data-uses.tsv
   - src/main/resources/io/github/devbpm/linneo/internal/linneo-data-subjects.tsv
   - src/main/resources/io/github/devbpm/linneo/internal/linneo-category-policy.tsv
+  - src/main/resources/io/github/devbpm/linneo/internal/linneo-traits.tsv
   - tools/fideslang/update.py
 -->
 
@@ -124,6 +125,25 @@ consolidated text) and, for Spain, Ley Orgánica 3/2018 (LOPDGDD), consolidated 
 **Data subjects** (7, all roots): `student`, `applicant`, `alumnus`, `faculty_member`, `staff_member`,
 `legal_representative`, `emergency_contact`.
 
+## Traits of the standard terms
+
+fideslang defines no [traits](terms.md#trait) either: Linneo's rules read the ones declared in `linneo-traits.tsv`,
+which every term below the one that declares them inherits.
+
+| Trait | Terms that declare it |
+|---|---|
+| `FINANCIAL` | `user.financial` |
+| `BEHAVIOURAL` | `user.behavior`, `user.location` |
+| `PRIVATE_LIFE` | `user.content.private` |
+| `DIRECT_IDENTIFIER` | `user.name`, `user.government_id`, `user.biometric`, `user.content.self_image` |
+| `CONTACT_IDENTIFIER` | `user.contact`, `user.account` |
+| `INDIRECT_IDENTIFIER` | `user.unique_id`, `user.device` |
+| `VULNERABLE` | the category `user.childrens`; the data subjects `employee`, `staff_member`, `faculty_member`, `trainee`, `patient`, `job_applicant` |
+| `EVALUATION` | the data uses `marketing.advertising.first_party.targeted`, `marketing.advertising.profiling`, `marketing.advertising.third_party.targeted`, `personalize.profiling`, `personalize.content.profiling`, `personalize.content.profiled` |
+| `DIRECT_MARKETING` | the data use `marketing` |
+
+The shipped extensions declare the traits of their own terms; see [Extensions](extensions/README.md#traits).
+
 ## fideslang roots
 
 - Data categories: `user`, `system`.
@@ -141,6 +161,7 @@ fideslang 3.1.4 has one deprecated term: the data use `personalize.profiling` (d
 | `fideslang-data-categories.tsv`, `fideslang-data-uses.tsv`, `fideslang-data-subjects.tsv` | `fideslang` | term format (7) |
 | `linneo-data-categories.tsv`, `linneo-data-uses.tsv`, `linneo-data-subjects.tsv` | `linneo` | term format (7) |
 | `linneo-category-policy.tsv` | — | policy format (5) |
+| `linneo-traits.tsv` | — | trait format (3) |
 
 Common rules (UTF-8): blank lines and lines starting with `#` are ignored; the first remaining line is the column
 header and is skipped; cells are separated by a tab and stripped of surrounding white space; missing trailing cells
@@ -163,9 +184,15 @@ are empty; a line with more cells than columns is rejected (`TaxonomyException`:
   `false`.
 - Each row is applied with `TaxonomyBuilder.refineCategory` after all terms are loaded, so the key must exist.
 
+**Trait format**: `kind`, `key`, `traits`.
+
+- `kind` is `category`, `use` or `subject`; `traits` holds the names of `Trait` constants separated by commas.
+- Each row is applied with `refineCategory`, `refineDataUse` or `refineDataSubject` after the policy, so the key must
+  exist and each trait must apply to the hierarchy of `kind`.
+
 Loading order: fideslang categories, uses and subjects (origin `fideslang`), then Linneo's categories, uses and
-subjects (origin `linneo`), then the policy. `TaxonomyBuilder.build()` then checks the hierarchy and resolves the
-inherited facets.
+subjects (origin `linneo`), then the policy and the traits. `TaxonomyBuilder.build()` then checks the hierarchy and
+resolves the inherited facets and traits.
 
 ## Regenerating from fideslang
 
@@ -176,13 +203,16 @@ root:
 python -I tools/fideslang/update.py 3.1.4
 ```
 
-The script (Python standard library only) downloads the release's source distribution from PyPI, reads
-`src/fideslang/default_taxonomy/data_{categories,uses,subjects}.py` and writes:
+The script (Python standard library only) downloads the release's source distribution from PyPI, checks it against the
+SHA-256 digest PyPI publishes, reads `src/fideslang/default_taxonomy/data_{categories,uses,subjects}.py` and writes:
 
 - `src/main/resources/io/github/devbpm/linneo/internal/fideslang-data-{categories,uses,subjects}.tsv`, with a
   header comment naming the source, version and licence;
 - `src/main/java/io/github/devbpm/linneo/{Categories,DataUses,DataSubjects}.java`: the fideslang keys, then the
   keys of the `linneo-*.tsv` files (see [Key constants](key-constants.md)).
+
+The downloaded modules are **not executed**: the script parses them with `ast` and reads only the literal values of the
+fields it keeps, and stops if one is not a literal.
 
 After adding a Linneo term to a `linneo-*.tsv` file, rerun the script to regenerate the constants. When moving to
 another fideslang version, also update `StandardTaxonomy.FIDESLANG_VERSION`, `NOTICE` and the term counts asserted

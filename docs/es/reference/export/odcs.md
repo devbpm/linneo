@@ -54,7 +54,7 @@ contienen datos y quedan fuera del esquema.
 | `static OdcsSchema of(Taxonomy taxonomy)` | escritor | El escritor de esquemas para una taxonomía, que resuelve las claves que guarda el inventario. `NullPointerException` si `taxonomy` es `null`. |
 | `static String classification(Protection protection)` | `String` | La etiqueta de clasificación de una protección: `public`, `internal`, `confidential` o `restricted`. |
 | `String schemaJson(DataInventory inventory)` | `String` | El `schema` de un contrato: un array JSON con un objeto de esquema por cada objeto del inventario, en su orden. `TaxonomyException` si la taxonomía no contiene una clave del inventario. |
-| `String objectJson(DataInventory inventory, String object)` | `String` | El objeto de esquema de un objeto: un objeto JSON con `name`, `logicalType` (`object`) y `properties`. |
+| `String objectJson(DataInventory inventory, String object)` | `String` | El objeto de esquema de un objeto: un objeto JSON con `name`, `logicalType` (`object`) y `properties`. `IllegalArgumentException` si el inventario no tiene ese objeto. |
 | `String propertyJson(InventoryField field)` | `String` | La propiedad de esquema de un campo clasificado: un objeto JSON con `name`, `classification`, `tags` y `customProperties`. `IllegalArgumentException` si el campo está exento. `TaxonomyException` si la taxonomía no contiene su clave. |
 
 ## Uso

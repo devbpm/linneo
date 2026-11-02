@@ -101,14 +101,20 @@ public record ProcessingActivity(String key, String name, String description, Li
 
     /**
      * The same activity with another governance, such as the one the data protection officer keeps up to date. The
-     * scope declared in code is kept as is.
+     * scope declared in code is kept as is, and so are the {@linkplain Governance#riskFactors() risk factors} of
+     * this activity: what the code declares it does, such as automated decisions, is a minimum the stored governance
+     * adds to and cannot drop, so a governance saved before the code changed never lifts an impact assessment.
+     * Call it on the activity as the code declares it.
      *
-     * @param governance the governance that replaces the current one
+     * @param governance the governance that replaces the current one, its risk factors joined to this activity's
      * @return a new activity
      */
     public ProcessingActivity withGovernance(Governance governance) {
+        Governance merged = Objects.requireNonNull(governance, "governance").riskFactors()
+                .containsAll(this.governance.riskFactors()) ? governance : governance.toBuilder()
+                .riskFactors(this.governance.riskFactors().toArray(ImpactScreening.Factor[]::new)).build();
         return new ProcessingActivity(key, name, description, purposes, dataSubjects, dataCategories, entities,
-                objects, Objects.requireNonNull(governance, "governance"));
+                objects, merged);
     }
 
     /**
@@ -238,13 +244,13 @@ public record ProcessingActivity(String key, String name, String description, Li
         }
 
         /**
-         * Declares the article 9.2 condition for special categories of data.
+         * Adds article 9.2 conditions for special categories of data.
          *
-         * @param condition the condition
+         * @param conditions the conditions
          * @return this builder
          */
-        public Builder specialCategoryCondition(SpecialCategoryCondition condition) {
-            governance.specialCategoryCondition(condition);
+        public Builder specialCategoryConditions(SpecialCategoryCondition... conditions) {
+            governance.specialCategoryConditions(conditions);
             return this;
         }
 

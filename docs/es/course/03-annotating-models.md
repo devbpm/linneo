@@ -352,8 +352,9 @@ public class ScholarshipApplication {              // aún no forma parte del mo
 }
 ```
 
-Un campo sin anotar cuyo tipo es un compuesto (o un array, una colección o un `Optional` de él) se clasifica por los
-campos del compuesto, con la ruta `campo.parte`: `home.street`, `previous.city`. Un `Map` nunca se recorre.
+Un campo sin anotar cuyo tipo es un compuesto (o un array, una colección, un `Optional` o los valores de un `Map` de él,
+a cualquier profundidad) se clasifica por los campos del compuesto, con la ruta `campo.parte`: `home.street`,
+`previous.city`, `byType.street`. Una subclase de un compuesto también es un compuesto, porque la anotación se hereda.
 
 - El compuesto se resuelve con **sus propias** anotaciones y su `@DefaultCategory`, nunca con los de la clase
   contenedora: un valor por defecto en `ScholarshipApplication` no llega a `Address`.
@@ -362,8 +363,14 @@ campos del compuesto, con la ruta `campo.parte`: `home.street`, `previous.city`.
   basta para la dirección, pero `@Category(SYSTEM_OPERATIONS)` sería un error `WEAKER_THAN_PARTS`.
 - Un compuesto que se contiene a sí mismo (un `Node` con una lista de `Node`) no se puede expandir: el campo que
   cierra el bucle es un error `CYCLE`; clasifica ese campo como un solo valor.
-- **Olvidar `@Composite` es seguro.** Sin él, `home` es un campo ordinario sin categoría, y el clasificador informa
-  `UNCLASSIFIED_FIELD`. No hace falta pasar las clases embebibles a `verify` por separado.
+- **Olvidar `@Composite` es seguro.** Sin él, `home` no tiene categoría y no toma ningún valor por defecto de la clase,
+  porque el clasificador ve que la clase contiene campos clasificados: informa `UNCLASSIFIED_FIELD`. No hace falta pasar
+  las clases embebibles a `verify` por separado.
+- **Un valor por defecto de la clase nunca llega a datos que el clasificador no ve.** Un compuesto como clave de mapa o
+  como argumento de tipo de una clase que no es una colección (`Wrapper<Address>`), varios compuestos en un campo,
+  `Object`, una variable de tipo sin enlazar o un contenedor sin parametrizar son `UNCLASSIFIED_FIELD` aunque la clase
+  tenga `@DefaultCategory`, así que envolver datos personales nunca los convierte en un valor por defecto no personal.
+  Declara tú la categoría de un campo así.
 
 ## `@Exempt`: campos técnicos
 
@@ -400,7 +407,9 @@ public class Document extends AuditedEntity {
 ```
 
 Se excluyen automáticamente, sin anotación: los campos **`static`**, los **sintéticos** (generados por el
-compilador) y los que llevan el modificador Java **`transient`**.
+compilador) y los que llevan el modificador Java **`transient`**, salvo que un campo `transient` lleve una de las
+anotaciones de Linneo (`@Category`, `@CategoryByRow`, `@DerivedFrom` o `@Exempt`): entonces se clasifica como cualquier
+otro.
 
 > **Nota sobre JPA.** `@jakarta.persistence.Transient` *no* es el modificador Java `transient`. Un campo anotado solo
 > con `@Transient` de JPA sigue siendo visible para el clasificador y necesita `@Exempt` (o una categoría).
@@ -743,12 +752,14 @@ promedio sobre muchas personas, puede proteger menos.
 2. Un error `LOWERED_LEVEL`; los niveles solo pueden subir.
 3. No: es personal (`PERSONAL_DEFAULT`).
 4. La protección de su techo, e `IDENTIFIED` si el techo es personal.
-5. Los campos `static`, los sintéticos y los `transient` de Java.
+5. Los campos `static`, los sintéticos y los `transient` de Java (un campo `transient` con una de las anotaciones de
+   Linneo se clasifica).
 6. No. Cubre los campos que declara la clase anotada (y, cuando esa clase es la que se clasifica, los campos sin
    anotar heredados de superclases sin valor por defecto propio).
 7. `@DerivedFrom("dateOfBirth")`. Toma la clasificación de su fuente: `user.demographic.date_of_birth`, identificado,
    dato personal, con base `DERIVED`.
-8. `UNCLASSIFIED_FIELD` para ese campo, salvo que un valor por defecto de la clase lo cubra como un solo valor: sin
-   `@Composite` es un campo ordinario.
+8. `UNCLASSIFIED_FIELD` para ese campo, aunque la clase tenga un valor por defecto: `Address` tiene campos clasificados
+   pero no es un compuesto, así que el campo puede ocultar datos y no toma ningún valor por defecto de la clase. Marca
+   `Address` como `@Composite`, o declara la categoría del campo.
 
 </details>

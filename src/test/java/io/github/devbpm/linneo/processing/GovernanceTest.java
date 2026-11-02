@@ -51,7 +51,7 @@ class GovernanceTest {
     private static Governance stored() {
         return Governance.builder()
                 .legalBasis(LegalBasis.PUBLIC_INTEREST)
-                .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+                .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
                 .legalReference("Ley Orgánica 2/2023, del Sistema Universitario, art. 37")
                 .retention("Until the end of the studies")
                 .recipients("Teaching staff")
@@ -88,7 +88,7 @@ class GovernanceTest {
     @DisplayName("a change by the officer is checked like any other, and code problems are told apart")
     void officerChange() {
         Governance consentOnly = stored().toBuilder()
-                .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT).build();
+                .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT).build();
         ProcessingActivity unknownPurpose = ProcessingActivity.builder("x", "X").purposes("education.unknown")
                 .dataSubjects(DataSubjects.STUDENT).dataCategories(Categories.USER_NAME).governance(stored()).build();
         CheckedActivity changed = checker.check(scope().withGovernance(consentOnly));

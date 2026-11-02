@@ -15,10 +15,13 @@
  */
 package io.github.devbpm.linneo;
 
+import io.github.devbpm.linneo.TermChange.Hierarchy;
 import io.github.devbpm.linneo.internal.StandardTaxonomy;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,8 +29,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
@@ -39,7 +42,10 @@ import java.util.regex.Pattern;
  * segment, and must exist in the same hierarchy. When the taxonomy is built:
  * <ul>
  *   <li>a root data category must declare its nature, confidentiality and integrity;</li>
- *   <li>a child inherits every facet it does not declare, and may not declare a weaker one;</li>
+ *   <li>every declared facet is a minimum: a child inherits every facet it does not declare, and a level it declares
+ *       below its parent's is raised to the parent's, so that raising a category raises everything below it;</li>
+ *   <li>a child keeps its parent's nature, or narrows ordinary personal data to special category or criminal offence
+ *       data; a child of different personal-ness, or of the other maximum-protection nature, is an error;</li>
  *   <li>a {@linkplain LegalNature#requiresMaximumProtection() special category or criminal offence} category must
  *       end up with {@link Confidentiality#HIGH HIGH} confidentiality and {@link Integrity#HIGH HIGH} integrity,
  *       declared or inherited;</li>
@@ -48,7 +54,9 @@ import java.util.regex.Pattern;
  *   <li>the replacement of a deprecated data category must protect at least as much: a nature the deprecated
  *       category admits, confidentiality and integrity no lower, and secret if the deprecated category is.</li>
  * </ul>
- * A builder is not thread-safe and is meant to be used once.
+ * An {@linkplain #extend(TaxonomyExtension) extension} adds data categories below existing ones, data uses and data
+ * subjects, raises protection and adds attributes: it cannot add a root data category, change the origin of its terms,
+ * or change the lifecycle of a term it did not add. A builder is not thread-safe and is meant to be used once.
  *
  * @since 0.1.0
  */
@@ -67,6 +75,8 @@ public final class TaxonomyBuilder {
     private final Map<String, TermDraft> subjects = new LinkedHashMap<>();
     private final Map<String, Class<?>> appliedExtensions = new LinkedHashMap<>();
     private String origin = DEFAULT_ORIGIN;
+    // The extension contributing now, or null.
+    private String extending;
     private boolean standardApplied;
 
     TaxonomyBuilder() {
@@ -82,8 +92,14 @@ public final class TaxonomyBuilder {
         if (!standardApplied) {
             standardApplied = true;
             String previous = origin;
-            StandardTaxonomy.contribute(this);
-            origin = previous;
+            String previousExtension = extending;
+            extending = null;
+            try {
+                StandardTaxonomy.contribute(this);
+            } finally {
+                origin = previous;
+                extending = previousExtension;
+            }
         }
         return this;
     }
@@ -136,11 +152,14 @@ public final class TaxonomyBuilder {
         }
         if (applied == null) {
             String previous = origin;
+            String previousExtension = extending;
             origin = name;
+            extending = name;
             try {
                 extension.contribute(this);
             } finally {
                 origin = previous;
+                extending = previousExtension;
             }
         }
         return this;
@@ -151,9 +170,16 @@ public final class TaxonomyBuilder {
      *
      * @param origin the origin, such as the name of the application
      * @return this builder
+     * @throws TaxonomyException if the origin is blank, or an extension calls it: an extension's terms carry its name
      */
     public TaxonomyBuilder origin(String origin) {
-        this.origin = Objects.requireNonNull(origin, "origin");
+        if (Objects.requireNonNull(origin, "origin").isBlank()) {
+            throw new TaxonomyException("The origin of terms must not be blank");
+        }
+        if (extending != null) {
+            throw new TaxonomyException("The extension '" + extending + "' cannot change the origin of its terms");
+        }
+        this.origin = origin;
         return this;
     }
 
@@ -179,9 +205,13 @@ public final class TaxonomyBuilder {
      * @param description what the category covers
      * @param customizer declares facets, attributes and lifecycle on the new category
      * @return this builder
-     * @throws TaxonomyException if the key is invalid or already present
+     * @throws TaxonomyException if the key is invalid or already present, or an extension adds a root category
      */
     public TaxonomyBuilder category(String key, String name, String description, Consumer<CategoryDraft> customizer) {
+        if (extending != null && Objects.requireNonNull(key, "key").indexOf('.') < 0) {
+            throw new TaxonomyException("The extension '" + extending + "' cannot add the root data category '" + key
+                    + "': an extension adds data categories below existing ones");
+        }
         CategoryDraft draft = new CategoryDraft(checkKey(key, categories), name, description, origin);
         customizer.accept(draft);
         categories.put(key, draft);
@@ -189,24 +219,57 @@ public final class TaxonomyBuilder {
     }
 
     /**
-     * Makes the protection of an existing data category stricter, or adds attributes or a deprecation to it.
-     * A facet it already declares can only be raised.
+     * Makes the protection of an existing data category, and of the categories below it, stricter, or adds attributes
+     * or a deprecation to it. Every facet is a minimum, so a level lower than the one already declared changes
+     * nothing, and two refinements of the same category combine into the stricter one in either order.
      *
      * @param key the key of a category already added
      * @param customizer declares the stricter facets, attributes or lifecycle
      * @return this builder
-     * @throws TaxonomyException if the category does not exist or the customizer lowers a declared facet
+     * @throws TaxonomyException if the category does not exist, the customizer declares a nature that cannot be
+     *         reconciled with the declared one, or an extension changes the lifecycle of a category it did not add
      */
     public TaxonomyBuilder refineCategory(String key, Consumer<CategoryDraft> customizer) {
-        CategoryDraft draft = categories.get(key);
+        return refine(categories, key, "data category", customizer);
+    }
+
+    /**
+     * Adds traits or a deprecation to an existing data use.
+     *
+     * @param key the key of a data use already added
+     * @param customizer declares the traits or lifecycle
+     * @return this builder
+     * @throws TaxonomyException if the data use does not exist, or an extension changes the lifecycle of a data use
+     *         it did not add
+     */
+    public TaxonomyBuilder refineDataUse(String key, Consumer<TermDraft> customizer) {
+        return refine(uses, key, "data use", customizer);
+    }
+
+    /**
+     * Adds traits or a deprecation to an existing data subject.
+     *
+     * @param key the key of a data subject already added
+     * @param customizer declares the traits or lifecycle
+     * @return this builder
+     * @throws TaxonomyException if the data subject does not exist, or an extension changes the lifecycle of a data
+     *         subject it did not add
+     */
+    public TaxonomyBuilder refineDataSubject(String key, Consumer<TermDraft> customizer) {
+        return refine(subjects, key, "data subject", customizer);
+    }
+
+    private <D extends TermDraft> TaxonomyBuilder refine(Map<String, D> drafts, String key, String kind,
+                                                         Consumer<? super D> customizer) {
+        D draft = drafts.get(key);
         if (draft == null) {
-            throw new TaxonomyException("Cannot refine unknown data category '" + key + "'");
+            throw new TaxonomyException("Cannot refine unknown " + kind + " '" + key + "'");
         }
-        draft.refining(true);
+        draft.lockLifecycle(extending != null && !extending.equals(draft.origin()) ? extending : null);
         try {
             customizer.accept(draft);
         } finally {
-            draft.refining(false);
+            draft.lockLifecycle(null);
         }
         return this;
     }
@@ -231,12 +294,12 @@ public final class TaxonomyBuilder {
      * @param key the unique key
      * @param name the human-readable name
      * @param description what the purpose covers
-     * @param customizer declares the lifecycle
+     * @param customizer declares the traits and lifecycle
      * @return this builder
      * @throws TaxonomyException if the key is invalid or already present
      */
     public TaxonomyBuilder dataUse(String key, String name, String description, Consumer<TermDraft> customizer) {
-        TermDraft draft = new TermDraft(checkKey(key, uses), name, description, origin);
+        TermDraft draft = new TermDraft(Hierarchy.DATA_USE, checkKey(key, uses), name, description, origin);
         customizer.accept(draft);
         uses.put(key, draft);
         return this;
@@ -262,12 +325,12 @@ public final class TaxonomyBuilder {
      * @param key the unique key
      * @param name the human-readable name
      * @param description who the subject is
-     * @param customizer declares the lifecycle
+     * @param customizer declares the traits and lifecycle
      * @return this builder
      * @throws TaxonomyException if the key is invalid or already present
      */
     public TaxonomyBuilder dataSubject(String key, String name, String description, Consumer<TermDraft> customizer) {
-        TermDraft draft = new TermDraft(checkKey(key, subjects), name, description, origin);
+        TermDraft draft = new TermDraft(Hierarchy.DATA_SUBJECT, checkKey(key, subjects), name, description, origin);
         customizer.accept(draft);
         subjects.put(key, draft);
         return this;
@@ -284,6 +347,7 @@ public final class TaxonomyBuilder {
      */
     public Taxonomy build() {
         Map<String, DataCategory> builtCategories = new LinkedHashMap<>();
+        raised.clear();
         for (CategoryDraft draft : byDepth(categories)) {
             String parentKey = parentOf(draft.key(), categories, "data category");
             DataCategory parent = parentKey == null ? null : builtCategories.get(parentKey);
@@ -297,7 +361,15 @@ public final class TaxonomyBuilder {
                 buildTerms(subjects, "data subject", DataSubject::new));
     }
 
-    private static DataCategory resolve(CategoryDraft draft, String parentKey, DataCategory parent) {
+    // The categories whose declared facets their parent's raised in the last build, for the checks of the bundled
+    // terms, which declare none below what they inherit.
+    private final List<String> raised = new ArrayList<>();
+
+    List<String> raised() {
+        return List.copyOf(raised);
+    }
+
+    private DataCategory resolve(CategoryDraft draft, String parentKey, DataCategory parent) {
         String key = draft.key();
         LegalNature nature = draft.declaredNature();
         Confidentiality confidentiality = draft.declaredConfidentiality();
@@ -311,28 +383,31 @@ public final class TaxonomyBuilder {
             checkMaximumProtection(key, nature, confidentiality, integrity);
             attributes.putAll(draft.declaredAttributes());
             return new DataCategory(draft.info(null), nature, confidentiality, integrity, draft.declaredSecret(),
-                    attributes);
+                    attributes, draft.declaredTraits());
         }
         if (nature != null && !parent.nature().admits(nature)) {
-            throw new TaxonomyException("Data category '" + key + "' declares nature " + nature
-                    + ", which its parent '" + parentKey + "' (" + parent.nature() + ") does not admit");
+            if (nature != LegalNature.ORDINARY || !parent.nature().requiresMaximumProtection()) {
+                throw new TaxonomyException("Data category '" + key + "' declares nature " + nature
+                        + ", which its parent '" + parentKey + "' (" + parent.nature() + ") does not admit");
+            }
+            raised.add(key + ": nature " + nature + " below " + parent.nature());
+            nature = null;
         }
         if (confidentiality != null && confidentiality.compareTo(parent.confidentiality()) < 0) {
-            throw new TaxonomyException("Data category '" + key + "' declares confidentiality " + confidentiality
-                    + ", lower than its parent's " + parent.confidentiality());
+            raised.add(key + ": confidentiality " + confidentiality + " below " + parent.confidentiality());
         }
         if (integrity != null && integrity.compareTo(parent.integrity()) < 0) {
-            throw new TaxonomyException("Data category '" + key + "' declares integrity " + integrity
-                    + ", lower than its parent's " + parent.integrity());
+            raised.add(key + ": integrity " + integrity + " below " + parent.integrity());
         }
         nature = nature != null ? nature : parent.nature();
-        confidentiality = confidentiality != null ? confidentiality : parent.confidentiality();
-        integrity = integrity != null ? integrity : parent.integrity();
+        confidentiality = confidentiality != null ? confidentiality.max(parent.confidentiality())
+                : parent.confidentiality();
+        integrity = integrity != null ? integrity.max(parent.integrity()) : parent.integrity();
         checkMaximumProtection(key, nature, confidentiality, integrity);
         attributes.putAll(parent.attributes());
         attributes.putAll(draft.declaredAttributes());
         return new DataCategory(draft.info(parentKey), nature, confidentiality, integrity,
-                parent.secret() || draft.declaredSecret(), attributes);
+                parent.secret() || draft.declaredSecret(), attributes, union(parent.traits(), draft.declaredTraits()));
     }
 
     // Special category data (GDPR art. 9, LOPDGDD art. 9) and criminal offence data (GDPR art. 10, LOPDGDD art. 10)
@@ -347,13 +422,25 @@ public final class TaxonomyBuilder {
         }
     }
 
+    // Traits are inherited: a child has its parent's and its own.
     private static <T extends Term> List<T> buildTerms(Map<String, TermDraft> drafts, String kind,
-                                                      Function<TermInfo, T> factory) {
+                                                      BiFunction<TermInfo, Set<Trait>, T> factory) {
         List<T> terms = new ArrayList<>();
+        Map<String, Set<Trait>> traits = new HashMap<>();
         for (TermDraft draft : byDepth(drafts)) {
-            terms.add(factory.apply(draft.info(parentOf(draft.key(), drafts, kind))));
+            String parentKey = parentOf(draft.key(), drafts, kind);
+            Set<Trait> own = union(parentKey == null ? Set.of() : traits.get(parentKey), draft.declaredTraits());
+            traits.put(draft.key(), own);
+            terms.add(factory.apply(draft.info(parentKey), own));
         }
         return terms;
+    }
+
+    private static Set<Trait> union(Set<Trait> inherited, Set<Trait> declared) {
+        Set<Trait> union = EnumSet.noneOf(Trait.class);
+        union.addAll(inherited);
+        union.addAll(declared);
+        return union;
     }
 
     private static <D extends TermDraft> List<D> byDepth(Map<String, D> drafts) {

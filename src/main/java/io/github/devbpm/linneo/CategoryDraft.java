@@ -22,15 +22,14 @@ import java.util.Objects;
 /**
  * The declared properties of a data category while a {@link TaxonomyBuilder} is open.
  * <p>
- * Every facet left undeclared is inherited from the parent when the taxonomy is built. When refining an existing
- * category ({@link TaxonomyBuilder#refineCategory}), a facet can only be made stricter than what it already
- * declares.
+ * Every declared facet is a minimum: declaring a level twice, as two extensions refining the same category do
+ * ({@link TaxonomyBuilder#refineCategory}), keeps the stricter one, whatever their order, and a facet left undeclared
+ * is inherited from the parent when the taxonomy is built.
  *
  * @since 0.1.0
  */
 public final class CategoryDraft extends TermDraft {
 
-    private boolean refining;
     private LegalNature nature;
     private Confidentiality confidentiality;
     private Integrity integrity;
@@ -38,56 +37,51 @@ public final class CategoryDraft extends TermDraft {
     private final Map<String, String> attributes = new LinkedHashMap<>();
 
     CategoryDraft(String key, String name, String description, String origin) {
-        super(key, name, description, origin);
+        super(TermChange.Hierarchy.DATA_CATEGORY, key, name, description, origin);
     }
 
     /**
-     * Declares the legal nature.
+     * Declares the legal nature, at least. A nature the declared one already covers, such as ordinary personal data
+     * for a special category, changes nothing.
      *
      * @param nature the nature; it must be admitted by the parent's ({@link LegalNature#admits})
      * @return this draft
-     * @throws TaxonomyException if refining would change an already declared nature into one it does not admit
+     * @throws TaxonomyException if a nature is already declared and the two cannot be reconciled: one is personal
+     *         data and the other is not, or they are special category and criminal offence data
      */
     public CategoryDraft nature(LegalNature nature) {
         Objects.requireNonNull(nature, "nature");
-        if (refining && this.nature != null && !this.nature.admits(nature)) {
-            throw new TaxonomyException("Cannot change the nature of '" + key() + "' from " + this.nature + " to " + nature);
+        if (this.nature == null || this.nature.admits(nature)) {
+            this.nature = nature;
+        } else if (this.nature.isPersonal() != nature.isPersonal() || !this.nature.covers(nature)) {
+            throw new TaxonomyException("Cannot change the nature of '" + key() + "' from " + this.nature + " to "
+                    + nature);
         }
-        this.nature = nature;
         return this;
     }
 
     /**
-     * Declares the confidentiality level.
+     * Declares the confidentiality level, at least: the stricter of this and an already declared level is kept.
      *
-     * @param confidentiality the level; never lower than the parent's
+     * @param confidentiality the level
      * @return this draft
-     * @throws TaxonomyException if refining would lower an already declared level
      */
     public CategoryDraft confidentiality(Confidentiality confidentiality) {
         Objects.requireNonNull(confidentiality, "confidentiality");
-        if (refining && this.confidentiality != null && confidentiality.compareTo(this.confidentiality) < 0) {
-            throw new TaxonomyException("Cannot lower the confidentiality of '" + key() + "' from "
-                    + this.confidentiality + " to " + confidentiality);
-        }
-        this.confidentiality = confidentiality;
+        this.confidentiality = this.confidentiality == null ? confidentiality
+                : this.confidentiality.max(confidentiality);
         return this;
     }
 
     /**
-     * Declares the integrity level.
+     * Declares the integrity level, at least: the stricter of this and an already declared level is kept.
      *
-     * @param integrity the level; never lower than the parent's
+     * @param integrity the level
      * @return this draft
-     * @throws TaxonomyException if refining would lower an already declared level
      */
     public CategoryDraft integrity(Integrity integrity) {
         Objects.requireNonNull(integrity, "integrity");
-        if (refining && this.integrity != null && integrity.compareTo(this.integrity) < 0) {
-            throw new TaxonomyException("Cannot lower the integrity of '" + key() + "' from " + this.integrity + " to "
-                    + integrity);
-        }
-        this.integrity = integrity;
+        this.integrity = this.integrity == null ? integrity : this.integrity.max(integrity);
         return this;
     }
 
@@ -109,16 +103,40 @@ public final class CategoryDraft extends TermDraft {
      * @return this draft
      */
     public CategoryDraft attribute(String name, String value) {
-        attributes.put(Objects.requireNonNull(name, "name"), Objects.requireNonNull(value, "value"));
+        if (Objects.requireNonNull(name, "name").isBlank()) {
+            throw new TaxonomyException("An attribute of '" + key() + "' has a blank name");
+        }
+        attributes.put(name, Objects.requireNonNull(value, "value"));
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws TaxonomyException if an extension refines a category it did not add
+     */
     @Override
     public CategoryDraft since(String version) {
         super.since(version);
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws TaxonomyException if a trait does not apply to data categories
+     */
+    @Override
+    public CategoryDraft traits(Trait... traits) {
+        super.traits(traits);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws TaxonomyException if the version is blank, or an extension refines a category it did not add
+     */
     @Override
     public CategoryDraft deprecated(String sinceVersion, String replacedBy) {
         super.deprecated(sinceVersion, replacedBy);
@@ -145,7 +163,4 @@ public final class CategoryDraft extends TermDraft {
         return attributes;
     }
 
-    void refining(boolean refining) {
-        this.refining = refining;
-    }
 }

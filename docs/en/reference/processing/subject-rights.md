@@ -7,6 +7,7 @@ nav_order: 5
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/SubjectRights.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # SubjectRights
@@ -23,7 +24,7 @@ conditions of each article depend on the case. Linneo reads the record; locating
 data is the application's.
 
 ```java
-SubjectRights rights = SubjectRights.of(record, DataSubjects.STUDENT, Jurisdiction.SPAIN);
+SubjectRights rights = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT, Jurisdiction.SPAIN);
 Map<String, List<InventoryField>> where = rights.storedFields(inventory, taxonomy);   // where to look for the data
 for (SubjectRights.ActivityRights activity : rights.activities()) {
     SubjectRights.Entitlement erasure = activity.entitlement(SubjectRights.Right.ERASURE);
@@ -35,9 +36,9 @@ for (SubjectRights.ActivityRights activity : rights.activities()) {
 
 | Member | Returns | Description |
 |---|---|---|
-| `static SubjectRights of(ProcessingRecord record, String dataSubject)` | rights | The rights under the GDPR alone (`Jurisdiction.EU`). |
-| `static SubjectRights of(ProcessingRecord record, String dataSubject, Jurisdiction jurisdiction)` | rights | The rights in a [jurisdiction](checker.md#jurisdiction), over every activity of the record whose data subjects include the category `dataSubject` (a key such as `student`). `NullPointerException` if an argument is `null`. |
-| `String dataSubject()` | `String` | The key of the category. |
+| `static SubjectRights of(ProcessingRecord record, Taxonomy taxonomy, String dataSubject)` | rights | The rights under the GDPR alone (`Jurisdiction.EU`). |
+| `static SubjectRights of(ProcessingRecord record, Taxonomy taxonomy, String dataSubject, Jurisdiction jurisdiction)` | rights | The rights in a [jurisdiction](checker.md#jurisdiction), over every activity of the record whose data subjects include the category `dataSubject` (a key such as `student`). The key is resolved with `taxonomy`, the one the record was checked with: a deprecated key stands for its replacement. `NullPointerException` if an argument is `null`; `TaxonomyException` if the taxonomy has no such data subject; `IllegalArgumentException` if an activity of the record has no lawful basis (build the record with `ProcessingChecker.verify`). |
+| `String dataSubject()` | `String` | The key of the category, resolved: the replacement if the key given was deprecated. |
 | `List<ActivityRights> activities()` | immutable list | The activities that process data of the category, with the rights over each, in the order of the record. |
 | `Optional<ActivityRights> activity(String activity)` | `Optional` | The rights over one activity, or empty if the activity does not process data of the category. |
 | `boolean isEmpty()` | `boolean` | `true` if no activity processes data of the category: there is nothing to answer but that. |
@@ -46,8 +47,9 @@ for (SubjectRights.ActivityRights activity : rights.activities()) {
 | `List<Class<?>> entities()` | immutable list | The entity classes the activities name, each once, in the order of the activities. |
 | `Map<String, List<InventoryField>> storedFields(DataInventory inventory, Taxonomy taxonomy)` | immutable map | The fields that hold personal data in the `objects()`: where to look for the person's data to give access to it, export it, rectify it or erase it. Objects sorted, fields in the order of the inventory; an object the inventory does not hold, or without personal fields, has no entry. `TaxonomyException` if the taxonomy does not contain a key of the inventory. |
 
-A category that no activity names gives an empty result, not an error. `entities()` and `objects()` are what the
-activities declare; the inventory gives the fields of the objects.
+A category that no activity names gives an empty result, but a key the taxonomy does not have is an error, so a typo is
+not read as "no data". `entities()` and `objects()` are what the activities declare; the inventory gives the fields of
+the objects.
 
 ## Right
 
@@ -92,7 +94,8 @@ the record, and `entitlements` holds one `Entitlement` per `Right`, in the order
 
 ## The rules
 
-The availability follows the lawful basis of the activity (`governance().legalBasis()`):
+The availability follows the lawful basis of the activity (`governance().legalBasis()`), which every activity of a
+record built with `ProcessingChecker.verify` has:
 
 | Right | Consent | Contract | Legal obligation | Vital interests | Public interest | Legitimate interests |
 |---|---|---|---|---|---|---|
@@ -107,14 +110,23 @@ The availability follows the lawful basis of the activity (`governance().legalBa
   17.3.b), and the explanation then carries the retention the activity declares (`not declared` if it has none). With
   consent it follows the withdrawal of consent (17.1.b), with a contract or vital interests once the data is no longer
   needed (17.1.a), with legitimate interests after an objection unless there are overriding legitimate grounds (17.1.c).
-- **Portability** applies to processing based on consent or a contract (article 20.1).
+- **Portability** applies to processing based on consent or a contract (article 20.1), and to the special category data
+  processed with explicit consent (article 20.1.a; see below).
 - **Objection** applies to processing based on a task in the public interest or legitimate interests (article 21.1).
 - **Restriction** is `CONDITIONAL` in every activity: it applies while the accuracy of the data or an objection is
   being verified, when the processing is unlawful and the person prefers restriction, or when the person needs the data
   for legal claims (article 18.1).
-- **Direct marketing.** If a purpose of the activity is `marketing` or under `marketing.*`, whatever the basis,
-  `ERASURE` is `YES` (articles 17.1.c and 21.2: the person may object at any time and the data is then erased) and
-  `OBJECTION` is `YES` (articles 21.2 and 21.3: the processing stops).
+- **Direct marketing.** If a purpose of the activity has the [`DIRECT_MARKETING` trait](../terms.md#trait) (the
+  standard `marketing` use and everything below it, `advancement` in the university extension, or a term of yours that
+  declares it), whatever the basis, `OBJECTION` is `YES` (articles 21.2 and 21.3: the processing stops) and `ERASURE`
+  is `YES` (articles 17.1.c and 21.2: the person may object at any time and the data is then erased). When the basis
+  is a legal obligation or a task in the public interest, `ERASURE` is `CONDITIONAL` instead (articles 17.1.c and
+  21.3): the data is erased except what article 17.3.b keeps, and the explanation carries the retention.
+- **Explicit consent.** If the activity declares explicit consent as a condition for special category data (article
+  9.2.a, in [`specialCategoryConditions`](activity.md#governance)): when its lawful basis is neither consent nor a
+  contract, `PORTABILITY` is `CONDITIONAL` instead of `NO` (article 20.1.a: it covers the special category data, not
+  the rest); and when its basis is not consent, `ERASURE` is `CONDITIONAL` unless it is already `YES`, and the
+  explanation adds that the special category data is erased when the consent is withdrawn (articles 17.1.b and 9.2.a).
 - **Access** is `YES` in every activity, and its explanation lists the purposes of the activity by name. The
   explanations of the other rights cite the articles above.
 - **`Jurisdiction.SPAIN`.** The explanations of `RECTIFICATION` and `ERASURE` add that the data is blocked, not

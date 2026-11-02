@@ -20,6 +20,7 @@ import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.LegalNature;
 import io.github.devbpm.linneo.TaxonomyBuilder;
 import io.github.devbpm.linneo.TaxonomyExtension;
+import io.github.devbpm.linneo.Trait;
 
 import static io.github.devbpm.linneo.extension.humanresources.HumanResourcesCategories.*;
 import static io.github.devbpm.linneo.extension.humanresources.HumanResourcesDataSubjects.*;
@@ -104,6 +105,23 @@ public final class HumanResourcesTaxonomy implements TaxonomyExtension {
         categories(builder);
         dataUses(builder);
         dataSubjects(builder);
+        traits(builder);
+    }
+
+    // The traits Linneo's legal rules read (see Trait): pay is financial data, monitoring and performance management
+    // are WP248 criteria, and dependants, whistleblowers and workers are in a weaker position than the employer.
+    private static void traits(TaxonomyBuilder builder) {
+        builder.refineCategory(USER_EMPLOYMENT_COMPENSATION, c -> c.traits(Trait.FINANCIAL))
+                .refineCategory(USER_EMPLOYMENT_BENEFIT, c -> c.traits(Trait.FINANCIAL))
+                .refineCategory(USER_EMPLOYMENT_PAYROLL, c -> c.traits(Trait.FINANCIAL))
+                .refineCategory(USER_EMPLOYMENT_MONITORING, c -> c.traits(Trait.MONITORING))
+                .refineDataUse(EMPLOYMENT_MONITORING, u -> u.traits(Trait.MONITORING))
+                .refineDataUse(EMPLOYMENT_PERFORMANCE, u -> u.traits(Trait.EVALUATION))
+                .refineDataUse(EMPLOYMENT_RECRUITMENT_BACKGROUND_CHECK, u -> u.traits(Trait.EVALUATION))
+                .refineDataSubject(DEPENDANT, s -> s.traits(Trait.VULNERABLE))
+                .refineDataSubject(REPORTING_PERSON, s -> s.traits(Trait.VULNERABLE))
+                .refineDataSubject(TEMPORARY_AGENCY_WORKER, s -> s.traits(Trait.VULNERABLE))
+                .refineDataSubject(WORKER_REPRESENTATIVE, s -> s.traits(Trait.VULNERABLE));
     }
 
     private static void categories(TaxonomyBuilder builder) {

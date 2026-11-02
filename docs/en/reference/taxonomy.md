@@ -7,6 +7,7 @@ nav_order: 1
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/Taxonomy.java
   - src/main/java/io/github/devbpm/linneo/TaxonomyException.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
   - src/main/resources/io/github/devbpm/linneo/internal/linneo-data-categories.tsv
 -->
 
@@ -96,6 +97,7 @@ email.isA("user.con");                // false (whole segments only)
 | `List<DataUse> dataUses()` | immutable list | All data uses, ordered by key. |
 | `Optional<DataUse> dataUse(String key)` | `Optional` | A data use by key; empty if absent. |
 | `DataUse requireDataUse(String key)` | `DataUse` | A data use by key. Throws `TaxonomyException` (`Unknown data use '<key>'`) if absent. |
+| `DataUse resolveDataUse(String key)` | `DataUse` | The data use **to use** for a key: the use itself or, if it is deprecated with a replacement, the current use that replaces it. Throws `TaxonomyException` if the key, or a replacement on the chain, is absent. |
 | `List<DataUse> childrenOf(DataUse use)` | immutable list | The direct children, ordered by key. |
 
 ## Data subjects
@@ -105,10 +107,13 @@ email.isA("user.con");                // false (whole segments only)
 | `List<DataSubject> dataSubjects()` | immutable list | All data subjects, ordered by key. |
 | `Optional<DataSubject> dataSubject(String key)` | `Optional` | A data subject by key; empty if absent. |
 | `DataSubject requireDataSubject(String key)` | `DataSubject` | A data subject by key. Throws `TaxonomyException` (`Unknown data subject '<key>'`) if absent. |
+| `DataSubject resolveDataSubject(String key)` | `DataSubject` | The data subject **to use** for a key: the subject itself or, if it is deprecated with a replacement, the current subject that replaces it. Throws `TaxonomyException` if the key, or a replacement on the chain, is absent. |
 
-`parentOf`, `ancestorsOf` and `resolveCategory` exist only for data categories; for data uses and data subjects use
-`info().parent()` and the lookups above. Data uses and data subjects describe processing activities, not fields, so
-no annotation refers to them.
+`resolveDataUse` and `resolveDataSubject` follow `replacedBy` as `resolveCategory` does, so a key stored before its
+term was deprecated still reaches the current term: [`SubjectRights`](processing/subject-rights.md) resolves the data
+subject with the latter. `parentOf` and `ancestorsOf` exist only for data categories; for data uses and data subjects
+use `info().parent()` and the lookups above. Data uses and data subjects describe processing activities, not fields,
+so no annotation refers to them.
 
 ## The taxonomy as data
 
@@ -118,7 +123,7 @@ classification of the past with the taxonomy of the past.
 
 | Method | Returns | Description |
 |---|---|---|
-| `String toTsv()` | `String` | The taxonomy as tab-separated text: every term with its lifecycle and, for data categories, their **effective** protection and attributes, in key order. Deterministic: the same taxonomy always gives the same text. |
+| `String toTsv()` | `String` | The taxonomy as tab-separated text: every term with its lifecycle and, for data categories, their **effective** protection and attributes, and the [traits](terms.md#trait) of every term, in key order. Deterministic: the same taxonomy always gives the same text. |
 | `static Taxonomy fromTsv(String text)` | `Taxonomy` | Reads a text written by `toTsv()`. The terms go through a `TaxonomyBuilder`, so the text must follow the same rules as any other taxonomy. Throws `TaxonomyException` if the text is not a taxonomy of a known format version, a row is malformed, or the terms break a rule of the builder. |
 | `String fingerprint()` | `String` | The SHA-256 of `toTsv()` (UTF-8), as 64 lower-case hexadecimal digits. Equal taxonomies have the same fingerprint; computed once and kept. |
 | `boolean equals(Object)`, `int hashCode()` | | Two taxonomies are equal when they have the same data categories, data uses and data subjects: same keys, names, descriptions, origins, lifecycles, protection and attributes. |
@@ -129,7 +134,7 @@ The fingerprint says that something changed, not what: any change of text, even 
 ### Text format
 
 The first line is `#linneo-taxonomy`, a tab and the format version, `1`; `fromTsv` refuses any other first line. Blank
-lines and lines starting with `#` after it are comments; `toTsv` writes three that name the columns. Every other line
+lines and lines starting with `#` after it are comments; `toTsv` writes four that name the columns. Every other line
 is a row of cells separated by tabs, and the first cell says which row it is:
 
 | Row | Cells |
@@ -137,13 +142,16 @@ is a row of cells separated by tabs, and the first cell says which row it is:
 | `category` | `category`, key, name, description, origin, version that introduced it, version that deprecated it, replacement, nature, confidentiality, integrity, secret (`true` or `false`): 12 cells |
 | `use`, `subject` | the kind, key, name, description, origin, version that introduced it, version that deprecated it, replacement: 8 cells |
 | `attribute` | `attribute`, category key, name, value: 4 cells. One row for each attribute of a category, those inherited from its ancestors included |
+| `trait` | `trait`, the kind of term (`category`, `use` or `subject`), key, trait: 4 cells. One row for each trait of a term, those inherited from its ancestors included |
 
 Rows are written in this order: data categories, data uses and data subjects, each by key, then the attributes by
-category key and name. An empty cell is an absent value. A backslash, tab, line feed and carriage return inside a
-cell are written `\\`, `\t`, `\n` and `\r`, so a row is always one line. The nature, confidentiality and integrity are
-the names of the constants of [`LegalNature`, `Confidentiality` and `Integrity`](protection-levels.md). `fromTsv` reads
-the rows in any order: parents are checked when the taxonomy is built, and the attribute rows are applied after all
-the terms.
+category key and name, then the traits of the categories, the uses and the subjects. An empty cell is an absent value.
+A backslash, tab, line feed and carriage return inside a cell are written `\\`, `\t`, `\n` and `\r`, so a row is always
+one line; a lone UTF-16 surrogate, which UTF-8 cannot encode, is written as a backslash, `u` and its four hexadecimal
+digits, so that two different taxonomies never have the same bytes or fingerprint. The nature, confidentiality and
+integrity are the names of the constants of [`LegalNature`, `Confidentiality` and `Integrity`](protection-levels.md),
+and the trait is the name of a [`Trait`](terms.md#trait). `fromTsv` reads the rows in any order: parents are checked
+when the taxonomy is built, and the attribute and trait rows are applied after all the terms.
 
 ```java
 Taxonomy taxonomy = Taxonomy.builder()
@@ -166,6 +174,7 @@ read.fingerprint().equals(taxonomy.fingerprint());   // true
 # category key name description origin since deprecated_since replaced_by nature confidentiality integrity secret
 # use|subject key name description origin since deprecated_since replaced_by
 # attribute category_key name value
+# trait category|use|subject key trait
 category→data→Data→Any data.→my-app→→→→ORDINARY→LOW→LOW→false
 category→data.note→Note→A free text note.→my-app→→→→ORDINARY→LOW→LOW→false
 attribute→data.note→retention→1y
@@ -185,7 +194,8 @@ Thrown when a taxonomy cannot be built or a key is not part of it. The message n
 
 Thrown by:
 
-- `Taxonomy.requireCategory`, `requireDataUse`, `requireDataSubject` and `resolveCategory` for an unknown key;
+- `Taxonomy.requireCategory`, `requireDataUse`, `requireDataSubject` and the three `resolve` methods for an unknown
+  key;
 - `Taxonomy.load()` and the `TaxonomyBuilder` methods when a rule is broken (messages listed in
   [Extending the taxonomy](extending.md#errors));
 - `Taxonomy.fromTsv` when the text is malformed or its terms break a rule of the builder;

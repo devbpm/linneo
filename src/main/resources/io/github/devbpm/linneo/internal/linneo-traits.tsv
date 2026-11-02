@@ -1,0 +1,39 @@
+# Linneo's traits of the standard terms. Copyright 2026 the original author or authors.
+# Licensed under the Apache License, Version 2.0. fideslang defines no such properties; these are Linneo's.
+# A trait is inherited by every term below the one that declares it (see io.github.devbpm.linneo.Trait).
+# Sources of the rules that read them:
+#   - Article 29 Working Party, Guidelines on Data Protection Impact Assessment, WP248 rev.01 (endorsed by the
+#     EDPB on 25 May 2018), section III.B.a: evaluation or scoring (criterion 1), systematic monitoring (3),
+#     sensitive data or data of a highly personal nature (4: financial data, location data, communications and
+#     private documents), data concerning vulnerable data subjects (7: children, employees, patients...).
+#   - ENISA, Recommendations for a methodology of the assessment of severity of personal data breaches (2013):
+#     data processing context (simple, behavioural, financial, sensitive) and ease of identification.
+#   - GDPR article 21.2-3: the absolute right to object to direct marketing and the profiling related to it.
+# Columns: kind (category, use or subject), key, traits separated by commas
+kind	key	traits
+category	user.financial	FINANCIAL
+category	user.behavior	BEHAVIOURAL
+category	user.location	BEHAVIOURAL
+category	user.content.private	PRIVATE_LIFE
+category	user.childrens	VULNERABLE
+category	user.name	DIRECT_IDENTIFIER
+category	user.government_id	DIRECT_IDENTIFIER
+category	user.biometric	DIRECT_IDENTIFIER
+category	user.content.self_image	DIRECT_IDENTIFIER
+category	user.contact	CONTACT_IDENTIFIER
+category	user.account	CONTACT_IDENTIFIER
+category	user.unique_id	INDIRECT_IDENTIFIER
+category	user.device	INDIRECT_IDENTIFIER
+use	marketing	DIRECT_MARKETING
+use	marketing.advertising.first_party.targeted	EVALUATION
+use	marketing.advertising.profiling	EVALUATION
+use	marketing.advertising.third_party.targeted	EVALUATION
+use	personalize.profiling	EVALUATION
+use	personalize.content.profiling	EVALUATION
+use	personalize.content.profiled	EVALUATION
+subject	employee	VULNERABLE
+subject	staff_member	VULNERABLE
+subject	faculty_member	VULNERABLE
+subject	trainee	VULNERABLE
+subject	patient	VULNERABLE
+subject	job_applicant	VULNERABLE

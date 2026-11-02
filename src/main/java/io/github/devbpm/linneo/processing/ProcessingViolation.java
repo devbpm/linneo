@@ -188,7 +188,7 @@ public record ProcessingViolation(String activity, Severity severity, Code code,
         LEGITIMATE_INTEREST(true),
 
         /**
-         * The article 9.2 condition ({@link Governance#specialCategoryCondition()}).
+         * The article 9.2 conditions ({@link Governance#specialCategoryConditions()}).
          */
         SPECIAL_CATEGORY_CONDITION(true),
 

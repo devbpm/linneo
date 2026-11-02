@@ -124,4 +124,13 @@ class DisclosurePolicyTest {
         }
         return protections;
     }
+
+    @Test
+    @DisplayName("an exempted stored field holds no data and is shown as it is, whatever the thresholds")
+    void exemptStoredField() {
+        DisclosurePolicy everything = DisclosurePolicy.builder().mask(Protection.LOWEST).build();
+        assertEquals(Treatment.CLEAR, everything.treatment(
+                io.github.devbpm.linneo.classify.InventoryField.exempt("o", "version", "optimistic lock"),
+                Taxonomy.standard()));
+    }
 }

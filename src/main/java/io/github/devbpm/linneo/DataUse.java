@@ -16,6 +16,7 @@
 package io.github.devbpm.linneo;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Why data is processed: the purpose of a processing activity, such as {@code essential.service.authentication}.
@@ -24,16 +25,20 @@ import java.util.Objects;
  * these terms where they describe their processing activities.
  *
  * @param info the key, parent, name, description, origin and lifecycle
+ * @param traits the traits the term declares or inherits, which Linneo's legal rules read
  * @since 0.1.0
  */
-public record DataUse(TermInfo info) implements Term {
+public record DataUse(TermInfo info, Set<Trait> traits) implements Term {
 
     /**
-     * Checks the component.
+     * Checks the components and makes the traits immutable.
      *
      * @param info the term information
+     * @param traits the traits, or {@code null} for none
+     * @throws IllegalArgumentException if a trait does not apply to the hierarchy
      */
     public DataUse {
         Objects.requireNonNull(info, "info");
+        traits = Trait.checked(traits, TermChange.Hierarchy.DATA_USE, info.key());
     }
 }

@@ -72,6 +72,11 @@ Los vocabularios de las bases siguen las declaraciones de privacidad de fideslan
 `SpecialCategoryCondition` y `TransferSafeguard` llevan en `fideslangName()` los valores de
 `legal_basis_for_processing`, `special_category_legal_basis` y `legal_basis_for_transfers`.
 
+Las reglas jurídicas que dependen de lo que es un término, y no de cómo se llama, leen los [rasgos](../terms.md#trait)
+de los términos y no listas de claves: el [cribado de impacto](impact-screening.md), la
+[evaluación de violaciones](breach-assessment.md) y los [derechos del interesado](subject-rights.md). Un término de una
+extensión o propio pesa en ellas en cuanto declara sus rasgos.
+
 ## Alcance y gobernanza
 
 Una actividad tiene dos partes con responsables distintos. Su **alcance**, las finalidades, los interesados y los datos
@@ -97,7 +102,9 @@ la gravedad:
   impacto. Con `Jurisdiction.SPAIN`, también el consentimiento explícito como única condición para las categorías
   especiales del artículo 9.1 de la LOPDGDD. `verify` lanza una `ProcessingException` y no se genera ningún registro.
 - **Aviso**: el registro está incompleto o algo debe revisarse. Una clave obsoleta, una categoría no personal, una
-  base que descansa en una ley sin nombrarla, el interés legítimo sin el interés perseguido, la falta de plazo de
+  base que descansa en una ley sin nombrarla (con `Jurisdiction.SPAIN`, el aviso nombra las disposiciones de la LOPDGDD
+  que exigen una norma con rango de ley, y también lo es tratar datos de sanciones administrativas sin consentimiento ni
+  referencia legal, según el artículo 27 de la LOPDGDD), el interés legítimo sin el interés perseguido, la falta de plazo de
   conservación, una condición declarada para datos que la actividad no trata, y una actividad cuyo
   [cribado](impact-screening.md) hace probable una evaluación de impacto (dos criterios o más) y que no cita ninguna.
   Los datos de categorías especiales por sí solos son un criterio y no generan nada. La verificación pasa y los avisos

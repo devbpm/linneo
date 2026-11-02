@@ -27,7 +27,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 /**
@@ -73,15 +76,36 @@ public final class ReleasedTaxonomy {
                 .extend(new HumanResourcesTaxonomy()).build();
     }
 
-    static Optional<Path> latest() throws IOException {
+    // The recorded releases, by version.
+    static List<Path> releases() throws IOException {
         if (!Files.isDirectory(DIRECTORY)) {
-            return Optional.empty();
+            return List.of();
         }
         try (Stream<Path> files = Files.list(DIRECTORY)) {
             return files.filter(f -> f.getFileName().toString().matches("\\d+\\.\\d+\\.\\d+\\.tsv"))
-                    .max(Comparator.comparing(f -> version(f.getFileName().toString().replace(".tsv", "")),
-                            Arrays::compare));
+                    .sorted(Comparator.comparing(ReleasedTaxonomy::version, Arrays::compare)).toList();
         }
+    }
+
+    // The release a version is compared with: the highest recorded one not above it, so that a maintenance branch
+    // compares with its own line and not with a later release.
+    static Optional<Path> baseline(List<Path> releases, String current) {
+        int[] version = version(current);
+        return releases.stream().filter(f -> Arrays.compare(version(f), version) <= 0)
+                .max(Comparator.comparing(ReleasedTaxonomy::version, Arrays::compare));
+    }
+
+    // The keys of every hierarchy, prefixed with the hierarchy, since a key may be both a use and a subject.
+    static Set<String> keys(Taxonomy taxonomy) {
+        Set<String> keys = new TreeSet<>();
+        taxonomy.categories().forEach(term -> keys.add("data category " + term.key()));
+        taxonomy.dataUses().forEach(term -> keys.add("data use " + term.key()));
+        taxonomy.dataSubjects().forEach(term -> keys.add("data subject " + term.key()));
+        return keys;
+    }
+
+    static int[] version(Path file) {
+        return version(file.getFileName().toString().replace(".tsv", ""));
     }
 
     // The largest change semantic versioning allows from one version to another.

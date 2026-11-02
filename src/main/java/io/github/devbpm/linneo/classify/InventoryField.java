@@ -42,10 +42,11 @@ import java.util.Objects;
  *        the category's
  * @param integrity the integrity the field declares above its category's, or {@code null} when it takes the
  *        category's
- * @param identifiability how the value points to the person; {@code null} when the category is not personal, and
- *        read as {@link Identifiability#IDENTIFIED} when absent for a personal category
+ * @param identifiability how the value points to the person, as the field declares it; {@code null} when it declares
+ *        none, read as {@link Identifiability#IDENTIFIED} for a personal category. {@code IDENTIFIED} itself is
+ *        stored as {@code null}, so that equal declarations give equal fields
  * @param reason the reason of an exemption or a class default, or what decides a per-row category; {@code null}
- *        otherwise
+ *        otherwise, and a blank reason of a classified field is stored as {@code null}
  * @since 0.1.0
  */
 public record InventoryField(String object, String path, String key, Basis basis, Confidentiality confidentiality,
@@ -66,6 +67,12 @@ public record InventoryField(String object, String path, String key, Basis basis
      *         exempted field has levels, an identifiability or no reason
      */
     public InventoryField {
+        if (identifiability == Identifiability.IDENTIFIED) {
+            identifiability = null;
+        }
+        if (key != null && reason != null && reason.isBlank()) {
+            reason = null;
+        }
         Objects.requireNonNull(object, "object");
         Objects.requireNonNull(path, "path");
         if (object.isBlank() || path.isBlank()) {

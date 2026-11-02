@@ -18,8 +18,9 @@ Usage, from the repository root:
 
     python -I tools/fideslang/update.py 3.1.4
 
-It downloads the release's source distribution from PyPI, reads src/fideslang/default_taxonomy/data_*.py
-and writes:
+It downloads the release's source distribution from PyPI, checks it against the SHA-256 digest PyPI publishes,
+reads src/fideslang/default_taxonomy/data_*.py without running them (the term definitions are parsed and only
+their literal values are read) and writes:
 
   * src/main/resources/io/github/devbpm/linneo/internal/fideslang-data-{categories,uses,subjects}.tsv
   * src/main/java/io/github/devbpm/linneo/{Categories,DataUses,DataSubjects}.java (fideslang keys, then the
@@ -28,10 +29,11 @@ and writes:
 Only the Python standard library is used. Update StandardTaxonomy.FIDESLANG_VERSION, NOTICE and the counts in
 StandardTaxonomyTest when moving to another version.
 """
+import ast
+import hashlib
 import io
 import json
 import os
-import re
 import sys
 import tarfile
 import urllib.request
@@ -76,9 +78,13 @@ LICENSE_HEADER = """/*
 def download_sources(version):
     with urllib.request.urlopen(f"https://pypi.org/pypi/fideslang/{version}/json") as response:
         release = json.load(response)
-    url = next(u["url"] for u in release["urls"] if u["packagetype"] == "sdist")
-    with urllib.request.urlopen(url) as response:
-        archive = tarfile.open(fileobj=io.BytesIO(response.read()), mode="r:gz")
+    sdist = next(u for u in release["urls"] if u["packagetype"] == "sdist")
+    with urllib.request.urlopen(sdist["url"]) as response:
+        data = response.read()
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != sdist["digests"]["sha256"]:
+        sys.exit(f"The download of fideslang {version} does not match PyPI's digest: {digest}")
+    archive = tarfile.open(fileobj=io.BytesIO(data), mode="r:gz")
     sources = {}
     for member in archive.getmembers():
         for module, _ in MODULES:
@@ -88,20 +94,24 @@ def download_sources(version):
 
 
 def parse(source):
-    """Evaluates a default_taxonomy module with stand-ins for its imports, collecting the factory arguments."""
-    source = re.sub(r"^(from|import) .*$", "", source, flags=re.M)
+    """Reads the terms of a default_taxonomy module without running it: every call with a fides_key argument
+    defines a term, in source order, and the fields Linneo keeps must be literals."""
     items = []
-
-    def factory(*_, **kwargs):
-        items.append(kwargs)
-        return kwargs
-
-    stand_ins = {"partial": lambda f, **_: factory, "default_factory": factory, "DataCategory": None,
-                 "DataUse": None, "DataSubject": None, "DataSubjectRights": lambda **kw: kw,
-                 "IncludeExcludeEnum": type("IncludeExcludeEnum", (), {"ALL": "ALL", "EXCLUDE": "EXCLUDE",
-                                                                       "INCLUDE": "INCLUDE", "NONE": "NONE"}),
-                 "DataSubjectRightsEnum": type("DataSubjectRightsEnum", (), {})}
-    exec(source, stand_ins)  # the module only builds literals; it comes from the pinned PyPI release
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, ast.Call):
+            continue
+        keywords = {keyword.arg: keyword.value for keyword in node.keywords if keyword.arg}
+        if "fides_key" not in keywords:
+            continue
+        item = {"_line": (node.lineno, node.col_offset)}
+        for field in FIELDS:
+            if field in keywords:
+                try:
+                    item[field] = ast.literal_eval(keywords[field])
+                except ValueError:
+                    sys.exit(f"Line {node.lineno}: {field} is not a literal value")
+        items.append(item)
+    items.sort(key=lambda item: item.pop("_line"))
     return items
 
 

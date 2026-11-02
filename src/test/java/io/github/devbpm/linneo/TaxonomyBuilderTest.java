@@ -19,6 +19,8 @@ import io.github.devbpm.linneo.extension.university.UniversityTaxonomy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,7 +54,7 @@ class TaxonomyBuilderTest {
     }
 
     @Test
-    @DisplayName("a child cannot weaken its parent's protection")
+    @DisplayName("a child keeps at least its parent's protection; a nature that cannot be reconciled is an error")
     void childCannotWeaken() {
         TaxonomyBuilder lowered = root().category("data.child", "Child", "",
                 c -> c.confidentiality(Confidentiality.PUBLIC));
@@ -61,10 +63,38 @@ class TaxonomyBuilderTest {
                 .category("data.health", "Health", "", c -> c.nature(LegalNature.SPECIAL_CATEGORY)
                         .confidentiality(Confidentiality.HIGH).integrity(Integrity.HIGH))
                 .category("data.health.x", "X", "", c -> c.nature(LegalNature.CRIMINAL_OFFENCE));
+        Taxonomy ordinaryUnderSpecial = root()
+                .category("data.health", "Health", "", c -> c.nature(LegalNature.SPECIAL_CATEGORY)
+                        .confidentiality(Confidentiality.HIGH).integrity(Integrity.HIGH))
+                .category("data.health.x", "X", "", c -> c.nature(LegalNature.ORDINARY)).build();
         assertAll(
-                () -> assertThrows(TaxonomyException.class, lowered::build),
+                () -> assertEquals(Confidentiality.LOW,
+                        lowered.build().requireCategory("data.child").confidentiality()),
                 () -> assertThrows(TaxonomyException.class, notPersonal::build),
-                () -> assertThrows(TaxonomyException.class, special::build));
+                () -> assertThrows(TaxonomyException.class, special::build),
+                () -> assertEquals(LegalNature.SPECIAL_CATEGORY,
+                        ordinaryUnderSpecial.requireCategory("data.health.x").nature()));
+    }
+
+    @Test
+    @DisplayName("raising a category raises every category below it, whatever they declare")
+    void raisesSubtree() {
+        Taxonomy taxonomy = Taxonomy.builder().withStandard()
+                .refineCategory(Categories.USER, c -> c.confidentiality(Confidentiality.HIGH)).build();
+        assertTrue(taxonomy.categories().stream().filter(c -> c.key().startsWith(Categories.USER + "."))
+                .allMatch(c -> c.confidentiality() == Confidentiality.HIGH));
+    }
+
+    @Test
+    @DisplayName("Linneo's own terms and the shipped extensions declare no facet below what they inherit")
+    void bundledDeclarationsAreConsistent() {
+        TaxonomyBuilder builder = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy())
+                .extend(new io.github.devbpm.linneo.extension.finance.FinanceTaxonomy())
+                .extend(new io.github.devbpm.linneo.extension.supplychain.SupplyChainTaxonomy())
+                .extend(new io.github.devbpm.linneo.extension.projectoperations.ProjectOperationsTaxonomy())
+                .extend(new io.github.devbpm.linneo.extension.humanresources.HumanResourcesTaxonomy());
+        builder.build();
+        assertEquals(List.of(), builder.raised());
     }
 
     @Test
@@ -91,21 +121,37 @@ class TaxonomyBuilderTest {
     }
 
     @Test
-    @DisplayName("refining can raise a declared facet but never lower it")
+    @DisplayName("refinements are minimums: a lower one changes nothing, and two combine in either order")
     void refineOnlyRaises() {
         Taxonomy taxonomy = Taxonomy.builder().withStandard()
                 .refineCategory(Categories.USER_GOVERNMENT_ID, c -> c.confidentiality(Confidentiality.HIGH))
                 .build();
         assertEquals(Confidentiality.HIGH,
                 taxonomy.requireCategory(Categories.USER_GOVERNMENT_ID_PASSPORT_NUMBER).confidentiality());
+        Taxonomy standard = Taxonomy.standard();
+        Taxonomy lowered = Taxonomy.builder().withStandard()
+                .refineCategory(Categories.USER_GOVERNMENT_ID, c -> c.confidentiality(Confidentiality.LOW))
+                .refineCategory(Categories.USER_HEALTH_AND_MEDICAL, c -> c.nature(LegalNature.ORDINARY))
+                .refineCategory(Categories.USER_EDUCATION, c -> c.integrity(Integrity.LOW))
+                .build();
+        Taxonomy highFirst = Taxonomy.builder().withStandard()
+                .refineCategory(Categories.USER_CONTACT, c -> c.confidentiality(Confidentiality.HIGH))
+                .refineCategory(Categories.USER_CONTACT, c -> c.confidentiality(Confidentiality.MEDIUM)).build();
+        Taxonomy mediumFirst = Taxonomy.builder().withStandard()
+                .refineCategory(Categories.USER_CONTACT, c -> c.confidentiality(Confidentiality.MEDIUM))
+                .refineCategory(Categories.USER_CONTACT, c -> c.confidentiality(Confidentiality.HIGH)).build();
         TaxonomyBuilder builder = Taxonomy.builder().withStandard();
-        assertThrows(TaxonomyException.class, () -> builder.refineCategory(Categories.USER_GOVERNMENT_ID,
-                c -> c.confidentiality(Confidentiality.LOW)));
-        assertThrows(TaxonomyException.class, () -> builder.refineCategory("user.unknown", c -> c.secret()));
-        assertThrows(TaxonomyException.class, () -> builder.refineCategory(Categories.USER_HEALTH_AND_MEDICAL,
-                c -> c.nature(LegalNature.ORDINARY)));
-        assertThrows(TaxonomyException.class, () -> builder.refineCategory(Categories.USER_EDUCATION,
-                c -> c.integrity(Integrity.LOW)));
+        assertAll(
+                () -> assertEquals(standard, lowered),
+                () -> assertEquals(highFirst, mediumFirst),
+                () -> assertEquals(Confidentiality.HIGH,
+                        highFirst.requireCategory(Categories.USER_CONTACT).confidentiality()),
+                () -> assertThrows(TaxonomyException.class,
+                        () -> builder.refineCategory("user.unknown", CategoryDraft::secret)),
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard()
+                        .refineCategory(Categories.SYSTEM_OPERATIONS, c -> c.nature(LegalNature.ORDINARY)).build()),
+                () -> assertThrows(TaxonomyException.class, () -> builder.refineCategory(
+                        Categories.USER_HEALTH_AND_MEDICAL, c -> c.nature(LegalNature.CRIMINAL_OFFENCE))));
         Taxonomy kept = Taxonomy.builder().withStandard()
                 .refineCategory(Categories.USER_HEALTH_AND_MEDICAL, c -> c.nature(LegalNature.SPECIAL_CATEGORY)
                         .integrity(Integrity.HIGH))
@@ -220,5 +266,70 @@ class TaxonomyBuilderTest {
         TaxonomyException clash = assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard()
                 .extend(university).extend(new UniversityTaxonomy()));
         assertTrue(clash.getMessage().endsWith(UniversityTaxonomy.class.getName() + " are both named 'university'"));
+    }
+
+    @Test
+    @DisplayName("the builder refuses what the text form could not hold, so every taxonomy reads back")
+    void refusesWhatCannotBeStored() {
+        assertAll(
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().origin(" ")),
+                () -> assertThrows(TaxonomyException.class, () -> root().category("data.a", "A", "",
+                        c -> c.attribute(" ", "x"))),
+                () -> assertThrows(TaxonomyException.class, () -> root().category("data.a", "A", "",
+                        c -> c.deprecated("", "data"))),
+                () -> assertThrows(TaxonomyException.class, () -> root().dataUse("use", "Use", "",
+                        u -> u.deprecated(" ", null))));
+    }
+
+    @Test
+    @DisplayName("any taxonomy the builder accepts reads back equal from its text")
+    void roundTrip() {
+        Taxonomy odd = root().origin("odd\torigin")
+                .category("data.tab", "Tab\tname", "Line\nbreak and \\ backslash", c -> c.attribute("k", "")
+                        .attribute("tab\tkey", "v\nw").since("1.0").deprecated("2.0", "data.kept").secret())
+                .category("data.kept", "Kept", "", c -> c.integrity(Integrity.HIGH).secret())
+                .dataUse("use", "", "", u -> u.since(" "))
+                .dataSubject("subject", "Subject", "")
+                .build();
+        Taxonomy standard = Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).build();
+        assertAll(
+                () -> assertEquals(odd, Taxonomy.fromTsv(odd.toTsv())),
+                () -> assertEquals(odd.fingerprint(), Taxonomy.fromTsv(odd.toTsv()).fingerprint()),
+                () -> assertEquals(standard, Taxonomy.fromTsv(standard.toTsv())));
+    }
+
+    @Test
+    @DisplayName("an extension adds categories below existing ones and changes the lifecycle of its own terms only")
+    void extensionLimits() {
+        TaxonomyExtension root = extension("root", b -> b.category("newroot", "Root", "",
+                c -> c.nature(LegalNature.NONE).confidentiality(Confidentiality.LOW).integrity(Integrity.LOW)));
+        TaxonomyExtension origin = extension("origin", b -> b.origin(TermInfo.FIDESLANG));
+        TaxonomyExtension deprecates = extension("deprecates", b -> b.refineCategory(Categories.USER_NAME,
+                c -> c.deprecated("1.0", null)));
+        TaxonomyExtension own = extension("own", b -> b.category("user.nickname", "Nickname", "")
+                .refineCategory("user.nickname", c -> c.deprecated("1.1", Categories.USER_NAME))
+                .refineCategory(Categories.USER_NAME, c -> c.confidentiality(Confidentiality.HIGH))
+                .dataSubject("own_subject", "Own subject", "").dataUse("own_use", "Own use", ""));
+        assertAll(
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard().extend(root)),
+                () -> assertThrows(TaxonomyException.class, () -> Taxonomy.builder().withStandard().extend(origin)),
+                () -> assertThrows(TaxonomyException.class,
+                        () -> Taxonomy.builder().withStandard().extend(deprecates)),
+                () -> assertTrue(Taxonomy.builder().withStandard().extend(own).build()
+                        .requireCategory("user.nickname").info().isDeprecated()));
+    }
+
+    private static TaxonomyExtension extension(String name, java.util.function.Consumer<TaxonomyBuilder> body) {
+        return new TaxonomyExtension() {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public void contribute(TaxonomyBuilder builder) {
+                body.accept(builder);
+            }
+        };
     }
 }

@@ -137,7 +137,7 @@ class HumanResourcesTaxonomyTest {
                 .impactAssessment("DPIA-2026-11");
         List<ProcessingViolation> withoutCondition = new ProcessingChecker(hr).check(payroll.build()).violations();
         List<ProcessingViolation> spain = new ProcessingChecker(hr, Jurisdiction.SPAIN).check(payroll
-                .specialCategoryCondition(SpecialCategoryCondition.EMPLOYMENT_AND_SOCIAL_SECURITY)
+                .specialCategoryConditions(SpecialCategoryCondition.EMPLOYMENT_AND_SOCIAL_SECURITY)
                 .legalReference("Workers' Statute, art. 29; General Social Security Act, art. 169")
                 .build()).violations();
         assertAll(

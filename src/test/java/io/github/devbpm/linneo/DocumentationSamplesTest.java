@@ -80,6 +80,17 @@ class DocumentationSamplesTest {
     private static final Pattern MEMBER_MODIFIER = Pattern.compile("^(private|protected|public|static|abstract)\\s");
     private static final Pattern DIAGNOSTIC = Pattern.compile("^S(\\d+)_(\\d+)\\.java:(\\d+):\\d+: "
             + "(compiler\\.err\\.[\\w.]+):?\\s?(.*)$");
+    private static final Pattern DECLARED_TYPE = Pattern.compile(
+            "\\b(class|interface|enum|record|@interface)\\s+([A-Z]\\w*)");
+    // A capitalized name with a lower-case letter: a type, not a constant such as ENTITIES.
+    private static final Pattern MISSING_TYPE = Pattern.compile("kindname\\.(class|variable), ([A-Z]\\w*[a-z]\\w*),");
+    /**
+     * Types the pages use without declaring them: frameworks' and the JDK's types the samples do not import, and
+     * application types a page only names.
+     */
+    private static final Set<String> CONTEXT_TYPES = Set.of("Bean", "ConcurrentHashMap", "Customer", "Entities",
+            "EntityManagerFactory", "EntityType", "FieldRow", "Invoice", "OpenApiCustomizer", "Schema", "Setting",
+            "WrongFields");
     private static final Pattern DIRECTIVE = Pattern.compile("(requires|exports|opens|uses|provides)\\s+([^;]+);");
     /**
      * A missing name shaped like a key constant ({@code USER_CONTACT_EMAIL}): every key constant is imported, so it
@@ -114,10 +125,12 @@ class DocumentationSamplesTest {
     private static final List<Sample> CANARIES_FAILING = List.of(
             new Sample("canary", 1, List.of("Taxonomy.standard().noSuchMethod();")),
             new Sample("canary", 2, List.of("@Category(USER_NO_SUCH_KEY) private String field;")),
-            new Sample("canary", 3, List.of("taxonomy.requireCategory(1);")));
+            new Sample("canary", 3, List.of("taxonomy.requireCategory(1);")),
+            new Sample("canary", 5, List.of("OpenMetadataExporter exporter = new OpenMetadataExporter(taxonomy);")),
+            new Sample("canary", 6, List.of("PostgresMasker.of(DisclosurePolicy.forLogs());")));
     /** ...and this one, which only uses names of its page, must pass. */
     private static final Sample CANARY_PASSING = new Sample("canary", 4,
-            List.of("undefinedVariable.anything(UndefinedType.CONSTANT, ENTITIES, student.email());"));
+            List.of("undefinedVariable.anything(Customer.CONSTANT, ENTITIES, student.email());"));
 
     record Sample(String page, int line, List<String> code) {
 
@@ -181,7 +194,8 @@ class DocumentationSamplesTest {
             }
         }
 
-        Map<String, List<Problem>> errors = compile(files);
+        Set<String> declared = declaredTypes(samples, types);
+        Map<String, List<Problem>> errors = compile(files, declared);
         Map<Sample, List<List<Problem>>> byVariant = new LinkedHashMap<>();
         units.forEach((name, sample) -> byVariant.computeIfAbsent(sample, s -> new ArrayList<>())
                 .add(errors.getOrDefault(name, List.of())));
@@ -287,7 +301,7 @@ class DocumentationSamplesTest {
     }
 
     /** Compiles the units in one run and returns the errors that fail the test, by unit name. */
-    private Map<String, List<Problem>> compile(List<Path> files) throws URISyntaxException {
+    private Map<String, List<Problem>> compile(List<Path> files, Set<String> declared) throws URISyntaxException {
         ToolProvider javac = ToolProvider.findFirst("javac")
                 .orElseThrow(() -> new AssertionError("the documentation samples need a JDK with javac"));
         // Raw diagnostics are stable and not translated; stopping after flow analysis writes no class files.
@@ -309,7 +323,8 @@ class DocumentationSamplesTest {
                 assertTrue(!line.contains("compiler.err"), () -> "javac failed: " + out);
                 continue;
             }
-            if (fails(diagnostic.group(4), diagnostic.group(5))) {
+            if (fails(diagnostic.group(4), diagnostic.group(5)) || undeclaredType(diagnostic.group(4),
+                    diagnostic.group(5), declared)) {
                 errors.computeIfAbsent("S" + diagnostic.group(1) + "_" + diagnostic.group(2), k -> new ArrayList<>())
                         .add(new Problem(Integer.parseInt(diagnostic.group(3)),
                                 diagnostic.group(4) + " " + diagnostic.group(5)));
@@ -331,6 +346,41 @@ class DocumentationSamplesTest {
             return arguments.startsWith(API);
         }
         return true;
+    }
+
+    /**
+     * The types the samples declare ({@code class Student}, {@code record Enrollment}) and those of the shared
+     * context: the names a sample may take from its page.
+     */
+    private static Set<String> declaredTypes(List<Sample> samples, Map<String, List<Class<?>>> types) {
+        Set<String> declared = new TreeSet<>(CONTEXT_TYPES);
+        declared.addAll(types.keySet());
+        // The library's nested types, such as FieldClassification.Basis, which a page imports once for all samples.
+        types.values().stream().flatMap(List::stream)
+                .flatMap(type -> java.util.Arrays.stream(type.getClasses()))
+                .forEach(nested -> declared.add(nested.getSimpleName()));
+        Matcher context = DECLARED_TYPE.matcher(CONTEXT);
+        while (context.find()) {
+            declared.add(context.group(2));
+        }
+        for (Sample sample : samples) {
+            Matcher type = DECLARED_TYPE.matcher(sample.text());
+            while (type.find()) {
+                declared.add(type.group(2));
+            }
+        }
+        return declared;
+    }
+
+    /**
+     * Whether a missing name is a type no sample declares: a type of the library that was renamed or removed, since
+     * the samples import every package of the library. A capitalized name is a type even where javac reads it as a
+     * variable, as the qualifier of a static call.
+     */
+    private static boolean undeclaredType(String code, String arguments, Set<String> declared) {
+        Matcher missing = MISSING_TYPE.matcher(arguments);
+        return code.startsWith("compiler.err.cant.resolve") && missing.lookingAt()
+                && !declared.contains(missing.group(2));
     }
 
     /** Checks a module declaration: the library's own against module-info.java, others' references to it. */

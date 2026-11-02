@@ -34,8 +34,11 @@ package io.github.devbpm.linneo;
  *     }
  * }
  * }</pre>
- * An extension may only add children to existing terms and make protection stricter; the rules are enforced when
- * the taxonomy is {@linkplain TaxonomyBuilder#build() built}.
+ * An extension adds data categories below existing ones (a new root would be a new domain of data, which needs its
+ * own protection policy), and data uses and data subjects; it may make the protection of any category stricter and
+ * add attributes, and deprecate only the terms it adds. {@link TaxonomyBuilder} refuses anything else while the
+ * extension contributes, and checks the protection rules when the taxonomy is
+ * {@linkplain TaxonomyBuilder#build() built}.
  *
  * @since 0.1.0
  */

@@ -19,6 +19,7 @@ import io.github.devbpm.linneo.Confidentiality;
 import io.github.devbpm.linneo.Integrity;
 import io.github.devbpm.linneo.TaxonomyBuilder;
 import io.github.devbpm.linneo.TaxonomyExtension;
+import io.github.devbpm.linneo.Trait;
 
 import static io.github.devbpm.linneo.extension.finance.FinanceCategories.*;
 import static io.github.devbpm.linneo.extension.finance.FinanceDataSubjects.*;
@@ -96,6 +97,14 @@ public final class FinanceTaxonomy implements TaxonomyExtension {
         categories(builder);
         dataUses(builder);
         dataSubjects(builder);
+        traits(builder);
+    }
+
+    // The traits Linneo's legal rules read (see Trait): the personal financial categories inherit FINANCIAL from
+    // user.financial; credit assessment and anti-money laundering screening are evaluation or scoring (WP248).
+    private static void traits(TaxonomyBuilder builder) {
+        builder.refineDataUse(FINANCE_CREDIT_MANAGEMENT, u -> u.traits(Trait.EVALUATION))
+                .refineDataUse(FINANCE_ANTI_MONEY_LAUNDERING, u -> u.traits(Trait.EVALUATION));
     }
 
     private static void categories(TaxonomyBuilder builder) {

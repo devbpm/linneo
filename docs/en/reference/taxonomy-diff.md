@@ -33,6 +33,8 @@ Instances of both types are immutable.
 | Member | Returns | Description |
 |---|---|---|
 | `static TaxonomyDiff between(Taxonomy before, Taxonomy after)` | `TaxonomyDiff` | Compares two versions: `before` is the earlier one, such as the one an application applied last, and `after` the later one, such as the one it runs with now. Terms are matched by key within each hierarchy. `NullPointerException` if either is `null`. |
+| `Taxonomy before()` | `Taxonomy` | The earlier version compared, as given to `between`. |
+| `Taxonomy after()` | `Taxonomy` | The later version compared, as given to `between`. [`DataInventory.affectedBy`](classify/inventory.md) reads both taxonomies to reach also the fields whose deprecated key is replaced by a changed category. |
 | `List<TermChange> changes()` | immutable list | The changes: data categories first, then data uses and data subjects, each by key. A term that did not change is not listed. |
 | `boolean isEmpty()` | `boolean` | `true` if the two versions have the same terms. |
 | `TermChange change(TermChange.Hierarchy hierarchy, String key)` | `TermChange` | The change of one term, or `null` if the term did not change (or is in neither version). |
@@ -51,8 +53,8 @@ to taxonomies. The constants are declared from the smallest to the largest, so `
 |---|---|
 | `NONE` | No change. |
 | `PATCH` | Descriptive changes only: names, descriptions, attributes, origins, lifecycle versions. |
-| `MINOR` | Compatible changes: added terms, tighter protection, deprecations, a replacement for a deprecated term that had none. |
-| `MAJOR` | Incompatible changes: removed terms, weaker or mixed protection, a deprecated term that now resolves to another replacement. |
+| `MINOR` | Compatible changes: added terms, tighter protection, added traits, deprecations, a replacement for a deprecated term that had none. |
+| `MAJOR` | Incompatible changes: removed terms or traits, weaker or mixed protection, a deprecated term that now resolves to another replacement. |
 
 ## TermChange
 
@@ -98,6 +100,7 @@ aspects into an immutable set.
 | `REPLACEMENT` | The key that replaces a deprecated term was set or changed, so the term resolves to another one. | `MAJOR` if the term already had a replacement, `MINOR` if it had none |
 | `NAME` | The name differs. | `PATCH` |
 | `DESCRIPTION` | The description differs. It is only text, but a description that says something else may hide a change of meaning, which is never allowed: review it. | `PATCH` |
+| `TRAITS` | The [traits](terms.md#trait) of the term differ, declared or inherited. Linneo's legal rules read them, so adding one makes them stricter and removing one may lift an obligation. | `MINOR` if every earlier trait is kept, `MAJOR` if one is removed |
 | `ATTRIBUTES` | The attributes of a data category differ. | `PATCH` |
 | `ORIGIN` | The origin differs, for example when a term moves from an extension to the standard taxonomy. | `PATCH` |
 | `VERSIONS` | The version that introduced the term differs, or the version that deprecated it differs without a change of deprecation status. | `PATCH` |
@@ -163,22 +166,28 @@ A taxonomy you extend yourself can use the same check to stay compatible; see
 Applications persist and publish the keys of the taxonomy, so Linneo versions it under semantic versioning with these
 rules, which `requiredBump()` applies:
 
-- **Major**: removing a term, weakening the protection of a category in any facet, or changing what a deprecated key
-  resolves to.
-- **Minor**: adding a term, tightening protection, deprecating a term, or giving a deprecated term its first
-  replacement.
+- **Major**: removing a term or a trait, weakening the protection of a category in any facet, or changing what a
+  deprecated key resolves to.
+- **Minor**: adding a term or a trait, tightening protection, deprecating a term, or giving a deprecated term its
+  first replacement.
 - **Patch**: descriptive changes (names, descriptions, attributes, origins, lifecycle versions).
 
-Two rules are not checked by a program: never change the meaning of a key, and never reuse a removed key. A
-`DESCRIPTION` change is reported so that someone reviews that the meaning stays.
+Never changing the meaning of a key is not checked by a program: a `DESCRIPTION` change is reported so that someone
+reviews that the meaning stays. Never reusing a removed key is checked only by Linneo's own build, below.
 
 Linneo's own build checks these rules. Each release keeps a copy of the taxonomy it ships, the standard taxonomy with
 every shipped extension, in `src/test/resources/io/github/devbpm/linneo/released/<version>.tsv`, written with
 `toTsv()`. `ReleasedTaxonomyTest`, which receives the project version from Maven as the system property
-`linneo.version`, compares the current taxonomy with the copy of the last release and fails when `requiredBump()` is
-larger than the version step allows: the first of major, minor and patch that differs between the released and the
-current version. For example, a removed term fails the build in a minor or patch release. While no copy exists, the
-test is skipped.
+`linneo.version`, makes two checks:
+
+- It compares the current taxonomy with the copy of the **highest release not above the project version** (so that a
+  maintenance branch compares with its own line and not with a later release) and fails when `requiredBump()` is
+  larger than the version step allows: the first of major, minor and patch that differs between the released and the
+  current version. For example, a removed term fails the build in a minor or patch release.
+- It fails if a key that **any** recorded release up to that one removed is back in the taxonomy, since a removed key
+  is never reused.
+
+While no copy exists, both checks are skipped.
 
 See also: [Taxonomy](taxonomy.md#the-taxonomy-as-data) · [Protection levels](protection-levels.md#direction) ·
 [Extending the taxonomy](extending.md) · [Standard taxonomy](standard-taxonomy.md)

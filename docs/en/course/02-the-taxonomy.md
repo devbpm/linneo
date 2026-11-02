@@ -21,6 +21,7 @@ After this module you will be able to:
 - describe where Linneo's taxonomy comes from (fideslang plus Linneo's extensions) and its three hierarchies;
 - read a dotted key and find its parent and ancestors;
 - explain how protection facets are inherited and why a child can only make them stricter;
+- say what a trait is and which Linneo rules read it;
 - use the `Taxonomy` API to look up, navigate and list categories;
 - recognise deprecated keys and how they resolve to their replacement.
 
@@ -104,6 +105,7 @@ fideslang defines keys, names and descriptions, but no protection levels. Linneo
 | `integrity` | `LOW` < `MEDIUM` < `HIGH` | inherited; a child may raise it, never lower it |
 | `secret` | `true` / `false` | once a category is secret, all its children are |
 | `attributes` | key/value pairs | inherited unless a child sets its own value (used by extensions, module 6) |
+| `traits` | a set of `Trait` | inherited and added to; read by Linneo's legal rules (see [Traits](#traits)) |
 
 The policy only lists the keys that *change* something; every other key inherits from its parent. An extract:
 
@@ -143,8 +145,9 @@ Let us resolve a few keys of the university model by hand:
 - `user.financial.credit_card` raises confidentiality to `HIGH` and inherits integrity `HIGH` from `user.financial`.
 
 The values you get from a `DataCategory` are always these **effective** facets: what the category declares or,
-where it declares nothing, what it inherits. The taxonomy guarantees they are never weaker than the parent's —
-it refuses to build otherwise (module 6 shows the error messages).
+where it declares nothing, what it inherits. The taxonomy guarantees they are never weaker than the parent's: every
+declared facet is a minimum, so a level declared below the parent's is raised to it (module 6 shows what the builder
+refuses).
 
 ```java
 DataCategory grade = Taxonomy.standard().requireCategory(Categories.USER_EDUCATION_GRADE);
@@ -160,6 +163,24 @@ The four facets also come as one value, `grade.protection()`, a
 [`Protection`](../reference/protection-levels.md#protection) that can be compared with `covers` and joined with `join`.
 Module 5 uses it for fields and whole classes.
 
+## Traits
+
+Protection says how a field must be treated; some of Linneo's legal rules need to know *what kind* of term they are
+looking at. A **trait** (`Trait`) is a property of a term of any of the three hierarchies that those rules read:
+`FINANCIAL`, `BEHAVIOURAL` and `PRIVATE_LIFE` mark data of a highly personal nature; `DIRECT_IDENTIFIER`,
+`CONTACT_IDENTIFIER` and `INDIRECT_IDENTIFIER` say how a category identifies a person; `EVALUATION`, `MONITORING`,
+`VULNERABLE` and `DIRECT_MARKETING` mark purposes and data subjects that the impact screening and the subject rights
+treat specially. Linneo's own terms declare theirs, a child inherits those of its parent, and each trait applies to some
+hierarchies only. Module 9 shows the rules that read them.
+
+```java
+DataCategory email = Taxonomy.standard().requireCategory(Categories.USER_CONTACT_EMAIL);
+email.has(Trait.CONTACT_IDENTIFIER);   // true: inherited from user.contact
+email.traits();                        // [CONTACT_IDENTIFIER]
+```
+
+The [reference](../reference/terms.md#trait) lists every trait. Your own terms declare theirs in module 6.
+
 ## Exploring with the `Taxonomy` API
 
 A `Taxonomy` is immutable and thread-safe; build one per application and share it.
@@ -173,8 +194,8 @@ A `Taxonomy` is immutable and thread-safe; build one per application and share i
 | `requireCategory(key)` | look up a key; throws `TaxonomyException("Unknown data category '...'")` if unknown |
 | `resolveCategory(key)` | look up a key and follow deprecation replacements to the current category |
 | `parentOf(c)`, `childrenOf(c)`, `ancestorsOf(c)` | navigate the tree |
-| `dataUses()`, `dataUse(key)`, `requireDataUse(key)`, `childrenOf(use)` | the same for data uses |
-| `dataSubjects()`, `dataSubject(key)`, `requireDataSubject(key)` | the same for data subjects |
+| `dataUses()`, `dataUse(key)`, `requireDataUse(key)`, `resolveDataUse(key)`, `childrenOf(use)` | the same for data uses |
+| `dataSubjects()`, `dataSubject(key)`, `requireDataSubject(key)`, `resolveDataSubject(key)` | the same for data subjects |
 
 Exploring the education subtree:
 
@@ -350,7 +371,8 @@ session is valid it grants access like a credential.
 
 1. `user.contact.address`.
 2. 126, of which 85 come from fideslang.
-3. No: a child may only raise a level. The taxonomy refuses to build.
+3. No: a child may only raise a level. What it declares is a minimum, so a `LOW` under a parent's `MEDIUM` is raised
+   back to `MEDIUM`.
 4. `requireCategory` returns the category for that exact key, deprecated or not; `resolveCategory` follows
    `replacedBy` to the current category.
 5. It is a compile-time constant (`public static final String` initialised with a literal).

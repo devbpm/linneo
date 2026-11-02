@@ -184,7 +184,7 @@ stricter key, not with the extension's:
 ## Data uses
 
 Every use is a child of the standard `employment` use (`employment.recruitment.background_check` sits below the standard
-`employment.recruitment`). Data uses have no protection facets.
+`employment.recruitment`). Data uses have no protection facets, only [traits](#traits).
 
 | Key | Name | Parent | Purpose |
 |---|---|---|---|
@@ -216,6 +216,21 @@ All the data subjects of the extension are flat, as fideslang data subjects have
 | `retiree` | Retiree | A former employee who receives a pension or another retirement benefit from the organization. |
 | `temporary_agency_worker` | Temporary Agency Worker | A worker hired by a temporary work agency and assigned to the organization. |
 | `worker_representative` | Worker Representative | A worker elected or appointed to represent the workforce, such as a works council member. |
+
+## Traits
+
+The extension declares the [traits](../terms.md#trait) that Linneo's legal rules read, so its terms weigh in the
+[impact screening](../processing/impact-screening.md), the [breach assessment](../processing/breach-assessment.md) and
+the [subject rights](../processing/subject-rights.md) like the standard ones:
+
+| Terms | Trait | Why |
+|---|---|---|
+| Categories `user.employment.compensation`, `user.employment.benefit` and `user.employment.payroll` (and its children) | `FINANCIAL` | Pay is data of a highly personal nature |
+| Category `user.employment.monitoring`; data use `employment.monitoring` | `MONITORING` | Systematic monitoring of workers (WP248 criterion 3) |
+| Data uses `employment.performance` and `employment.recruitment.background_check` | `EVALUATION` | Evaluation or scoring of people (WP248 criterion 1) |
+| Data subjects `dependant`, `reporting_person`, `temporary_agency_worker` and `worker_representative` | `VULNERABLE` | People in a weaker position than the controller (WP248 criterion 7) |
+
+The standard data subjects `employee`, `job_applicant` and `staff_member` are already `VULNERABLE`.
 
 ## Standard keys for everything else
 

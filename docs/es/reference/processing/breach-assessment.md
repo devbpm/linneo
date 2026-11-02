@@ -7,6 +7,7 @@ nav_order: 7
 <!--
 doc-sources:
   - src/main/java/io/github/devbpm/linneo/processing/BreachAssessment.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # BreachAssessment
@@ -21,16 +22,18 @@ assessment of severity of personal data breaches», v1.0, 2013):
 gravedad = contexto del tratamiento de datos × facilidad de identificación + circunstancias de la violación
 ```
 
-Linneo puntúa los dos primeros factores a partir de la clasificación de los campos afectados, y dice qué campos fijan
-cada puntuación. Las circunstancias (cómo se perdieron la confidencialidad, la integridad y la disponibilidad, y si hubo
-intención maliciosa) las declara quien gestiona la violación. Las instancias son inmutables; construye una con
-[`BreachAssessment.builder()`](#builder).
+Linneo puntúa los dos primeros factores a partir de la clasificación de los campos afectados y de los
+[rasgos](../terms.md#trait) de sus categorías, y dice qué campos fijan cada puntuación. Las circunstancias (cómo se
+perdieron la confidencialidad, la integridad y la disponibilidad, y si hubo intención maliciosa) las declara quien
+gestiona la violación. Las instancias son inmutables; construye una con [`BreachAssessment.builder()`](#builder).
 
 Es una **orientación para las primeras horas, no una decisión**: el responsable evalúa el riesgo de cada violación, y el
 delegado de protección de datos decide si hay que notificar. Una gravedad baja se lee como una violación que
 probablemente no entraña un riesgo (artículo 33.1), que se documenta (artículo 33.5) pero no se notifica; una alta o muy
 alta, como un riesgo alto, que además se comunica a los interesados (artículo 34.1) salvo que los datos fueran
-ininteligibles (artículo 34.3.a).
+ininteligibles (artículo 34.3.a). Una violación solo de la confidencialidad de datos que eran ininteligibles, como los
+cifrados con una clave que no quedó comprometida, tampoco entraña probablemente un riesgo y no se notifica, sea cual
+sea su puntuación (Directrices 9/2022 del CEPD, y 01/2021, caso 1).
 
 ## Cómo se puntúa
 
@@ -40,19 +43,23 @@ crítico entre los afectados.
 | Contexto | Los datos afectados |
 |---|---|
 | 4 | datos de categorías especiales o datos penales |
-| 3 | datos financieros: una categoría `user.financial` o descendiente |
-| 2 | datos de comportamiento: `user.behavior` o `user.location` o descendientes |
+| 3 | datos financieros: una categoría con el rasgo `FINANCIAL` (`user.financial` y descendientes en la taxonomía estándar) |
+| 2 | datos de comportamiento: una categoría con el rasgo `BEHAVIOURAL` (`user.behavior` y `user.location` y descendientes) |
 | 1 | otros datos personales |
 | 0 | ningún campo afectado contiene datos personales: no es una violación de seguridad de datos personales (RGPD, artículo 4.12) |
 
+Un campo declarado anonimizado o agregado no es un dato personal, así que no cuenta ni para el contexto ni para la
+facilidad de identificación.
+
 **Facilidad de identificación**: con qué facilidad identifican los datos afectados a las personas a las que se refieren.
-Es el más alto de los niveles de los campos afectados.
+Es el más alto de los niveles de los campos personales afectados, leído de los rasgos de identificador de sus
+categorías.
 
 | Nivel | Puntuación | Los campos afectados |
 |---|---|---|
-| `MAXIMUM` | 1 | incluyen un nombre (`user.name`), un documento de identidad (`user.government_id`), datos biométricos (`user.biometric`) o una imagen (`user.content.self_image`) |
-| `SIGNIFICANT` | 0,75 | incluyen datos de contacto (`user.contact`) o de cuenta (`user.account`) |
-| `LIMITED` | 0,5 | incluyen identificadores internos (`user.unique_id`), identificadores de dispositivo (`user.device`) o cualquier valor declarado seudonimizado; un nombre, un contacto o una cuenta seudonimizados también son `LIMITED` |
+| `MAXIMUM` | 1 | incluyen un `DIRECT_IDENTIFIER`: un nombre (`user.name`), un documento de identidad (`user.government_id`), datos biométricos (`user.biometric`) o una imagen (`user.content.self_image`) |
+| `SIGNIFICANT` | 0,75 | incluyen un `CONTACT_IDENTIFIER`: datos de contacto (`user.contact`) o de cuenta (`user.account`) |
+| `LIMITED` | 0,5 | incluyen un `INDIRECT_IDENTIFIER`: identificadores internos (`user.unique_id`) o de dispositivo (`user.device`); o cualquier valor declarado seudonimizado; un identificador directo o de contacto seudonimizado también es `LIMITED` |
 | `NEGLIGIBLE` | 0,25 | no tienen ninguno de ellos |
 
 Ambos pueden ajustarse, como prevé la metodología, cuando el contexto de los datos lo pide: véanse
@@ -86,7 +93,7 @@ La **gravedad** es el nivel de la puntuación (`contexto × identificación + ci
 
 | Método | `true` cuando | Artículo |
 |---|---|---|
-| `notifyAuthority()` | hay datos personales afectados y la gravedad no es `LOW` | 33.1: notificar a la autoridad de control en un plazo de 72 horas desde que se tiene constancia de la violación. Una violación `LOW` solo se documenta (33.5). |
+| `notifyAuthority()` | hay datos personales afectados, la gravedad no es `LOW` y **no** se perdió solo la confidencialidad de datos ininteligibles (`unintelligible(true)` sin pérdida de integridad ni de disponibilidad declarada) | 33.1: notificar a la autoridad de control en un plazo de 72 horas desde que se tiene constancia de la violación. Una violación `LOW`, y una violación solo de la confidencialidad de datos ininteligibles (Directrices 9/2022 del CEPD y 01/2021, caso 1), solo se documenta (33.5). |
 | `communicateToSubjects()` | hay datos personales afectados, la gravedad es `HIGH` o `VERY_HIGH` y los datos **no** se declararon ininteligibles | 34.1: informar a los interesados sin dilación indebida. 34.3.a: no hace falta si los datos eran ininteligibles para cualquiera sin acceso a ellos, por ejemplo cifrados con una clave robusta que no se vio comprometida (`unintelligible(true)`). |
 | `manyIndividuals()` | se declaró que se vieron afectadas más de 100 personas | Un indicador de la metodología que pesa en la evaluación sin cambiar la puntuación. |
 
@@ -162,10 +169,12 @@ This is an orientation: the controller assesses the risk of each breach.
 ```
 
 La puntuación es `4 × 1 + 0,25`: datos sensibles que nombran a las personas, enviados a destinatarios conocidos. Si esos
-mismos datos se hubieran declarado `unintelligible(true)`, la autoridad se notificaría igualmente, pero la penúltima
-línea diría que no hace falta informar a los interesados (artículo 34.3.a). Una violación que solo afecta a
-calificaciones e identificadores internos, sin que se haya revelado nada, puntúa 0,5 (`LOW`): documéntala, no la
-notifiques.
+mismos datos se hubieran declarado `unintelligible(true)`, solo se habría perdido su confidencialidad, así que tampoco
+se notificaría a la autoridad: la explicación diría que solo se perdió la confidencialidad de datos ininteligibles
+(Directrices 9/2022 del CEPD) y que la violación se documenta, no se notifica. Con una pérdida de integridad o de
+disponibilidad declarada, la autoridad se notificaría y la penúltima línea diría que no hace falta informar a los
+interesados (artículo 34.3.a). Una violación que solo afecta a calificaciones e identificadores internos, sin que se
+haya revelado nada, puntúa 0,5 (`LOW`): documéntala, no la notifiques.
 
 Véase también: [ImpactScreening](impact-screening.md) · [ProcessingChecker](checker.md) ·
 [Classifier](../classify/classifier.md) · [Actividades de tratamiento](README.md)

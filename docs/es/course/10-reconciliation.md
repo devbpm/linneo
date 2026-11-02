@@ -103,7 +103,7 @@ Cada `InventoryField` guarda lo que el código **declara**, no lo que una taxono
 | `key` | `"user.contact.email"`, aunque una taxonomía posterior la deje obsoleta |
 | `basis` | `DECLARED` (o `CLASS_DEFAULT`, `BY_ROW`, `DERIVED`) |
 | `confidentiality`, `integrity` | `HIGH`, `null`: solo los niveles que eleva el propio campo |
-| `identifiability` | `IDENTIFIED` |
+| `identifiability` | `null`: el campo no declara ninguna; una categoría personal se lee como `IDENTIFIED`, que nunca se guarda |
 | `reason` | el motivo de un valor por defecto de clase o lo que decide una categoría por fila; aquí `null` |
 
 Un campo compuesto aparece una vez por parte (`home.street`), un campo derivado con la clave de su origen, y un campo

@@ -12,26 +12,42 @@ doc-sources:
 
 # @Composite
 
-`io.github.devbpm.linneo.annotation.Composite` — `@Documented @Retention(RUNTIME) @Target(TYPE)`, `@since 0.1.0`
+`io.github.devbpm.linneo.annotation.Composite` — `@Documented @Inherited @Retention(RUNTIME) @Target(TYPE)`,
+`@since 0.1.0`
 
 Marks a class whose instances are part of another record, such as a JPA `@Embeddable` address or a value object, so
-that the fields that hold it are classified by its own fields. It is a marker with no elements.
+that the fields that hold it are classified by its own fields. It is a marker with no elements. It is **inherited**: a
+subclass of a composite is a composite.
 
 The marker is Linneo's own rather than a framework annotation, so that the library needs no dependency. Forgetting it
-is safe: the field that holds the class then has no category and fails verification.
+is safe: a field that holds a class whose fields are classified, without the class being a composite, takes no class
+default, so it fails verification (`UNCLASSIFIED_FIELD`) until the class is marked or the field declares its own
+category.
 
 ## What the classifier does
 
-A field with **no annotation of its own** whose type is a composite class, or an array, a collection or an
-`Optional` of one, gets one classification per field of the composite, with the path `field.part`:
+A field with **no annotation of its own** whose type is a composite class, or an array, a collection, an `Optional` or
+a `Map` **value** of one, at any depth, gets one classification per field of the composite, with the path
+`field.part`:
 
 | Field | Classified as |
 |---|---|
 | `Address home` | `home.street`, `home.city` |
 | `List<Address> previous`, `Address[] previous`, `Optional<Address> previous` | `previous.street`, `previous.city` |
-| `Map<String, Address> byType` | not descended into: an ordinary field, which needs its own category or a class default |
+| `Map<String, Address> byType`, `Map<String, List<Address>> byType` | `byType.street`, `byType.city`: the values of a map, and containers nested at any depth, are descended into |
+| a field that may hold data the classifier cannot split into fields (see below) | `UNCLASSIFIED_FIELD`, unless it declares its own category |
 | a field with `@Category`, `@CategoryByRow` or `@DerivedFrom` | one entry: the composite is stored as one value (see below) |
 | a field with `@Exempt` | skipped, and listed in `exempted()` |
+
+- **Type variables** are resolved through the superclasses of the class being classified: a `T value` of a generic
+  base class classified for `Box extends Base<Address>` is an `Address`.
+- **A class default never applies to a field that may hold data the classifier cannot see**, so wrapping a composite
+  never gives it a non-personal default. These fields are an `UNCLASSIFIED_FIELD` error unless they are annotated:
+  a map **key** that is a composite; a composite as the type argument of a class that is not a collection, such as
+  `Wrapper<Address>`; several composites in one type, such as `Map<Address, Address>`; a value typed `Object`, an unbound
+  type variable or a raw container; and another class with classified fields that is **not** a composite, such as a
+  referenced entity (mark it `@Composite` to classify its fields here, or declare what the field stores, such as the
+  record's key).
 
 - **Paths** nest: a composite inside a composite gives `home.geo.country`. For such a field,
   `FieldClassification.fieldName()` is the last segment and `declaringClass()` is the composite class.
@@ -53,14 +69,17 @@ A field with **no annotation of its own** whose type is a composite class, or an
 
 ## A composite stored as one value
 
-A field that stores the composite as one value, for example as JSON in a single column, declares its category with
+A field that stores the composite as one value, for example as JSON in a single column, or that holds it where its
+fields cannot be paths (a map key, or a type argument of a class that is not a collection), declares its category with
 [`@Category`](category.md) or [`@CategoryByRow`](category-by-row.md). The field is then one entry, and its
-protection must cover the protection of **every field of the composite**: otherwise the value would be classified
-below what it contains.
+protection must cover the protection of **every field of the composites it holds**: otherwise the value would be
+classified below what it contains. The same holds for a field that stores composites as one value and takes its
+category from a [`@DerivedFrom`](derived-from.md) source. The check also covers a composite that holds itself and
+composites that hold each other, whatever the order in which the classes are classified.
 
 | Rule | Violation | Severity | Field classified? |
 |---|---|---|---|
-| The declared category protects at least as much as `ceiling()` of the composite | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of <Composite> need (<natures>, <confidentiality>, <integrity>[, secret])`) | error | **yes** (the error is still reported) |
+| The declared category protects at least as much as the fields of every composite the field holds | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of [<Composite>, ...] need (<natures>, <confidentiality>, <integrity>[, secret])`) | error | **yes** (the error is still reported) |
 | The composite does not contain itself, directly or through other composites | `CYCLE` (`the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow`) | error | no (the field that closes the loop) |
 
 A composite that contains itself (`Node` with a `List<Node> children`) cannot be expanded: the error is reported at

@@ -213,7 +213,7 @@ The same reasoning applies to other special categories, for example a society li
 The extension adds two roots, `advancement` and `research`, because fideslang has no purpose for fundraising or for
 scientific research; every other use is a child of an existing one, including the new children of the standard
 `education.academic_records`, `education.assessment` and `education.financial_aid`. Data uses have no protection
-facets.
+facets, only [traits](#traits).
 
 | Key | Name | Parent | Purpose |
 |---|---|---|---|
@@ -284,6 +284,18 @@ extension draws on treat them as **roles a person holds in a course offering**, 
 is a `faculty_member` or a `staff_member`, and a teaching assistant is often a `student`. Classify the field that
 records the role with `user.workplace.role` and the person with the subject they are. The exception is the
 `external_examiner`, who belongs to no other subject of the institution.
+
+## Traits
+
+The extension declares the [traits](../terms.md#trait) that Linneo's legal rules read, so its terms weigh in the
+[impact screening](../processing/impact-screening.md), the [breach assessment](../processing/breach-assessment.md) and
+the [subject rights](../processing/subject-rights.md) like the standard ones:
+
+| Terms | Trait | Why |
+|---|---|---|
+| Data use `advancement` (and its children) | `DIRECT_MARKETING` | Advancement is direct marketing, fundraising included, so the right to object to it is absolute (GDPR article 21.2) |
+| Data uses `advancement.prospect_research` and `education.financial_aid.means_assessment` | `EVALUATION` | Prospect research and means assessment evaluate people (WP248 criterion 1) |
+| Data use `education.learning_analytics` | `EVALUATION`, `MONITORING` | Learning analytics evaluates students and observes them systematically (WP248 criteria 1 and 3) |
 
 ## Standard keys for everything else
 

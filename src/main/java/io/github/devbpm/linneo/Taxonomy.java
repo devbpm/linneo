@@ -48,6 +48,7 @@ public final class Taxonomy {
     private static final String USE = "use";
     private static final String SUBJECT = "subject";
     private static final String ATTRIBUTE = "attribute";
+    private static final String TRAIT = "trait";
 
     private final Map<String, DataCategory> categories;
     private final Map<String, DataUse> uses;
@@ -243,6 +244,38 @@ public final class Taxonomy {
     }
 
     /**
+     * The data use to use for a key: the use itself or, if it is deprecated with a replacement, the current use that
+     * replaces it.
+     *
+     * @param key the key
+     * @return the current data use
+     * @throws TaxonomyException if the taxonomy does not contain the key
+     */
+    public DataUse resolveDataUse(String key) {
+        DataUse use = requireDataUse(key);
+        while (use.info().replacedBy() != null) {
+            use = requireDataUse(use.info().replacedBy());
+        }
+        return use;
+    }
+
+    /**
+     * The data subject to use for a key: the subject itself or, if it is deprecated with a replacement, the current
+     * subject that replaces it.
+     *
+     * @param key the key
+     * @return the current data subject
+     * @throws TaxonomyException if the taxonomy does not contain the key
+     */
+    public DataSubject resolveDataSubject(String key) {
+        DataSubject subject = requireDataSubject(key);
+        while (subject.info().replacedBy() != null) {
+            subject = requireDataSubject(subject.info().replacedBy());
+        }
+        return subject;
+    }
+
+    /**
      * The taxonomy as tab-separated text: every term with its lifecycle and, for data categories, their effective
      * protection and attributes, in key order. The text is deterministic, so the same taxonomy always gives the same
      * text and {@link #fingerprint()}.
@@ -251,7 +284,9 @@ public final class Taxonomy {
      * first cell is {@code category}, {@code use} or {@code subject}, followed by the key, name, description, origin,
      * introducing version, deprecating version and replacement and, for a category, its nature, confidentiality,
      * integrity and secret flag ({@code true} or {@code false}). Each attribute of a category is a row
-     * {@code attribute}, key, name, value. Cells escape a backslash, tab, line feed and carriage return as
+     * {@code attribute}, key, name, value, and each {@linkplain Trait trait} of a term, declared or inherited, a row
+     * {@code trait}, the term's kind ({@code category}, {@code use} or {@code subject}), key and trait. Cells escape
+     * a backslash, tab, line feed and carriage return as
      * {@code \\}, {@code \t}, {@code \n} and {@code \r}; an empty cell is an absent value.
      *
      * @return the text, read back by {@link #fromTsv(String)}
@@ -261,7 +296,8 @@ public final class Taxonomy {
                 .comment("category key name description origin since deprecated_since replaced_by nature"
                         + " confidentiality integrity secret")
                 .comment("use|subject key name description origin since deprecated_since replaced_by")
-                .comment("attribute category_key name value");
+                .comment("attribute category_key name value")
+                .comment("trait category|use|subject key trait");
         for (DataCategory category : categories.values()) {
             TermInfo info = category.info();
             tsv.row(CATEGORY, info.key(), info.name(), info.description(), info.origin(), info.since(),
@@ -278,6 +314,9 @@ public final class Taxonomy {
             new TreeMap<>(category.attributes()).forEach((name, value) ->
                     tsv.row(ATTRIBUTE, category.key(), name, value));
         }
+        traits(tsv, CATEGORY, categories.values());
+        traits(tsv, USE, uses.values());
+        traits(tsv, SUBJECT, subjects.values());
         return tsv.text();
     }
 
@@ -299,6 +338,7 @@ public final class Taxonomy {
         }
         TaxonomyBuilder builder = builder();
         List<List<String>> attributes = new ArrayList<>();
+        List<List<String>> traits = new ArrayList<>();
         for (List<String> row : rows) {
             String kind = row.getFirst();
             switch (kind == null ? "" : kind) {
@@ -328,11 +368,25 @@ public final class Taxonomy {
                     cells(row, 4);
                     attributes.add(row);
                 }
+                case TRAIT -> {
+                    cells(row, 4);
+                    traits.add(row);
+                }
                 default -> throw new TaxonomyException("Unknown row '" + kind + "' in a taxonomy text");
             }
         }
         for (List<String> row : attributes) {
             builder.refineCategory(required(row, 1), draft -> draft.attribute(required(row, 2), text(row, 3)));
+        }
+        for (List<String> row : traits) {
+            Trait trait = constant(Trait.class, row, 3);
+            String kind = required(row, 1);
+            switch (kind) {
+                case CATEGORY -> builder.refineCategory(required(row, 2), draft -> draft.traits(trait));
+                case USE -> builder.refineDataUse(required(row, 2), draft -> draft.traits(trait));
+                case SUBJECT -> builder.refineDataSubject(required(row, 2), draft -> draft.traits(trait));
+                default -> throw new TaxonomyException("Unknown kind of term '" + kind + "' in " + row);
+            }
         }
         return builder.build();
     }
@@ -373,6 +427,14 @@ public final class Taxonomy {
     public String toString() {
         return "Taxonomy[" + categories.size() + " data categories, " + uses.size() + " data uses, "
                 + subjects.size() + " data subjects]";
+    }
+
+    private static void traits(Tsv tsv, String kind, Collection<? extends Term> terms) {
+        for (Term term : terms) {
+            for (Trait trait : term.traits()) {
+                tsv.row(TRAIT, kind, term.key(), trait);
+            }
+        }
     }
 
     private static void term(Tsv tsv, String kind, TermInfo info) {

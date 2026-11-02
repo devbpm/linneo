@@ -28,13 +28,17 @@ anonimizador lo convierte en una regla:
 
 | Tratamiento | Regla | Sentencia |
 |---|---|---|
-| `OMIT` | `MASKED WITH VALUE NULL` | `SECURITY LABEL FOR anon ON COLUMN <column> IS 'MASKED WITH VALUE NULL';` |
-| `MASK` | `MASKED WITH FUNCTION <function>` cuando Linneo conoce una función para la categoría o un ancestro; si no, `MASKED WITH VALUE NULL` | `... IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';` |
+| `OMIT` | `MASKED WITH VALUE NULL`, o `MASKED WITH VALUE <value>` cuando se declara un valor para la categoría | `SECURITY LABEL FOR anon ON COLUMN <column> IS 'MASKED WITH VALUE NULL';` |
+| `MASK` | `MASKED WITH FUNCTION <function>` cuando Linneo conoce una función para la categoría o un ancestro; si no, como `OMIT` | `... IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';` |
 | `CLEAR` | ninguna | `SECURITY LABEL FOR anon ON COLUMN <column> IS NULL;` |
 
-- Un campo enmascarado se sustituye por un valor falso del mismo tipo cuando se conoce una función para él. Si no,
-  también es `NULL`: Linneo no conoce el tipo de la columna, y omitir el valor es la opción más estricta. Declara los
-  enmascaramientos de tus otras columnas con [`withMask`](#miembros).
+- Un campo enmascarado se sustituye por un valor falso del mismo tipo cuando se conoce una función para él. Si no, se
+  omite como uno omitido, `NULL` salvo que hayas declarado un valor: Linneo no conoce el tipo de la columna, y omitir
+  el valor es la opción más estricta. Declara los enmascaramientos de tus otras columnas con
+  [`withMask`](#miembros).
+- Un valor omitido es `NULL`, que una columna `NOT NULL`, como un hash de contraseña, rechaza. Declara el valor que lo
+  sustituye con [`withValue`](#miembros), por ejemplo `'*'`: una constante no dice nada del original. Igual que un
+  enmascaramiento, un valor se busca por la clave de la categoría y luego por las de sus ancestros.
 - Un campo que la política muestra tal cual recibe `IS NULL`, que **elimina** cualquier regla que tuviera la columna.
   Ejecutar de nuevo las sentencias tras un cambio de la clasificación, o de la política, pone todas las columnas al día.
 - Una función se busca por la clave de la categoría, luego por la de su padre, y así hacia arriba en el árbol: un
@@ -48,21 +52,38 @@ anonimizador lo convierte en una regla:
 | `static PostgresAnonymizer of(DisclosurePolicy policy)` | anonimizador | Las reglas que siguen una política, con las funciones de enmascaramiento de Linneo. `NullPointerException` si `policy` es `null`. |
 | `PostgresAnonymizer withMask(String categoryKey, String function)` | anonimizador nuevo | Las mismas reglas con una función de enmascaramiento para los campos de una categoría y de las categorías que cuelgan de ella, salvo que una clave más específica tenga la suya. `function` es el SQL que sigue a `MASKED WITH FUNCTION`, como `anon.random_int_between(0, 10)` o `anon.partial(iban, 4, '******', 2)`; se le quitan los espacios sobrantes. `IllegalArgumentException` si está en blanco. |
 | `Map<String, String> masks()` | mapa inmutable | Las funciones de enmascaramiento por clave de categoría, ordenadas por clave. |
-| `String rule(FieldClassification field)` | `String` | El texto de la etiqueta de un campo: `MASKED WITH FUNCTION ...` o `MASKED WITH VALUE NULL`, o `null` para un valor que la política muestra tal cual. |
+| `PostgresAnonymizer withValue(String categoryKey, String value)` | anonimizador nuevo | Las mismas reglas con el valor que sustituye a un valor omitido de una categoría y de las categorías que cuelgan de ella, salvo que una clave más específica tenga el suyo, en lugar de `NULL`: lo que necesita una columna `NOT NULL`. `value` es el SQL que sigue a `MASKED WITH VALUE`, como `'*'` o `0`; se le quitan los espacios sobrantes. `IllegalArgumentException` si está en blanco. |
+| `Map<String, String> values()` | mapa inmutable | Los valores que sustituyen a los omitidos por clave de categoría, ordenados por clave; una categoría sin valor es `NULL`. |
+| `String rule(FieldClassification field)` | `String` | El texto de la etiqueta de un campo: `MASKED WITH FUNCTION ...` o `MASKED WITH VALUE ...` (`NULL` salvo que se declare otro), o `null` para un valor que la política muestra tal cual. |
 | `String rule(InventoryField field, Taxonomy taxonomy)` | `String` | Lo mismo para un campo guardado, resuelto con la taxonomía; `null` para un campo exento. `TaxonomyException` si la taxonomía no contiene la clave. |
 | `String label(String column, FieldClassification field)` | `String` | La sentencia `SECURITY LABEL FOR anon ON COLUMN ...` de un campo. `IllegalArgumentException` si `column` no es un identificador SQL cualificado. |
 | `String label(String column, InventoryField field, Taxonomy taxonomy)` | `String` | La sentencia de un campo guardado. |
-| `List<String> labels(ClassClassification classification, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de una clase, en el orden de los campos, seguidas de las de los exentos (`IS NULL`). `columns` da la columna de la ruta de un campo; `null` omite el campo. `IllegalArgumentException` si la clase tiene errores de clasificación, porque algunos campos no tendrían regla, o si una columna no es un identificador cualificado. |
-| `List<String> labels(DataInventory inventory, String object, Taxonomy taxonomy, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de un objeto de un inventario de datos, también los exentos, en el orden del inventario. |
+| `List<String> labels(ClassClassification classification, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de una clase, también los exentos (`IS NULL`), **una por cada columna**, en el orden del primer campo de cada una. `columns` da la columna de la ruta de un campo; `null` omite el campo. `IllegalArgumentException` si la clase tiene errores de clasificación, porque algunos campos no tendrían regla, o si una columna no es un identificador cualificado. |
+| `List<String> labels(DataInventory inventory, String object, Taxonomy taxonomy, Function<String, String> columns)` | lista inmutable | Las sentencias de todos los campos de un objeto de un inventario de datos, también los exentos, una por cada columna, en el orden del primer campo de cada una. `IllegalArgumentException` si el inventario no tiene ese objeto (una clave mal escrita no escribiría ninguna sentencia), o si una columna no es un identificador cualificado. |
 
-`toString()` es `PostgresAnonymizer[<política>, <n> masks]`.
+`toString()` es `PostgresAnonymizer[<política>, <n> masks, <n> values]`.
 
 ### La columna
 
 Una columna se escribe `table.column` o `schema.table.column`, y cada parte es un identificador simple o uno entre
 comillas dobles (`"Students"."e-mail"`). Cualquier otra cosa, como `email` solo o `students.email; DROP TABLE students`,
-se rechaza con `IllegalArgumentException`, de modo que una sentencia no pueda llevar más que la etiqueta. Las comillas
-simples dentro de la regla se duplican en la sentencia.
+se rechaza con `IllegalArgumentException`, de modo que una sentencia no pueda llevar más que la etiqueta.
+
+Las sentencias escriben siempre las partes **entre comillas**, y una parte sin comillas se pasa a minúsculas, como la
+lee PostgreSQL: `students.firstName` pasa a `"students"."firstname"` y `"Students"."e-mail"` se queda como está. Así
+funciona una columna con el nombre de una palabra reservada, como `user`, y la sentencia nombra la misma columna que la
+base de datos.
+
+La etiqueta es una constante de cadena que se lee igual sea cual sea `standard_conforming_strings`: las comillas simples
+dentro de la regla se duplican, y una regla con una barra invertida se escribe como cadena de escape (`E'...'`) con la
+barra duplicada.
+
+### Varios campos en una columna
+
+Cuando varios campos se guardan en una misma columna, como un compuesto guardado como JSON, la columna recibe **una**
+sentencia: la regla que comparten sus campos cuando todos tienen la misma y, si no, `MASKED WITH VALUE NULL`, porque un
+valor falso del tipo de un campo no sirve en una columna que contiene varios. Una columna cuyos campos se muestran todos
+tal cual recibe `IS NULL`.
 
 ### Enmascaramientos estándar
 
@@ -125,30 +146,33 @@ statements.forEach(System.out::println);
 ```
 
 ```text
-SECURITY LABEL FOR anon ON COLUMN students.firstName IS 'MASKED WITH FUNCTION anon.dummy_first_name()';
-SECURITY LABEL FOR anon ON COLUMN students.email IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';
-SECURITY LABEL FOR anon ON COLUMN students.disabilityDegree IS 'MASKED WITH VALUE NULL';
-SECURITY LABEL FOR anon ON COLUMN students.mark IS 'MASKED WITH VALUE NULL';
-SECURITY LABEL FOR anon ON COLUMN students.passwordHash IS 'MASKED WITH VALUE NULL';
-SECURITY LABEL FOR anon ON COLUMN students.version IS NULL;
-SECURITY LABEL FOR anon ON COLUMN students.cache IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "students"."firstname" IS 'MASKED WITH FUNCTION anon.dummy_first_name()';
+SECURITY LABEL FOR anon ON COLUMN "students"."email" IS 'MASKED WITH FUNCTION anon.dummy_safe_email()';
+SECURITY LABEL FOR anon ON COLUMN "students"."disabilitydegree" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."mark" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."passwordhash" IS 'MASKED WITH VALUE NULL';
+SECURITY LABEL FOR anon ON COLUMN "students"."version" IS NULL;
+SECURITY LABEL FOR anon ON COLUMN "students"."cache" IS NULL;
 ```
 
 `mark` es un dato personal, así que la política lo enmascara, pero Linneo no conoce ninguna función para
 `user.education.grade` y lo enmascara con `NULL`. Declara una para tu columna y la regla cambia; un enmascaramiento de
-una categoría sirve a sus descendientes:
+una categoría sirve a sus descendientes. Una columna `NOT NULL`, como `passwordHash`, rechaza `NULL`: declara el valor
+que lo sustituye con `withValue`:
 
 ```java
 import io.github.devbpm.linneo.export.postgresql.PostgresAnonymizer;
 
 PostgresAnonymizer custom = PostgresAnonymizer.of(DisclosurePolicy.forLogs())
         .withMask(USER_EDUCATION, "anon.random_int_between(0, 10)")
-        .withMask(USER_CONTACT_EMAIL, "anon.partial(email, 1, '***', 4)");
+        .withMask(USER_CONTACT_EMAIL, "anon.partial(email, 1, '***', 4)")
+        .withValue(USER_AUTHORIZATION_PASSWORD, "'*'");
 
 ClassClassification student = classifier.classify(Student.class);
 FieldClassification mark = student.field("mark").orElseThrow();
 String statement = custom.label("public.students.mark", mark);
-// SECURITY LABEL FOR anon ON COLUMN public.students.mark IS 'MASKED WITH FUNCTION anon.random_int_between(0, 10)';
+// SECURITY LABEL FOR anon ON COLUMN "public"."students"."mark" IS 'MASKED WITH FUNCTION anon.random_int_between(0, 10)';
+custom.rule(student.field("passwordHash").orElseThrow());   // MASKED WITH VALUE '*'
 ```
 
 Las sentencias de una clasificación guardada son las mismas, lo que permite que un back office sin las clases del modelo

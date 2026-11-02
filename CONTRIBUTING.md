@@ -50,12 +50,17 @@ java -cp target/classes tools/bench/InventoryBench.java
 
 - Never change the meaning of an existing key and never reuse a removed one.
 - Add terms as children of existing terms. New roots need a discussion first.
-- Protection may only become stricter down the tree; the build enforces it.
+- Protection may only become stricter down the tree. The builder raises a level a child declares below its parent's,
+  and a test checks that Linneo's own terms and extensions declare none, so write the level the term really needs.
+- Give each term the traits the legal rules need (`linneo-traits.tsv` for the standard terms, a `traits(builder)`
+  method in an extension): financial, behavioural or private-life data, identifiers, monitoring, vulnerable data
+  subjects, evaluation and direct marketing purposes. Adding a trait is a minor change, removing one a major one.
 - Deprecate instead of deleting: give `version_deprecated` and, where there is one, `replaced_by`.
 - Each release keeps a copy of the taxonomy it ships, the standard taxonomy with every extension, in
   `src/test/resources/io/github/devbpm/linneo/released/`. `ReleasedTaxonomyTest` compares the current taxonomy with
-  the last copy and fails when the changes need a larger version step than the project version takes (for example a
-  removed term in a minor release). After publishing a release, record its taxonomy and commit the file:
+  the last copy of its release line (the highest release not above the project version) and fails when the changes
+  need a larger version step than the project version takes (for example a removed term in a minor release), or when
+  a key that any release removed is back. After publishing a release, record its taxonomy and commit the file:
 
   ```bash
   ./mvnw -q test-compile

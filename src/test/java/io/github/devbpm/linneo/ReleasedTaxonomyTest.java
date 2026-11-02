@@ -22,7 +22,11 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,19 +36,50 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class ReleasedTaxonomyTest {
 
     @Test
-    @DisplayName("the taxonomy changed since the last release no more than the version did")
+    @DisplayName("the taxonomy changed since its release line's last release no more than the version did")
     void versioning() throws IOException {
-        Optional<Path> latest = ReleasedTaxonomy.latest();
         String current = System.getProperty("linneo.version");
-        assumeTrue(latest.isPresent(), "no release recorded yet");
         assumeTrue(current != null, "run through Maven, which passes linneo.version");
-        String released = latest.get().getFileName().toString().replace(".tsv", "");
-        TaxonomyDiff diff = TaxonomyDiff.between(Taxonomy.fromTsv(Files.readString(latest.get())),
+        Optional<Path> baseline = ReleasedTaxonomy.baseline(ReleasedTaxonomy.releases(), current);
+        assumeTrue(baseline.isPresent(), "no release recorded yet");
+        String released = baseline.get().getFileName().toString().replace(".tsv", "");
+        TaxonomyDiff diff = TaxonomyDiff.between(Taxonomy.fromTsv(Files.readString(baseline.get())),
                 ReleasedTaxonomy.shipped());
         Bump allowed = ReleasedTaxonomy.allowed(released, current);
         assertTrue(diff.requiredBump().compareTo(allowed) <= 0, () -> "From " + released + " to " + current
                 + " the version allows a " + allowed + " change, but the taxonomy needs a " + diff.requiredBump()
                 + ": " + (diff.requiredBump() == Bump.MAJOR ? diff.breakingChanges() : diff.changes()));
+    }
+
+    @Test
+    @DisplayName("a key removed in any earlier release is never used again")
+    void removedKeysStayRemoved() throws IOException {
+        String current = System.getProperty("linneo.version");
+        assumeTrue(current != null, "run through Maven, which passes linneo.version");
+        List<Path> releases = ReleasedTaxonomy.releases();
+        Optional<Path> baseline = ReleasedTaxonomy.baseline(releases, current);
+        assumeTrue(baseline.isPresent(), "no release recorded yet");
+        Set<String> removed = new TreeSet<>();
+        for (Path release : releases) {
+            if (Arrays.compare(ReleasedTaxonomy.version(release), ReleasedTaxonomy.version(baseline.get())) <= 0) {
+                removed.addAll(ReleasedTaxonomy.keys(Taxonomy.fromTsv(Files.readString(release))));
+            }
+        }
+        removed.removeAll(ReleasedTaxonomy.keys(Taxonomy.fromTsv(Files.readString(baseline.get()))));
+        removed.retainAll(ReleasedTaxonomy.keys(ReleasedTaxonomy.shipped()));
+        assertEquals(Set.of(), removed, "keys removed by an earlier release are back");
+    }
+
+    @Test
+    @DisplayName("each version is compared with the highest release not above it")
+    void baseline() {
+        List<Path> releases = List.of(Path.of("0.1.0.tsv"), Path.of("0.2.0.tsv"), Path.of("1.0.0.tsv"));
+        assertAll(
+                () -> assertEquals(Optional.of(Path.of("0.1.0.tsv")),
+                        ReleasedTaxonomy.baseline(releases, "0.1.1-SNAPSHOT")),
+                () -> assertEquals(Optional.of(Path.of("1.0.0.tsv")),
+                        ReleasedTaxonomy.baseline(releases, "1.1.0-SNAPSHOT")),
+                () -> assertEquals(Optional.empty(), ReleasedTaxonomy.baseline(releases, "0.0.9")));
     }
 
     @Test

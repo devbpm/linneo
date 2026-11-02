@@ -18,6 +18,7 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/extension/humanresources/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/humanresources/HumanResourcesTaxonomy.java
   - src/main/java/io/github/devbpm/linneo/TaxonomyBuilder.java
+  - src/main/java/io/github/devbpm/linneo/Trait.java
 -->
 
 # Extensiones
@@ -49,10 +50,11 @@ Una extensión incluida nunca forma parte de la taxonomía salvo que la aplicaci
   módulo de Linneo no registra ninguna: su `module-info.java` tiene una cláusula `uses` pero ninguna `provides`, y el
   JAR no tiene fichero `META-INF/services`.
 
-Una extensión incluida sigue las mismas reglas que las tuyas: añade hijos de términos existentes (una extensión
-incluida puede añadir una raíz nueva de usos de datos cuando fideslang no tiene ninguna para el sector, como hace la
-extensión universitaria, o una rama nueva de categorías, como hace la extensión de recursos humanos con
-`user.employment`) y solo endurece la protección.
+Una extensión incluida sigue las [mismas reglas que las tuyas](../extending.md#qué-puede-hacer-una-extensión): añade
+categorías de datos por debajo de las existentes, nunca una raíz (una rama nueva, como hace la extensión de recursos
+humanos con `user.employment`), usos de datos y sujetos de datos (puede añadir una raíz nueva de usos de datos cuando
+fideslang no tiene ninguna para el sector, como hace la extensión universitaria), y solo eleva la protección y añade
+rasgos.
 
 ## Aplicar una extensión incluida
 
@@ -71,6 +73,21 @@ incluidas aplicadas imprime `Taxonomy[225 data categories, 136 data uses, 48 dat
 úsalo en todas partes: en el [`Classifier`](../classify/classifier.md), en el
 [`ProcessingChecker`](../processing/checker.md) y en los exportadores a catálogos. Un `Classifier` construido sobre
 `Taxonomy.standard()` informa de cada clave de la extensión como `UNKNOWN_CATEGORY`.
+
+## Rasgos
+
+Cada extensión incluida declara los [rasgos](../terms.md#trait) de sus términos, para que el
+[cribado de impacto](../processing/impact-screening.md), la [evaluación de violaciones](../processing/breach-assessment.md)
+y los [derechos del interesado](../processing/subject-rights.md) los lean igual que los estándar. Las categorías
+personales que cuelgan de `user.financial` o de `user.contact` heredan esos rasgos; las extensiones añaden:
+
+| Extensión | Rasgos que declara |
+|---|---|
+| Universidad | usos de datos: `advancement` `DIRECT_MARKETING`; `advancement.prospect_research` y `education.financial_aid.means_assessment` `EVALUATION`; `education.learning_analytics` `EVALUATION` y `MONITORING` |
+| Finanzas | usos de datos: `finance.credit_management` y `finance.anti_money_laundering` `EVALUATION` |
+| Cadena de suministro | uso de datos: `operations.logistics.fleet_management` `MONITORING`; sujeto de datos: `driver` `VULNERABLE` |
+| Recursos humanos | categorías: `user.employment.compensation`, `user.employment.benefit` y `user.employment.payroll` `FINANCIAL`, `user.employment.monitoring` `MONITORING`; usos de datos: `employment.monitoring` `MONITORING`, `employment.performance` y `employment.recruitment.background_check` `EVALUATION`; sujetos de datos: `dependant`, `reporting_person`, `temporary_agency_worker` y `worker_representative` `VULNERABLE` |
+| Operaciones de proyecto | ninguno |
 
 ## Registrar una extensión incluida
 
@@ -135,7 +152,9 @@ cualesquiera:
 - **Claves.** Revisa la extensión incluida antes de añadir un término: si ya tiene la clave, úsala. Añadir dos veces
   una clave falla con `Duplicate key '<key>'`.
 - **Orden.** Tu extensión solo puede hacer más estricto un término de una extensión incluida con `refineCategory` si
-  la incluida se aplica antes; si no, `refineCategory` falla con `Cannot refine unknown data category '<key>'`. Con
+  la incluida se aplica antes; si no, `refineCategory` falla con `Cannot refine unknown data category '<key>'`. Elevar
+  no depende del orden: si dos extensiones elevan la misma categoría, el resultado es el nivel más estricto se aplique
+  primero la que se aplique. Una extensión no puede deprecar ni fijar el `since` de un término que no añadió. Con
   `extend`, el orden es el de las llamadas. `load()` aplica las extensiones registradas ordenadas por nombre. Para
   aplicar primero una extensión incluida y después todas las registradas, se llamen como se llamen:
 

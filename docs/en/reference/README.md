@@ -17,7 +17,6 @@ doc-sources:
   - src/main/java/io/github/devbpm/linneo/export/odcs/package-info.java
   - src/main/java/io/github/devbpm/linneo/export/openapi/package-info.java
   - src/main/java/io/github/devbpm/linneo/export/postgresql/package-info.java
-  - src/main/java/io/github/devbpm/linneo/internal/Cli.java
   - src/main/java/io/github/devbpm/linneo/extension/university/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/finance/package-info.java
   - src/main/java/io/github/devbpm/linneo/extension/supplychain/package-info.java
@@ -39,10 +38,9 @@ translate the taxonomy for a data catalogue: `OpenMetadataCatalog` (OpenMetadata
 `DataHubCatalog` (a DataHub business glossary) and `AtlasCatalog` (Apache Atlas classifications). Three more exporters
 publish the classification of a model's fields to the tools beside the code: an OpenAPI extension, masking rules for
 PostgreSQL Anonymizer and the schema of an Open Data Contract Standard data contract. Optional helpers orient the
-severity of a personal data breach and the security category of a system under the Spanish ENS, and the JAR has a
-command line.
-Applications add their own terms through a `TaxonomyExtension`, and Linneo ships five optional ones (universities,
-finance, supply chain, project operations and human resources) that are applied only on request.
+severity of a personal data breach and the security category of a system under the Spanish ENS. Applications add their
+own terms through a `TaxonomyExtension`, and Linneo ships five optional ones (universities, finance, supply chain,
+project operations and human resources) that are applied only on request.
 
 This reference describes every public type. For a guided introduction, see the [course](../course/README.md).
 
@@ -75,7 +73,7 @@ module io.github.devbpm.linneo {
 
 | Package | Exported | Contents |
 |---|---|---|
-| `io.github.devbpm.linneo` | yes | The taxonomy (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), the differences between two versions of it (`TaxonomyDiff`, `TermChange`), its terms (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`), the protection enums and `Protection`, and the key constants (`Categories`, `DataUses`, `DataSubjects`) |
+| `io.github.devbpm.linneo` | yes | The taxonomy (`Taxonomy`, `TaxonomyBuilder`, `TaxonomyExtension`), the differences between two versions of it (`TaxonomyDiff`, `TermChange`), its terms (`Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`, `Trait`), the protection enums and `Protection`, and the key constants (`Categories`, `DataUses`, `DataSubjects`) |
 | `io.github.devbpm.linneo.annotation` | yes | The annotations that declare what each field of a model holds: `@Category`, `@DefaultCategory`, `@CategoryByRow`, `@DerivedFrom`, `@Composite`, `@Exempt` |
 | `io.github.devbpm.linneo.classify` | yes | Reading and verifying the annotations of a model: `Classifier`, `ClassClassification`, `FieldClassification`, `Violation`, `ClassificationException`, `ModelClasses`; what may leave the system for a field: `DisclosurePolicy`; and the classification kept as data that an application can store and compare: `DataInventory`, `InventoryField`, `InventoryDiff`, `FieldChange` |
 | `io.github.devbpm.linneo.processing` | yes | Processing activities and the GDPR record of processing activities: `ProcessingActivity`, `Governance`, `Transfer`, `LegalBasis`, `SpecialCategoryCondition`, `CriminalDataBasis`, `TransferSafeguard`, `ProcessingChecker`, `CheckedActivity`, `ProcessingViolation`, `ProcessingException`, `ProcessingRecord`, `RecordDiff`, `ActivityChange`, `SubjectRights`; the screening of the need for an impact assessment, `ImpactScreening`; and the severity of a personal data breach, `BreachAssessment` |
@@ -91,7 +89,7 @@ module io.github.devbpm.linneo {
 | `io.github.devbpm.linneo.extension.supplychain` | yes | An optional extension for supply chain management, not applied by default: `SupplyChainTaxonomy` and its key constants `SupplyChainCategories`, `SupplyChainDataUses`, `SupplyChainDataSubjects` |
 | `io.github.devbpm.linneo.extension.projectoperations` | yes | An optional extension for project operations, not applied by default: `ProjectOperationsTaxonomy` and its key constants `ProjectOperationsCategories`, `ProjectOperationsDataUses`, `ProjectOperationsDataSubjects` |
 | `io.github.devbpm.linneo.extension.humanresources` | yes | An optional extension for human resources and payroll, not applied by default: `HumanResourcesTaxonomy` and its key constants `HumanResourcesCategories`, `HumanResourcesDataUses`, `HumanResourcesDataSubjects` |
-| `io.github.devbpm.linneo.internal` | no | `StandardTaxonomy`, which loads the bundled TSV resources, `Json`, the minimal JSON writer shared by the exporters, and the [command line](command-line.md) of the JAR. Not part of the public API |
+| `io.github.devbpm.linneo.internal` | no | `StandardTaxonomy`, which loads the bundled TSV resources, and `Json`, the minimal JSON writer shared by the exporters. Not part of the public API |
 
 The `uses` clause lets `Taxonomy.load()` and `TaxonomyBuilder.withExtensions()` find extensions with
 `java.util.ServiceLoader`; see [Extending the taxonomy](extending.md). The module has no `provides` clause: the
@@ -111,7 +109,7 @@ module com.example.app {
 
 - [Taxonomy](taxonomy.md) — `Taxonomy` (`standard`, `load`, `builder`, lookups, deprecation, navigation, text form and
   fingerprint) and `TaxonomyException`.
-- [Terms](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`.
+- [Terms](terms.md) — `Term`, `TermInfo`, `DataCategory`, `DataUse`, `DataSubject`, `Trait`.
 - [Protection levels](protection-levels.md) — `LegalNature`, `Confidentiality`, `Integrity`, `Identifiability`,
   `Protection` and the inheritance rule.
 - [Standard taxonomy](standard-taxonomy.md) — the bundled fideslang taxonomy, Linneo's additions and protection
@@ -207,11 +205,6 @@ module com.example.app {
   null each column, following a disclosure policy.
 - [Open Data Contract Standard](export/odcs.md) — `OdcsSchema`: the `schema` of a data contract from a data inventory.
 
-**Command line**
-
-- [Command line](command-line.md) — `java -jar linneo.jar`: write the taxonomy, compare taxonomies and inventories and
-  write the catalog requests, with exit codes for a pipeline.
-
 ## Data catalogues compared
 
 The three exporters publish the same taxonomy and compute the labels of each classified field from the same
@@ -229,7 +222,7 @@ labels to your tables: they build request bodies and names.
 | Levels and secret | `Confidentiality.*`, `Integrity.*`, `Identifiability.*`, `DataHandling.Secret` | the same, as glossary terms | the same, as classifications (not super types of the categories) |
 | Created for the standard taxonomy | 5 classifications and 138 tags | 295 proposals: 28 nodes, 141 terms, 126 relation aspects | 147 classification types |
 | Requests | `PUT /api/v1/classifications`, `PUT /api/v1/tags`, one per body | `POST /aspects?action=ingestProposal`, one per proposal | one `POST /api/atlas/v2/types/typedefs` |
-| Sending again | create or update | `UPSERT` (replaces each aspect) | `POST` answers 409 if the types exist; update with `PUT` |
+| Sending again | create or update | `UPSERT` (replaces each aspect) | `POST` creates all or none (409 if one exists): `createJson` and `updateJson` split the types for `POST` and `PUT` |
 | Labels of a field | `tagsOf(field)`: tag names | `termsOf(field)`: term URNs | `classificationsOf(field)`: names; `classificationsJson(field)`: request body |
 | Applying them (your code) | the table API you already use | for example GraphQL `addTerms` with the field path as `subResource` | `POST /api/atlas/v2/entity/guid/{guid}/classifications` |
 | Names | [`OpenMetadataMapping`](openmetadata/mapping.md): seven names and a threshold | [`DataHubMapping`](datahub/mapping.md): six node names | [`AtlasMapping`](atlas/mapping.md): six root names |

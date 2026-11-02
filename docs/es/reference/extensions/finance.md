@@ -194,7 +194,7 @@ campos con la clave más estricta, no con la de la extensión:
 
 ## Usos de datos
 
-Todos los usos son hijos del uso estándar `finance`. Los usos de datos no tienen facetas de protección.
+Todos los usos son hijos del uso estándar `finance`. Los usos de datos no tienen facetas de protección, solo [rasgos](#rasgos).
 
 | Clave | Nombre | Madre | Finalidad |
 |---|---|---|---|
@@ -221,6 +221,19 @@ Todos los interesados de la extensión son planos, como los de fideslang, que no
 | `beneficial_owner` | Beneficial Owner | Una persona que posee o controla en última instancia a un cliente, proveedor u otra persona jurídica. |
 | `guarantor` | Guarantor | Una persona que garantiza las obligaciones de un cliente o de otro deudor. |
 | `payee` | Payee | Una persona a la que paga la organización y que no es su cliente, proveedor ni empleado, como un reclamante o el ganador de un premio. |
+
+## Rasgos
+
+La extensión declara los [rasgos](../terms.md#trait) que leen las reglas jurídicas de Linneo, de modo que sus términos
+pesan en el [cribado de impacto](../processing/impact-screening.md), la
+[evaluación de violaciones](../processing/breach-assessment.md) y los
+[derechos del interesado](../processing/subject-rights.md) igual que los estándar:
+
+| Términos | Rasgo | Por qué |
+|---|---|---|
+| Usos de datos `finance.credit_management` y `finance.anti_money_laundering` | `EVALUATION` | La evaluación de crédito y el cribado contra el blanqueo de capitales evalúan o puntúan a personas (criterio 1 del WP248) |
+
+Las categorías personales de la extensión que cuelgan del estándar `user.financial` heredan su rasgo `FINANCIAL`.
 
 ## Claves estándar para todo lo demás
 

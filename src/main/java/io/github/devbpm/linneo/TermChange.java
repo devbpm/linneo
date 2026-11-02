@@ -61,9 +61,9 @@ public record TermChange(Hierarchy hierarchy, String key, Term before, Term afte
     }
 
     /**
-     * The version change this change requires under Linneo's rules: removing a term, weakening the protection of a
-     * category or changing what a deprecated key resolves to is incompatible; adding a term, tightening protection
-     * and deprecating are compatible additions; the rest is descriptive.
+     * The version change this change requires under Linneo's rules: removing a term or a trait, weakening the
+     * protection of a category or changing what a deprecated key resolves to is incompatible; adding a term or a
+     * trait, tightening protection and deprecating are compatible additions; the rest is descriptive.
      *
      * @return the strictest bump any of its aspects requires
      */
@@ -75,6 +75,8 @@ public record TermChange(Hierarchy hierarchy, String key, Term before, Term afte
                 case PROTECTION -> direction.weakens() ? TaxonomyDiff.Bump.MAJOR : TaxonomyDiff.Bump.MINOR;
                 case REPLACEMENT -> before.info().replacedBy() != null ? TaxonomyDiff.Bump.MAJOR
                         : TaxonomyDiff.Bump.MINOR;
+                case TRAITS -> after.traits().containsAll(before.traits()) ? TaxonomyDiff.Bump.MINOR
+                        : TaxonomyDiff.Bump.MAJOR;
                 case ADDED, DEPRECATION -> TaxonomyDiff.Bump.MINOR;
                 case NAME, DESCRIPTION, ATTRIBUTES, ORIGIN, VERSIONS -> TaxonomyDiff.Bump.PATCH;
             };
@@ -165,6 +167,12 @@ public record TermChange(Hierarchy hierarchy, String key, Term before, Term afte
          * meaning, which is never allowed: review it.
          */
         DESCRIPTION,
+
+        /**
+         * The {@linkplain Trait traits} of the term, which Linneo's legal rules read: adding one makes them stricter,
+         * removing one may lift an obligation.
+         */
+        TRAITS,
 
         /**
          * The application-defined attributes of a data category.

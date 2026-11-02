@@ -64,15 +64,22 @@ Para cada actividad, en este orden (las infracciones de una `CheckedActivity` lo
    - sin `legalBasis`: error `MISSING_LEGAL_BASIS`;
    - `LEGITIMATE_INTERESTS` sin `legitimateInterest`: aviso `MISSING_LEGITIMATE_INTEREST`; un `legitimateInterest`
      con otra base: aviso `UNNEEDED_CONDITION`;
-   - datos de categorías especiales sin `specialCategoryCondition`: error `MISSING_SPECIAL_CATEGORY_CONDITION`; una
-     condición sin datos de categorías especiales: aviso `UNNEEDED_CONDITION`;
+   - datos de categorías especiales sin `specialCategoryConditions`: error `MISSING_SPECIAL_CATEGORY_CONDITION`;
+     condiciones sin datos de categorías especiales: aviso `UNNEEDED_CONDITION`;
    - datos penales sin `criminalDataBasis`: error `MISSING_CRIMINAL_DATA_BASIS`; una base sin datos penales: aviso
      `UNNEEDED_CONDITION`;
-   - con `Jurisdiction.SPAIN`, `EXPLICIT_CONSENT` como condición del artículo 9.2 de una actividad que trata ideología,
-     afiliación sindical, religión, orientación sexual, creencias u origen racial o étnico: error
-     `CONSENT_NOT_SUFFICIENT`;
+   - con `Jurisdiction.SPAIN`, `EXPLICIT_CONSENT` como **única** condición del artículo 9.2 de una actividad que trata
+     ideología, afiliación sindical, religión, orientación sexual, creencias u origen racial o étnico: error
+     `CONSENT_NOT_SUFFICIENT` (otra condición declarada junto a ella cubre los datos que el consentimiento no puede);
    - bases que [descansan en una ley](bases.md#la-referencia-legal) sin `legalReference`: aviso
-     `MISSING_LEGAL_REFERENCE`;
+     `MISSING_LEGAL_REFERENCE`. Con `Jurisdiction.SPAIN` el mensaje añade, cuando procede,
+     `LOPDGDD article(s) 8, 9.2, 10: a law with the rank of statute`, con las disposiciones que la exigen: la 8 para una
+     obligación legal o una misión de interés público, la 9.2 para las condiciones de los artículos 9.2.g, h e i, y la 10
+     para datos penales autorizados por ley;
+   - con `Jurisdiction.SPAIN`, datos sobre infracciones y sanciones administrativas (`user.administrative_sanction` o
+     descendientes), una base distinta del consentimiento y sin `legalReference`: aviso `MISSING_LEGAL_REFERENCE`
+     (artículo 27 de la LOPDGDD: solo pueden tratarlos los órganos competentes, con el consentimiento de la persona o
+     cuando una norma con rango de ley lo permite);
    - sin `retention`: aviso `MISSING_RETENTION`;
    - sin `impactAssessment`, y el [cribado](impact-screening.md) de la actividad encuentra un caso del artículo 35.3 del
      RGPD (`REQUIRED`): error `IMPACT_ASSESSMENT_REQUIRED`; o encuentra dos criterios o más (`LIKELY`): aviso
@@ -215,18 +222,18 @@ aplica a varias partes depende de la parte. Los mensajes están en inglés.
 | `MISSING_PERSONAL_DATA` | error | `PERSONAL_DATA` | Ninguna categoría personal ni entidad u objeto con campos personales, y ninguna clave de categoría desconocida, error de entidad ni objeto desconocido que lo explique. | `The activity processes no personal data` |
 | `ENTITY_NOT_CLASSIFIED` | error | `PERSONAL_DATA` | Una entidad de la lista tiene errores de clasificación. | `<nombre binario de la clase> has <n> classification error(s)` |
 | `MISSING_LEGAL_BASIS` | error | `LEGAL_BASIS` | Datos personales sin `legalBasis`. | `Personal data needs a lawful basis (GDPR article 6.1)` |
-| `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Datos de categorías especiales sin `specialCategoryCondition`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
+| `MISSING_SPECIAL_CATEGORY_CONDITION` | error | `SPECIAL_CATEGORY_CONDITION` | Datos de categorías especiales sin `specialCategoryConditions`. | `Special categories of data (<keys>) need a condition of GDPR article 9.2` |
 | `MISSING_CRIMINAL_DATA_BASIS` | error | `CRIMINAL_DATA_BASIS` | Datos penales sin `criminalDataBasis`. | `Criminal offence data (<keys>) needs a basis of GDPR article 10` |
 | `CONSENT_NOT_SUFFICIENT` | error | `SPECIAL_CATEGORY_CONDITION` | Solo con `Jurisdiction.SPAIN`: la actividad trata `user.demographic.political_opinion`, `philosophical_belief`, `trade_union_membership`, `religious_belief`, `sexual_orientation` o `race_ethnicity` (o un descendiente) y su única condición del artículo 9.2 es `EXPLICIT_CONSENT` (LOPDGDD, artículo 9.1). | `Explicit consent alone does not lift the prohibition of processing <keys> (LOPDGDD article 9.1); declare another condition of GDPR article 9.2` |
 | `IMPACT_ASSESSMENT_REQUIRED` | error | `IMPACT_ASSESSMENT` | El [cribado](impact-screening.md) de la actividad encuentra un caso del artículo 35.3 del RGPD y no hay `impactAssessment`. | `GDPR article <a> requires an impact assessment; refer to it. <summary>`, donde `<a>` es `35.3.a`, `35.3.b` o `35.3.c` y `<summary>` es `ImpactScreening.summary()` |
 | `DUPLICATE_ACTIVITY` | error | `KEY` | Solo en `checkAll`/`verify`: una actividad anterior tiene la misma clave. | `Another activity of the record has the key '<k>'` |
 | `DEPRECATED_KEY` | **aviso** | `PURPOSES`, `DATA_SUBJECTS` o `PERSONAL_DATA`, según el tipo de clave | Una clave de finalidad, interesado o categoría está obsoleta, o un campo de un objeto de `objects` declara una clave de categoría de datos obsoleta; la actividad se comprueba con su sustituta. | `The data use '<k>' is deprecated; checked as '<r>'` (igual con `data subject` y `data category`; sin la parte `; checked as` cuando la clave no tiene sustituto) / `The field <o>.<path> has the deprecated data category '<k>'; checked as '<r>'` (misma omisión) |
 | `NOT_PERSONAL_DATA` | **aviso** | `PERSONAL_DATA` | Una categoría declarada no es dato personal; queda fuera del registro. | `The data category '<k>' is not personal data and is left out of the record` |
-| `UNNEEDED_CONDITION` | **aviso** | `SPECIAL_CATEGORY_CONDITION` para una condición del artículo 9.2, `CRIMINAL_DATA_BASIS` para una base del artículo 10, `LEGITIMATE_INTEREST` para un interés legítimo | Se declara una condición del artículo 9.2 o una base del artículo 10 para datos que la actividad no trata, o se indica un interés legítimo con otra base jurídica. | `Article <a> is declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
-| `MISSING_LEGAL_REFERENCE` | **aviso** | `LEGAL_REFERENCE` | Se aplica una base que descansa en una ley y no se indica `legalReference`. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; con `Jurisdiction.SPAIN` y una condición `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH`, termina con ` (LOPDGDD article 9.2: a law with the rank of statute)` |
+| `UNNEEDED_CONDITION` | **aviso** | `SPECIAL_CATEGORY_CONDITION` para una condición del artículo 9.2, `CRIMINAL_DATA_BASIS` para una base del artículo 10, `LEGITIMATE_INTEREST` para un interés legítimo | Se declara una condición del artículo 9.2 o una base del artículo 10 para datos que la actividad no trata, o se indica un interés legítimo con otra base jurídica. | `Article(s) <a>, <a> declared but the activity processes no special category of data` / `Article 10 is declared but the activity processes no criminal offence data` / `A legitimate interest is stated but the lawful basis is article <a>` |
+| `MISSING_LEGAL_REFERENCE` | **aviso** | `LEGAL_REFERENCE` | Se aplica una base que descansa en una ley y no se indica `legalReference`; o, con `Jurisdiction.SPAIN`, la actividad trata datos sobre infracciones y sanciones administrativas (`user.administrative_sanction` o descendientes) con una base distinta del consentimiento. | `GDPR article(s) <a>, <a> rest on Union or Member State law; name it as the legal reference`; con `Jurisdiction.SPAIN` termina con ` (LOPDGDD article(s) <a>: a law with the rank of statute)` con las disposiciones que se aplican: `8` para una obligación legal o una misión de interés público, `9.2` para una condición `SUBSTANTIAL_PUBLIC_INTEREST`, `HEALTH_OR_SOCIAL_CARE` o `PUBLIC_HEALTH`, `10` para datos penales autorizados por ley. Para las sanciones administrativas: `Data on administrative infringements and sanctions may only be processed by the bodies competent for the sanctioning procedure, with the consent of the person, or as a law with the rank of statute allows (LOPDGDD article 27); name that law as the legal reference` |
 | `MISSING_LEGITIMATE_INTEREST` | **aviso** | `LEGITIMATE_INTEREST` | La base es `LEGITIMATE_INTERESTS` y no se indica `legitimateInterest`. | `State the legitimate interest pursued (GDPR article 6.1.f)` |
 | `MISSING_RETENTION` | **aviso** | `RETENTION` | Datos personales sin `retention`. | `Declare the envisaged time limit for erasure (GDPR article 30.1.f)` |
-| `IMPACT_ASSESSMENT_RECOMMENDED` | **aviso** | `IMPACT_ASSESSMENT` | El [cribado](impact-screening.md) de la actividad cumple dos criterios o más, así que el artículo 35 probablemente exige una evaluación de impacto, y no hay `impactAssessment`. | `GDPR article 35 likely requires an impact assessment. <summary>`, donde `<summary>` es `ImpactScreening.summary()` |
+| `IMPACT_ASSESSMENT_RECOMMENDED` | **aviso** | `IMPACT_ASSESSMENT` | El [cribado](impact-screening.md) de la actividad cumple dos criterios o más, así que el artículo 35 probablemente exige una evaluación de impacto, y no hay `impactAssessment`. | `GDPR article 35 likely requires an impact assessment. <summary>`, donde `<summary>` es `ImpactScreening.summary()`; con `Jurisdiction.SPAIN`, `GDPR article 35 likely requires an impact assessment (the AEPD's list under article 35.4 requires one in most cases that meet two criteria or more). <summary>` |
 
 Salida real para una actividad de estudiantes que trata `user.health_and_medical.disability` y `user.criminal_history` y
 a la que le faltan ambas condiciones. Ambos son datos sensibles, un solo criterio, así que el cribado es `POSSIBLE` y
@@ -258,7 +265,7 @@ y para una con tres declaraciones innecesarias (`legitimateInterest(...)` seguid
 
 ```text
 WARNING UNNEEDED_CONDITION newsletter: A legitimate interest is stated but the lawful basis is article 6.1.a
-WARNING UNNEEDED_CONDITION newsletter: Article 9.2.a is declared but the activity processes no special category of data
+WARNING UNNEEDED_CONDITION newsletter: Article(s) 9.2.a declared but the activity processes no special category of data
 WARNING UNNEEDED_CONDITION newsletter: Article 10 is declared but the activity processes no criminal offence data
 ```
 
@@ -279,7 +286,7 @@ de datos, así que un problema ahí corresponde a la pantalla donde se edita.
 | `PERSONAL_DATA` | `false` | Los datos personales: categorías de datos, entidades y objetos. |
 | `LEGAL_BASIS` | `true` | La base jurídica (`Governance.legalBasis()`). |
 | `LEGITIMATE_INTEREST` | `true` | El interés legítimo perseguido (`Governance.legitimateInterest()`). |
-| `SPECIAL_CATEGORY_CONDITION` | `true` | La condición del artículo 9.2 (`Governance.specialCategoryCondition()`). |
+| `SPECIAL_CATEGORY_CONDITION` | `true` | Las condiciones del artículo 9.2 (`Governance.specialCategoryConditions()`). |
 | `CRIMINAL_DATA_BASIS` | `true` | La base del artículo 10 (`Governance.criminalDataBasis()`). |
 | `LEGAL_REFERENCE` | `true` | La norma en la que descansan las bases (`Governance.legalReference()`). |
 | `RETENTION` | `true` | El plazo previsto para la supresión (`Governance.retention()`). |

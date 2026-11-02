@@ -188,7 +188,7 @@ stricter key, not with the extension's:
 
 ## Data uses
 
-Every use is a child of the standard `finance` use. Data uses have no protection facets.
+Every use is a child of the standard `finance` use. Data uses have no protection facets, only [traits](#traits).
 
 | Key | Name | Parent | Purpose |
 |---|---|---|---|
@@ -215,6 +215,18 @@ All the data subjects of the extension are flat, as fideslang data subjects have
 | `beneficial_owner` | Beneficial Owner | An individual who ultimately owns or controls a customer, supplier or other legal entity. |
 | `guarantor` | Guarantor | An individual who guarantees the obligations of a customer or other debtor. |
 | `payee` | Payee | An individual paid by the organization who is not its customer, supplier or employee, such as a claimant or a prize winner. |
+
+## Traits
+
+The extension declares the [traits](../terms.md#trait) that Linneo's legal rules read, so its terms weigh in the
+[impact screening](../processing/impact-screening.md), the [breach assessment](../processing/breach-assessment.md) and
+the [subject rights](../processing/subject-rights.md) like the standard ones:
+
+| Terms | Trait | Why |
+|---|---|---|
+| Data uses `finance.credit_management` and `finance.anti_money_laundering` | `EVALUATION` | Credit assessment and screening against money laundering evaluate or score people (WP248 criterion 1) |
+
+The personal categories of the extension that hang from the standard `user.financial` inherit its `FINANCIAL` trait.
 
 ## Standard keys for everything else
 

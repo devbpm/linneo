@@ -21,7 +21,7 @@ After this module you will be able to:
 
 - decide when an extension is the right answer (and when a standard key is enough);
 - write a `TaxonomyExtension` that adds categories, data uses and data subjects;
-- make existing categories stricter with `refineCategory`, add attributes and deprecate your own terms;
+- make existing categories stricter with `refineCategory`, add attributes and traits and deprecate your own terms;
 - register the extension with `ServiceLoader`, on the class path or the module path;
 - apply the university extension shipped with Linneo and combine it with your own;
 - predict which extensions the builder rejects, and read its error messages.
@@ -91,10 +91,11 @@ refused (see below). The name `"university"` is taken by the
 | `CategoryDraft` method | Declares |
 |---|---|
 | `nature(LegalNature)` | the legal nature; must be admitted by the parent's (`LegalNature.admits`) |
-| `confidentiality(Confidentiality)` | the confidentiality; never lower than the parent's |
-| `integrity(Integrity)` | the integrity; never lower than the parent's |
+| `confidentiality(Confidentiality)` | the confidentiality, as a minimum: a level below the parent's is raised to it |
+| `integrity(Integrity)` | the integrity, as a minimum: a level below the parent's is raised to it |
 | `secret()` | marks the category, and therefore all its children, as secret |
 | `attribute(name, value)` | an application-defined attribute, inherited by children that do not set their own |
+| `traits(Trait...)` | traits that Linneo's legal rules read, inherited by children (see [below](#traits)) |
 | `since(version)` | the version of your extension that introduced the term |
 | `deprecated(sinceVersion, replacedBy)` | deprecates the term; `replacedBy` may be `null` |
 
@@ -116,20 +117,45 @@ The key must be lower-case segments separated by dots (`[a-z][a-z0-9_]*`), and i
 
 `refineCategory(key, customizer)` modifies a category that is already in the builder — standard or added by an
 earlier extension. It can raise levels, change an `ORDINARY` nature into a stricter one, mark it secret, add
-attributes or deprecate it. It can never weaken:
+attributes and traits or deprecate it. It can never weaken, because every facet you declare is a **minimum**: a level
+lower than the one the category already has changes nothing, and two refinements of the same category give the
+stricter level, whichever is applied first:
 
 ```java
 .refineCategory(Categories.USER_GOVERNMENT_ID, c -> c.confidentiality(Confidentiality.HIGH))
 ```
 
 After this, `user.government_id.passport_number`, `...national_identification_number`,
-`...social_security_number` and every other child inherit `HIGH`. Refining does not change the term's origin:
-`user.government_id` is still `fideslang`.
+`...social_security_number` and every other child inherit `HIGH`, and a child that declared `MEDIUM` itself is raised to
+`HIGH` too: raising a category raises its subtree. Refining does not change the term's origin: `user.government_id` is
+still `fideslang`.
 
 ### Data uses and data subjects
 
 `dataUse(key, name, description)` and `dataSubject(key, name, description)` (each with an optional `TermDraft`
-customizer for `since` and `deprecated`) add terms to the other two hierarchies. They have no protection facets.
+customizer for `since`, `deprecated` and `traits`) add terms to the other two hierarchies. They have no protection
+facets. Unlike a category, an extension may start a **new root** of data uses or data subjects: fideslang has no purpose
+for fundraising, so the university extension adds the root `advancement`. `refineDataUse` and `refineDataSubject` add
+traits or a deprecation to one that exists.
+
+### Traits
+
+A **trait** is a property of a term that Linneo's legal rules read, so that they follow the taxonomy and not lists of
+keys: `EVALUATION` marks a purpose that scores people, `MONITORING` one that observes them, `VULNERABLE` a data subject
+in a weaker position than the controller, `DIRECT_MARKETING` a purpose the data subject may always object to, and so on
+(the [reference](../reference/terms.md#trait) lists all ten and the hierarchies each one applies to). A term has its own
+traits and those of its ancestors. If the university scores applicants, say so on the purpose and the impact screening
+of module 9 sees it:
+
+```java
+.dataUse("education.applicant_ranking", "Applicant ranking", "Ranks applicants for admission.",
+        u -> u.traits(Trait.EVALUATION))
+.refineDataSubject("visiting_researcher", s -> s.traits(Trait.VULNERABLE))   // after the subject is added
+```
+
+A trait can only be declared on a hierarchy it applies to: `Trait.EVALUATION` on a category throws
+`The trait EVALUATION does not apply to the DATA_CATEGORY '<key>'`. Adding a trait to a term makes the rules stricter, so
+it is a minor change of a taxonomy; removing one is a major change.
 
 ### Deprecating your own terms
 
@@ -255,6 +281,11 @@ Two extensions combine safely when:
   `Cannot refine unknown data category 'user.education.attendance'`. With `extend` you choose the order. `load()`
   sorts by name, so to apply the shipped extension first and then every registered one, write
   `Taxonomy.builder().withStandard().extend(new UniversityTaxonomy()).withExtensions().build()`.
+- **raising does not depend on order.** If both extensions raise the confidentiality of the same category, the result
+  is the stricter level whichever is applied first.
+- **each deprecates only its own terms.** While an extension contributes, the builder also refuses to add a root data
+  category, to call `origin(...)`, and to deprecate or set the `since` of a term the extension did not add: it may add
+  data uses and data subjects, raise protection and add traits and attributes.
 
 To have `Taxonomy.load()` include the shipped extension, register it in your application; the
 [Extensions](../reference/extensions/README.md#registering-a-shipped-extension) reference shows how on the class path
@@ -271,26 +302,25 @@ extension stops the application (or the test) instead of producing a weaker taxo
 | Invalid key | `Invalid key 'user.education.LabNotebook': use lower-case segments separated by dots` | on `category(...)` |
 | Duplicate key | `Duplicate key 'user.education.grade'` | on `category(...)` |
 | Refining a key that is not there (yet) | `Cannot refine unknown data category 'user.education.lab_notebook'` | on `refineCategory(...)` |
-| Refine lowers a level the category declares | `Cannot lower the confidentiality of 'user.education' from MEDIUM to LOW` | on `refineCategory(...)` |
-| Refine changes a nature to one it does not admit | `Cannot change the nature of 'user.health_and_medical' from SPECIAL_CATEGORY to ORDINARY` | on `refineCategory(...)` |
+| A nature that cannot be reconciled with the declared one (personal and not personal, or special category and criminal offence) | `Cannot change the nature of 'user.health_and_medical' from SPECIAL_CATEGORY to NONE` | on `nature(...)` |
+| An extension adds a root data category | `The extension 'campus' cannot add the root data category 'research': an extension adds data categories below existing ones` | on `category(...)` |
+| An extension deprecates a term it did not add | `The extension 'campus' cannot deprecate 'user.education.grade', which comes from 'linneo'` | on `deprecated(...)` |
+| A trait on a hierarchy it does not apply to | `The trait EVALUATION does not apply to the DATA_CATEGORY 'user.education.lab_notebook'` | on `traits(...)` |
 | Missing parent | `The parent 'user.education.lab_notebook' of data category 'user.education.lab_notebook.entry' does not exist` | `build()` |
 | Root without all facets | `Root data category 'research' must declare its nature, confidentiality and integrity` | `build()` |
 | Nature not admitted by the parent | `Data category 'user.education.stats' declares nature NONE, which its parent 'user.education' (ORDINARY) does not admit` | `build()` |
-| Level lower than the parent's | `Data category 'user.education.grade' declares confidentiality LOW, lower than its parent's MEDIUM` | `build()` |
 | Replacement does not exist | `The replacement 'user.education.new' of data category 'user.education.old' does not exist` | `build()` |
 | Replacement protects less | `The replacement 'user.education.new' of data category 'user.education.old' has weaker protection: ORDINARY, LOW, LOW instead of ORDINARY, MEDIUM, HIGH` | `build()` |
 | Replacements form a cycle | `The replacements of data category 'user.education.a' form a cycle` | `build()` |
 
-Two cases deserve attention:
+A level lower than the one a category has is not an error: it is simply not a lower level. Two cases show it:
 
-- **Refining a category that only inherits a level.** `user.education.grade` declares no confidentiality of its
-  own, so `refineCategory(USER_EDUCATION_GRADE, c -> c.confidentiality(LOW))` is accepted by `refineCategory`, but
-  `build()` then compares it with the parent and fails ("declares confidentiality LOW, lower than its parent's
-  MEDIUM"). Either way, it cannot be lowered.
-- **Raising a parent above what a child declares.** `refineCategory(USER_DEMOGRAPHIC, c ->
-  c.confidentiality(HIGH))` fails at build time with `Data category 'user.demographic.date_of_birth' declares
-  confidentiality MEDIUM, lower than its parent's HIGH`, because several children of `user.demographic` declare
-  `MEDIUM` explicitly. Refine those children as well, or refine only the specific keys you care about.
+- **Refining a category with a lower level.** `user.education.grade` inherits `MEDIUM` confidentiality, so
+  `refineCategory(USER_EDUCATION_GRADE, c -> c.confidentiality(LOW))` is accepted and changes nothing: the result is
+  still `MEDIUM`. A level you declare can only raise.
+- **Raising a parent above what a child declares.** `refineCategory(USER_DEMOGRAPHIC, c -> c.confidentiality(HIGH))`
+  also raises `user.demographic.date_of_birth` and the other children that declare `MEDIUM` themselves: a child below
+  its parent's level is raised to it, so raising a category raises everything below it.
 
 Order matters for `refineCategory`: the key must already be in the builder. The standard terms always are;
 terms of another extension are only there if that extension's name sorts before yours.
@@ -300,9 +330,13 @@ terms of another extension are only there if that extension's name sorts before 
 - **Forgetting to register the extension** (or registering it only in the test resources). The application then
   fails with `UNKNOWN_CATEGORY`, or worse, uses `Taxonomy.standard()` and never sees the stricter levels.
 - **Using `Taxonomy.standard()`** anywhere the extension is needed: it never includes extensions.
-- **Trying to lower a level** for the whole organisation. Not possible by design; levels only become stricter.
-- **Inventing new roots.** Add children of existing terms. (The builder does accept a new root that declares
-  nature, confidentiality and integrity, but nobody else will understand it.)
+- **Trying to lower a level** for the whole organisation. Not possible by design; levels only become stricter, and a
+  lower level you declare is ignored, not reported.
+- **Inventing new roots of data categories.** Add children of existing terms. An extension cannot add a root category
+  (the builder refuses it, since a new root is a new domain of data that needs its own protection policy); only data
+  uses and data subjects may start a new root.
+- **Declaring no traits on terms the rules should see.** A purpose that scores people without the `EVALUATION` trait is
+  invisible to the impact screening.
 - **Renaming a key** instead of deprecating it with a replacement.
 - **Using `"linneo"` or `"fideslang"` as the extension name**, or `"university"`, which the shipped extension uses.
 - **Adding a key the shipped university extension already has** instead of applying it.
@@ -323,6 +357,8 @@ confidentiality, integrity and origin? Check with `requireCategory`.
 2. `builder.category("user.education.special_needs", "Special Needs", "Adaptations for disabled students.", c -> c.nature(LegalNature.SPECIAL_CATEGORY));`
 3. `builder.refineCategory(Categories.USER_HEALTH_AND_MEDICAL, c -> c.nature(LegalNature.ORDINARY));`
 4. `builder.refineCategory(Categories.USER_EDUCATION_TEST_SCORE, CategoryDraft::secret);`
+5. `builder.category("campus", "Campus", "Campus data.", c -> c.nature(LegalNature.NONE).confidentiality(Confidentiality.LOW).integrity(Integrity.LOW));`
+6. `builder.refineCategory(Categories.USER_EDUCATION, c -> c.confidentiality(Confidentiality.LOW));`
 
 **Exercise 6.4 — Register and test.** Register `CampusTaxonomy` with `ServiceLoader` and write a test that
 asserts that `Taxonomy.load()` contains `user.education.lab_notebook` with origin `"campus"` and that
@@ -388,9 +424,13 @@ confidentiality, so they all inherit `MEDIUM`. `user.contact.email` and the othe
    the key inherits `MEDIUM` confidentiality from `user.education`: `Data category 'user.education.special_needs' is
    SPECIAL_CATEGORY data and must have HIGH confidentiality and integrity, not MEDIUM and HIGH`. Declaring
    `c.nature(LegalNature.SPECIAL_CATEGORY).confidentiality(Confidentiality.HIGH)` makes it succeed.
-3. Fails on `refineCategory`: `Cannot change the nature of 'user.health_and_medical' from SPECIAL_CATEGORY to
-   ORDINARY`.
+3. Succeeds and changes nothing: ordinary data is already covered by special category data, and every facet is a
+   minimum. Declaring `LegalNature.NONE` instead would fail on `nature(...)`: `Cannot change the nature of
+   'user.health_and_medical' from SPECIAL_CATEGORY to NONE`, because that changes whether the data is personal.
 4. Succeeds: test scores become secret (an odd choice, but stricter, so allowed).
+5. Fails on `category`: `The extension 'campus' cannot add the root data category 'campus': an extension adds data
+   categories below existing ones`.
+6. Succeeds and changes nothing: `user.education` keeps `MEDIUM`, because `LOW` is lower.
 
 **Exercise 6.4**
 
@@ -436,7 +476,8 @@ Taxonomy taxonomy = Taxonomy.builder()
 1. The extension's `name()`.
 2. No; it keeps the origin of whoever added the term.
 3. Sorted by name.
-4. No. `user.contact.email` inherits `LOW` from `user`; `PUBLIC` is lower, so `build()` fails.
+4. No. `user.contact.email` inherits `LOW` from `user`; `PUBLIC` is lower, so it is raised back to `LOW`: a declared
+   level is a minimum.
 5. In `META-INF/services/io.github.devbpm.linneo.TaxonomyExtension` (in Maven, under `src/main/resources`).
 6. No. Linneo's module provides no extension as a service; apply it with `extend(new UniversityTaxonomy())` or
    register it in your application.

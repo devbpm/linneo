@@ -172,7 +172,7 @@ así que `SUBSTANTIAL_PUBLIC_INTEREST` (art. 9.2.g)— y, como el delegado de pr
 evaluación de impacto, una referencia a ella:
 
 ```java
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .legalReference("Higher Education Act, arts. 12 and 31")
         .impactAssessment("DPIA-2026-01")
 ```
@@ -184,9 +184,14 @@ actividad, así que nombra en él todas las leyes implicadas.
 
 Por defecto, el comprobador aplica solo el RGPD. Para una institución española, créalo con una jurisdicción:
 `new ProcessingChecker(Taxonomy.load(), Jurisdiction.SPAIN)`. Entonces informa también del error
-`CONSENT_NOT_SUFFICIENT` cuando el consentimiento explícito es la única condición para creencias, afiliación
-sindical u otros datos del artículo 9.1 de la LOPDGDD, y avisa en `MISSING_LEGAL_REFERENCE` de que los artículos
-9.2.g, h e i exigen una norma con rango de ley.
+`CONSENT_NOT_SUFFICIENT` cuando el consentimiento explícito es la **única** condición para creencias, afiliación
+sindical u otros datos del artículo 9.1 de la LOPDGDD (una actividad puede declarar varias condiciones, una por cada
+tipo de dato especial, y otra condición junto al consentimiento cubre lo que el consentimiento no puede), y avisa en
+`MISSING_LEGAL_REFERENCE` de qué disposiciones exigen una norma con rango de ley: el artículo 8 de la LOPDGDD para una
+obligación legal o una misión de interés público, el 9.2 para las condiciones de los artículos 9.2.g, h e i, y el 10
+para datos penales autorizados por ley. Avisa también cuando se tratan datos sobre sanciones administrativas
+(`user.administrative_sanction`) sin consentimiento ni referencia legal (artículo 27 de la LOPDGDD), y su aviso sobre
+una evaluación de impacto cita la lista de la AEPD del artículo 35.4.
 
 La página de referencia [Bases jurídicas](../reference/processing/bases.md) enumera cada constante con su artículo y
 su nombre en fideslang.
@@ -287,7 +292,7 @@ public final class UniversityActivities {
             .dataCategories(USER_NAME, USER_CONTACT_EMAIL, USER_EDUCATION_PREVIOUS_EDUCATION,
                     USER_EDUCATION_TEST_SCORE, USER_HEALTH_AND_MEDICAL_DISABILITY)
             .legalBasis(LegalBasis.PUBLIC_INTEREST)
-            .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+            .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
             .legalReference("Higher Education Act, arts. 12 and 31")
             .retention("Until the end of the admission cycle; admitted applicants move to the student record")
             .recipients("Admissions board")
@@ -412,7 +417,7 @@ ProcessingActivity support = ProcessingActivity.builder("learning-support", "Lea
 // En el almacenamiento del delegado: lo que decide.
 Governance stored = Governance.builder()
         .legalBasis(LegalBasis.PUBLIC_INTEREST)
-        .specialCategoryCondition(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
+        .specialCategoryConditions(SpecialCategoryCondition.SUBSTANTIAL_PUBLIC_INTEREST)
         .legalReference("Higher Education Act, arts. 12 and 31")
         .retention("Until the end of the studies")
         .impactAssessment("DPIA-2026-07")
@@ -420,6 +425,10 @@ Governance stored = Governance.builder()
 
 CheckedActivity checked = checker.check(support.withGovernance(stored));   // válida, sin infracciones
 ```
+
+`withGovernance` conserva lo que el código declara de la actividad: los factores de riesgo que le da el código (por
+ejemplo `Factor.AUTOMATED_DECISIONS`) son un mínimo al que la gobernanza guardada suma y que no puede quitar, así que
+una gobernanza guardada antes de que cambiara el código nunca levanta una evaluación de impacto.
 
 El alcance en el código todavía no tiene gobernanza, así que su comprobación solo encuentra problemas de gobernanza.
 Cada `ProcessingViolation` lleva el `element()` de la actividad en el que está:
@@ -536,9 +545,14 @@ El comprobador también criba cada actividad para saber si necesita una evaluaci
 de datos (`ImpactScreening`). Cuenta los criterios de las directrices del Comité Europeo de Protección de Datos que
 cumple la actividad, avisa cuando se cumplen dos y no se cita ninguna evaluación, y notifica como error un caso del
 artículo 35.3. Lo que solo sabe la delegada, como la escala del tratamiento, lo declara ella con `riskFactors(...)`:
-`Factor.LARGE_SCALE` en `learning-support` lo convertiría en un error hasta que citara una evaluación. Cuando ocurre una
-violación de seguridad, `BreachAssessment` puntúa su gravedad a partir de la clasificación de los campos afectados,
-como orientación para las primeras horas. Consulta [ImpactScreening](../reference/processing/impact-screening.md) y
+`Factor.LARGE_SCALE` en `learning-support` lo convertiría en un error hasta que citara una evaluación. Los criterios que
+el código puede ver se leen de los **rasgos** de los términos (módulo 2): una finalidad con `EVALUATION` es el criterio
+1, `MONITORING` el criterio 3, una categoría con `FINANCIAL`, `BEHAVIOURAL` o `PRIVATE_LIFE` el criterio 4, y un
+interesado o una categoría con `VULNERABLE` el criterio 7, así que un término de tu propia extensión (módulo 6) cuenta
+en cuanto declara sus rasgos. Cuando ocurre una violación de seguridad, `BreachAssessment` puntúa su gravedad a partir
+de la clasificación de los campos afectados y de los rasgos de sus categorías, como orientación para las primeras
+horas; una violación solo de la confidencialidad de datos que eran ininteligibles, como los fuertemente cifrados, no se
+notifica a la autoridad. Consulta [ImpactScreening](../reference/processing/impact-screening.md) y
 [BreachAssessment](../reference/processing/breach-assessment.md).
 
 ## Responder a la solicitud de un interesado
@@ -547,8 +561,9 @@ Un antiguo alumno escribe a la universidad: ¿qué hacéis con mis datos y podé
 mayor parte de la respuesta, y `SubjectRights` lo lee para una categoría de interesados:
 
 ```java
-ProcessingRecord record = new ProcessingChecker(Taxonomy.load()).verify(UniversityActivities.all());
-SubjectRights alumni = SubjectRights.of(record, DataSubjects.ALUMNUS);
+Taxonomy taxonomy = Taxonomy.load();
+ProcessingRecord record = new ProcessingChecker(taxonomy).verify(UniversityActivities.all());
+SubjectRights alumni = SubjectRights.of(record, taxonomy, DataSubjects.ALUMNUS);
 
 for (SubjectRights.ActivityRights activity : alumni.activities()) {
     System.out.println(activity.activity().activity().name());
@@ -565,7 +580,7 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 |---|---|---|
 | `ACCESS` | `YES` | Art. 15: siempre, con las finalidades, destinatarios, transferencias y conservación de la actividad |
 | `RECTIFICATION` | `YES` | Art. 16 |
-| `ERASURE` | `YES` | La finalidad es mercadotecnia directa: la persona puede oponerse en cualquier momento y los datos se suprimen entonces |
+| `ERASURE` | `YES` | La finalidad es mercadotecnia directa (el rasgo `DIRECT_MARKETING` de `marketing` y sus hijos): la persona puede oponerse en cualquier momento y los datos se suprimen entonces |
 | `RESTRICTION` | `CONDITIONAL` | El art. 18.1 enumera los casos |
 | `PORTABILITY` | `NO` | Solo en el tratamiento basado en el consentimiento o en un contrato; este se basa en intereses legítimos |
 | `OBJECTION` | `YES` | Art. 21.2: mercadotecnia directa |
@@ -573,7 +588,7 @@ for (SubjectRights.ActivityRights activity : alumni.activities()) {
 La misma llamada para un estudiante muestra qué cambia la base. La matrícula se basa en una misión de interés público:
 
 ```java
-SubjectRights students = SubjectRights.of(record, DataSubjects.STUDENT);
+SubjectRights students = SubjectRights.of(record, taxonomy, DataSubjects.STUDENT);
 SubjectRights.Entitlement erasure = students.activity("enrollment").orElseThrow()
         .entitlement(SubjectRights.Right.ERASURE);
 System.out.println(erasure.availability() + ": " + erasure.explanation());
@@ -586,8 +601,11 @@ NO: Art. 17.3.b: the data is kept while the task in the public interest requires
 Cada `Entitlement` lleva una explicación en inglés que cita los artículos. Para encontrar los datos,
 `dataCategories()`, `entities()`, `objects()` y, con un [inventario de datos](10-reconciliation.md),
 `storedFields(inventory, taxonomy)` dan los campos personales que hay que mirar, objeto por objeto. Con
-`SubjectRights.of(record, DataSubjects.ALUMNUS, Jurisdiction.SPAIN)` las explicaciones de la rectificación y la
-supresión añaden que los datos se bloquean antes de borrarse (LOPDGDD, art. 32).
+`SubjectRights.of(record, taxonomy, DataSubjects.ALUMNUS, Jurisdiction.SPAIN)` las explicaciones de la rectificación y
+la supresión añaden que los datos se bloquean antes de borrarse (LOPDGDD, art. 32). La clave se resuelve con la
+taxonomía, así que un interesado que no tiene es una `TaxonomyException` y no una respuesta vacía, y una actividad con
+finalidades `DIRECT_MARKETING` y una base de obligación legal o de misión de interés público recibe una supresión
+`CONDITIONAL` en lugar de `YES`: los datos se suprimen salvo lo que conserva el art. 17.3.b.
 
 Esto es el comienzo de la respuesta, no la respuesta. `CONDITIONAL` significa que el artículo enumera casos, y si esta
 solicitud los cumple lo decide la delegada de protección de datos, como toda solicitud. Linneo lee el registro; dar a la
@@ -662,7 +680,7 @@ este módulo, que se declaró en el código sin gobernanza:
 ```java
 Governance saved = Governance.builder()
         .legalBasis(LegalBasis.CONSENT)
-        .specialCategoryCondition(SpecialCategoryCondition.EXPLICIT_CONSENT)
+        .specialCategoryConditions(SpecialCategoryCondition.EXPLICIT_CONSENT)
         .build();
 ```
 

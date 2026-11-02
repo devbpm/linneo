@@ -230,8 +230,6 @@
                         <manifest>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                            <!-- java -jar linneo.jar runs the command line (internal, not part of the API). -->
-                            <mainClass>io.github.devbpm.linneo.internal.Cli</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -279,6 +277,8 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <doclint>all</doclint>
+                    <!-- A missing or broken Javadoc fails the build, as a lint warning fails the compilation. -->
+                    <failOnWarnings>true</failOnWarnings>
                     <quiet>true</quiet>
                     <links>
                         <link>https://docs.oracle.com/en/java/javase/21/docs/api/</link>

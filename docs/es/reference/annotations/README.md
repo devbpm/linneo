@@ -37,13 +37,13 @@ clasificador.
 ## Qué campos se clasifican
 
 El clasificador recorre la clase y sus superclases (se detiene antes de `Object`, `Record` y `Enum`) y considera todos
-los campos que declaran salvo los **estáticos**, **transient** y **sintéticos** (y los llamados `$$_...`, que añade
-Hibernate), que se omiten siempre sin necesidad de anotación. Consulta
-[Classifier](../classify/classifier.md#qué-campos-se-examinan).
+los campos que declaran salvo los **estáticos** y **sintéticos** (y los llamados `$$_...`, que añade Hibernate), que se
+omiten siempre sin necesidad de anotación, y los **transient**, que se omiten salvo que lleven una de las anotaciones de
+campo de Linneo. Consulta [Classifier](../classify/classifier.md#qué-campos-se-examinan).
 
-Un campo sin anotación propia cuyo tipo es una clase [`@Composite`](composite.md) (o un array, una colección o un
-`Optional` de ella) no se clasifica como un solo campo: se clasifica cada campo del compuesto, con la ruta
-`campo.parte`.
+Un campo sin anotación propia cuyo tipo es una clase [`@Composite`](composite.md) (o un array, una colección, un
+`Optional` o un valor de mapa de ella, a cualquier profundidad) no se clasifica como un solo campo: se clasifica cada
+campo del compuesto, con la ruta `campo.parte`.
 
 ## Orden de resolución
 
@@ -55,14 +55,18 @@ Para cada campo considerado, gana la primera regla que se cumple:
 | 2 | El campo tiene `@Category` | la categoría declarada (`DECLARED`; `DERIVED` si además tiene `@DerivedFrom`) |
 | 2 | El campo tiene `@CategoryByRow` | la categoría techo (`BY_ROW`) |
 | 3 | El campo tiene `@DerivedFrom` y no tiene `@Category` | la clasificación de su fuente (`DERIVED`) |
-| 4 | El tipo del campo es una clase `@Composite`, o un array, una colección o un `Optional` de ella | una clasificación por cada campo del compuesto, con la ruta `campo.parte`, cada una como la resuelve su propia clase |
-| 5 | La clase que **declara** el campo tiene `@DefaultCategory` | ese valor por defecto (`CLASS_DEFAULT`) |
-| 6 | La clase **que se clasifica** tiene `@DefaultCategory` | ese valor por defecto (`CLASS_DEFAULT`) |
+| 4 | El tipo del campo es una clase `@Composite`, o un array, una colección, un `Optional` o un valor de mapa de ella, a cualquier profundidad | una clasificación por cada campo del compuesto, con la ruta `campo.parte`, cada una como la resuelve su propia clase |
+| 5 | La clase que **declara** el campo tiene `@DefaultCategory`, y el campo no puede contener datos que el clasificador no ve | ese valor por defecto (`CLASS_DEFAULT`) |
+| 6 | La clase **que se clasifica** tiene `@DefaultCategory`, y se cumple lo mismo | ese valor por defecto (`CLASS_DEFAULT`) |
 | 7 | ninguna de las anteriores | error `UNCLASSIFIED_FIELD` |
 
 Consecuencias:
 
 - Una anotación en el campo siempre prevalece sobre el valor por defecto de la clase.
+- Un valor por defecto de la clase nunca se aplica a un campo que puede contener datos que el clasificador no ve (una
+  clave de mapa que es un compuesto, varios compuestos, `Object`, una variable de tipo sin enlazar, un contenedor sin
+  parametrizar, o una clase con campos clasificados que no es `@Composite`): ese campo necesita su propia anotación, o es
+  un `UNCLASSIFIED_FIELD`. Consulta [`@Composite`](composite.md#qué-hace-el-clasificador).
 - Los campos de un compuesto se resuelven con las anotaciones y el `@DefaultCategory` del propio compuesto, nunca
   con el valor por defecto de la clase que lo contiene.
 - El `@DefaultCategory` de una superclase cubre los campos que declara esa superclase, aunque se clasifique una

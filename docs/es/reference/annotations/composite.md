@@ -12,28 +12,42 @@ doc-sources:
 
 # @Composite
 
-`io.github.devbpm.linneo.annotation.Composite` — `@Documented @Retention(RUNTIME) @Target(TYPE)`, `@since 0.1.0`
+`io.github.devbpm.linneo.annotation.Composite` — `@Documented @Inherited @Retention(RUNTIME) @Target(TYPE)`,
+`@since 0.1.0`
 
 Marca una clase cuyas instancias forman parte de otro registro, como una dirección `@Embeddable` de JPA o un objeto de
 valor, de modo que los campos que la contienen se clasifican por los campos de la propia clase. Es un marcador sin
-elementos.
+elementos. Se **hereda**: una subclase de un compuesto es un compuesto.
 
 El marcador es propio de Linneo y no una anotación de un framework, para que la biblioteca no necesite ninguna
-dependencia. Olvidarlo es seguro: el campo que contiene la clase se queda sin categoría y no pasa la verificación.
+dependencia. Olvidarlo es seguro: un campo que contiene una clase cuyos campos están clasificados, sin que la clase sea
+un compuesto, no toma el valor por defecto de la clase, así que no pasa la verificación (`UNCLASSIFIED_FIELD`) hasta
+que se marque la clase o el campo declare su propia categoría.
 
 ## Qué hace el clasificador
 
-Un campo **sin anotación propia** cuyo tipo es una clase compuesta, o un array, una colección o un `Optional` de ella,
-recibe una clasificación por cada campo del compuesto, con la ruta `campo.parte`:
+Un campo **sin anotación propia** cuyo tipo es una clase compuesta, o un array, una colección, un `Optional` o un
+**valor** de `Map` de ella, a cualquier profundidad, recibe una clasificación por cada campo del compuesto, con la ruta
+`campo.parte`:
 
 | Campo | Se clasifica como |
 |---|---|
 | `Address home` | `home.street`, `home.city` |
 | `List<Address> previous`, `Address[] previous`, `Optional<Address> previous` | `previous.street`, `previous.city` |
-| `Map<String, Address> byType` | no se entra en él: un campo ordinario, que necesita su propia categoría o un valor por defecto de la clase |
+| `Map<String, Address> byType`, `Map<String, List<Address>> byType` | `byType.street`, `byType.city`: se entra en los valores de un mapa y en los contenedores anidados a cualquier profundidad |
+| un campo que puede contener datos que el clasificador no puede dividir en campos (véase más abajo) | `UNCLASSIFIED_FIELD`, salvo que declare su propia categoría |
 | un campo con `@Category`, `@CategoryByRow` o `@DerivedFrom` | una sola entrada: el compuesto se guarda como un solo valor (véase más abajo) |
 | un campo con `@Exempt` | se omite, y se lista en `exempted()` |
 
+- **Las variables de tipo** se resuelven a través de las superclases de la clase que se clasifica: un `T value` de una
+  clase base genérica, clasificado para `Box extends Base<Address>`, es un `Address`.
+- **Un valor por defecto de la clase nunca se aplica a un campo que puede contener datos que el clasificador no ve**,
+  así que envolver un compuesto nunca le da un valor por defecto no personal. Estos campos son un error
+  `UNCLASSIFIED_FIELD` salvo que estén anotados: una **clave** de mapa que es un compuesto; un compuesto como argumento
+  de tipo de una clase que no es una colección, como `Wrapper<Address>`; varios compuestos en un mismo tipo, como
+  `Map<Address, Address>`; un valor tipado `Object`, una variable de tipo sin enlazar o un contenedor sin parametrizar;
+  y otra clase con campos clasificados que **no** es un compuesto, como una entidad referenciada (márcala `@Composite`
+  para clasificar aquí sus campos, o declara lo que guarda el campo, como la clave del registro).
 - **Las rutas** se anidan: un compuesto dentro de otro da `home.geo.country`. En un campo así,
   `FieldClassification.fieldName()` es el último segmento y `declaringClass()` es la clase compuesta.
 - **Valores por defecto.** Los campos del compuesto se resuelven con las anotaciones del propio compuesto y su propio
@@ -54,14 +68,18 @@ recibe una clasificación por cada campo del compuesto, con la ruta `campo.parte
 
 ## Un compuesto guardado como un solo valor
 
-Un campo que guarda el compuesto como un solo valor, por ejemplo como JSON en una única columna, declara su categoría
-con [`@Category`](category.md) o [`@CategoryByRow`](category-by-row.md). El campo es entonces una sola entrada, y su
-protección debe cubrir la protección de **todos los campos del compuesto**: si no, el valor quedaría clasificado por
-debajo de lo que contiene.
+Un campo que guarda el compuesto como un solo valor, por ejemplo como JSON en una única columna, o que lo contiene donde
+sus campos no pueden ser rutas (una clave de mapa, o un argumento de tipo de una clase que no es una colección), declara
+su categoría con [`@Category`](category.md) o [`@CategoryByRow`](category-by-row.md). El campo es entonces una sola
+entrada, y su protección debe cubrir la protección de **todos los campos de los compuestos que contiene**: si no, el
+valor quedaría clasificado por debajo de lo que contiene. Lo mismo vale para un campo que guarda compuestos como un solo
+valor y toma su categoría de una fuente de [`@DerivedFrom`](derived-from.md). La comprobación abarca también un
+compuesto que se contiene a sí mismo y compuestos que se contienen entre sí, sea cual sea el orden en que se clasifican
+las clases.
 
 | Regla | Violación | Gravedad | ¿Se clasifica el campo? |
 |---|---|---|---|
-| La categoría declarada protege al menos tanto como el `ceiling()` del compuesto | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of <Composite> need (<natures>, <confidentiality>, <integrity>[, secret])`) | error | **sí** (el error se informa igualmente) |
+| La categoría declarada protege al menos tanto como los campos de cada compuesto que contiene el campo | `WEAKER_THAN_PARTS` (`'<key>' protects less than the fields of [<Composite>, ...] need (<natures>, <confidentiality>, <integrity>[, secret])`) | error | **sí** (el error se informa igualmente) |
 | El compuesto no se contiene a sí mismo, directamente ni a través de otros compuestos | `CYCLE` (`the composite <Composite> contains itself; classify the field as one value with @Category or @CategoryByRow`) | error | no (el campo que cierra el bucle) |
 
 Un compuesto que se contiene a sí mismo (`Node` con un `List<Node> children`) no se puede expandir: el error se

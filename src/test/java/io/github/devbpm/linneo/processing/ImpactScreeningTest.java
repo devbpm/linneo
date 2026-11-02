@@ -60,7 +60,7 @@ class ImpactScreeningTest {
                 .purposes(DataUses.EDUCATION).dataSubjects(DataSubjects.STUDENT)
                 .dataCategories(Categories.USER_HEALTH_AND_MEDICAL)
                 .legalBasis(LegalBasis.PUBLIC_INTEREST).legalReference("Health Act, art. 3")
-                .specialCategoryCondition(SpecialCategoryCondition.HEALTH_OR_SOCIAL_CARE).retention("Five years");
+                .specialCategoryConditions(SpecialCategoryCondition.HEALTH_OR_SOCIAL_CARE).retention("Five years");
     }
 
     private static Set<Code> codes(CheckedActivity checked) {
